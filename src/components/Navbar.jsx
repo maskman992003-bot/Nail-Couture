@@ -18,20 +18,22 @@ export default function Navbar({ currentPage, onNavigate }) {
 
   return (
     <nav className="sticky top-0 z-[60] bg-charcoal border-b border-gold/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 relative" style={{ paddingBottom: '6rem' }}>
-        <img 
-          src="/NC.jpg" 
-          alt="Nail Couture" 
-          className="h-52 sm:h-64 w-auto"
-          style={{ position: 'absolute', top: '100%', left: '1rem', zIndex: 999 }}
-        />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div 
             className="cursor-pointer"
             onClick={() => onNavigate('home')}
           >
+          </div>
           
-          <div className="flex items-center gap-4 sm:gap-6">
+          <img 
+            src="/NC.jpg" 
+            alt="Nail Couture" 
+            className="h-40 sm:h-48 w-auto"
+          />
+        </div>
+        
+        <div className="flex items-center gap-4 sm:gap-6">
             <div className="hidden md:flex items-center gap-6">
               <button 
                 onClick={() => scrollToSection('services')}
