@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-charcoal: #121212;
+  --color-offwhite: #F9F9F9;
+  --color-gold: #C5A059;
+  
+  --font-family-heading: 'Playfair Display', Georgia, serif;
+  --font-family-body: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-family-body);
+}
+
+.font-heading {
+  font-family: var(--font-family-heading);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@layer utilities {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+}
