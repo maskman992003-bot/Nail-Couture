@@ -27,7 +27,7 @@ export default function Navbar({ currentPage, onNavigate }) {
             <img 
               src="/NC.jpg" 
               alt="Nail Couture" 
-              className="h-20 sm:h-24 w-auto"
+              className="h-36 sm:h-40 w-auto"
             />
           </div>
           
