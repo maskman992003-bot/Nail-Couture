@@ -23,7 +23,7 @@ export default function Navbar({ currentPage, onNavigate }) {
           <img 
             src="/NC.jpg" 
             alt="Nail Couture" 
-            className="h-36 sm:h-44 w-auto cursor-pointer"
+            className="h-16 sm:h-20 w-auto cursor-pointer"
             onClick={() => onNavigate('home')}
           />
           
