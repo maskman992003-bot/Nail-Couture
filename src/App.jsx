@@ -31,10 +31,16 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-offwhite flex flex-col">
+    <div className="min-h-screen bg-offwhite flex flex-col relative">
+      <img 
+        src="/NC.jpg" 
+        alt="" 
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] opacity-[0.05] pointer-events-none z-0"
+        style={{ maxWidth: '600px' }}
+      />
       <Navbar currentPage={currentPage} onNavigate={setCurrentPage} />
       
-      <main className="flex-1">
+      <main className="flex-1 relative z-10">
         {currentPage === 'home' && (
           <>
             <Lookbook />
