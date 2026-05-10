@@ -42,7 +42,6 @@ function App() {
           onClick={() => setCurrentPage('home')}
         />
       </div>
-      </div>
       
       <main className="flex-1 relative z-10">
         {currentPage === 'home' && (
