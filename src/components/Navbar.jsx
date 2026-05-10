@@ -17,21 +17,19 @@ export default function Navbar({ currentPage, onNavigate }) {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-charcoal border-b border-gold/30 pb-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
-        <div className="flex items-center justify-between relative">
+    <nav className="sticky top-0 z-[60] bg-charcoal border-b border-gold/30">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 relative" style={{ paddingBottom: '6rem' }}>
+        <img 
+          src="/NC.jpg" 
+          alt="Nail Couture" 
+          className="h-52 sm:h-64 w-auto"
+          style={{ position: 'absolute', top: '100%', left: '1rem', zIndex: 999 }}
+        />
+        <div className="flex items-center justify-between">
           <div 
-            className="cursor-pointer relative"
+            className="cursor-pointer"
             onClick={() => onNavigate('home')}
-            style={{ zIndex: 999 }}
           >
-            <img 
-              src="/NC.jpg" 
-              alt="Nail Couture" 
-              className="h-48 sm:h-56 w-auto"
-              style={{ position: 'absolute', top: '100%', left: 0 }}
-            />
-          </div>
           
           <div className="flex items-center gap-4 sm:gap-6">
             <div className="hidden md:flex items-center gap-6">
