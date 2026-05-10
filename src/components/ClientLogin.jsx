@@ -21,7 +21,7 @@ export default function ClientLogin() {
         <div className="bg-white border border-charcoal/10 p-8">
           <div className="text-center mb-8">
             <Link to="/" className="block">
-              <img src="/src/assets/NC.jpg" alt="Nail Couture" className="h-28 w-auto mx-auto" />
+              <img src="/NC.jpg" alt="Nail Couture" className="h-28 w-auto mx-auto" />
             </Link>
             <p className="text-charcoal/60 mt-2">Client Portal Login</p>
           </div>

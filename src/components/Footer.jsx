@@ -3,7 +3,7 @@ export default function Footer({ onNavigate }) {
     <footer className="bg-charcoal border-t border-gold/30 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
         <div>
-          <img src="/src/assets/NC.jpg" alt="Nail Couture" className="h-20 w-auto mb-4" />
+          <img src="/NC.jpg" alt="Nail Couture" className="h-20 w-auto mb-4" />
           <p className="text-offwhite/60 text-sm leading-relaxed">
             123 Luxury Avenue, Suite 500<br />
             Beverly Hills, CA 90210<br />

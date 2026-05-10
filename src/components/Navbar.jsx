@@ -25,7 +25,7 @@ export default function Navbar({ currentPage, onNavigate }) {
             onClick={() => onNavigate('home')}
           >
             <img 
-              src="/src/assets/NC.jpg" 
+              src="/NC.jpg" 
               alt="Nail Couture" 
               className="h-20 sm:h-24 w-auto"
             />
