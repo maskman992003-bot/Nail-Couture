@@ -34,16 +34,7 @@ function App() {
     <div className="min-h-screen bg-offwhite flex flex-col">
       <Navbar currentPage={currentPage} onNavigate={setCurrentPage} />
       
-      <div className="h-32 sm:h-40 bg-charcoal relative -mt-8 sm:-mt-10 z-40">
-        <img 
-          src="/NC.jpg" 
-          alt="Nail Couture" 
-          className="h-full w-auto absolute left-4 sm:left-6 top-0 cursor-pointer"
-          onClick={() => setCurrentPage('home')}
-        />
-      </div>
-      
-      <main className="flex-1 relative z-10">
+      <main className="flex-1">
         {currentPage === 'home' && (
           <>
             <Lookbook />
