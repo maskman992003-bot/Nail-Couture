@@ -33,7 +33,7 @@ function App() {
   return (
     <div className="min-h-screen bg-offwhite flex flex-col relative">
       <img 
-        src="/NC.jpg" 
+        src="/NC.jfif.png" 
         alt="" 
         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] opacity-10 pointer-events-none z-50"
         style={{ maxWidth: '600px' }}
