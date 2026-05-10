@@ -34,7 +34,7 @@ function App() {
     <div className="min-h-screen bg-offwhite flex flex-col">
       <Navbar currentPage={currentPage} onNavigate={setCurrentPage} />
       
-      <main className="flex-1">
+      <main className="flex-1 -mt-16 relative z-10">
         {currentPage === 'home' && (
           <>
             <Lookbook />
