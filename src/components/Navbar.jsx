@@ -20,14 +20,12 @@ export default function Navbar({ currentPage, onNavigate }) {
     <nav className="sticky top-0 z-[60] bg-charcoal border-b border-gold/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center justify-between relative pb-16">
-            <img 
-              src="/NC.jpg" 
-              alt="Nail Couture" 
-              className="h-40 sm:h-48 w-auto cursor-pointer absolute bottom-0 left-0 z-50"
-              onClick={() => onNavigate('home')}
-            />
-          </div>
+          <img 
+            src="/NC.jpg" 
+            alt="Nail Couture" 
+            className="h-36 sm:h-44 w-auto cursor-pointer"
+            onClick={() => onNavigate('home')}
+          />
           
           <div className="flex items-center gap-4 sm:gap-6">
             <div className="hidden md:flex items-center gap-6">
