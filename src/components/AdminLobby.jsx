@@ -1,46 +1,64 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
-import { DndContext, DragOverlay, useDraggable, useDroppable, closestCenter } from '@dnd-kit/core'
+import { DndContext, DragOverlay, useDraggable, useDroppable, pointerWithin, rectIntersection } from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '../services/services'
 
-const TechnicianGridItem = ({ tech, currentCustomer, isBusy, updating, onComplete, canDrop }) => {
-  const { isOver, setNodeRef } = useDroppable({ id: tech.id, disabled: isBusy })
+const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, updating, onAccept, onComplete, wiggle }) => {
+  const { isOver, setNodeRef } = useDroppable({ id: tech.id, disabled: isBusy || isPending })
+
+  const showAcceptButton = !!pendingCustomer
+  const dropHighlight = isOver && !isBusy
 
   return (
     <div
       ref={setNodeRef}
       className={`rounded-xl p-5 border-2 transition-all ${
-        isOver && !isBusy && canDrop ? 'border-gold bg-gold/20' : isBusy
-          ? 'border-gray-600/30 bg-gray-900/30'
-          : canDrop ? 'border-offwhite/20 bg-offwhite/5 hover:border-gold/50' : 'border-gray-600/30 bg-gray-900/30'
-      }`}
+        dropHighlight ? 'border-gold border-4 bg-gold/20 scale-105' : isBusy
+          ? 'border-red-500/50 bg-red-900/10'
+          : 'border-offwhite/20 bg-offwhite/5 hover:border-gold/50'
+      } ${wiggle ? 'animate-wiggle' : ''}`}
     >
       <div className="flex items-center justify-between mb-2">
-        <h4 className={`font-heading text-lg ${isBusy ? 'text-offwhite/50' : 'text-offwhite'}`}>{tech.full_name}</h4>
+        <h4 className={`font-heading text-lg ${isBusy ? 'text-red-400' : 'text-offwhite'}`}>{tech.full_name}</h4>
         <span className={`text-xs px-2 py-1 rounded ${
           isBusy
-            ? 'bg-gray-600/30 text-gray-400'
-            : 'bg-offwhite/20 text-offwhite/50'
+            ? 'bg-red-500/30 text-red-400'
+            : showAcceptButton
+              ? 'bg-yellow-500/30 text-yellow-400'
+              : 'bg-offwhite/20 text-offwhite/50'
         }`}>
-          {isBusy ? 'Busy' : 'Available'}
+          {isBusy ? 'Busy' : showAcceptButton ? 'Pending' : 'Available'}
         </span>
       </div>
       {isBusy ? (
-        <div className="text-sm text-gray-500">
-          <div className="mb-2">{currentCustomer.customer?.full_name || 'Customer'}</div>
-          <div className="text-xs text-gray-600">{currentCustomer.services?.name}</div>
+        <div className="text-sm text-gray-400">
+          <div className="mb-2">{activeCustomer.customer?.full_name || 'Customer'}</div>
+          <div className="text-xs text-gray-600">{activeCustomer.services?.name}</div>
           <button
-            onClick={() => onComplete(currentCustomer.id)}
-            disabled={updating === currentCustomer.id}
+            onClick={() => onComplete(activeCustomer.id)}
+            disabled={updating === activeCustomer.id}
             className="mt-3 w-full py-2 bg-gold text-charcoal font-heading text-sm hover:bg-gold/90 disabled:opacity-50 rounded-lg"
           >
-            {updating === currentCustomer.id ? 'Completing...' : 'Mark Completed'}
+            {updating === activeCustomer.id ? 'Completing...' : 'Mark Completed'}
+          </button>
+        </div>
+      ) : showAcceptButton ? (
+        <div className="text-sm text-offwhite/70">
+          <div className="mb-2">{pendingCustomer.customer?.full_name || 'Customer'}</div>
+          <div className="text-xs text-offwhite/50">{pendingCustomer.services?.name}</div>
+          <button
+            onClick={() => onAccept(pendingCustomer.id, tech.id)}
+            disabled={updating === pendingCustomer.id}
+            className="mt-3 w-full py-2 bg-green-500 text-white font-heading text-sm hover:bg-green-600 disabled:opacity-50 rounded-lg"
+          >
+            {updating === pendingCustomer.id ? 'Starting...' : '✓ Confirm Start'}
           </button>
         </div>
       ) : (
         <div className="text-sm text-offwhite/40">
-          {canDrop ? 'Drop here to assign' : 'Technician unavailable'}
+          {dropHighlight ? 'Release to assign' : 'Drop here to assign'}
         </div>
       )}
     </div>
@@ -53,10 +71,11 @@ const DraggableAppointmentCard = ({ appointment, isPriority, onTogglePriority, o
     data: { type: 'appointment', appointment }
   })
 
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    zIndex: 1000
-  } : undefined
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    zIndex: isDragging ? 1000 : undefined,
+    opacity: isDragging ? 0.5 : 1
+  }
 
   return (
     <div
@@ -65,8 +84,8 @@ const DraggableAppointmentCard = ({ appointment, isPriority, onTogglePriority, o
       {...listeners}
       {...attributes}
       className={`bg-offwhite/5 border rounded-xl p-5 cursor-grab active:cursor-grabbing transition-all ${
-        isDragging ? 'opacity-50' : ''
-      } ${isPriority ? 'border-gold shadow-lg shadow-gold/20' : 'border-offwhite/10'}`}
+        isPriority ? 'border-gold shadow-lg shadow-gold/20' : 'border-offwhite/10'
+      }`}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
@@ -269,6 +288,7 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
 export default function AdminLobby() {
   const [lobbyAppointments, setLobbyAppointments] = useState([])
   const [servingAppointments, setServingAppointments] = useState([])
+  const [pendingAppointments, setPendingAppointments] = useState([])
   const [technicians, setTechnicians] = useState([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
@@ -279,14 +299,21 @@ export default function AdminLobby() {
   const [services, setServices] = useState([])
   const [cancelConfirm, setCancelConfirm] = useState(null)
   const [cancelReason, setCancelReason] = useState('')
+  const [wiggleTechId, setWiggleTechId] = useState(null)
 
   const busyTechnicians = servingAppointments
     .filter(a => a.status === 'serving' && a.technician_id)
     .map(a => a.technician_id)
 
+  const pendingTechnicians = pendingAppointments
+    .filter(a => a.status === 'assigned_pending' && a.technician_id)
+    .map(a => a.technician_id)
+
+  const allBusyTechnicians = [...busyTechnicians, ...pendingTechnicians]
+
   useEffect(() => {
     const init = async () => {
-      await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchTechnicians(), fetchTodayTotal()])
+      await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
       setLoading(false)
     }
     init()
@@ -295,7 +322,7 @@ export default function AdminLobby() {
     const channel = supabase
       .channel('floor-manager')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, async () => {
-        await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchTechnicians(), fetchTodayTotal()])
+        await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
       })
       .subscribe()
 
@@ -332,6 +359,22 @@ export default function AdminLobby() {
       console.log('Serving appointments:', data)
     }
     setServingAppointments(data || [])
+  }, [])
+
+  const fetchPendingAppointments = useCallback(async () => {
+    console.log('Fetching pending appointments...')
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*, customer:profiles!appointments_profile_id_fkey(full_name), services(name)')
+      .eq('status', 'assigned_pending')
+      .order('check_in_time', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching pending:', error)
+    } else {
+      console.log('Pending appointments:', data)
+    }
+    setPendingAppointments(data || [])
   }, [])
 
   const fetchTechnicians = useCallback(async () => {
@@ -437,8 +480,10 @@ export default function AdminLobby() {
     const technicianId = over.id
 
     if (technicianId && technicianId !== 'lobby') {
-      if (busyTechnicians.includes(technicianId)) {
-        setNotification({ message: 'Technician is currently busy', name: 'Please wait until they finish' })
+      if (allBusyTechnicians.includes(technicianId)) {
+        setWiggleTechId(technicianId)
+        setTimeout(() => setWiggleTechId(null), 500)
+        setNotification({ message: 'Technician is busy', name: 'Cannot assign right now' })
         setTimeout(() => setNotification(null), 3000)
         return
       }
@@ -448,13 +493,32 @@ export default function AdminLobby() {
         .from('appointments')
         .update({
           technician_id: technicianId,
-          status: 'serving',
-          start_time: new Date().toISOString()
+          status: 'assigned_pending'
         })
         .eq('id', appointmentId)
-      await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchTechnicians()])
+      await Promise.all([fetchAppointments(), fetchPendingAppointments(), fetchTechnicians()])
       setUpdating(null)
     }
+  }
+
+  const acceptAssignment = async (appointmentId, techId) => {
+    setUpdating(appointmentId)
+    const { error } = await supabase
+      .from('appointments')
+      .update({
+        status: 'serving',
+        start_time: new Date().toISOString()
+      })
+      .eq('id', appointmentId)
+    
+    if (error) {
+      console.error('Error accepting assignment:', error)
+      setUpdating(null)
+      return
+    }
+    
+    await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchPendingAppointments(), fetchTechnicians()])
+    setUpdating(null)
   }
 
   if (loading) {
@@ -466,7 +530,7 @@ export default function AdminLobby() {
   }
 
   return (
-    <DndContext collisionDetection={closestCenter} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
+    <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
       <div className="min-h-screen bg-charcoal p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-6">
@@ -551,18 +615,22 @@ export default function AdminLobby() {
               <p className="text-offwhite/40 text-sm mb-4">Drop a customer on a technician to assign</p>
               <div className="space-y-4">
                 {technicians.map(tech => {
-                  const currentCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')
-                  const isBusy = !!currentCustomer
-                  const canDrop = !busyTechnicians.includes(tech.id)
+                  const activeCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')
+                  const pendingCustomer = pendingAppointments.find(a => a.technician_id === tech.id && a.status === 'assigned_pending')
+                  const isBusy = !!activeCustomer
+                  const isPending = !!pendingCustomer
                   
                   return (
                     <TechnicianGridItem
                       key={tech.id}
                       tech={tech}
-                      currentCustomer={currentCustomer || {}}
+                      activeCustomer={activeCustomer || {}}
+                      pendingCustomer={pendingCustomer}
                       isBusy={isBusy}
-                      canDrop={canDrop}
+                      isPending={isPending}
+                      wiggle={wiggleTechId === tech.id}
                       updating={updating}
+                      onAccept={acceptAssignment}
                       onComplete={(id) => updateStatus(id, 'completed')}
                     />
                   )

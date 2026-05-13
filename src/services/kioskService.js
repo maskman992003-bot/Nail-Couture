@@ -3,19 +3,18 @@ import { supabase } from '../lib/supabase'
 export async function processCheckIn(phoneNumber) {
   const cleanPhone = phoneNumber.replace(/\D/g, '')
 
-  const { data: profiles, error: profileError } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('phone_number', cleanPhone)
+    .single()
 
-  if (profileError) {
+  if (profileError && profileError.code !== 'PGRST116') {
     console.error('Profile search error:', profileError)
     throw profileError
   }
 
-  if (profiles && profiles.length > 0) {
-    const profile = profiles[0]
-
+  if (profile) {
     const { data: appointments, error: appointmentError } = await supabase
       .from('appointments')
       .insert({

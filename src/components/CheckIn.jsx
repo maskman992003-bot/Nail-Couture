@@ -153,13 +153,17 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
     try {
       const cleanPhone = phone.replace(/\D/g, '')
       
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: profileSearchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('phone_number', cleanPhone)
         .single()
       
       let profileId
+      
+      if (profileSearchError && profileSearchError.code !== 'PGRST116') {
+        throw profileSearchError
+      }
       
       if (existingProfile) {
         profileId = existingProfile.id
@@ -176,7 +180,10 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
           .select()
           .single()
 
-        if (insertError) throw insertError
+        if (insertError) {
+          console.error('Profile insert error:', insertError)
+          throw insertError
+        }
         profileId = profile.id
       }
 
@@ -190,7 +197,10 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
           refreshment_choice: refreshmentPref || null
         })
 
-      if (appointmentError) throw appointmentError
+      if (appointmentError) {
+        console.error('Appointment insert error:', appointmentError)
+        throw appointmentError
+      }
 
       setSuccess(true)
     } catch (err) {
