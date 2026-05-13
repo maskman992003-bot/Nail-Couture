@@ -74,7 +74,9 @@ const DraggableAppointmentCard = ({ appointment, isPriority, onTogglePriority, o
   const style = {
     transform: CSS.Translate.toString(transform),
     zIndex: isDragging ? 1000 : undefined,
-    opacity: isDragging ? 0.5 : 1
+    opacity: isDragging ? 0.5 : 1,
+    maxWidth: '100%',
+    overflow: 'hidden'
   }
 
   return (
@@ -83,7 +85,7 @@ const DraggableAppointmentCard = ({ appointment, isPriority, onTogglePriority, o
       style={style}
       {...listeners}
       {...attributes}
-      className={`bg-offwhite/5 border rounded-xl p-5 cursor-grab active:cursor-grabbing transition-all ${
+      className={`bg-offwhite/5 border rounded-xl p-4 sm:p-5 cursor-grab active:cursor-grabbing transition-all ${
         isPriority ? 'border-gold shadow-lg shadow-gold/20' : 'border-offwhite/10'
       }`}
     >
@@ -531,28 +533,22 @@ export default function AdminLobby() {
 
   return (
     <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
-      <div className="min-h-screen bg-charcoal p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-6">
-              <div>
-                <h1 className="font-heading text-3xl text-gold">Floor Manager</h1>
-                <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>
-              </div>
-              <div className="bg-gold/10 border border-gold/30 rounded-lg px-4 py-2">
-                <span className="text-offwhite/60 text-sm">Today's Total: </span>
-                <span className="font-heading text-xl text-gold">{todayTotal}</span>
-              </div>
+      <div className="min-h-screen bg-charcoal p-4 sm:p-6 md:p-8 w-full overflow-x-hidden">
+        <div className="w-full max-w-[1400px] mx-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+            <div>
+              <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
+              <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <Link to="/admin/reports" className="px-4 py-2 border border-gold/50 text-gold/70 hover:bg-gold hover:text-charcoal text-sm">View Reports</Link>
-              <Link to="/admin" className="px-6 py-2 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal">Reception Home</Link>
+              <Link to="/admin" className="px-4 sm:px-6 py-2 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal text-sm">Reception Home</Link>
             </div>
           </div>
 
           {notification && (
-            <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gold text-charcoal px-8 py-4 rounded-lg shadow-lg z-50">
-              <p className="font-heading text-lg">{notification.message}</p>
+            <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gold text-charcoal px-4 sm:px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw]">
+              <p className="font-heading text-base sm:text-lg">{notification.message}</p>
               <p className="text-sm opacity-80">{notification.name}</p>
             </div>
           )}
@@ -648,8 +644,8 @@ export default function AdminLobby() {
 
       <DragOverlay>
         {activeId && (
-          <div className="bg-gold/20 border border-gold rounded-xl p-5 shadow-2xl">
-            <p className="text-offwhite font-heading">Moving...</p>
+          <div className="bg-gold/20 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none">
+            <p className="text-offwhite font-heading text-sm sm:text-base">Moving...</p>
           </div>
         )}
       </DragOverlay>
