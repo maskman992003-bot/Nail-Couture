@@ -20,7 +20,7 @@ export async function processCheckIn(phoneNumber) {
       .from('appointments')
       .insert({
         profile_id: profile.id,
-        status: 'Checked-In',
+        status: 'waiting',
         check_in_time: new Date().toISOString()
       })
       .select()

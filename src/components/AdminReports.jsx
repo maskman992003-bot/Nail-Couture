@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
@@ -67,7 +67,7 @@ const analyzePeriod = async (period) => {
   const appointments = await getAppointmentsData(range.start, range.end)
   
   if (appointments.length === 0) {
-    return { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {} }
+    return { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0 }
   }
 
   const profileIds = [...new Set(appointments.map(a => a.profile_id))]
@@ -93,6 +93,7 @@ const analyzePeriod = async (period) => {
   let totalRevenue = 0
   let totalDuration = 0
   let completedCount = 0
+  let cancelledCount = 0
   
   for (const appt of appointments) {
     if (appt.services) {
@@ -103,6 +104,15 @@ const analyzePeriod = async (period) => {
     }
   }
   
+  const { count: cancelledToday } = await supabase
+    .from('appointments')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'cancelled')
+    .gte('check_in_time', range.start)
+    .lt('check_in_time', range.end)
+  
+  cancelledCount = cancelledToday || 0
+  
   const avgServiceTime = completedCount > 0 ? Math.round(totalDuration / completedCount) : 0
   
   return { 
@@ -111,7 +121,8 @@ const analyzePeriod = async (period) => {
     total: profileIds.length,
     revenue: totalRevenue,
     serviceCounts,
-    avgServiceTime
+    avgServiceTime,
+    cancelled: cancelledCount
   }
 }
 
@@ -232,6 +243,11 @@ const MetricColumn = ({ label, data, isCurrent }) => {
         <div className="font-heading text-xl text-offwhite/80">{data.avgServiceTime || 0} min</div>
       </div>
       
+      <div className="py-4">
+        <div className="text-center text-offwhite/40 text-sm mb-2">Cancellations</div>
+        <div className="font-heading text-xl text-red-400">{data.cancelled || 0}</div>
+      </div>
+      
       <div className="py-4 flex-1">
         <DonutChart data={data} size={160} />
       </div>
@@ -242,18 +258,14 @@ const MetricColumn = ({ label, data, isCurrent }) => {
 export default function AdminReports() {
   const [loading, setLoading] = useState(true)
   const [periodData, setPeriodData] = useState({
-    lastWeek: { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0 },
-    thisWeek: { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0 },
-    lastMonth: { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0 },
-    thisMonth: { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0 }
+    lastWeek: { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0 },
+    thisWeek: { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0 },
+    lastMonth: { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0 },
+    thisMonth: { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0 }
   })
   const [exporting, setExporting] = useState(false)
 
-  useEffect(() => {
-    fetchInsights()
-  }, [])
-
-  const fetchInsights = async () => {
+  const fetchInsights = useCallback(async () => {
     const [lastWeek, thisWeek, lastMonth, thisMonth] = await Promise.all([
       analyzePeriod('lastWeek'),
       analyzePeriod('thisWeek'),
@@ -263,7 +275,11 @@ export default function AdminReports() {
     
     setPeriodData({ lastWeek, thisWeek, lastMonth, thisMonth })
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchInsights()
+  }, [fetchInsights])
 
   const handleExport = async () => {
     setExporting(true)

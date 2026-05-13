@@ -153,33 +153,44 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
     try {
       const cleanPhone = phone.replace(/\D/g, '')
       
-      const { data: profile, error: insertError } = await supabase
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .insert({
-          full_name: fullName,
-          email: email,
-          phone_number: cleanPhone,
-          nail_goal: nailGoal,
-          refreshment_pref: refreshmentPref || null
-        })
-        .select()
+        .select('*')
+        .eq('phone_number', cleanPhone)
         .single()
-
-      if (insertError) throw insertError
-
-      if (profile) {
-        const { error: appointmentError } = await supabase
-          .from('appointments')
+      
+      let profileId
+      
+      if (existingProfile) {
+        profileId = existingProfile.id
+      } else {
+        const { data: profile, error: insertError } = await supabase
+          .from('profiles')
           .insert({
-            profile_id: profile.id,
-            service_id: selectedService.id,
-            status: 'Checked-In',
-            check_in_time: new Date().toISOString(),
-            refreshment_choice: refreshmentPref || null
+            full_name: fullName,
+            email: email,
+            phone_number: cleanPhone,
+            nail_goal: nailGoal,
+            refreshment_pref: refreshmentPref || null
           })
+          .select()
+          .single()
 
-        if (appointmentError) throw appointmentError
+        if (insertError) throw insertError
+        profileId = profile.id
       }
+
+      const { error: appointmentError } = await supabase
+        .from('appointments')
+        .insert({
+          profile_id: profileId,
+          service_id: selectedService.id,
+          status: 'waiting',
+          check_in_time: new Date().toISOString(),
+          refreshment_choice: refreshmentPref || null
+        })
+
+      if (appointmentError) throw appointmentError
 
       setSuccess(true)
     } catch (err) {

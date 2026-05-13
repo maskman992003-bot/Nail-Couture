@@ -16,18 +16,11 @@ export default function Lobby() {
       const { data, error } = await supabase
         .from('appointments')
         .select(`
-          id,
-          status,
-          check_in_time,
-          start_time,
-          refreshment_choice,
-          profiles (
-            full_name,
-            nail_goal,
-            refreshment_pref
-          )
+          *,
+          profiles!appointments_profile_id_fkey(full_name, nail_goal, refreshment_pref),
+          services(name, price, duration_minutes)
         `)
-        .in('status', ['Checked-In', 'In-Progress'])
+        .in('status', ['waiting', 'serving'])
         .order('check_in_time', { ascending: true })
 
       if (error) throw error
@@ -46,7 +39,7 @@ export default function Lobby() {
       const result = await supabase
         .from('appointments')
         .update({ 
-          status: 'In-Progress',
+          status: 'serving',
           start_time: new Date().toISOString()
         })
         .eq('id', appointment.id)
