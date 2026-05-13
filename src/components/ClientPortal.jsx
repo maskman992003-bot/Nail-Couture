@@ -27,31 +27,40 @@ export default function ClientPortal() {
   const [appointments, setAppointments] = useState([]);
   const { user, logout, loading: authLoading } = useAuth();
 
-  const fetchUserData = useCallback(async () => {
-    if (!user?.id) return;
+  console.log('ClientPortal render:', { user, authLoading });
+
+  const fetchUserData = useCallback(async (userId) => {
+    if (!userId) {
+      console.log('No userId, skipping fetch');
+      return;
+    }
+
+    console.log('Fetching user data for:', userId);
 
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single()
 
       if (profileError) {
         console.error('Profile fetch error:', profileError);
       } else {
+        console.log('Profile loaded:', profileData);
         setProfile(profileData);
       }
 
       const { data: appointmentsData, error: appointmentsError } = await supabase
         .from('appointments')
         .select('*, services(name, price, duration_minutes)')
-        .eq('profile_id', user.id)
+        .eq('profile_id', userId)
         .order('check_in_time', { ascending: false })
 
       if (appointmentsError) {
         console.error('Appointments fetch error:', appointmentsError);
       } else {
+        console.log('Appointments loaded:', appointmentsData?.length);
         setAppointments(appointmentsData || []);
       }
 
@@ -60,20 +69,25 @@ export default function ClientPortal() {
       console.error('Error fetching user data:', err);
       setLoading(false);
     }
-  }, [user?.id]);
+  }, []);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    console.log('Auth state changed:', { user, authLoading });
+    
+    if (authLoading) {
+      console.log('Auth still loading, waiting...');
+      return;
+    }
+
+    if (!user) {
+      console.log('No user after auth loaded, redirecting to login');
       navigate('/login');
       return;
     }
-  }, [user, authLoading, navigate]);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchUserData();
-    }
-  }, [user?.id, fetchUserData]);
+    console.log('User authenticated, fetching data...');
+    fetchUserData(user.id);
+  }, [user, authLoading, navigate, fetchUserData]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -83,7 +97,8 @@ export default function ClientPortal() {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'appointments', filter: `profile_id=eq.${user.id}` },
         () => {
-          fetchUserData();
+          console.log('Real-time update received, refetching...');
+          fetchUserData(user.id);
         }
       )
       .subscribe();
@@ -94,6 +109,7 @@ export default function ClientPortal() {
   }, [user?.id, fetchUserData]);
 
   const handleLogout = () => {
+    console.log('Logout clicked');
     logout();
     navigate('/');
   };
@@ -111,6 +127,7 @@ export default function ClientPortal() {
   );
 
   if (authLoading || loading) {
+    console.log('Showing loading state');
     return (
       <div className="min-h-screen bg-offwhite flex items-center justify-center">
         <div className="text-gold animate-pulse">Loading...</div>
@@ -119,6 +136,7 @@ export default function ClientPortal() {
   }
 
   if (!profile) {
+    console.log('No profile, showing error state');
     return (
       <div className="min-h-screen bg-offwhite flex items-center justify-center">
         <div className="text-center">

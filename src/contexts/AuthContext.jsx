@@ -2,29 +2,37 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
+const STORAGE_KEY = 'salon_user_id';
+const NAME_KEY = 'salon_user_name';
+const EMAIL_KEY = 'salon_user_email';
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedProfileId = localStorage.getItem('portal_profile_id');
-    const storedProfileName = localStorage.getItem('portal_profile_name');
-    const storedEmail = localStorage.getItem('portal_profile_email');
+    const savedUserId = localStorage.getItem(STORAGE_KEY);
+    const savedUserName = localStorage.getItem(NAME_KEY);
+    const savedUserEmail = localStorage.getItem(EMAIL_KEY);
 
-    if (storedProfileId) {
+    console.log('Session Check:', savedUserId);
+    console.log('Session Name:', savedUserName);
+
+    if (savedUserId) {
       setUser({
-        id: storedProfileId,
-        full_name: storedProfileName,
-        email: storedEmail
+        id: savedUserId,
+        full_name: savedUserName,
+        email: savedUserEmail
       });
     }
     setLoading(false);
   }, []);
 
   const login = (profile) => {
-    localStorage.setItem('portal_profile_id', profile.id);
-    localStorage.setItem('portal_profile_name', profile.full_name);
-    localStorage.setItem('portal_profile_email', profile.email || '');
+    console.log('Login - Saving to localStorage:', profile.id, profile.full_name);
+    localStorage.setItem(STORAGE_KEY, profile.id);
+    localStorage.setItem(NAME_KEY, profile.full_name);
+    localStorage.setItem(EMAIL_KEY, profile.email || '');
     setUser({
       id: profile.id,
       full_name: profile.full_name,
@@ -33,9 +41,10 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('portal_profile_id');
-    localStorage.removeItem('portal_profile_name');
-    localStorage.removeItem('portal_profile_email');
+    console.log('Logout - Clearing localStorage');
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(NAME_KEY);
+    localStorage.removeItem(EMAIL_KEY);
     setUser(null);
   };
 

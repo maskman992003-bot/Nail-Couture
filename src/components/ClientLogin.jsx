@@ -22,12 +22,15 @@ export default function ClientLogin() {
 
     try {
       const cleanPhone = phone.replace(/\D/g, '');
+      console.log('Looking up phone:', cleanPhone);
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .eq('phone_number', cleanPhone)
         .single()
+
+      console.log('Profile lookup result:', profile, profileError);
 
       if (profileError && profileError.code !== 'PGRST116') {
         throw profileError;
@@ -40,6 +43,7 @@ export default function ClientLogin() {
       }
 
       login(profile);
+      console.log('Login successful, navigating to /portal');
       navigate('/portal');
     } catch (err) {
       console.error('Login error:', err);
