@@ -1,19 +1,79 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export default function ClientLogin() {
   const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!phone || phone.length < 10) {
       setError('Please enter a valid phone number');
       return;
     }
-    navigate('/portal');
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const cleanPhone = phone.replace(/\D/g, '');
+      
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('phone_number', cleanPhone)
+        .single()
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        throw profileError;
+      }
+
+      if (!profile) {
+        setError('No account found with this phone number. Please check in at the kiosk first.');
+        setLoading(false);
+        return;
+      }
+
+      const redirectTo = `${window.location.origin}/portal`;
+      
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        phone: cleanPhone,
+        options: { shouldCreateUser: false }
+      });
+
+      if (otpError) throw otpError;
+
+      setSuccess(true);
+      setTimeout(() => {
+        navigate('/portal');
+      }, 2000);
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-offwhite flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="bg-white border border-charcoal/10 p-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-green-600 text-3xl">✓</span>
+            </div>
+            <h2 className="font-heading text-2xl text-charcoal mb-2">Check Your Phone</h2>
+            <p className="text-charcoal/60">We sent a verification code to {phone}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-offwhite flex items-center justify-center px-4">
@@ -46,9 +106,10 @@ export default function ClientLogin() {
 
             <button
               type="submit"
-              className="w-full bg-gold text-charcoal py-3 font-heading tracking-wider hover:bg-gold/90 transition-colors"
+              disabled={loading}
+              className="w-full bg-gold text-charcoal py-3 font-heading tracking-wider hover:bg-gold/90 transition-colors disabled:opacity-50"
             >
-              Access Portal
+              {loading ? 'Sending Code...' : 'Access Portal'}
             </button>
           </form>
 
