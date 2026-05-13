@@ -6,7 +6,6 @@ export default function ClientLogin() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -24,7 +23,7 @@ export default function ClientLogin() {
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, email')
+        .select('id, full_name, email')
         .eq('phone_number', cleanPhone)
         .single()
 
@@ -38,19 +37,10 @@ export default function ClientLogin() {
         return;
       }
 
-      const redirectTo = `${window.location.origin}/portal`;
+      localStorage.setItem('portal_profile_id', profile.id);
+      localStorage.setItem('portal_profile_name', profile.full_name);
       
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        phone: cleanPhone,
-        options: { shouldCreateUser: false }
-      });
-
-      if (otpError) throw otpError;
-
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/portal');
-      }, 2000);
+      navigate('/portal');
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'Something went wrong. Please try again.');
@@ -58,22 +48,6 @@ export default function ClientLogin() {
       setLoading(false);
     }
   };
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-offwhite flex items-center justify-center px-4">
-        <div className="w-full max-w-md text-center">
-          <div className="bg-white border border-charcoal/10 p-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-green-600 text-3xl">✓</span>
-            </div>
-            <h2 className="font-heading text-2xl text-charcoal mb-2">Check Your Phone</h2>
-            <p className="text-charcoal/60">We sent a verification code to {phone}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-offwhite flex items-center justify-center px-4">
@@ -109,7 +83,7 @@ export default function ClientLogin() {
               disabled={loading}
               className="w-full bg-gold text-charcoal py-3 font-heading tracking-wider hover:bg-gold/90 transition-colors disabled:opacity-50"
             >
-              {loading ? 'Sending Code...' : 'Access Portal'}
+              {loading ? 'Verifying...' : 'Access Portal'}
             </button>
           </form>
 

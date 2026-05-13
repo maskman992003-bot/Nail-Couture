@@ -24,38 +24,29 @@ export default function ClientPortal() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  const [user, setUser] = useState(null);
+  const [profileId, setProfileId] = useState(null);
 
   const fetchUserData = useCallback(async () => {
+    if (!profileId) return;
+
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      
-      if (!authUser) {
-        navigate('/login');
-        return;
-      }
-
-      setUser(authUser);
-
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', authUser.id)
-        .single();
+        .eq('id', profileId)
+        .single()
 
       if (profileError) {
         console.error('Profile fetch error:', profileError);
-        setLoading(false);
-        return;
+      } else {
+        setProfile(profileData);
       }
-
-      setProfile(profileData);
 
       const { data: appointmentsData, error: appointmentsError } = await supabase
         .from('appointments')
         .select('*, services(name, price, duration_minutes)')
-        .eq('profile_id', authUser.id)
-        .order('check_in_time', { ascending: false });
+        .eq('profile_id', profileId)
+        .order('check_in_time', { ascending: false })
 
       if (appointmentsError) {
         console.error('Appointments fetch error:', appointmentsError);
@@ -68,26 +59,46 @@ export default function ClientPortal() {
       console.error('Error fetching user data:', err);
       setLoading(false);
     }
+  }, [profileId]);
+
+  useEffect(() => {
+    const storedProfileId = localStorage.getItem('portal_profile_id');
+    
+    if (!storedProfileId) {
+      navigate('/login');
+      return;
+    }
+
+    setProfileId(storedProfileId);
   }, [navigate]);
 
   useEffect(() => {
-    fetchUserData();
+    if (profileId) {
+      fetchUserData();
+    }
+  }, [profileId, fetchUserData]);
+
+  useEffect(() => {
+    if (!profileId) return;
 
     const channel = supabase
       .channel('client-portal-updates')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'appointments', filter: `profile_id=eq.${user?.id || ''}` },
-        (payload) => {
+        { event: '*', schema: 'public', table: 'appointments', filter: `profile_id=eq.${profileId}` },
+        () => {
           fetchUserData();
         }
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
-  }, [fetchUserData, user?.id]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profileId, fetchUserData]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    localStorage.removeItem('portal_profile_id');
+    localStorage.removeItem('portal_profile_name');
     navigate('/login');
   };
 
@@ -95,12 +106,12 @@ export default function ClientPortal() {
     ['waiting', 'assigned_pending', 'serving'].includes(a.status)
   );
 
-  const pastAppointments = appointments.filter(a => 
-    ['completed', 'cancelled'].includes(a.status)
-  );
-
   const upcomingAppointments = appointments.filter(a => 
     a.status === 'waiting'
+  );
+
+  const pastAppointments = appointments.filter(a => 
+    ['completed', 'cancelled'].includes(a.status)
   );
 
   if (loading) {
@@ -151,7 +162,7 @@ export default function ClientPortal() {
                 <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-3">
                   <span className="text-charcoal font-heading text-2xl">{initials}</span>
                 </div>
-                <h3 className="font-heading text-charcoal text-lg">{profile.full_name}</h3>
+                <h3 className="font-heading text-charcoal text-lg">Welcome, {profile.full_name}</h3>
                 <p className="text-charcoal/50 text-sm">{profile.email}</p>
                 {profile.nail_goal && (
                   <p className="text-gold/70 text-xs mt-1">Goal: {profile.nail_goal}</p>
@@ -258,6 +269,11 @@ export default function ClientPortal() {
                             <h4 className="font-heading text-charcoal">
                               {booking.services?.name || 'Service'}
                             </h4>
+                            {booking.cancel_reason && (
+                              <p className="text-red-500 text-sm mt-1">
+                                Cancelled: {booking.cancel_reason}
+                              </p>
+                            )}
                             {booking.start_time && booking.end_time && (
                               <p className="text-charcoal/60 text-sm">
                                 Service time: {Math.round((new Date(booking.end_time) - new Date(booking.start_time)) / 60000)} min
