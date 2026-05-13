@@ -365,54 +365,54 @@ export default function AdminReports() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-10">
-          <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-8">
-            <h3 className="font-heading text-xl text-gold mb-6 text-center">Week-over-Week Comparison</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={weekComparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <XAxis dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 14 }} />
-                <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 14 }} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-4 sm:p-8">
+            <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6 text-center">Week-over-Week Comparison</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={weekComparisonData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
+                <XAxis dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 14 }}
+                  contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 12 }}
                   labelStyle={{ color: '#fff' }}
                 />
-                <Legend wrapperStyle={{ fontSize: 14 }} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="lastWeek" name="Last Week" fill="#666" />
                 <Bar dataKey="thisWeek" name="This Week" fill="#C5A059" />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-8">
-            <h3 className="font-heading text-xl text-gold mb-6 text-center">Month-over-Month Comparison</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={monthComparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <XAxis dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 14 }} />
-                <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 14 }} />
+          <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-4 sm:p-8">
+            <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6 text-center">Month-over-Month Comparison</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={monthComparisonData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
+                <XAxis dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 14 }}
+                  contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 12 }}
                   labelStyle={{ color: '#fff' }}
                 />
-                <Legend wrapperStyle={{ fontSize: 14 }} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="lastMonth" name="Last Month" fill="#666" />
                 <Bar dataKey="thisMonth" name="This Month" fill="#C5A059" />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-8">
-            <h3 className="font-heading text-xl text-gold mb-6 text-center">Popular Services (This Month)</h3>
+          <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-4 sm:p-8">
+            <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6 text-center">Popular Services (This Month)</h3>
             {thisMonthServiceData.length === 0 ? (
               <div className="h-64 flex items-center justify-center text-offwhite/40">
                 No service data
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={thisMonthServiceData} layout="vertical" margin={{ top: 20, right: 30, left: 80, bottom: 5 }}>
-                  <XAxis type="number" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
-                  <YAxis type="category" dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} width={70} />
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={thisMonthServiceData} layout="vertical" margin={{ top: 20, right: 10, left: 50, bottom: 5 }}>
+                  <XAxis type="number" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} />
+                  <YAxis type="category" dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} width={40} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 14 }}
+                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 12 }}
                     labelStyle={{ color: '#fff' }}
                   />
                   <Bar dataKey="count" name="Bookings" fill="#C5A059" />

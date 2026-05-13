@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Navbar({ currentPage, onNavigate }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollToSection = (id) => {
+    setMobileMenuOpen(false);
     if (currentPage !== 'home') {
       onNavigate('home');
       setTimeout(() => {
@@ -23,6 +26,7 @@ export default function Navbar({ currentPage, onNavigate }) {
   };
 
   const handleLogout = () => {
+    setMobileMenuOpen(false);
     logout();
     navigate('/');
   };
@@ -34,18 +38,18 @@ export default function Navbar({ currentPage, onNavigate }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div 
-            className="cursor-pointer"
+            className="cursor-pointer flex-shrink-0"
             onClick={() => onNavigate('home')}
           >
             <img 
               src="/NC.jpg" 
               alt="Nail Couture" 
-              className="h-20 sm:h-24 w-auto"
+              className="h-16 sm:h-20 md:h-24 w-auto"
             />
           </div>
           
-          <div className="flex items-center gap-4 sm:gap-6">
-            <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-6">
+            <div className="flex items-center gap-6">
               <button 
                 onClick={() => scrollToSection('services')}
                 className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
@@ -66,21 +70,21 @@ export default function Navbar({ currentPage, onNavigate }) {
               </button>
             </div>
             
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-4">
               {user ? (
                 <>
-                  <span className="text-gold font-heading text-sm hidden sm:block">
+                  <span className="text-gold font-heading text-sm">
                     Hi, {firstName}
                   </span>
                   <Link 
                     to="/portal"
-                    className="px-3 sm:px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-xs sm:text-sm tracking-wider font-medium"
+                    className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium"
                   >
                     My Portal
                   </Link>
                   <button 
                     onClick={handleLogout}
-                    className="px-3 sm:px-4 py-2 border border-offwhite/30 text-offwhite/60 hover:border-offwhite hover:text-offwhite transition-all text-xs sm:text-sm tracking-wider"
+                    className="px-4 py-2 border border-offwhite/30 text-offwhite/60 hover:border-offwhite hover:text-offwhite transition-all text-sm tracking-wider"
                   >
                     Logout
                   </button>
@@ -89,13 +93,13 @@ export default function Navbar({ currentPage, onNavigate }) {
                 <>
                   <a 
                     href="/login"
-                    className="px-3 sm:px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-xs sm:text-sm tracking-wider font-medium"
+                    className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium"
                   >
                     Login
                   </a>
                   <button 
                     onClick={() => scrollToSection('book')}
-                    className="px-3 sm:px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-xs sm:text-sm tracking-wider"
+                    className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
                   >
                     BOOK
                   </button>
@@ -103,47 +107,87 @@ export default function Navbar({ currentPage, onNavigate }) {
               )}
             </div>
           </div>
+
+          <button 
+            className="md:hidden p-2 text-offwhite"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
         </div>
         
-        <div className="md:hidden flex border-t border-gold/10 mt-4 -mb-4">
-          {user ? (
-            <>
-              <Link 
-                to="/portal"
-                className="flex-1 py-3 text-charcoal bg-gold text-xs tracking-wider text-center font-medium hover:bg-gold/90"
-              >
-                MY PORTAL
-              </Link>
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gold/10 mt-4 pt-4">
+            {user && (
+              <div className="mb-4 pb-4 border-b border-gold/10">
+                <span className="text-gold font-heading text-lg">
+                  Hi, {firstName}
+                </span>
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
               <button 
-                onClick={handleLogout}
-                className="flex-1 py-3 text-offwhite/60 text-xs tracking-wider text-center hover:text-offwhite border-r border-gold/10"
+                onClick={() => scrollToSection('services')}
+                className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
               >
-                LOGOUT
+                SERVICES
               </button>
-            </>
-          ) : (
-            <>
               <button 
                 onClick={() => scrollToSection('gallery')}
-                className="flex-1 py-3 text-offwhite/60 hover:text-gold text-xs tracking-wider border-r border-gold/10"
+                className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
               >
                 LOOKBOOK
               </button>
               <button 
-                onClick={() => onNavigate('about')}
-                className="flex-1 py-3 text-offwhite/60 hover:text-gold text-xs tracking-wider border-r border-gold/10"
+                onClick={() => { setMobileMenuOpen(false); onNavigate('about'); }}
+                className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
               >
                 ABOUT
               </button>
-              <a 
-                href="/login"
-                className="flex-1 py-3 text-offwhite/60 hover:text-gold text-xs tracking-wider text-center bg-gold/20"
+              <button 
+                onClick={() => scrollToSection('book')}
+                className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider border-t border-gold/10 mt-2 pt-2"
               >
-                LOGIN
-              </a>
-            </>
-          )}
-        </div>
+                BOOK APPOINTMENT
+              </button>
+              
+              <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-gold/10">
+                {user ? (
+                  <>
+                    <Link 
+                      to="/portal"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="py-3 text-charcoal bg-gold text-center px-2 text-sm tracking-wider font-medium"
+                    >
+                      MY PORTAL
+                    </Link>
+                    <button 
+                      onClick={handleLogout}
+                      className="py-3 text-offwhite/60 hover:text-offwhite text-left px-2 text-sm tracking-wider"
+                    >
+                      LOGOUT
+                    </button>
+                  </>
+                ) : (
+                  <a 
+                    href="/login"
+                    className="py-3 text-charcoal bg-gold text-center px-2 text-sm tracking-wider font-medium"
+                  >
+                    LOGIN
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );

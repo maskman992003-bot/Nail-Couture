@@ -557,13 +557,13 @@ export default function AdminLobby() {
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-6">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
               <h2 className="font-heading text-xl text-gold mb-4 flex items-center gap-2">
                 <span className="w-3 h-3 bg-gold rounded-full animate-pulse"></span>
                 Waiting ({lobbyAppointments.length})
               </h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {lobbyAppointments.map(appointment => (
                   <DraggableAppointmentCard
                     key={appointment.id}
@@ -575,14 +575,14 @@ export default function AdminLobby() {
                   />
                 ))}
                 {lobbyAppointments.length === 0 && (
-                  <div className="col-span-2 text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
+                  <div className="col-span-1 sm:col-span-2 text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
                     <p className="text-offwhite/40">No guests waiting</p>
                   </div>
                 )}
               </div>
 
               <h2 className="font-heading text-xl text-gold mt-8 mb-4">Currently Serving ({servingAppointments.length})</h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {servingAppointments.map(appointment => (
                   <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
                     <div className="flex items-center justify-between mb-2">
