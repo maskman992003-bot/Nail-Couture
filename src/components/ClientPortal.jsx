@@ -27,11 +27,15 @@ export default function ClientPortal() {
   const [appointments, setAppointments] = useState([]);
   const { user, logout, loading: authLoading } = useAuth();
 
-  console.log('ClientPortal render:', { user, authLoading });
+  console.log('ClientPortal render - user:', user?.id, 'authLoading:', authLoading);
 
-  const fetchUserData = useCallback(async (userId) => {
+  const fetchUserData = useCallback(async () => {
+    const currentUser = localStorage.getItem('salon_user_data');
+    const userId = currentUser ? JSON.parse(currentUser).id : null;
+    
     if (!userId) {
-      console.log('No userId, skipping fetch');
+      console.log('No userId found, redirecting to login');
+      navigate('/login');
       return;
     }
 
@@ -69,11 +73,9 @@ export default function ClientPortal() {
       console.error('Error fetching user data:', err);
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
-    console.log('Auth state changed:', { user, authLoading });
-    
     if (authLoading) {
       console.log('Auth still loading, waiting...');
       return;
@@ -86,19 +88,22 @@ export default function ClientPortal() {
     }
 
     console.log('User authenticated, fetching data...');
-    fetchUserData(user.id);
+    fetchUserData();
   }, [user, authLoading, navigate, fetchUserData]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    const currentUser = localStorage.getItem('salon_user_data');
+    const userId = currentUser ? JSON.parse(currentUser).id : null;
+    
+    if (!userId) return;
 
     const channel = supabase
       .channel('client-portal-updates')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'appointments', filter: `profile_id=eq.${user.id}` },
+        { event: '*', schema: 'public', table: 'appointments', filter: `profile_id=eq.${userId}` },
         () => {
           console.log('Real-time update received, refetching...');
-          fetchUserData(user.id);
+          fetchUserData();
         }
       )
       .subscribe();
@@ -106,7 +111,7 @@ export default function ClientPortal() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, fetchUserData]);
+  }, [fetchUserData]);
 
   const handleLogout = () => {
     console.log('Logout clicked');
@@ -126,8 +131,17 @@ export default function ClientPortal() {
     ['completed', 'cancelled'].includes(a.status)
   );
 
-  if (authLoading || loading) {
-    console.log('Showing loading state');
+  if (authLoading) {
+    console.log('Showing auth loading state');
+    return (
+      <div className="min-h-screen bg-offwhite flex items-center justify-center">
+        <div className="text-gold animate-pulse">Checking session...</div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    console.log('Showing data loading state');
     return (
       <div className="min-h-screen bg-offwhite flex items-center justify-center">
         <div className="text-gold animate-pulse">Loading...</div>

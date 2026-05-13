@@ -26,7 +26,7 @@ export default function ClientLogin() {
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, email')
+        .select('*')
         .eq('phone_number', cleanPhone)
         .single()
 

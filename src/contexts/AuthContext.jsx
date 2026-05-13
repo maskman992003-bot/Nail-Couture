@@ -2,49 +2,51 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
-const STORAGE_KEY = 'salon_user_id';
-const NAME_KEY = 'salon_user_name';
-const EMAIL_KEY = 'salon_user_email';
+const STORAGE_KEY = 'salon_user_data';
+
+function getStoredUser() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const user = JSON.parse(stored);
+      console.log('Synchronous Session Check:', user?.id, user?.full_name);
+      return user;
+    }
+  } catch (err) {
+    console.error('Error parsing stored user:', err);
+  }
+  return null;
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => getStoredUser());
+  const [loading, setLoading] = useState(!!getStoredUser());
 
   useEffect(() => {
-    const savedUserId = localStorage.getItem(STORAGE_KEY);
-    const savedUserName = localStorage.getItem(NAME_KEY);
-    const savedUserEmail = localStorage.getItem(EMAIL_KEY);
-
-    console.log('Session Check:', savedUserId);
-    console.log('Session Name:', savedUserName);
-
-    if (savedUserId) {
-      setUser({
-        id: savedUserId,
-        full_name: savedUserName,
-        email: savedUserEmail
-      });
+    console.log('AuthContext mounted, user:', user);
+    if (user) {
+      setLoading(false);
     }
-    setLoading(false);
-  }, []);
+  }, [user]);
 
   const login = (profile) => {
     console.log('Login - Saving to localStorage:', profile.id, profile.full_name);
-    localStorage.setItem(STORAGE_KEY, profile.id);
-    localStorage.setItem(NAME_KEY, profile.full_name);
-    localStorage.setItem(EMAIL_KEY, profile.email || '');
-    setUser({
+    const userData = {
       id: profile.id,
       full_name: profile.full_name,
-      email: profile.email
-    });
+      email: profile.email || '',
+      nail_goal: profile.nail_goal || '',
+      refreshment_pref: profile.refreshment_pref || '',
+      phone_number: profile.phone_number || ''
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+    setUser(userData);
+    setLoading(false);
   };
 
   const logout = () => {
     console.log('Logout - Clearing localStorage');
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(NAME_KEY);
-    localStorage.removeItem(EMAIL_KEY);
     setUser(null);
   };
 
