@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import Navbar from './Navbar';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -119,6 +120,10 @@ export default function ClientPortal() {
     navigate('/');
   };
 
+  const handleNavigate = (page) => {
+    if (page === 'home') navigate('/');
+  };
+
   const currentAppointment = appointments.find(a => 
     ['waiting', 'assigned_pending', 'serving'].includes(a.status)
   );
@@ -170,17 +175,7 @@ export default function ClientPortal() {
 
   return (
     <div className="min-h-screen bg-offwhite">
-      <nav className="bg-charcoal border-b border-gold/30 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link to="/"><img src="/NC.jpg" alt="Nail Couture" className="h-16 w-auto" /></Link>
-            <span className="text-gold/60 text-sm">My Portal</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <button onClick={handleLogout} className="text-offwhite/60 hover:text-offwhite text-sm">Logout</button>
-          </div>
-        </div>
-      </nav>
+      <Navbar currentPage="portal" onNavigate={handleNavigate} />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">

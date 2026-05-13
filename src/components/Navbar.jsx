@@ -9,7 +9,17 @@ export default function Navbar({ currentPage, onNavigate }) {
 
   const scrollToSection = (id) => {
     setMobileMenuOpen(false);
-    if (currentPage !== 'home') {
+    if (currentPage === 'portal') {
+      navigate('/');
+      setTimeout(() => {
+        setTimeout(() => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 300);
+      }, 100);
+    } else if (currentPage !== 'home') {
       onNavigate('home');
       setTimeout(() => {
         const element = document.getElementById(id);
@@ -25,9 +35,22 @@ export default function Navbar({ currentPage, onNavigate }) {
     }
   };
 
+  const handleLogoClick = () => {
+    if (currentPage === 'portal') {
+      navigate('/');
+    } else {
+      onNavigate('home');
+    }
+  };
+
   const handleLogout = () => {
     setMobileMenuOpen(false);
     logout();
+    navigate('/');
+  };
+
+  const handleHomeClick = () => {
+    setMobileMenuOpen(false);
     navigate('/');
   };
 
@@ -39,7 +62,7 @@ export default function Navbar({ currentPage, onNavigate }) {
         <div className="flex items-center justify-between">
           <div 
             className="cursor-pointer flex-shrink-0"
-            onClick={() => onNavigate('home')}
+            onClick={handleLogoClick}
           >
             <img 
               src="/NC.jpg" 
@@ -126,7 +149,7 @@ export default function Navbar({ currentPage, onNavigate }) {
         
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gold/10 mt-4 pt-4">
-            {user && (
+            {user && currentPage === 'portal' && (
               <div className="mb-4 pb-4 border-b border-gold/10">
                 <span className="text-gold font-heading text-lg">
                   Hi, {firstName}
@@ -134,44 +157,73 @@ export default function Navbar({ currentPage, onNavigate }) {
               </div>
             )}
             <div className="flex flex-col gap-2">
-              <button 
-                onClick={() => scrollToSection('services')}
-                className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
-              >
-                SERVICES
-              </button>
-              <button 
-                onClick={() => scrollToSection('gallery')}
-                className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
-              >
-                LOOKBOOK
-              </button>
-              <button 
-                onClick={() => { setMobileMenuOpen(false); onNavigate('about'); }}
-                className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
-              >
-                ABOUT
-              </button>
-              <button 
-                onClick={() => scrollToSection('book')}
-                className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider border-t border-gold/10 mt-2 pt-2"
-              >
-                BOOK APPOINTMENT
-              </button>
+              {currentPage === 'portal' ? (
+                <>
+                  <button 
+                    onClick={handleHomeClick}
+                    className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
+                  >
+                    HOME
+                  </button>
+                  <Link 
+                    to="/"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
+                  >
+                    SERVICES
+                  </Link>
+                  <Link 
+                    to="/"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
+                  >
+                    LOOKBOOK
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => scrollToSection('services')}
+                    className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
+                  >
+                    SERVICES
+                  </button>
+                  <button 
+                    onClick={() => scrollToSection('gallery')}
+                    className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
+                  >
+                    LOOKBOOK
+                  </button>
+                  <button 
+                    onClick={() => { setMobileMenuOpen(false); onNavigate('about'); }}
+                    className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
+                  >
+                    ABOUT
+                  </button>
+                  <button 
+                    onClick={() => scrollToSection('book')}
+                    className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider border-t border-gold/10 mt-2 pt-2"
+                  >
+                    BOOK APPOINTMENT
+                  </button>
+                </>
+              )}
               
               <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-gold/10">
                 {user ? (
                   <>
-                    <Link 
-                      to="/portal"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="py-3 text-charcoal bg-gold text-center px-2 text-sm tracking-wider font-medium"
-                    >
-                      MY PORTAL
-                    </Link>
+                    {currentPage !== 'portal' && (
+                      <Link 
+                        to="/portal"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="py-3 text-charcoal bg-gold text-center px-2 text-sm tracking-wider font-medium"
+                      >
+                        MY PORTAL
+                      </Link>
+                    )}
                     <button 
                       onClick={handleLogout}
-                      className="py-3 text-offwhite/60 hover:text-offwhite text-left px-2 text-sm tracking-wider"
+                      className="py-3 text-red-400 hover:text-red-300 text-left px-2 text-sm tracking-wider"
                     >
                       LOGOUT
                     </button>

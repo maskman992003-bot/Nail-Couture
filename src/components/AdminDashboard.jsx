@@ -84,23 +84,23 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white border border-charcoal/10 p-4">
+          <div className="bg-white border border-charcoal/10 p-4 text-center">
             <div className="text-charcoal/50 text-sm mb-1">Total Bookings</div>
             <div className="text-charcoal text-2xl font-heading">{stats.total}</div>
           </div>
-          <div className="bg-yellow-50 border border-yellow-200 p-4">
+          <div className="bg-yellow-50 border border-yellow-200 p-4 text-center">
             <div className="text-yellow-700 text-sm mb-1">Pending</div>
             <div className="text-charcoal text-2xl font-heading">{stats.pending}</div>
           </div>
-          <div className="bg-blue-50 border border-blue-200 p-4">
+          <div className="bg-blue-50 border border-blue-200 p-4 text-center">
             <div className="text-blue-700 text-sm mb-1">Confirmed</div>
             <div className="text-charcoal text-2xl font-heading">{stats.confirmed}</div>
           </div>
-          <div className="bg-green-50 border border-green-200 p-4">
+          <div className="bg-green-50 border border-green-200 p-4 text-center">
             <div className="text-green-700 text-sm mb-1">Completed</div>
             <div className="text-charcoal text-2xl font-heading">{stats.completed}</div>
           </div>
-          <div className="bg-red-50 border border-red-200 p-4">
+          <div className="bg-red-50 border border-red-200 p-4 text-center">
             <div className="text-red-700 text-sm mb-1">No-Shows</div>
             <div className="text-charcoal text-2xl font-heading">{stats.noshow}</div>
           </div>

@@ -213,38 +213,36 @@ const MetricColumn = ({ label, data, isCurrent }) => {
   const opacity = isCurrent ? 1 : 0.6
   
   return (
-    <div className="flex flex-col" style={{ opacity }}>
-      <div className="text-center py-4 border-b border-gold/20">
+    <div className="flex flex-col text-center" style={{ opacity }}>
+      <div className="py-4 border-b border-gold/20">
         <span className="font-heading text-gold text-base">{label}</span>
       </div>
       
-      <div className="py-6 border-b border-gold/10 space-y-4">
-        <div className="text-center">
-          <div className="text-offwhite/40 text-sm mb-2">New Customers</div>
-          <div className="font-heading text-4xl text-[#D4D4D4]">{data.new}</div>
-        </div>
-        <div className="text-center">
-          <div className="text-offwhite/40 text-sm mb-2">Regular Customers</div>
-          <div className="font-heading text-4xl text-gold">{data.regular}</div>
-        </div>
-        <div className="text-center pt-2 border-t border-gold/10">
-          <div className="text-offwhite/40 text-sm mb-1">Total Guests</div>
-          <div className="font-heading text-3xl text-offwhite">{data.total}</div>
-        </div>
+      <div className="py-6 border-b border-gold/10">
+        <div className="text-offwhite/40 text-sm mb-2">New Customers</div>
+        <div className="font-heading text-4xl text-[#D4D4D4]">{data.new}</div>
+      </div>
+      <div className="py-6 border-b border-gold/10">
+        <div className="text-offwhite/40 text-sm mb-2">Regular Customers</div>
+        <div className="font-heading text-4xl text-gold">{data.regular}</div>
+      </div>
+      <div className="py-6 border-b border-gold/10">
+        <div className="text-offwhite/40 text-sm mb-1">Total Guests</div>
+        <div className="font-heading text-3xl text-offwhite">{data.total}</div>
       </div>
       
       <div className="py-4 border-b border-gold/10">
-        <div className="text-center text-offwhite/40 text-sm mb-2">Revenue Estimate</div>
+        <div className="text-offwhite/40 text-sm mb-2">Revenue Estimate</div>
         <div className="font-heading text-2xl text-gold">${data.revenue?.toLocaleString() || 0}</div>
       </div>
       
-      <div className="py-4 border-b border-gold/10 min-h-[80px]">
-        <div className="text-center text-offwhite/40 text-sm mb-2">Avg Service Time</div>
+      <div className="py-4 min-h-[80px]">
+        <div className="text-offwhite/40 text-sm mb-2">Avg Service Time</div>
         <div className="font-heading text-xl text-offwhite/80">{data.avgServiceTime || 0} min</div>
       </div>
       
       <div className="py-4 min-h-[80px]">
-        <div className="text-center text-offwhite/40 text-sm mb-2">Cancellations</div>
+        <div className="text-offwhite/40 text-sm mb-2">Cancellations</div>
         <div className="font-heading text-xl text-red-400">{data.cancelled || 0}</div>
       </div>
       
