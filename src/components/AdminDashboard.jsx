@@ -1,17 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
-const initialBookings = [
-  { id: 1, date: '2026-05-12', time: '10:00 AM', customerName: 'Alexandra Chen', email: 'alexandra@email.com', phone: '5551234567', service: 'Gel-X Extensions with Custom Art', addOns: ['French Tip', 'Chrome Finish'], totalPrice: 135, status: 'pending' },
-  { id: 2, date: '2026-05-12', time: '2:00 PM', customerName: 'Sophia Martinez', email: 'sophia.m@email.com', phone: '5559876543', service: 'The Signature Russian Manicure', addOns: ['Strength Layer'], totalPrice: 90, status: 'confirmed' },
-  { id: 3, date: '2026-05-13', time: '11:30 AM', customerName: 'Isabella Williams', email: 'isabella.w@email.com', phone: '5552468135', service: 'Luxury Spa Pedicure', addOns: ['Chrome Finish'], totalPrice: 80, status: 'pending' },
-  { id: 4, date: '2026-05-13', time: '3:00 PM', customerName: 'Olivia Johnson', email: 'olivia.j@email.com', phone: '5553691472', service: 'Gel-X Extensions', addOns: ['French Tip'], totalPrice: 115, status: 'completed' },
-  { id: 5, date: '2026-05-14', time: '9:00 AM', customerName: 'Emma Davis', email: 'emma.d@email.com', phone: '5557418529', service: 'The Signature Russian Manicure', addOns: [], totalPrice: 80, status: 'confirmed' },
-  { id: 6, date: '2026-05-14', time: '1:00 PM', customerName: 'Ava Brown', email: 'ava.b@email.com', phone: '5558529634', service: 'Gel-X with Full Crystal Set', addOns: ['Chrome Finish', 'Strength Layer'], totalPrice: 230, status: 'pending' },
-  { id: 7, date: '2026-05-15', time: '11:00 AM', customerName: 'Mia Garcia', email: 'mia.g@email.com', phone: '5559637412', service: 'Luxury Spa Pedicure', addOns: ['French Tip'], totalPrice: 75, status: 'noshow' },
-  { id: 8, date: '2026-05-15', time: '4:00 PM', customerName: 'Charlotte Miller', email: 'charlotte.m@email.com', phone: '5551472583', service: 'Gel-X Extensions with Custom Art', addOns: ['Pearl Add-on'], totalPrice: 165, status: 'confirmed' },
-];
-
 const statusOptions = ['pending', 'confirmed', 'completed', 'noshow'];
 
 const statusColors = {
@@ -29,7 +18,7 @@ const statusLabels = {
 };
 
 export default function AdminDashboard() {
-  const [bookings, setBookings] = useState(initialBookings);
+  const [bookings, setBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -71,12 +60,20 @@ export default function AdminDashboard() {
             <Link to="/"><img src="/NC.jpg" alt="Nail Couture" className="h-16 w-auto" /></Link>
             <span className="text-gold/60 text-sm">Admin Dashboard</span>
           </div>
-          <Link 
-            to="/" 
-            className="text-offwhite/60 hover:text-offwhite text-sm transition-colors"
-          >
-            ← Back to Site
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link 
+              to="/admin/lobby" 
+              className="px-4 py-2 bg-gold text-charcoal font-heading text-sm hover:bg-gold/90 transition-colors"
+            >
+              The Atelier Lobby
+            </Link>
+            <Link 
+              to="/" 
+              className="text-offwhite/60 hover:text-offwhite text-sm transition-colors"
+            >
+              ← Back to Site
+            </Link>
+          </div>
         </div>
       </nav>
 
