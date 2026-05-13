@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -24,16 +25,16 @@ export default function ClientPortal() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  const [profileId, setProfileId] = useState(null);
+  const { user, logout, loading: authLoading } = useAuth();
 
   const fetchUserData = useCallback(async () => {
-    if (!profileId) return;
+    if (!user?.id) return;
 
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', profileId)
+        .eq('id', user.id)
         .single()
 
       if (profileError) {
@@ -45,7 +46,7 @@ export default function ClientPortal() {
       const { data: appointmentsData, error: appointmentsError } = await supabase
         .from('appointments')
         .select('*, services(name, price, duration_minutes)')
-        .eq('profile_id', profileId)
+        .eq('profile_id', user.id)
         .order('check_in_time', { ascending: false })
 
       if (appointmentsError) {
@@ -59,32 +60,28 @@ export default function ClientPortal() {
       console.error('Error fetching user data:', err);
       setLoading(false);
     }
-  }, [profileId]);
+  }, [user?.id]);
 
   useEffect(() => {
-    const storedProfileId = localStorage.getItem('portal_profile_id');
-    
-    if (!storedProfileId) {
+    if (!authLoading && !user) {
       navigate('/login');
       return;
     }
-
-    setProfileId(storedProfileId);
-  }, [navigate]);
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    if (profileId) {
+    if (user?.id) {
       fetchUserData();
     }
-  }, [profileId, fetchUserData]);
+  }, [user?.id, fetchUserData]);
 
   useEffect(() => {
-    if (!profileId) return;
+    if (!user?.id) return;
 
     const channel = supabase
       .channel('client-portal-updates')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'appointments', filter: `profile_id=eq.${profileId}` },
+        { event: '*', schema: 'public', table: 'appointments', filter: `profile_id=eq.${user.id}` },
         () => {
           fetchUserData();
         }
@@ -94,12 +91,11 @@ export default function ClientPortal() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profileId, fetchUserData]);
+  }, [user?.id, fetchUserData]);
 
   const handleLogout = () => {
-    localStorage.removeItem('portal_profile_id');
-    localStorage.removeItem('portal_profile_name');
-    navigate('/login');
+    logout();
+    navigate('/');
   };
 
   const currentAppointment = appointments.find(a => 
@@ -114,7 +110,7 @@ export default function ClientPortal() {
     ['completed', 'cancelled'].includes(a.status)
   );
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-offwhite flex items-center justify-center">
         <div className="text-gold animate-pulse">Loading...</div>
@@ -245,7 +241,7 @@ export default function ClientPortal() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-charcoal/50">No upcoming appointments. 
+                    <p className="text-charcoal/60">No upcoming appointments. 
                       <Link to="/booking" className="text-gold hover:underline ml-1">Book one now</Link>
                     </p>
                   )}

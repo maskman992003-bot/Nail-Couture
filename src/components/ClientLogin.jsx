@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ClientLogin() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,9 +39,7 @@ export default function ClientLogin() {
         return;
       }
 
-      localStorage.setItem('portal_profile_id', profile.id);
-      localStorage.setItem('portal_profile_name', profile.full_name);
-      
+      login(profile);
       navigate('/portal');
     } catch (err) {
       console.error('Login error:', err);
