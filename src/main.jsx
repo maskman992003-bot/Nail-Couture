@@ -7,6 +7,7 @@ import AdminDashboard from './components/AdminDashboard.jsx'
 import ClientPortal from './components/ClientPortal.jsx'
 import ClientLogin from './components/ClientLogin.jsx'
 import AdminLobby from './components/AdminLobby.jsx'
+import AdminReports from './components/AdminReports.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -20,6 +21,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/check-in" element={<App />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/lobby" element={<AdminLobby />} />
+        <Route path="/admin/reports" element={<AdminReports />} />
         <Route path="/portal" element={<ClientPortal />} />
         <Route path="/login" element={<ClientLogin />} />
       </Routes>

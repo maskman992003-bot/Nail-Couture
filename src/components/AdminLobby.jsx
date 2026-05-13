@@ -8,6 +8,7 @@ export default function AdminLobby() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
   const [notification, setNotification] = useState(null)
+  const [todayTotal, setTodayTotal] = useState(0)
 
   useEffect(() => {
     fetchAppointments()
@@ -27,6 +28,9 @@ export default function AdminLobby() {
 
   const fetchAppointments = async () => {
     try {
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+      
       const { data, error } = await supabase
         .from('appointments')
         .select(`
@@ -39,12 +43,24 @@ export default function AdminLobby() {
             full_name,
             nail_goal,
             refreshment_pref
+          ),
+          services (
+            name,
+            price,
+            duration_minutes
           )
         `)
         .in('status', ['Checked-In', 'In-Progress'])
         .order('check_in_time', { ascending: true })
 
       if (error) throw error
+      
+      const { data: todayData } = await supabase
+        .from('appointments')
+        .select('id', { count: 'exact', head: true })
+        .gte('check_in_time', todayStart.toISOString())
+
+      setTodayTotal(todayData?.length || 0)
       
       const lobby = (data || []).filter(a => a.status === 'Checked-In')
       const serving = (data || []).filter(a => a.status === 'In-Progress')
@@ -106,17 +122,31 @@ export default function AdminLobby() {
   return (
     <div className="min-h-screen bg-charcoal p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="font-heading text-3xl text-gold">The Atelier Lobby</h1>
-            <p className="text-offwhite/60 mt-1">Real-time appointment management</p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-6">
+            <div>
+              <h1 className="font-heading text-3xl text-gold">The Atelier Lobby</h1>
+              <p className="text-offwhite/60 mt-1">Real-time appointment management</p>
+            </div>
+            <div className="bg-gold/10 border border-gold/30 rounded-lg px-4 py-2">
+              <span className="text-offwhite/60 text-sm">Today's Total: </span>
+              <span className="font-heading text-xl text-gold">{todayTotal}</span>
+            </div>
           </div>
-          <Link
-            to="/admin"
-            className="px-6 py-2 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal transition-all"
-          >
-            Reception Home
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/admin/reports"
+              className="px-6 py-2 border-2 border-gold/50 text-gold/70 hover:bg-gold hover:text-charcoal transition-all text-sm"
+            >
+              View Full Reports
+            </Link>
+            <Link
+              to="/admin"
+              className="px-6 py-2 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal transition-all"
+            >
+              Reception Home
+            </Link>
+          </div>
         </div>
 
         {notification && (
@@ -130,7 +160,7 @@ export default function AdminLobby() {
           <div>
             <h2 className="font-heading text-xl text-gold mb-4 flex items-center gap-2">
               <span className="w-3 h-3 bg-gold rounded-full animate-pulse"></span>
-              The Lobby ({lobbyAppointments.length})
+              Waiting ({lobbyAppointments.length})
             </h2>
             {lobbyAppointments.length === 0 ? (
               <div className="text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
@@ -150,11 +180,17 @@ export default function AdminLobby() {
                         </h3>
                         <div className="flex flex-wrap gap-3 text-sm">
                           <span className="text-offwhite/50">{formatTime(appointment.check_in_time)}</span>
+                          {appointment.services && (
+                            <span className="text-gold font-heading">{appointment.services.name} - ${appointment.services.price}</span>
+                          )}
+                          {appointment.services?.duration_minutes && (
+                            <span className="text-offwhite/40 text-xs">~{appointment.services.duration_minutes} min</span>
+                          )}
                           {appointment.profiles?.nail_goal && (
-                            <span className="text-gold">{appointment.profiles.nail_goal}</span>
+                            <span className="text-offwhite/60">{appointment.profiles.nail_goal}</span>
                           )}
                           {(appointment.refreshment_choice || appointment.profiles?.refreshment_pref) && (
-                            <span className="text-offwhite/60">
+                            <span className="text-offwhite/40">
                               {appointment.refreshment_choice || appointment.profiles?.refreshment_pref}
                             </span>
                           )}
@@ -177,7 +213,7 @@ export default function AdminLobby() {
           <div>
             <h2 className="font-heading text-xl text-gold mb-4 flex items-center gap-2">
               <span className="w-3 h-3 bg-gold rounded-full"></span>
-              Currently Serving ({servingAppointments.length})
+              Serving ({servingAppointments.length})
             </h2>
             {servingAppointments.length === 0 ? (
               <div className="text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
@@ -197,6 +233,22 @@ export default function AdminLobby() {
                         </h3>
                         <div className="flex flex-wrap gap-3 text-sm">
                           <span className="text-gold">Started {formatTime(appointment.start_time)}</span>
+                          {appointment.services && (
+                            <span className="text-offwhite/80 font-heading">{appointment.services.name}</span>
+                          )}
+                          {appointment.services?.duration_minutes && (
+                            (() => {
+                              const startTime = new Date(appointment.start_time)
+                              const finishTime = new Date(startTime.getTime() + appointment.services.duration_minutes * 60000)
+                              const now = new Date()
+                              const isOverdue = now > finishTime
+                              return (
+                                <span className={isOverdue ? 'text-red-400' : 'text-offwhite/50'}>
+                                  {isOverdue ? 'Overdue' : 'Finish'} {finishTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                </span>
+                              )
+                            })()
+                          )}
                           {appointment.profiles?.nail_goal && (
                             <span className="text-offwhite/60">{appointment.profiles.nail_goal}</span>
                           )}
@@ -207,7 +259,7 @@ export default function AdminLobby() {
                         disabled={updating === appointment.id}
                         className="px-6 py-3 bg-gold text-charcoal font-heading tracking-wider hover:bg-gold/90 transition-all disabled:opacity-50"
                       >
-                        Complete Service
+                        Complete
                       </button>
                     </div>
                   </div>

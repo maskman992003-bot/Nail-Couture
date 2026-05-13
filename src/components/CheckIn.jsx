@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { processCheckIn } from '../services/kioskService'
+import { getServices } from '../services/services'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 
@@ -20,12 +21,116 @@ const Sparkle = () => (
   </div>
 )
 
+const ServiceSelection = ({ onSelect, onBack }) => {
+  const [services, setServices] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    setLoading(true)
+    getServices()
+      .then((data) => {
+        console.log('Services loaded:', data)
+        setServices(data)
+      })
+      .catch((err) => {
+        console.error('Failed to load services:', err)
+        setError(err.message)
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-charcoal/95 flex items-center justify-center">
+        <div className="text-gold animate-pulse">Loading services...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-charcoal/95 flex items-center justify-center">
+        <div className="text-red-400">Error: {error}</div>
+      </div>
+    )
+  }
+
+  const groupedServices = services.reduce((acc, service) => {
+    const category = service.category || 'Other'
+    if (!acc[category]) acc[category] = []
+    acc[category].push(service)
+    return acc
+  }, {})
+
+  return (
+    <div className="min-h-screen bg-charcoal/95 flex items-center justify-center p-8">
+      <div className="w-full max-w-3xl animate-fade-in">
+        <button
+          onClick={onBack}
+          className="absolute top-6 left-6 text-offwhite/50 hover:text-offwhite transition-colors"
+        >
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <div className="text-center mb-8">
+          <h2 className="font-heading text-3xl text-gold mb-2">Select Your Service</h2>
+          <p className="text-offwhite/60">Choose your treatment</p>
+        </div>
+
+        {services.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-offwhite/40">No services available</p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-8">
+              {Object.entries(groupedServices).map(([category, categoryServices]) => (
+                <div key={category}>
+                  <h3 className="font-heading text-lg text-gold mb-3 border-b border-gold/20 pb-2">
+                    {category}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {categoryServices.map((service) => (
+                      <button
+                        key={service.id}
+                        onClick={() => {
+                          console.log('Selected service:', service)
+                          onSelect(service)
+                        }}
+                        className="bg-offwhite/5 border border-gold/30 hover:border-gold hover:bg-gold/10 rounded-xl p-5 text-left transition-all group"
+                      >
+                        <div className="font-heading text-lg text-offwhite group-hover:text-gold mb-1">
+                          {service.name}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gold text-xl font-heading">${service.price}</span>
+                          <span className="text-offwhite/50 text-sm">{service.duration_minutes} min</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-offwhite/30 text-sm mt-6">Times are approximate to ensure couture quality.</p>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 const RegistrationModal = ({ phone, onClose, onComplete }) => {
   const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [nailGoal, setNailGoal] = useState('')
   const [refreshmentPref, setRefreshmentPref] = useState('')
+  const [selectedService, setSelectedService] = useState(null)
+  const [showServiceSelection, setShowServiceSelection] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
@@ -41,7 +146,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!fullName || !email || !nailGoal) return
+    if (!fullName || !email || !nailGoal || !selectedService) return
     
     setLoading(true)
     setError(null)
@@ -66,7 +171,8 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
         const { error: appointmentError } = await supabase
           .from('appointments')
           .insert({
-            client_id: profile.id,
+            profile_id: profile.id,
+            service_id: selectedService.id,
             status: 'Checked-In',
             check_in_time: new Date().toISOString(),
             refreshment_choice: refreshmentPref || null
@@ -103,6 +209,18 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
           )}
         </div>
       </div>
+    )
+  }
+
+  if (showServiceSelection) {
+    return (
+      <ServiceSelection 
+        onSelect={(service) => {
+          setSelectedService(service)
+          setShowServiceSelection(false)
+        }}
+        onBack={() => setShowServiceSelection(false)}
+      />
     )
   }
 
@@ -186,9 +304,36 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
+          <div className="bg-offwhite/5 border border-gold/30 rounded-xl p-4">
+            <label className="block text-offwhite/80 text-sm mb-2">Selected Service</label>
+            {selectedService ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-offwhite font-heading">{selectedService.name}</div>
+                  <div className="text-gold text-sm">${selectedService.price}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowServiceSelection(true)}
+                  className="text-gold text-sm hover:underline"
+                >
+                  Change
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowServiceSelection(true)}
+                className="w-full py-3 border border-gold/50 text-gold hover:bg-gold/10 rounded-lg transition-all"
+              >
+                Select a Service
+              </button>
+            )}
+          </div>
+
           <button
             type="submit"
-            disabled={loading || !fullName || !email || !nailGoal}
+            disabled={loading || !fullName || !email || !nailGoal || !selectedService}
             className="w-full py-4 bg-gold text-charcoal font-heading text-lg tracking-wider hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating Profile...' : 'Join the Club'}
@@ -212,6 +357,13 @@ export default function CheckIn({ onNavigate }) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  const [showServiceSelection, setShowServiceSelection] = useState(false)
+  const [selectedService, setSelectedService] = useState(null)
+  const [services, setServices] = useState([])
+
+  useEffect(() => {
+    getServices().then(setServices).catch(console.error)
+  }, [])
 
   const handleKeyPress = (key) => {
     if (key === 'del') {
@@ -238,6 +390,27 @@ export default function CheckIn({ onNavigate }) {
     }
   }
 
+  const handleExistingUserServiceSelect = async (service) => {
+    if (!result?.appointment?.id) return
+    
+    setLoading(true)
+    try {
+      const { error: updateError } = await supabase
+        .from('appointments')
+        .update({ service_id: service.id })
+        .eq('id', result.appointment.id)
+
+      if (updateError) throw updateError
+      
+      setSelectedService(service)
+      setShowServiceSelection(false)
+    } catch (err) {
+      console.error('Error updating service:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const formatDisplay = (num) => {
     if (num.length === 0) return 'Enter phone number'
     if (num.length <= 3) return `(${num}) `
@@ -245,10 +418,26 @@ export default function CheckIn({ onNavigate }) {
     return `(${num.slice(0, 3)}) ${num.slice(3, 6)}-${num.slice(6)}`
   }
 
-  if (result && !result.isNew) {
+  if (showServiceSelection) {
+    return (
+      <ServiceSelection 
+        onSelect={(service) => {
+          if (result && !result.isNew && result.appointment) {
+            handleExistingUserServiceSelect(service)
+          } else {
+            setSelectedService(service)
+            setShowServiceSelection(false)
+          }
+        }}
+        onBack={() => setShowServiceSelection(false)}
+      />
+    )
+  }
+
+  if (result && !result.isNew && result.appointment) {
     return (
       <div className="min-h-screen bg-charcoal flex flex-col items-center justify-center p-8">
-        <div className="text-center animate-fade-in">
+        <div className="text-center animate-fade-in max-w-md w-full">
           <div className="w-20 h-20 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -256,11 +445,36 @@ export default function CheckIn({ onNavigate }) {
           </div>
           <h2 className="font-heading text-3xl text-offwhite mb-2">Welcome Back</h2>
           <p className="text-xl text-gold mb-8">{result.name}</p>
+          
+          <div className="mb-6">
+            <p className="text-offwhite/60 mb-3">Select your service:</p>
+            <div className="grid grid-cols-2 gap-3">
+              {services.map((service) => (
+                <button
+                  key={service.id}
+                  onClick={() => handleExistingUserServiceSelect(service)}
+                  className="bg-offwhite/10 border border-gold/30 hover:border-gold rounded-xl p-4 text-left"
+                >
+                  <div className="text-offwhite font-heading text-sm">{service.name}</div>
+                  <div className="text-gold">${service.price}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {selectedService && (
+            <div className="bg-gold/20 border border-gold/50 rounded-xl p-4 mb-6">
+              <p className="text-offwhite/60 text-sm">Selected:</p>
+              <p className="text-gold font-heading">{selectedService.name} - ${selectedService.price}</p>
+            </div>
+          )}
+
           <p className="text-offwhite/60 mb-8">You have been checked in</p>
           <button
             onClick={() => {
               setPhone('')
               setResult(null)
+              setSelectedService(null)
             }}
             className="px-8 py-3 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal transition-all"
           >
