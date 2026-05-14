@@ -559,160 +559,162 @@ return (
                 <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>
               </div>
 
-            {notification && (
-            <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gold text-charcoal px-4 sm:px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw]">
-              <p className="font-heading text-base sm:text-lg">{notification.message}</p>
-              <p className="text-sm opacity-80">{notification.name}</p>
-            </div>
-          )}
+              {notification && (
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gold text-charcoal px-4 sm:px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw]">
+                  <p className="font-heading text-base sm:text-lg">{notification.message}</p>
+                  <p className="text-sm opacity-80">{notification.name}</p>
+                </div>
+              )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <h2 className="font-heading text-xl text-gold mb-4 flex items-center gap-2">
-                <span className="w-3 h-3 bg-gold rounded-full animate-pulse"></span>
-                Waiting ({lobbyAppointments.length})
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {lobbyAppointments.map(appointment => (
-                  <DraggableAppointmentCard
-                    key={appointment.id}
-                    appointment={appointment}
-                    isPriority={appointment.is_priority}
-                    onTogglePriority={togglePriority}
-                    onEdit={setEditingAppointment}
-                    onCancel={setCancelConfirm}
-                  />
-                ))}
-                {lobbyAppointments.length === 0 && (
-                  <div className="col-span-1 sm:col-span-2 text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
-                    <p className="text-offwhite/40">No guests waiting</p>
-                  </div>
-                )}
-              </div>
-
-              <h2 className="font-heading text-xl text-gold mt-8 mb-4">Currently Serving ({servingAppointments.length})</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {servingAppointments.map(appointment => (
-                  <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-heading text-lg text-offwhite">{appointment.customer?.full_name || 'Guest'}</h3>
-                      <button
-                        onClick={() => setCancelConfirm(appointment)}
-                        className="text-red-400/50 hover:text-red-400 text-sm"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-sm items-center">
-                      {appointment.services && <span className="text-gold">{appointment.services.name}</span>}
-                      {appointment.technician && (
-                        <span className="text-xs text-gold/70 ml-auto">with {appointment.technician.full_name}</span>
-                      )}
-                    </div>
-                    {appointment.start_time && (
-                      <div className="text-xs text-offwhite/40 mt-2">
-                        Started: {formatTime(appointment.start_time)}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <h2 className="font-heading text-xl text-gold mb-4 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-gold rounded-full animate-pulse"></span>
+                    Waiting ({lobbyAppointments.length})
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {lobbyAppointments.map(appointment => (
+                      <DraggableAppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        isPriority={appointment.is_priority}
+                        onTogglePriority={togglePriority}
+                        onEdit={setEditingAppointment}
+                        onCancel={setCancelConfirm}
+                      />
+                    ))}
+                    {lobbyAppointments.length === 0 && (
+                      <div className="col-span-1 sm:col-span-2 text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
+                        <p className="text-offwhite/40">No guests waiting</p>
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <div>
-              <h2 className="font-heading text-xl text-gold mb-4">Technician Grid</h2>
-              <p className="text-offwhite/40 text-sm mb-4">Drop a customer on a technician to assign</p>
-              <div className="space-y-4">
-                {technicians.map(tech => {
-                  const activeCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')
-                  const pendingCustomer = pendingAppointments.find(a => a.technician_id === tech.id && a.status === 'assigned_pending')
-                  const isBusy = !!activeCustomer
-                  const isPending = !!pendingCustomer
-                  
-                  return (
-                    <TechnicianGridItem
-                      key={tech.id}
-                      tech={tech}
-                      activeCustomer={activeCustomer || {}}
-                      pendingCustomer={pendingCustomer}
-                      isBusy={isBusy}
-                      isPending={isPending}
-                      wiggle={wiggleTechId === tech.id}
-                      updating={updating}
-                      onAccept={acceptAssignment}
-                      onComplete={(id) => updateStatus(id, 'completed')}
-                    />
-                  )
-                })}
-                {technicians.length === 0 && (
-                  <div className="text-center py-8 text-offwhite/40">
-                    No technicians found (add role='technician' to profiles)
+                  <h2 className="font-heading text-xl text-gold mt-8 mb-4">Currently Serving ({servingAppointments.length})</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {servingAppointments.map(appointment => (
+                      <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-heading text-lg text-offwhite">{appointment.customer?.full_name || 'Guest'}</h3>
+                          <button
+                            onClick={() => setCancelConfirm(appointment)}
+                            className="text-red-400/50 hover:text-red-400 text-sm"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-sm items-center">
+                          {appointment.services && <span className="text-gold">{appointment.services.name}</span>}
+                          {appointment.technician && (
+                            <span className="text-xs text-gold/70 ml-auto">with {appointment.technician.full_name}</span>
+                          )}
+                        </div>
+                        {appointment.start_time && (
+                          <div className="text-xs text-offwhite/40 mt-2">
+                            Started: {formatTime(appointment.start_time)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+
+                <div>
+                  <h2 className="font-heading text-xl text-gold mb-4">Technician Grid</h2>
+                  <p className="text-offwhite/40 text-sm mb-4">Drop a customer on a technician to assign</p>
+                  <div className="space-y-4">
+                    {technicians.map(tech => {
+                      const activeCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')
+                      const pendingCustomer = pendingAppointments.find(a => a.technician_id === tech.id && a.status === 'assigned_pending')
+                      const isBusy = !!activeCustomer
+                      const isPending = !!pendingCustomer
+                      
+                      return (
+                        <TechnicianGridItem
+                          key={tech.id}
+                          tech={tech}
+                          activeCustomer={activeCustomer || {}}
+                          pendingCustomer={pendingCustomer}
+                          isBusy={isBusy}
+                          isPending={isPending}
+                          wiggle={wiggleTechId === tech.id}
+                          updating={updating}
+                          onAccept={acceptAssignment}
+                          onComplete={(id) => updateStatus(id, 'completed')}
+                        />
+                      )
+                    })}
+                    {technicians.length === 0 && (
+                      <div className="text-center py-8 text-offwhite/40">
+                        No technicians found (add role='technician' to profiles)
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <DragOverlay>
-        {activeId && (
-          <div className="bg-gold/20 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none">
-            <p className="text-offwhite font-heading text-sm sm:text-base">Moving...</p>
+        <DragOverlay>
+          {activeId && (
+            <div className="bg-gold/20 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none">
+              <p className="text-offwhite font-heading text-sm sm:text-base">Moving...</p>
+            </div>
+          )}
+        </DragOverlay>
+
+        {editingAppointment && (
+          <EditAppointmentModal
+            appointment={editingAppointment}
+            services={services}
+            onSave={handleEditSave}
+            onClose={() => setEditingAppointment(null)}
+          />
+        )}
+
+        {cancelConfirm && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
+            <div className="bg-charcoal border border-red-500/30 rounded-xl p-6 w-full max-w-md">
+              <div className="text-center">
+                <div className="text-4xl mb-4">⚠️</div>
+                <h3 className="font-heading text-2xl text-offwhite mb-2">Cancel Appointment?</h3>
+                <p className="text-offwhite/60 mb-4">
+                  Are you sure you want to cancel the appointment for <span className="text-gold">{cancelConfirm.customer?.full_name}</span>?
+                </p>
+                <div className="mb-6 text-left">
+                  <label className="block text-offwhite/60 text-sm mb-2">Reason for cancellation</label>
+                  <select
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    style={{ backgroundColor: '#1a1a1a', color: '#ffffff', border: '1px solid #333' }}
+                    className="w-full px-4 py-3 border rounded-lg"
+                  >
+                    <option value="">Select a reason...</option>
+                    <option value="Wait time too long">Wait time too long</option>
+                    <option value="Customer left">Customer left</option>
+                    <option value="Mistake check-in">Mistake check-in</option>
+                  </select>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setCancelConfirm(null); setCancelReason('') }}
+                    className="flex-1 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg"
+                  >
+                    Keep Appointment
+                  </button>
+                  <button
+                    onClick={() => cancelAppointment(cancelConfirm)}
+                    disabled={!cancelReason || updating === cancelConfirm.id}
+                    className="flex-1 py-3 bg-red-500 text-white font-heading hover:bg-red-600 rounded-lg disabled:opacity-50"
+                  >
+                    {updating === cancelConfirm.id ? 'Cancelling...' : 'Confirm Cancellation'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-      </DragOverlay>
-
-      {editingAppointment && (
-        <EditAppointmentModal
-          appointment={editingAppointment}
-          services={services}
-          onSave={handleEditSave}
-          onClose={() => setEditingAppointment(null)}
-        />
-      )}
-
-      {cancelConfirm && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
-          <div className="bg-charcoal border border-red-500/30 rounded-xl p-6 w-full max-w-md">
-            <div className="text-center">
-              <div className="text-4xl mb-4">⚠️</div>
-              <h3 className="font-heading text-2xl text-offwhite mb-2">Cancel Appointment?</h3>
-              <p className="text-offwhite/60 mb-4">
-                Are you sure you want to cancel the appointment for <span className="text-gold">{cancelConfirm.customer?.full_name}</span>?
-              </p>
-              <div className="mb-6 text-left">
-                <label className="block text-offwhite/60 text-sm mb-2">Reason for cancellation</label>
-                <select
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  style={{ backgroundColor: '#1a1a1a', color: '#ffffff', border: '1px solid #333' }}
-                  className="w-full px-4 py-3 border rounded-lg"
-                >
-                  <option value="">Select a reason...</option>
-                  <option value="Wait time too long">Wait time too long</option>
-                  <option value="Customer left">Customer left</option>
-                  <option value="Mistake check-in">Mistake check-in</option>
-                </select>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setCancelConfirm(null); setCancelReason('') }}
-                  className="flex-1 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg"
-                >
-                  Keep Appointment
-                </button>
-                <button
-                  onClick={() => cancelAppointment(cancelConfirm)}
-                  disabled={!cancelReason || updating === cancelConfirm.id}
-                  className="flex-1 py-3 bg-red-500 text-white font-heading hover:bg-red-600 rounded-lg disabled:opacity-50"
-                >
-                  {updating === cancelConfirm.id ? 'Cancelling...' : 'Confirm Cancellation'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </DndContext>
     );
   }
