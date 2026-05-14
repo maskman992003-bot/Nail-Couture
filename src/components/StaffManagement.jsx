@@ -135,7 +135,11 @@ export default function StaffManagement() {
               </thead>
               <tbody className="divide-y divide-charcoal/10">
                 {filteredStaff.map((member) => (
-                  <tr key={member.id} className="hover:bg-offwhite/50 transition-colors">
+                  <tr 
+                    key={member.id} 
+                    className="hover:bg-offwhite/50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/admin/staff/${member.id}`)}
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
@@ -155,7 +159,7 @@ export default function StaffManagement() {
                       <div className="text-sm text-charcoal">{member.email || 'No email'}</div>
                       <div className="text-xs text-charcoal/50">{member.phone_number || 'No phone'}</div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                       <span className={`px-3 py-1 text-xs border-2 rounded-full ${roleColors[member.role] || 'bg-gray-100 text-gray-800'}`}>
                         {roleLabels[member.role] || member.role}
                       </span>
@@ -170,29 +174,7 @@ export default function StaffManagement() {
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
-
-        <div className="mt-8 bg-charcoal/5 border border-charcoal/20 rounded-xl p-6">
-          <h3 className="font-heading text-charcoal text-lg mb-4">Role Permissions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Object.entries(roleLabels).map(([role, label]) => (
-              <div key={role} className="bg-white border border-charcoal/10 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`px-2 py-1 text-xs border rounded-full ${roleColors[role]}`}>{label}</span>
-                </div>
-                <p className="text-xs text-charcoal/60">
-                  {role === 'super_admin' && 'Full system access, all settings, cannot be deleted'}
-                  {role === 'owner' && 'Full business access, can manage staff and finances'}
-                  {role === 'partner' && 'Shared business access, limited settings'}
-                  {role === 'admin' && 'Floor management, reports, service menu'}
-                  {role === 'cashier' && 'Checkout station, payment processing'}
-                  {role === 'technician' && 'Service delivery, assigned to appointments'}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+</div>
       </div>
     </div>
   );

@@ -15,3 +15,17 @@ export async function getServices() {
 
   return data || []
 }
+
+export async function updateService(serviceId, updates) {
+  const { error } = await supabase
+    .from('services')
+    .update(updates)
+    .eq('id', serviceId)
+
+  if (error) {
+    console.error('Error updating service:', error)
+    return false
+  }
+
+  return true
+}

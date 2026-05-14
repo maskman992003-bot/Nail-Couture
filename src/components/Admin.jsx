@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import Navbar from './Navbar';
 
 const actionCards = [
@@ -38,8 +40,49 @@ const actionCards = [
 
 export default function Admin() {
   const navigate = useNavigate();
+  const [quickStats, setQuickStats] = useState({
+    todayRevenue: 0,
+    activeTechnicians: 0,
+    lobbyCount: 0
+  });
+  const [loading, setLoading] = useState(true);
+
   const handleNavigate = (page) => {
     if (page === 'home') navigate('/');
+  };
+
+  useEffect(() => {
+    fetchQuickStats();
+  }, []);
+
+  const fetchQuickStats = async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const { data: revenueData } = await supabase
+      .from('appointments')
+      .select('final_price')
+      .eq('status', 'completed')
+      .gte('completed_at', today.toISOString());
+    
+    const todayRevenue = revenueData?.reduce((sum, a) => sum + (a.final_price || 0), 0) || 0;
+
+    const { count: techCount } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('role', 'technician');
+
+    const { count: lobbyCount } = await supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['waiting', 'assigned_pending', 'serving']);
+
+    setQuickStats({
+      todayRevenue,
+      activeTechnicians: techCount || 0,
+      lobbyCount: lobbyCount || 0
+    });
+    setLoading(false);
   };
 
   return (
@@ -50,6 +93,27 @@ export default function Admin() {
         <div className="mb-8 text-center">
           <h1 className="font-heading text-charcoal text-3xl mb-2">Admin Command Center</h1>
           <p className="text-charcoal/60">Select an action to manage the salon</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white border border-gold/30 rounded-xl p-6 text-center">
+            <div className="text-gold/60 text-sm mb-1">Today's Revenue</div>
+            <div className="font-heading text-3xl text-gold">
+              {loading ? '...' : `$${quickStats.todayRevenue.toFixed(0)}`}
+            </div>
+          </div>
+          <div className="bg-white border border-charcoal/10 rounded-xl p-6 text-center">
+            <div className="text-charcoal/60 text-sm mb-1">Active Technicians</div>
+            <div className="font-heading text-3xl text-charcoal">
+              {loading ? '...' : quickStats.activeTechnicians}
+            </div>
+          </div>
+          <div className="bg-white border border-charcoal/10 rounded-xl p-6 text-center">
+            <div className="text-charcoal/60 text-sm mb-1">Customers in Lobby</div>
+            <div className="font-heading text-3xl text-charcoal">
+              {loading ? '...' : quickStats.lobbyCount}
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

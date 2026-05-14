@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-export function ProtectedRoute({ allowedRoles, children }) {
+export function ProtectedRoute({ allowedRoles, children, blockStaff }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -18,6 +18,11 @@ export function ProtectedRoute({ allowedRoles, children }) {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
+    const redirectPath = getRedirectPath(user.role);
+    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+  }
+
+  if (blockStaff && user.is_staff) {
     const redirectPath = getRedirectPath(user.role);
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
