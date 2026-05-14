@@ -713,7 +713,6 @@ return (
             </div>
           </div>
         </div>
-        </div>
-        </DndContext>
-      );
-    }
+      </DndContext>
+    );
+  }
