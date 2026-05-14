@@ -12,6 +12,7 @@ import AdminReports from './components/AdminReports.jsx'
 import CashierCheckout from './components/CashierCheckout.jsx'
 import StaffManagement from './components/StaffManagement.jsx'
 import StaffProfile from './components/StaffProfile.jsx'
+import Settings from './components/Settings.jsx'
 import Services from './components/Services.jsx'
 import ServicesPublic from './components/ServicesPublic.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
@@ -59,6 +60,11 @@ createRoot(document.getElementById('root')).render(
           <Route path="/admin/staff/:id" element={
             <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
               <StaffProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/settings" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician']}>
+              <Settings />
             </ProtectedRoute>
           } />
           <Route path="/checkout" element={

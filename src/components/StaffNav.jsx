@@ -82,7 +82,7 @@ export default function StaffNav() {
 
   return (
     <>
-      <div className="hidden lg:flex fixed left-0 top-0 h-screen w-20 flex-col border-r border-gold/10 z-40" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="hidden lg:flex fixed left-0 top-0 h-screen w-20 flex-col border-r border-gold/10 z-50" style={{ backgroundColor: '#0a0a0a' }}>
         <div className="flex-1 py-6">
           <nav className="flex flex-col gap-1 px-3">
             {navItems.map((item) => {
@@ -109,7 +109,7 @@ export default function StaffNav() {
         </div>
       </div>
 
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50" style={{ backgroundColor: '#0a0a0a' }}>
         <nav className="flex items-center justify-around px-2 py-2 border-t border-gold/10">
           {navItems.map((item) => {
             const active = isActive(location.pathname, item.href);

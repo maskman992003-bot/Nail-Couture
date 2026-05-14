@@ -77,74 +77,87 @@ export default function Navbar({ currentPage, onNavigate }) {
           </div>
 
           <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center gap-6">
-              <button
-                onClick={() => scrollToSection('services')}
-                className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
-              >
-                SERVICES
-              </button>
-              <button
-                onClick={() => scrollToSection('gallery')}
-                className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
-              >
-                LOOKBOOK
-              </button>
-              <button
-                onClick={() => onNavigate('about')}
-                className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
-              >
-                ABOUT
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {user ? (
+              {user && user.is_staff ? (
                 <>
-                  <span className="text-gold font-heading text-sm">
-                    Hi, {firstName}
-                  </span>
-                  {user.is_staff && !isAdminPage && (
-                    <Link
-                      to="/admin"
-                      className="px-4 py-2 border border-gold/50 text-gold/80 hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
-                    >
-                      Dashboard
-                    </Link>
-                  )}
-                  {!user.is_staff && (
-                    <Link
-                      to="/portal"
-                      className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium"
-                    >
-                      My Portal
-                    </Link>
-                  )}
                   <button
-                    onClick={handleLogout}
-                    className="px-4 py-2 border border-offwhite/30 text-offwhite/60 hover:border-offwhite hover:text-offwhite transition-all text-sm tracking-wider"
+                    onClick={() => navigate('/admin/lobby')}
+                    className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
                   >
-                    Logout
+                    LOBBY
                   </button>
                 </>
               ) : (
                 <>
-                  <a
-                    href="/login"
-                    className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium"
-                  >
-                    Login
-                  </a>
                   <button
-                    onClick={() => scrollToSection('book')}
-                    className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                    onClick={() => scrollToSection('services')}
+                    className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
                   >
-                    BOOK
+                    SERVICES
+                  </button>
+                  <button
+                    onClick={() => scrollToSection('gallery')}
+                    className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
+                  >
+                    LOOKBOOK
+                  </button>
+                  <button
+                    onClick={() => onNavigate('about')}
+                    className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
+                  >
+                    ABOUT
                   </button>
                 </>
               )}
+
+              <div className="flex items-center gap-4">
+                {user ? (
+                  <>
+                    <span className="text-gold font-heading text-sm">
+                      Hi, {firstName}
+                    </span>
+                    {user.is_staff && !isAdminPage && (
+                      <Link
+                        to="/admin"
+                        className="px-4 py-2 border border-gold/50 text-gold/80 hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                      >
+                        Dashboard
+                      </Link>
+                    )}
+                    {!user.is_staff && (
+                      <Link
+                        to="/portal"
+                        className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium"
+                      >
+                        My Portal
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleLogout}
+                      className="px-4 py-2 border border-offwhite/30 text-offwhite/60 hover:border-offwhite hover:text-offwhite transition-all text-sm tracking-wider"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <a
+                      href="/login"
+                      className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium"
+                    >
+                      Login
+                    </a>
+                    {!user?.is_staff && (
+                      <button
+                        onClick={() => scrollToSection('book')}
+                        className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                      >
+                        BOOK
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
 
           <button
             className="md:hidden p-2 text-offwhite"
@@ -194,6 +207,27 @@ export default function Navbar({ currentPage, onNavigate }) {
                   >
                     LOOKBOOK
                   </Link>
+                </>
+              ) : user && user.is_staff ? (
+                <>
+                  <button
+                    onClick={() => { setMobileMenuOpen(false); navigate('/admin'); }}
+                    className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
+                  >
+                    ADMIN DASHBOARD
+                  </button>
+                  <button
+                    onClick={() => { setMobileMenuOpen(false); navigate('/admin/lobby'); }}
+                    className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
+                  >
+                    LOBBY
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="py-3 text-red-400 hover:text-red-300 text-left px-2 text-sm tracking-wider border-t border-gold/10 mt-2 pt-2"
+                  >
+                    LOGOUT
+                  </button>
                 </>
               ) : (
                 <>

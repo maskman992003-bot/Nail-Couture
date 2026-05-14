@@ -71,8 +71,9 @@ export default function StaffManagement() {
 
   const filteredStaff = staff.filter((member) => {
     const search = searchTerm.toLowerCase();
+    const displayName = member.full_name || member.email || '';
     return (
-      member.full_name?.toLowerCase().includes(search) ||
+      displayName.toLowerCase().includes(search) ||
       member.email?.toLowerCase().includes(search) ||
       member.phone_number?.includes(search)
     );
@@ -159,7 +160,7 @@ export default function StaffManagement() {
                             </span>
                           </div>
                           <div>
-                            <div className="text-offwhite font-medium">{member.full_name || 'Unknown'}</div>
+                            <div className="text-offwhite font-medium">{member.full_name || member.email || 'Unknown'}</div>
                             {member.nail_goal && (
                               <div className="text-xs text-offwhite/40">{member.nail_goal}</div>
                             )}
