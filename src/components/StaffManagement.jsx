@@ -39,9 +39,8 @@ export default function StaffManagement() {
 
   const fetchStaff = async () => {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('staff_profiles')
       .select('*')
-      .in('role', ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'])
       .order('full_name');
 
     if (error) {
@@ -174,7 +173,8 @@ export default function StaffManagement() {
                 ))}
               </tbody>
             </table>
-</div>
+          </div>
+        </div>
       </div>
     </div>
   );
