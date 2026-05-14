@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
 import Navbar from './Navbar';
 
 const roleColors = {
@@ -23,7 +22,6 @@ const roleLabels = {
 };
 
 export default function StaffManagement() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +48,7 @@ export default function StaffManagement() {
     setLoading(false);
   };
 
-  const filteredStaff = staff.filter(member => {
+  const filteredStaff = staff.filter((member) => {
     const search = searchTerm.toLowerCase();
     return (
       member.full_name?.toLowerCase().includes(search) ||
@@ -85,7 +83,7 @@ export default function StaffManagement() {
               to="/admin"
               className="px-4 py-2 border border-charcoal/20 text-charcoal/60 hover:border-charcoal hover:text-charcoal text-sm"
             >
-              ← Back to Admin
+              Back to Admin
             </Link>
           </div>
         </div>
@@ -115,7 +113,7 @@ export default function StaffManagement() {
 
         {filteredStaff.length === 0 ? (
           <div className="bg-white border border-charcoal/10 rounded-xl p-12 text-center">
-            <div className="text-6xl mb-4">👥</div>
+            <div className="text-6xl mb-4">&#128100;</div>
             <h2 className="font-heading text-charcoal text-2xl mb-2">No Staff Found</h2>
             <p className="text-charcoal/60">
               {searchTerm ? 'No staff match your search criteria.' : 'No staff members found in the system.'}
@@ -133,48 +131,50 @@ export default function StaffManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-charcoal/10">
-                {filteredStaff.map((member) => (
-                  <tr 
-                    key={member.id} 
-                    className="hover:bg-offwhite/50 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/admin/staff/${member.id}`)}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
-                          <span className="text-gold font-heading">
-                            {member.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || '??'}
-                          </span>
+                {filteredStaff.map((member) => {
+                  return (
+                    <tr
+                      key={member.id}
+                      className="hover:bg-offwhite/50 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/admin/staff/${member.id}`)}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
+                            <span className="text-gold font-heading">
+                              {member.full_name?.split(' ').map((n) => n[0]).join('').toUpperCase() || '??'}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-charcoal font-medium">{member.full_name || 'Unknown'}</div>
+                            {member.nail_goal && (
+                              <div className="text-xs text-charcoal/50">{member.nail_goal}</div>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-charcoal font-medium">{member.full_name || 'Unknown'}</div>
-                          {member.nail_goal && (
-                            <div className="text-xs text-charcoal/50">{member.nail_goal}</div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-charcoal">{member.email || 'No email'}</div>
-                      <div className="text-xs text-charcoal/50">{member.phone_number || 'No phone'}</div>
-                    </td>
-                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                      <span className={`px-3 py-1 text-xs border-2 rounded-full ${roleColors[member.role] || 'bg-gray-100 text-gray-800'}`}>
-                        {roleLabels[member.role] || member.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center gap-1 text-sm text-green-600">
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                        Active
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-charcoal">{member.email || 'No email'}</div>
+                        <div className="text-xs text-charcoal/50">{member.phone_number || 'No phone'}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 text-xs border-2 rounded-full ${roleColors[member.role] || 'bg-gray-100 text-gray-800'}`}>
+                          {roleLabels[member.role] || member.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center gap-1 text-sm text-green-600">
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                          Active
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
