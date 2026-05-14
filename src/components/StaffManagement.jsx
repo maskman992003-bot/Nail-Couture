@@ -5,12 +5,12 @@ import Navbar from './Navbar';
 import StaffNav from './StaffNav';
 
 const roleColors = {
-  super_admin: 'bg-purple-100 text-purple-800 border-purple-300',
-  owner: 'bg-purple-100 text-purple-800 border-purple-300',
-  partner: 'bg-indigo-100 text-indigo-800 border-indigo-300',
-  admin: 'bg-blue-100 text-blue-800 border-blue-300',
-  cashier: 'bg-green-100 text-green-800 border-green-300',
-  technician: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+  super_admin: 'bg-purple-900/50 text-purple-300 border-purple-700',
+  owner: 'bg-purple-900/50 text-purple-300 border-purple-700',
+  partner: 'bg-indigo-900/50 text-indigo-300 border-indigo-700',
+  admin: 'bg-blue-900/50 text-blue-300 border-blue-700',
+  cashier: 'bg-green-900/50 text-green-300 border-green-700',
+  technician: 'bg-yellow-900/50 text-yellow-300 border-yellow-700',
 };
 
 const roleLabels = {
@@ -165,7 +165,7 @@ export default function StaffManagement() {
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
                             <span className="text-gold font-heading">
-                              {member.full_name?.split(' ').map((n) => n[0]).join('').toUpperCase() || '??'}
+                              {(member.full_name || member.email || '??').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
                             </span>
                           </div>
                           <div>
