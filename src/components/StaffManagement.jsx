@@ -37,41 +37,16 @@ export default function StaffManagement() {
   }, []);
 
   const fetchStaff = async () => {
-    console.log('Fetching staff from profiles table...');
-
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, role, is_staff, full_name, phone_number, nail_goal')
+      .select('*')
       .eq('is_staff', true)
       .order('full_name', { ascending: true });
 
     if (error) {
-      console.error('Staff Fetch Error:', error.code, error.message);
-      console.error('Full error object:', error);
-    }
-    
-    if (!error && (!data || data.length === 0)) {
-      console.warn('No staff found in database with is_staff=true');
-      console.log('Trying alternative query with role filter...');
-      
-      const { data: altData, error: altError } = await supabase
-        .from('profiles')
-        .select('id, email, role, is_staff, full_name, phone_number, nail_goal')
-        .in('role', ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'])
-        .order('full_name', { ascending: true });
-      
-      if (altError) {
-        console.error('Alternative query error:', altError);
-      } else {
-        console.log('Alternative query returned:', altData?.length, 'staff members');
-        setStaff(altData || []);
-        setLoading(false);
-        return;
-      }
+      console.error('Staff Fetch Error:', error);
     }
 
-    console.log('Fetched staff:', data?.length, 'members');
-    console.log('Staff data:', data);
     setStaff(data || []);
     setLoading(false);
   };

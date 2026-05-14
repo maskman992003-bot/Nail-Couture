@@ -85,35 +85,37 @@ export default function StaffNav() {
 
   return (
     <>
-      <div className="hidden lg:flex fixed left-0 top-0 h-screen w-20 flex-col border-r border-gold/10 z-50" style={{ backgroundColor: '#0a0a0a' }}>
-        <div className="flex-1 py-6">
-          <nav className="flex flex-col gap-1 px-3">
-            {navItems.map((item) => {
-              const active = isActive(location.pathname, item.href);
-              return (
-                <Link
-                  key={item.id}
-                  to={item.href}
-                  className={`relative flex flex-col items-center gap-1 px-3 py-3 rounded-xl transition-all ${
-                    active
-                      ? 'text-gold bg-gold/10'
-                      : 'text-offwhite/40 hover:text-offwhite/80 hover:bg-offwhite/5'
-                  }`}
-                >
-                  <div className="w-6 h-6">{item.icon}</div>
-                  <span className="text-[10px] font-medium tracking-wide">{item.label.toUpperCase()}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="p-3 border-t border-gold/10">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
-              <span className="text-gold text-xs font-heading">{initials || '?'}</span>
-            </div>
-            <div className="text-center">
-              <div className="text-offwhite/80 text-[10px] font-medium truncate w-full">{displayName}</div>
+      <div className="hidden lg:block w-20 flex-shrink-0" style={{ backgroundColor: '#0a0a0a' }}>
+        <div className="fixed left-0 top-0 h-screen w-20 flex flex-col border-r border-gold/10 z-50" style={{ backgroundColor: '#0a0a0a' }}>
+          <div className="flex-1 py-6">
+            <nav className="flex flex-col gap-1 px-3">
+              {navItems.map((item) => {
+                const active = isActive(location.pathname, item.href);
+                return (
+                  <Link
+                    key={item.id}
+                    to={item.href}
+                    className={`relative flex flex-col items-center gap-1 px-3 py-3 rounded-xl transition-all ${
+                      active
+                        ? 'text-gold bg-gold/10'
+                        : 'text-offwhite/40 hover:text-offwhite/80 hover:bg-offwhite/5'
+                    }`}
+                  >
+                    <div className="w-6 h-6">{item.icon}</div>
+                    <span className="text-[10px] font-medium tracking-wide">{item.label.toUpperCase()}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+          <div className="p-3 border-t border-gold/10">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
+                <span className="text-gold text-xs font-heading">{initials || '?'}</span>
+              </div>
+              <div className="text-center">
+                <div className="text-offwhite/80 text-[10px] font-medium truncate w-full">{displayName}</div>
+              </div>
             </div>
           </div>
         </div>
