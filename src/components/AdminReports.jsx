@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
 import Navbar from './Navbar'
+import StaffNav from './StaffNav'
 
 const getDateRange = (period) => {
   const now = new Date()
@@ -324,7 +325,8 @@ export default function AdminReports() {
 return (
       <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
         <Navbar currentPage="admin" onNavigate={() => {}} />
-        <div className="w-full max-w-[1400px] mx-auto px-6 py-8">
+        <StaffNav />
+        <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8 lg:ml-20">
           <div className="mb-6 sm:mb-8">
             <h1 className="font-heading text-2xl sm:text-3xl text-gold">Reports & Insights</h1>
             <p className="text-offwhite/60 mt-1">Comprehensive business analytics</p>

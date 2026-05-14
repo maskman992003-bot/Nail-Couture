@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Navbar from './Navbar';
+import StaffNav from './StaffNav';
 
 const actionCards = [
   {
@@ -88,8 +89,9 @@ export default function Admin() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
       <Navbar currentPage="admin" onNavigate={handleNavigate} />
+      <StaffNav />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="lg:ml-20 max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
         <div className="mb-8 text-center">
           <h1 className="font-heading text-3xl text-gold mb-2">Admin Command Center</h1>
           <p className="text-offwhite/60">Select an action to manage the salon</p>

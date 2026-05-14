@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Navbar from './Navbar';
+import StaffNav from './StaffNav';
 
 const roleColors = {
   super_admin: 'bg-purple-100 text-purple-800 border-purple-300',
@@ -81,7 +82,8 @@ export default function StaffManagement() {
     return (
       <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
         <Navbar currentPage="admin" onNavigate={handleNavigate} />
-        <div className="flex items-center justify-center py-20">
+        <StaffNav />
+        <div className="flex items-center justify-center py-20 lg:ml-20">
           <div className="text-gold animate-pulse">Loading staff...</div>
         </div>
       </div>
@@ -91,8 +93,9 @@ export default function StaffManagement() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
       <Navbar currentPage="admin" onNavigate={handleNavigate} />
+      <StaffNav />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8 lg:ml-20">
         <div className="mb-8">
           <h1 className="font-heading text-3xl text-gold mb-2">Staff Management</h1>
           <p className="text-offwhite/60">Manage your team members and roles</p>

@@ -64,14 +64,6 @@ export default function Navbar({ currentPage, onNavigate }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {user?.is_staff && isAdminPage && (
-              <Link
-                to="/admin"
-                className="text-offwhite/60 hover:text-gold text-sm whitespace-nowrap"
-              >
-                Back to Admin
-              </Link>
-            )}
             <div
               className="cursor-pointer flex-shrink-0"
               onClick={handleLogoClick}

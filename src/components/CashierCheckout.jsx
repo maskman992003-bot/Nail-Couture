@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from './Navbar';
+import StaffNav from './StaffNav';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -211,20 +212,25 @@ export default function CashierCheckout() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-offwhite flex items-center justify-center">
-        <div className="text-gold animate-pulse">Loading...</div>
+      <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
+        <Navbar currentPage="checkout" onNavigate={handleNavigate} />
+        <StaffNav />
+        <div className="flex items-center justify-center py-20 lg:ml-20">
+          <div className="text-gold animate-pulse">Loading...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-offwhite w-full overflow-x-hidden">
+    <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
       <Navbar currentPage="checkout" onNavigate={handleNavigate} />
+      <StaffNav />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8 lg:ml-20">
         <div className="mb-8">
-          <h1 className="font-heading text-charcoal text-3xl mb-2">Checkout Station</h1>
-          <p className="text-charcoal/60">Complete payments for customers being served</p>
+          <h1 className="font-heading text-3xl text-gold mb-2">Checkout Station</h1>
+          <p className="text-offwhite/60">Complete payments for customers being served</p>
         </div>
 
         {notification && (
@@ -235,35 +241,35 @@ export default function CashierCheckout() {
         )}
 
         {servingAppointments.length === 0 ? (
-          <div className="bg-white border border-charcoal/10 rounded-xl p-12 text-center">
+          <div className="rounded-xl p-12 text-center" style={{ backgroundColor: '#1a1a1a' }}>
             <div className="text-6xl mb-4">&#9744;</div>
-            <h2 className="font-heading text-charcoal text-2xl mb-2">No Active Services</h2>
-            <p className="text-charcoal/60">Customers currently being served will appear here for checkout.</p>
+            <h2 className="font-heading text-2xl text-offwhite mb-2">No Active Services</h2>
+            <p className="text-offwhite/50">Customers currently being served will appear here for checkout.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {servingAppointments.map((appointment) => (
-              <div key={appointment.id} className="bg-white border border-charcoal/10 rounded-xl p-6">
+              <div key={appointment.id} className="rounded-xl p-6 border border-gold/20" style={{ backgroundColor: '#1a1a1a' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-heading text-charcoal text-xl">
+                  <h3 className="font-heading text-xl text-offwhite">
                     {appointment.customer?.full_name || 'Guest'}
                   </h3>
-                  <span className={`px-2 py-1 text-xs border ${statusColors[appointment.status]}`}>
+                  <span className={`px-2 py-1 text-xs border rounded ${statusColors[appointment.status]}`}>
                     {appointment.status === 'serving' ? 'In Chair' : appointment.status}
                   </span>
                 </div>
 
                 <div className="space-y-2 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-charcoal/60">Service</span>
-                    <span className="text-charcoal font-medium">{appointment.services?.name}</span>
+                    <span className="text-offwhite/50">Service</span>
+                    <span className="text-offwhite font-medium">{appointment.services?.name}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-charcoal/60">Started</span>
-                    <span className="text-charcoal/70">{formatTime(appointment.start_time)}</span>
+                    <span className="text-offwhite/50">Started</span>
+                    <span className="text-offwhite/70">{formatTime(appointment.start_time)}</span>
                   </div>
-                  <div className="flex justify-between text-lg pt-2 border-t border-charcoal/10">
-                    <span className="text-charcoal font-medium">Est. Total</span>
+                  <div className="flex justify-between text-lg pt-2 border-t border-offwhite/10">
+                    <span className="text-offwhite font-medium">Est. Total</span>
                     <span className="text-gold font-heading">${appointment.services?.price?.toFixed(2)}</span>
                   </div>
                 </div>

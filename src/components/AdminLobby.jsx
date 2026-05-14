@@ -6,6 +6,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '../services/services'
 import { useAuth } from '../contexts/AuthContext'
 import Navbar from './Navbar'
+import StaffNav from './StaffNav'
 
 const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, updating, onAccept, onComplete, wiggle }) => {
   const { isOver, setNodeRef } = useDroppable({ id: tech.id, disabled: isBusy || isPending })
@@ -544,7 +545,8 @@ return (
       <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
         <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
           <Navbar currentPage="admin" onNavigate={handleNavigate} />
-          <div className="w-full max-w-[1400px] mx-auto px-6 py-8">
+          <StaffNav />
+          <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8 lg:ml-20">
             <div className="mb-6">
               <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
               <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>

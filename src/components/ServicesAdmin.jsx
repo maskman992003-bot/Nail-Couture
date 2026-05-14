@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getServices, updateService } from '../services/services';
 import Navbar from './Navbar';
+import StaffNav from './StaffNav';
 
 export default function ServicesAdmin() {
   const navigate = useNavigate();
@@ -68,7 +69,8 @@ export default function ServicesAdmin() {
     return (
       <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
         <Navbar currentPage="admin" onNavigate={handleNavigate} />
-        <div className="flex items-center justify-center py-20">
+        <StaffNav />
+        <div className="flex items-center justify-center py-20 lg:ml-20">
           <div className="text-gold animate-pulse">Loading services...</div>
         </div>
       </div>
@@ -78,8 +80,9 @@ export default function ServicesAdmin() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
       <Navbar currentPage="admin" onNavigate={handleNavigate} />
+      <StaffNav />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8 lg:ml-20">
         <div className="mb-8">
           <h1 className="font-heading text-3xl text-gold mb-2">Service Editor</h1>
           <p className="text-offwhite/60">Manage services and pricing</p>
