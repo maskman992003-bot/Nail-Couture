@@ -325,108 +325,107 @@ export default function AdminReports() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
-return (
-      <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <StaffNav />
-        <div className="flex-1 overflow-x-hidden">
-          <Navbar currentPage="admin" onNavigate={() => {}} />
-          <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8">
-            <div className="mb-6 sm:mb-8">
-              <h1 className="font-heading text-2xl sm:text-3xl text-gold">Reports & Insights</h1>
-              <p className="text-offwhite/60 mt-1">Comprehensive business analytics</p>
+  return (
+    <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
+      <StaffNav />
+      <div className="flex-1 overflow-x-hidden">
+        <Navbar currentPage="admin" onNavigate={() => {}} />
+        <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="font-heading text-2xl sm:text-3xl text-gold">Reports & Insights</h1>
+            <p className="text-offwhite/60 mt-1">Comprehensive business analytics</p>
+          </div>
+
+          <div className="mb-8 sm:mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 border border-gold/30 rounded-xl overflow-hidden bg-charcoal/50">
+              <MetricColumn 
+                label={getDateRange('lastWeek').label} 
+                data={periodData.lastWeek}
+                isCurrent={false}
+                showRevenue={isAdmin}
+              />
+              <MetricColumn 
+                label={getDateRange('thisWeek').label} 
+                data={periodData.thisWeek}
+                isCurrent={true}
+                showRevenue={isAdmin}
+              />
+              <MetricColumn 
+                label={getDateRange('lastMonth').label} 
+                data={periodData.lastMonth}
+                isCurrent={false}
+                showRevenue={isAdmin}
+              />
+              <MetricColumn 
+                label={getDateRange('thisMonth').label} 
+                data={periodData.thisMonth}
+                isCurrent={true}
+                showRevenue={isAdmin}
+              />
             </div>
-
-        <div className="mb-8 sm:mb-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 border border-gold/30 rounded-xl overflow-hidden bg-charcoal/50">
-            <MetricColumn 
-              label={getDateRange('lastWeek').label} 
-              data={periodData.lastWeek}
-              isCurrent={false}
-              showRevenue={isAdmin}
-            />
-            <MetricColumn 
-              label={getDateRange('thisWeek').label} 
-              data={periodData.thisWeek}
-              isCurrent={true}
-              showRevenue={isAdmin}
-            />
-            <MetricColumn 
-              label={getDateRange('lastMonth').label} 
-              data={periodData.lastMonth}
-              isCurrent={false}
-              showRevenue={isAdmin}
-            />
-            <MetricColumn 
-              label={getDateRange('thisMonth').label} 
-              data={periodData.thisMonth}
-              isCurrent={true}
-              showRevenue={isAdmin}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-4 sm:p-8">
-            <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6 text-center">Week-over-Week Comparison</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={weekComparisonData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
-                <XAxis dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
-                <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 12 }}
-                  labelStyle={{ color: '#fff' }}
-                />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="lastWeek" name="Last Week" fill="#666" />
-                <Bar dataKey="thisWeek" name="This Week" fill="#C5A059" />
-              </BarChart>
-            </ResponsiveContainer>
           </div>
 
-          <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-4 sm:p-8">
-            <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6 text-center">Month-over-Month Comparison</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthComparisonData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
-                <XAxis dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
-                <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 12 }}
-                  labelStyle={{ color: '#fff' }}
-                />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="lastMonth" name="Last Month" fill="#666" />
-                <Bar dataKey="thisMonth" name="This Month" fill="#C5A059" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-4 sm:p-8">
-            <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6 text-center">Popular Services (This Month)</h3>
-            {thisMonthServiceData.length === 0 ? (
-              <div className="h-64 flex items-center justify-center text-offwhite/40">
-                No service data
-              </div>
-            ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-4 sm:p-8">
+              <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6 text-center">Week-over-Week Comparison</h3>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={thisMonthServiceData} layout="vertical" margin={{ top: 20, right: 10, left: 50, bottom: 5 }}>
-                  <XAxis type="number" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} />
-                  <YAxis type="category" dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} width={40} />
+                <BarChart data={weekComparisonData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
+                  <XAxis dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                  <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 12 }}
                     labelStyle={{ color: '#fff' }}
                   />
-                  <Bar dataKey="count" name="Bookings" fill="#C5A059" />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="lastWeek" name="Last Week" fill="#666" />
+                  <Bar dataKey="thisWeek" name="This Week" fill="#C5A059" />
                 </BarChart>
               </ResponsiveContainer>
-            )}
-</div>
+            </div>
+
+            <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-4 sm:p-8">
+              <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6 text-center">Month-over-Month Comparison</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthComparisonData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
+                  <XAxis dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                  <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 12 }}
+                    labelStyle={{ color: '#fff' }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="lastMonth" name="Last Month" fill="#666" />
+                  <Bar dataKey="thisMonth" name="This Month" fill="#C5A059" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-4 sm:p-8">
+              <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6 text-center">Popular Services (This Month)</h3>
+              {thisMonthServiceData.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-offwhite/40">
+                  No service data
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={thisMonthServiceData} layout="vertical" margin={{ top: 20, right: 10, left: 50, bottom: 5 }}>
+                    <XAxis type="number" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} />
+                    <YAxis type="category" dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} width={40} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 12 }}
+                      labelStyle={{ color: '#fff' }}
+                    />
+                    <Bar dataKey="count" name="Bookings" fill="#C5A059" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
