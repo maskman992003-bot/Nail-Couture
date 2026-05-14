@@ -127,10 +127,10 @@ export default function StaffProfile() {
 if (loading) {
     return (
       <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <Navbar currentPage="admin" onNavigate={handleNavigate} />
         <StaffNav />
-        <div className="flex-1 lg:ml-20 overflow-x-hidden">
-          <div className="flex items-center justify-center py-20">
+        <div className="flex-1 overflow-x-hidden">
+          <Navbar currentPage="admin" onNavigate={handleNavigate} />
+          <div className="flex items-center justify-center py-20 px-6">
             <div className="text-gold animate-pulse">Loading...</div>
           </div>
         </div>
@@ -138,13 +138,13 @@ if (loading) {
     );
   }
 
-  const initials = profile?.full_name?.split(' ').map((n) => n[0]).join('').toUpperCase() || '??';
+  const initials = (profile?.full_name || profile?.email || '??').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-      <Navbar currentPage="admin" onNavigate={handleNavigate} />
       <StaffNav />
-      <div className="flex-1 lg:ml-20 overflow-x-hidden">
+      <div className="flex-1 overflow-x-hidden">
+        <Navbar currentPage="admin" onNavigate={handleNavigate} />
         <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
           <div className="mb-8">
           <div className="flex flex-col lg:flex-row gap-8 items-start">

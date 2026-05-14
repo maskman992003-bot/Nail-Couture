@@ -535,25 +535,31 @@ export default function AdminLobby() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-charcoal flex items-center justify-center">
-        <div className="text-gold animate-pulse">Loading...</div>
+      <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
+        <StaffNav />
+        <div className="flex-1 overflow-x-hidden">
+          <Navbar currentPage="admin" onNavigate={handleNavigate} />
+          <div className="flex items-center justify-center py-20 px-6">
+            <div className="text-gold animate-pulse">Loading...</div>
+          </div>
+        </div>
       </div>
-    )
+    );
   }
 
 return (
       <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
         <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-          <Navbar currentPage="admin" onNavigate={handleNavigate} />
           <StaffNav />
-          <div className="flex-1 lg:ml-20">
-          <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8">
-            <div className="mb-6">
-              <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
-              <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>
-            </div>
+          <div className="flex-1 overflow-x-hidden">
+            <Navbar currentPage="admin" onNavigate={handleNavigate} />
+            <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8">
+              <div className="mb-6">
+                <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
+                <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>
+              </div>
 
-          {notification && (
+            {notification && (
             <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gold text-charcoal px-4 sm:px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw]">
               <p className="font-heading text-base sm:text-lg">{notification.message}</p>
               <p className="text-sm opacity-80">{notification.name}</p>
@@ -707,7 +713,7 @@ return (
             </div>
           </div>
         </div>
-      )}
-    </DndContext>
-  )
-}
+        </div>
+        </DndContext>
+      );
+    }

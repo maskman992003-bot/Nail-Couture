@@ -60,7 +60,7 @@ export default function Navbar({ currentPage, onNavigate }) {
   const firstName = user?.full_name ? user.full_name.split(' ')[0] : '';
 
   return (
-    <nav className="sticky top-0 z-50 bg-charcoal border-b border-gold/30 lg:ml-20">
+    <nav className="sticky top-0 z-50 bg-charcoal border-b border-gold/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
