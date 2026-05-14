@@ -90,92 +90,93 @@ export default function ServicesAdmin() {
             <p className="text-offwhite/60">Manage services and pricing</p>
           </div>
 
-        {editingId ? (
-          <div className="rounded-xl p-6" style={{ backgroundColor: '#1a1a1a' }}>
-            <h2 className="font-heading text-xl text-gold mb-4">Edit Service</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-offwhite/60 text-xs block mb-1">Service Name</label>
-                <input
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="text-offwhite/60 text-xs block mb-1">Price ($)</label>
-                <input
-                  type="number"
-                  value={editForm.price}
-                  onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
-                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="text-offwhite/60 text-xs block mb-1">Duration (minutes)</label>
-                <input
-                  type="number"
-                  value={editForm.duration_minutes}
-                  onChange={(e) => setEditForm({ ...editForm, duration_minutes: e.target.value })}
-                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="text-offwhite/60 text-xs block mb-1">Description</label>
-                <input
-                  type="text"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
-                />
-              </div>
-              <div className="md:col-span-2 flex gap-3">
-                <button
-                  onClick={() => saveEdit(editingId)}
-                  disabled={saving}
-                  className="flex-1 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-                <button
-                  onClick={cancelEdit}
-                  className="px-6 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg"
-                >
-                  Cancel
-                </button>
+          {editingId ? (
+            <div className="rounded-xl p-6" style={{ backgroundColor: '#1a1a1a' }}>
+              <h2 className="font-heading text-xl text-gold mb-4">Edit Service</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-offwhite/60 text-xs block mb-1">Service Name</label>
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="text-offwhite/60 text-xs block mb-1">Price ($)</label>
+                  <input
+                    type="number"
+                    value={editForm.price}
+                    onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                    className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="text-offwhite/60 text-xs block mb-1">Duration (minutes)</label>
+                  <input
+                    type="number"
+                    value={editForm.duration_minutes}
+                    onChange={(e) => setEditForm({ ...editForm, duration_minutes: e.target.value })}
+                    className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="text-offwhite/60 text-xs block mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
+                  />
+                </div>
+                <div className="md:col-span-2 flex gap-3">
+                  <button
+                    onClick={() => saveEdit(editingId)}
+                    disabled={saving}
+                    className="flex-1 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    className="px-6 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {services.map((service) => {
-              return (
-                <div
-                  key={service.id}
-                  className="rounded-xl p-5 border border-gold/20 hover:border-gold/40 transition-all"
-                  style={{ backgroundColor: '#1a1a1a' }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-heading text-lg text-gold">{service.name}</h3>
-                    <span className="font-heading text-xl text-offwhite">${service.price?.toFixed(0)}</span>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {services.map((service) => {
+                return (
+                  <div
+                    key={service.id}
+                    className="rounded-xl p-5 border border-gold/20 hover:border-gold/40 transition-all"
+                    style={{ backgroundColor: '#1a1a1a' }}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-heading text-lg text-gold">{service.name}</h3>
+                      <span className="font-heading text-xl text-offwhite">${service.price?.toFixed(0)}</span>
+                    </div>
+                    <p className="text-offwhite/50 text-xs mb-3">{service.description || 'No description'}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-offwhite/40 text-sm">{service.duration_minutes} min</span>
+                      <button
+                        onClick={() => startEdit(service)}
+                        className="px-4 py-2 border border-gold/50 text-gold/80 hover:bg-gold hover:text-charcoal rounded-lg text-sm"
+                      >
+                        Edit
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-offwhite/50 text-xs mb-3">{service.description || 'No description'}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-offwhite/40 text-sm">{service.duration_minutes} min</span>
-                    <button
-                      onClick={() => startEdit(service)}
-                      className="px-4 py-2 border border-gold/50 text-gold/80 hover:bg-gold hover:text-charcoal rounded-lg text-sm"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

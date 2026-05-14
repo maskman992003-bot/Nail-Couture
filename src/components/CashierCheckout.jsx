@@ -230,70 +230,72 @@ export default function CashierCheckout() {
       <div className="flex-1 overflow-x-hidden">
         <Navbar currentPage="checkout" onNavigate={handleNavigate} />
         <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
-        <div className="mb-8">
-          <h1 className="font-heading text-3xl text-gold mb-2">Checkout Station</h1>
-          <p className="text-offwhite/60">Complete payments for customers being served</p>
-        </div>
-
-        {notification && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-500 text-white px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw] text-center">
-            <p className="font-heading text-lg">{notification.message}</p>
-            <p className="text-sm opacity-90">{notification.name} - ${notification.amount?.toFixed(2)}</p>
+          <div className="mb-8">
+            <h1 className="font-heading text-3xl text-gold mb-2">Checkout Station</h1>
+            <p className="text-offwhite/60">Complete payments for customers being served</p>
           </div>
-        )}
 
-        {servingAppointments.length === 0 ? (
-          <div className="rounded-xl p-12 text-center" style={{ backgroundColor: '#1a1a1a' }}>
-            <div className="text-6xl mb-4">&#9744;</div>
-            <h2 className="font-heading text-2xl text-offwhite mb-2">No Active Services</h2>
-            <p className="text-offwhite/50">Customers currently being served will appear here for checkout.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {servingAppointments.map((appointment) => (
-              <div key={appointment.id} className="rounded-xl p-6 border border-gold/20" style={{ backgroundColor: '#1a1a1a' }}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-heading text-xl text-offwhite">
-                    {appointment.customer?.full_name || 'Guest'}
-                  </h3>
-                  <span className={`px-2 py-1 text-xs border rounded ${statusColors[appointment.status]}`}>
-                    {appointment.status === 'serving' ? 'In Chair' : appointment.status}
-                  </span>
+          {notification && (
+            <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-500 text-white px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw] text-center">
+              <p className="font-heading text-lg">{notification.message}</p>
+              <p className="text-sm opacity-90">{notification.name} - ${notification.amount?.toFixed(2)}</p>
+            </div>
+          )}
+
+          {servingAppointments.length === 0 ? (
+            <div className="rounded-xl p-12 text-center" style={{ backgroundColor: '#1a1a1a' }}>
+              <div className="text-6xl mb-4">&#9744;</div>
+              <h2 className="font-heading text-2xl text-offwhite mb-2">No Active Services</h2>
+              <p className="text-offwhite/50">Customers currently being served will appear here for checkout.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {servingAppointments.map((appointment) => (
+                <div key={appointment.id} className="rounded-xl p-6 border border-gold/20" style={{ backgroundColor: '#1a1a1a' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-heading text-xl text-offwhite">
+                      {appointment.customer?.full_name || 'Guest'}
+                    </h3>
+                    <span className={`px-2 py-1 text-xs border rounded ${statusColors[appointment.status]}`}>
+                      {appointment.status === 'serving' ? 'In Chair' : appointment.status}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 mb-6">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-offwhite/50">Service</span>
+                      <span className="text-offwhite font-medium">{appointment.services?.name}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-offwhite/50">Started</span>
+                      <span className="text-offwhite/70">{formatTime(appointment.start_time)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg pt-2 border-t border-offwhite/10">
+                      <span className="text-offwhite font-medium">Est. Total</span>
+                      <span className="text-gold font-heading">${appointment.services?.price?.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setCheckingOut(appointment)}
+                    className="w-full py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg transition-colors"
+                  >
+                    Settle Payment
+                  </button>
                 </div>
+              ))}
+            </div>
+          )}
 
-                <div className="space-y-2 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-offwhite/50">Service</span>
-                    <span className="text-offwhite font-medium">{appointment.services?.name}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-offwhite/50">Started</span>
-                    <span className="text-offwhite/70">{formatTime(appointment.start_time)}</span>
-                  </div>
-                  <div className="flex justify-between text-lg pt-2 border-t border-offwhite/10">
-                    <span className="text-offwhite font-medium">Est. Total</span>
-                    <span className="text-gold font-heading">${appointment.services?.price?.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setCheckingOut(appointment)}
-                  className="w-full py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg transition-colors"
-                >
-                  Settle Payment
-                </button>
-              </div>
-            ))}
-          </div>
+          {checkingOut && (
+            <CheckoutModal
+              appointment={checkingOut}
+              onConfirm={handleCheckout}
+              onClose={() => setCheckingOut(null)}
+            />
+          )}
         </div>
-
-        {checkingOut && (
-        <CheckoutModal
-          appointment={checkingOut}
-          onConfirm={handleCheckout}
-          onClose={() => setCheckingOut(null)}
-        />
-      )}
+      </div>
     </div>
   );
 }
