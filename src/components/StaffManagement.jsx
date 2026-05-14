@@ -37,32 +37,20 @@ export default function StaffManagement() {
   }, []);
 
   const fetchStaff = async () => {
-    console.log('Fetching staff from staff_profiles view...');
+    console.log('Fetching staff from profiles table...');
 
     let { data, error } = await supabase
-      .from('staff_profiles')
-      .select('*')
-      .order('full_name');
+      .from('profiles')
+      .select('id, email, role, is_staff, full_name, phone_number, nail_goal')
+      .in('role', ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'])
+      .order('full_name', { ascending: true });
 
     if (error) {
-      console.error('staff_profiles view error:', error.code, error.message);
-      console.log('Falling back to profiles table with role filter...');
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('role', ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'])
-        .order('full_name');
-
-      if (profileError) {
-        console.error('profiles table fallback error:', profileError.code, profileError.message);
-      } else {
-        console.log('Fetched from profiles table:', profileData?.length, 'staff members');
-        data = profileData;
-        error = null;
-      }
+      console.error('Error fetching staff:', error.code, error.message);
+      console.error('Full error object:', error);
     } else {
-      console.log('Fetched from staff_profiles view:', data?.length, 'staff members');
+      console.log('Fetched from profiles table:', data?.length, 'staff members');
+      console.log('Staff data:', data);
     }
 
     setStaff(data || []);
@@ -74,30 +62,32 @@ export default function StaffManagement() {
     const displayName = member.full_name || member.email || '';
     return (
       displayName.toLowerCase().includes(search) ||
-      member.email?.toLowerCase().includes(search) ||
-      member.phone_number?.includes(search)
+      (member.email?.toLowerCase().includes(search) ?? false) ||
+      (member.phone_number?.includes(search) ?? false)
     );
   });
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
         <Navbar currentPage="admin" onNavigate={handleNavigate} />
         <StaffNav />
-        <div className="flex items-center justify-center py-20 lg:ml-20">
-          <div className="text-gold animate-pulse">Loading staff...</div>
+        <div className="flex-1 lg:ml-20 overflow-x-hidden">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-gold animate-pulse">Loading staff...</div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
       <Navbar currentPage="admin" onNavigate={handleNavigate} />
       <StaffNav />
-
-      <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8 lg:ml-20">
-        <div className="mb-8">
+      <div className="flex-1 lg:ml-20 overflow-x-hidden">
+        <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
+          <div className="mb-8">
           <h1 className="font-heading text-3xl text-gold mb-2">Staff Management</h1>
           <p className="text-offwhite/60">Manage your team members and roles</p>
         </div>
@@ -161,8 +151,8 @@ export default function StaffManagement() {
                           </div>
                           <div>
                             <div className="text-offwhite font-medium">{member.full_name || member.email || 'Unknown'}</div>
-                            {member.nail_goal && (
-                              <div className="text-xs text-offwhite/40">{member.nail_goal}</div>
+                            {member.email && member.full_name && (
+                              <div className="text-xs text-offwhite/40">{member.email}</div>
                             )}
                           </div>
                         </div>
@@ -189,6 +179,7 @@ export default function StaffManagement() {
             </table>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

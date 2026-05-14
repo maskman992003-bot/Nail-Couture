@@ -36,11 +36,11 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
       <Navbar currentPage="admin" onNavigate={handleNavigate} />
       <StaffNav />
-
-      <div className="max-w-2xl mx-auto px-6 py-8 pb-24 lg:pb-8 lg:ml-20">
+      <div className="flex-1 lg:ml-20 overflow-x-hidden">
+      <div className="max-w-2xl mx-auto px-6 py-8 pb-24 lg:pb-8">
         <div className="mb-8">
           <h1 className="font-heading text-3xl text-gold mb-2">Account Settings</h1>
           <p className="text-offwhite/60">View your account information</p>

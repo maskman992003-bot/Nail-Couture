@@ -543,10 +543,11 @@ export default function AdminLobby() {
 
 return (
       <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
-        <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
+        <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
           <Navbar currentPage="admin" onNavigate={handleNavigate} />
           <StaffNav />
-          <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8 lg:ml-20">
+          <div className="flex-1 lg:ml-20">
+          <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8">
             <div className="mb-6">
               <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
               <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>

@@ -124,13 +124,15 @@ export default function StaffProfile() {
     setUpdatingRole(false);
   };
 
-  if (loading) {
+if (loading) {
     return (
-      <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
         <Navbar currentPage="admin" onNavigate={handleNavigate} />
         <StaffNav />
-        <div className="flex items-center justify-center py-20 lg:ml-20">
-          <div className="text-gold animate-pulse">Loading profile...</div>
+        <div className="flex-1 lg:ml-20 overflow-x-hidden">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-gold animate-pulse">Loading...</div>
+          </div>
         </div>
       </div>
     );
@@ -139,12 +141,12 @@ export default function StaffProfile() {
   const initials = profile?.full_name?.split(' ').map((n) => n[0]).join('').toUpperCase() || '??';
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
       <Navbar currentPage="admin" onNavigate={handleNavigate} />
       <StaffNav />
-
-      <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8 lg:ml-20">
-        <div className="mb-8">
+      <div className="flex-1 lg:ml-20 overflow-x-hidden">
+        <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
+          <div className="mb-8">
           <div className="flex flex-col lg:flex-row gap-8 items-start">
             <div className="rounded-xl p-8 text-center border border-offwhite/10 lg:w-64" style={{ backgroundColor: '#1a1a1a' }}>
               <div className="w-24 h-24 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
