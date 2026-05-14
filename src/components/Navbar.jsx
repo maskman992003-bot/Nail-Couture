@@ -77,38 +77,6 @@ export default function Navbar({ currentPage, onNavigate }) {
           </div>
 
           <div className="hidden md:flex items-center gap-6">
-              {user && user.is_staff ? (
-                <>
-                  <button
-                    onClick={() => navigate('/admin/lobby')}
-                    className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
-                  >
-                    LOBBY
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => scrollToSection('services')}
-                    className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
-                  >
-                    SERVICES
-                  </button>
-                  <button
-                    onClick={() => scrollToSection('gallery')}
-                    className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
-                  >
-                    LOOKBOOK
-                  </button>
-                  <button
-                    onClick={() => onNavigate('about')}
-                    className="text-offwhite/80 hover:text-gold transition-colors text-sm tracking-wider"
-                  >
-                    ABOUT
-                  </button>
-                </>
-              )}
-
               <div className="flex items-center gap-4">
                 {user ? (
                   <>
@@ -215,18 +183,6 @@ export default function Navbar({ currentPage, onNavigate }) {
                     className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
                   >
                     ADMIN DASHBOARD
-                  </button>
-                  <button
-                    onClick={() => { setMobileMenuOpen(false); navigate('/admin/lobby'); }}
-                    className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider"
-                  >
-                    LOBBY
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="py-3 text-red-400 hover:text-red-300 text-left px-2 text-sm tracking-wider border-t border-gold/10 mt-2 pt-2"
-                  >
-                    LOGOUT
                   </button>
                 </>
               ) : (

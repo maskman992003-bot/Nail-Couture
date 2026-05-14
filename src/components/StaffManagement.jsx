@@ -119,7 +119,8 @@ export default function StaffManagement() {
             </div>
           ) : (
             <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
-              <table className="w-full">
+              <div className="w-full overflow-x-auto">
+              <table className="w-full min-w-[600px]">
                 <thead className="bg-charcoal text-offwhite">
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-medium">Name</th>
@@ -171,6 +172,7 @@ export default function StaffManagement() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>
