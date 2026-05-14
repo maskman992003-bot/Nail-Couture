@@ -285,11 +285,9 @@ export default function CashierCheckout() {
               </div>
             ))}
           </div>
-        )}
-      </div>
-      </div>
+        </div>
 
-      {checkingOut && (
+        {checkingOut && (
         <CheckoutModal
           appointment={checkingOut}
           onConfirm={handleCheckout}
