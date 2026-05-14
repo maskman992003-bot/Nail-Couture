@@ -5,7 +5,7 @@ export function ProtectedRoute({ allowedRoles, children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (!user && loading) {
     return (
       <div className="min-h-screen bg-offwhite flex items-center justify-center">
         <div className="text-gold animate-pulse">Loading...</div>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import Navbar from './Navbar';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -172,6 +173,10 @@ export default function CashierCheckout() {
   };
 
   const firstName = user?.full_name?.split(' ')[0] || 'Cashier';
+  const navigate = useNavigate();
+  const handleNavigate = (page) => {
+    if (page === 'home') navigate('/');
+  };
 
   if (loading) {
     return (
@@ -182,19 +187,8 @@ export default function CashierCheckout() {
   }
 
   return (
-    <div className="min-h-screen bg-offwhite">
-      <nav className="bg-charcoal border-b border-gold/30 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link to="/"><img src="/NC.jpg" alt="Nail Couture" className="h-16 w-auto" /></Link>
-            <span className="text-gold/60 text-sm">Cashier Checkout</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-gold font-heading text-sm">Hi, {firstName}</span>
-            <button onClick={logout} className="text-offwhite/60 hover:text-offwhite text-sm">Logout</button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-offwhite w-full overflow-x-hidden">
+      <Navbar currentPage="checkout" onNavigate={handleNavigate} />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">

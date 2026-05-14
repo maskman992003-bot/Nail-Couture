@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
+import Navbar from './Navbar';
 
 const actionCards = [
   {
@@ -37,30 +37,14 @@ const actionCards = [
 ];
 
 export default function Admin() {
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const handleNavigate = (page) => {
+    if (page === 'home') navigate('/');
+  };
 
   return (
-    <div className="min-h-screen bg-offwhite">
-      <nav className="bg-charcoal border-b border-gold/30 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link to="/"><img src="/NC.jpg" alt="Nail Couture" className="h-16 w-auto" /></Link>
-            <span className="text-gold/60 text-sm">Admin Command Center</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-gold font-heading text-sm">
-              {user?.role?.replace('_', ' ').toUpperCase()}
-            </span>
-            <Link 
-              to="/admin/lobby" 
-              className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-colors text-sm"
-            >
-              Couture Lobby
-            </Link>
-            <button onClick={logout} className="text-offwhite/60 hover:text-offwhite text-sm">Logout</button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-offwhite w-full overflow-x-hidden">
+      <Navbar currentPage="admin" onNavigate={handleNavigate} />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8 text-center">
