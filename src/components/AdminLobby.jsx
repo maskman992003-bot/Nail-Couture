@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { DndContext, DragOverlay, useDraggable, useDroppable, pointerWithin, rectIntersection } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '../services/services'
+import { useAuth } from '../contexts/AuthContext'
 
 const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, updating, onAccept, onComplete, wiggle }) => {
   const { isOver, setNodeRef } = useDroppable({ id: tech.id, disabled: isBusy || isPending })
@@ -302,6 +303,8 @@ export default function AdminLobby() {
   const [cancelConfirm, setCancelConfirm] = useState(null)
   const [cancelReason, setCancelReason] = useState('')
   const [wiggleTechId, setWiggleTechId] = useState(null)
+  const { user } = useAuth()
+  const isStaff = user?.is_staff || false
 
   const busyTechnicians = servingAppointments
     .filter(a => a.status === 'serving' && a.technician_id)

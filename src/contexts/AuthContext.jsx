@@ -37,7 +37,9 @@ export function AuthProvider({ children }) {
       email: profile.email || '',
       nail_goal: profile.nail_goal || '',
       refreshment_pref: profile.refreshment_pref || '',
-      phone_number: profile.phone_number || ''
+      phone_number: profile.phone_number || '',
+      role: profile.role || 'customer',
+      is_staff: ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(profile.role)
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
     setUser(userData);

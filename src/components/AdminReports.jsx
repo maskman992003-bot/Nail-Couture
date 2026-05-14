@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
+import { useAuth } from '../contexts/AuthContext'
 
 const getDateRange = (period) => {
   const now = new Date()
@@ -49,6 +50,8 @@ const getAppointmentsData = async (startDate, endDate) => {
     .from('appointments')
     .select(`
       profile_id,
+      final_price,
+      status,
       services (
         id,
         name,
@@ -98,9 +101,10 @@ const analyzePeriod = async (period) => {
   for (const appt of appointments) {
     if (appt.services) {
       serviceCounts[appt.services.name] = (serviceCounts[appt.services.name] || 0) + 1
-      totalRevenue += appt.services.price
+      const price = appt.final_price || appt.services.price
+      totalRevenue += price
       totalDuration += appt.services.duration_minutes || 0
-      completedCount++
+      if (appt.status === 'completed') completedCount++
     }
   }
   
@@ -148,7 +152,7 @@ const exportMonthlyData = async () => {
         Email: profile.email || '',
         Phone: profile.phone_number || '',
         'Total Visits': profileAppointments.length,
-        'Total Spent': `$${profileAppointments.reduce((sum, a) => sum + (a.services?.price || 0), 0)}`
+        'Total Spent': `$${profileAppointments.reduce((sum, a) => sum + (a.final_price || a.services?.price || 0), 0)}`
       })
     }
   }
@@ -209,7 +213,7 @@ const DonutChart = ({ data, size = 180 }) => {
   )
 }
 
-const MetricColumn = ({ label, data, isCurrent }) => {
+const MetricColumn = ({ label, data, isCurrent, showRevenue }) => {
   const opacity = isCurrent ? 1 : 0.6
   
   return (
@@ -231,10 +235,12 @@ const MetricColumn = ({ label, data, isCurrent }) => {
         <div className="font-heading text-3xl text-offwhite">{data.total}</div>
       </div>
       
-      <div className="py-4 border-b border-gold/10">
-        <div className="text-offwhite/40 text-sm mb-2">Revenue Estimate</div>
-        <div className="font-heading text-2xl text-gold">${data.revenue?.toLocaleString() || 0}</div>
-      </div>
+      {showRevenue && (
+        <div className="py-4 border-b border-gold/10">
+          <div className="text-offwhite/40 text-sm mb-2">Revenue Estimate</div>
+          <div className="font-heading text-2xl text-gold">${data.revenue?.toLocaleString() || 0}</div>
+        </div>
+      )}
       
       <div className="py-4 min-h-[80px]">
         <div className="text-offwhite/40 text-sm mb-2">Avg Service Time</div>
@@ -254,6 +260,8 @@ const MetricColumn = ({ label, data, isCurrent }) => {
 }
 
 export default function AdminReports() {
+  const { user } = useAuth()
+  const isAdmin = ['super_admin', 'owner', 'partner'].includes(user?.role)
   const [loading, setLoading] = useState(true)
   const [periodData, setPeriodData] = useState({
     lastWeek: { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0 },
@@ -322,13 +330,15 @@ export default function AdminReports() {
             <p className="text-offwhite/60 mt-1">Comprehensive business analytics</p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
-            <button
-              onClick={handleExport}
-              disabled={exporting}
-              className="px-4 sm:px-6 py-2 bg-gold text-charcoal font-heading hover:bg-gold/90 transition-all disabled:opacity-50 text-sm"
-            >
-              {exporting ? 'Exporting...' : 'Export Monthly Data (CSV)'}
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="px-4 sm:px-6 py-2 bg-gold text-charcoal font-heading hover:bg-gold/90 transition-all disabled:opacity-50 text-sm"
+              >
+                {exporting ? 'Exporting...' : 'Export Monthly Data (CSV)'}
+              </button>
+            )}
             <Link
               to="/admin/lobby"
               className="px-4 sm:px-6 py-2 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm"
@@ -344,21 +354,25 @@ export default function AdminReports() {
               label={getDateRange('lastWeek').label} 
               data={periodData.lastWeek}
               isCurrent={false}
+              showRevenue={isAdmin}
             />
             <MetricColumn 
               label={getDateRange('thisWeek').label} 
               data={periodData.thisWeek}
               isCurrent={true}
+              showRevenue={isAdmin}
             />
             <MetricColumn 
               label={getDateRange('lastMonth').label} 
               data={periodData.lastMonth}
               isCurrent={false}
+              showRevenue={isAdmin}
             />
             <MetricColumn 
               label={getDateRange('thisMonth').label} 
               data={periodData.thisMonth}
               isCurrent={true}
+              showRevenue={isAdmin}
             />
           </div>
         </div>

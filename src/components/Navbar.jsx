@@ -99,6 +99,14 @@ export default function Navbar({ currentPage, onNavigate }) {
                   <span className="text-gold font-heading text-sm">
                     Hi, {firstName}
                   </span>
+                  {user.is_staff && (
+                    <Link 
+                      to="/admin"
+                      className="px-4 py-2 border border-gold/50 text-gold/80 hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                    >
+                      Couture Lobby
+                    </Link>
+                  )}
                   <Link 
                     to="/portal"
                     className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium"
