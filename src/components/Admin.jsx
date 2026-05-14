@@ -64,7 +64,7 @@ export default function Admin() {
       .select('final_price')
       .eq('status', 'completed')
       .gte('completed_at', today.toISOString());
-    
+
     const todayRevenue = revenueData?.reduce((sum, a) => sum + (a.final_price || 0), 0) || 0;
 
     const { count: techCount } = await supabase
@@ -86,67 +86,67 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-offwhite w-full overflow-x-hidden">
+    <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
       <Navbar currentPage="admin" onNavigate={handleNavigate} />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8 text-center">
-          <h1 className="font-heading text-charcoal text-3xl mb-2">Admin Command Center</h1>
-          <p className="text-charcoal/60">Select an action to manage the salon</p>
+          <h1 className="font-heading text-3xl text-gold mb-2">Admin Command Center</h1>
+          <p className="text-offwhite/60">Select an action to manage the salon</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white border border-gold/30 rounded-xl p-6 text-center">
-            <div className="text-gold/60 text-sm mb-1">Today's Revenue</div>
+          <div className="rounded-xl p-6 text-center border border-gold/20" style={{ backgroundColor: '#1a1a1a' }}>
+            <div className="text-offwhite/50 text-sm mb-1">Today&apos;s Revenue</div>
             <div className="font-heading text-3xl text-gold">
               {loading ? '...' : `$${quickStats.todayRevenue.toFixed(0)}`}
             </div>
           </div>
-          <div className="bg-white border border-charcoal/10 rounded-xl p-6 text-center">
-            <div className="text-charcoal/60 text-sm mb-1">Active Technicians</div>
-            <div className="font-heading text-3xl text-charcoal">
+          <div className="rounded-xl p-6 text-center border border-offwhite/10" style={{ backgroundColor: '#1a1a1a' }}>
+            <div className="text-offwhite/50 text-sm mb-1">Active Technicians</div>
+            <div className="font-heading text-3xl text-offwhite">
               {loading ? '...' : quickStats.activeTechnicians}
             </div>
           </div>
-          <div className="bg-white border border-charcoal/10 rounded-xl p-6 text-center">
-            <div className="text-charcoal/60 text-sm mb-1">Customers in Lobby</div>
-            <div className="font-heading text-3xl text-charcoal">
+          <div className="rounded-xl p-6 text-center border border-offwhite/10" style={{ backgroundColor: '#1a1a1a' }}>
+            <div className="text-offwhite/50 text-sm mb-1">Customers in Lobby</div>
+            <div className="font-heading text-3xl text-offwhite">
               {loading ? '...' : quickStats.lobbyCount}
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {actionCards.map((card) => (
-            <Link
-              key={card.id}
-              to={card.href}
-              className={`group relative bg-white border-2 ${
-                card.color === 'gold' 
-                  ? 'border-gold hover:shadow-lg hover:shadow-gold/20' 
-                  : 'border-charcoal/20 hover:border-charcoal/40'
-              } rounded-xl p-8 text-center transition-all duration-300 hover:-translate-y-1`}
-            >
-              <div className={`text-5xl mb-4 ${
-                card.color === 'gold' ? 'text-gold' : 'text-charcoal/40'
-              } group-hover:scale-110 transition-transform`}>
-                {card.icon}
-              </div>
-              <h3 className="font-heading text-charcoal text-xl mb-2">{card.label}</h3>
-              <p className="text-charcoal/50 text-sm">{card.description}</p>
-              <div className={`absolute bottom-0 left-0 right-0 h-1 ${
-                card.color === 'gold' ? 'bg-gold' : 'bg-charcoal/20'
-              } rounded-b-xl opacity-0 group-hover:opacity-100 transition-opacity`} />
-            </Link>
-          ))}
+          {actionCards.map((card) => {
+            return (
+              <Link
+                key={card.id}
+                to={card.href}
+                className={`group relative border-2 rounded-xl p-8 text-center transition-all duration-300 hover:-translate-y-1 ${
+                  card.color === 'gold'
+                    ? 'border-gold hover:shadow-lg hover:shadow-gold/20'
+                    : 'border-offwhite/10 hover:border-offwhite/30'
+                }`}
+                style={{ backgroundColor: '#1a1a1a' }}
+              >
+                <div className={`text-5xl mb-4 ${
+                  card.color === 'gold' ? 'text-gold' : 'text-offwhite/30'
+                } group-hover:scale-110 transition-transform`}>
+                  {card.icon}
+                </div>
+                <h3 className="font-heading text-xl text-offwhite mb-2">{card.label}</h3>
+                <p className="text-offwhite/40 text-sm">{card.description}</p>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="mt-12 text-center">
-          <Link 
-            to="/" 
-            className="text-charcoal/60 hover:text-charcoal text-sm transition-colors"
+          <Link
+            to="/"
+            className="text-offwhite/40 hover:text-offwhite/60 text-sm transition-colors"
           >
-            ← Back to Site
+            Back to Site
           </Link>
         </div>
       </div>

@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Link } from 'react-router-dom'
 import { DndContext, DragOverlay, useDraggable, useDroppable, pointerWithin, rectIntersection } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '../services/services'
 import { useAuth } from '../contexts/AuthContext'
+import Navbar from './Navbar'
 
 const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, updating, onAccept, onComplete, wiggle }) => {
   const { isOver, setNodeRef } = useDroppable({ id: tech.id, disabled: isBusy || isPending })
@@ -305,6 +306,11 @@ export default function AdminLobby() {
   const [wiggleTechId, setWiggleTechId] = useState(null)
   const { user } = useAuth()
   const isStaff = user?.is_staff || false
+  const navigate = useNavigate()
+
+  const handleNavigate = (page) => {
+    if (page === 'home') navigate('/')
+  }
 
   const busyTechnicians = servingAppointments
     .filter(a => a.status === 'serving' && a.technician_id)
@@ -534,20 +540,15 @@ export default function AdminLobby() {
     )
   }
 
-  return (
-    <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
-      <div className="min-h-screen bg-charcoal p-4 sm:p-6 md:p-8 w-full overflow-x-hidden">
-        <div className="w-full max-w-[1400px] mx-auto">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-            <div>
+return (
+      <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
+        <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
+          <Navbar currentPage="admin" onNavigate={handleNavigate} />
+          <div className="w-full max-w-[1400px] mx-auto px-6 py-8">
+            <div className="mb-6">
               <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
               <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>
             </div>
-            <div className="flex flex-wrap items-center gap-4">
-              <Link to="/admin/reports" className="px-4 py-2 border border-gold/50 text-gold/70 hover:bg-gold hover:text-charcoal text-sm">View Reports</Link>
-              <Link to="/admin" className="px-4 sm:px-6 py-2 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal text-sm">Reception Home</Link>
-            </div>
-          </div>
 
           {notification && (
             <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gold text-charcoal px-4 sm:px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw]">

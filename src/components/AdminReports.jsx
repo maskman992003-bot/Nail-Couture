@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
+import Navbar from './Navbar'
 
 const getDateRange = (period) => {
   const now = new Date()
@@ -321,32 +321,14 @@ export default function AdminReports() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-charcoal p-4 sm:p-6 md:p-8 w-full overflow-x-hidden">
-      <div className="w-full max-w-[1400px] mx-auto">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
-          <div>
+return (
+      <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
+        <Navbar currentPage="admin" onNavigate={() => {}} />
+        <div className="w-full max-w-[1400px] mx-auto px-6 py-8">
+          <div className="mb-6 sm:mb-8">
             <h1 className="font-heading text-2xl sm:text-3xl text-gold">Reports & Insights</h1>
             <p className="text-offwhite/60 mt-1">Comprehensive business analytics</p>
           </div>
-          <div className="flex flex-wrap items-center gap-4">
-            {isAdmin && (
-              <button
-                onClick={handleExport}
-                disabled={exporting}
-                className="px-4 sm:px-6 py-2 bg-gold text-charcoal font-heading hover:bg-gold/90 transition-all disabled:opacity-50 text-sm"
-              >
-                {exporting ? 'Exporting...' : 'Export Monthly Data (CSV)'}
-              </button>
-            )}
-            <Link
-              to="/admin/lobby"
-              className="px-4 sm:px-6 py-2 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm"
-            >
-              Back to Lobby
-            </Link>
-          </div>
-        </div>
 
         <div className="mb-8 sm:mb-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 border border-gold/30 rounded-xl overflow-hidden bg-charcoal/50">
