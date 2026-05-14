@@ -80,6 +80,9 @@ export default function StaffNav() {
     return null;
   }
 
+  const displayName = user?.full_name || user?.email || 'Staff';
+  const initials = displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+
   return (
     <>
       <div className="hidden lg:flex fixed left-0 top-0 h-screen w-20 flex-col border-r border-gold/10 z-50" style={{ backgroundColor: '#0a0a0a' }}>
@@ -91,7 +94,7 @@ export default function StaffNav() {
                 <Link
                   key={item.id}
                   to={item.href}
-                  className={`flex flex-col items-center gap-1 px-3 py-3 rounded-xl transition-all ${
+                  className={`relative flex flex-col items-center gap-1 px-3 py-3 rounded-xl transition-all ${
                     active
                       ? 'text-gold bg-gold/10'
                       : 'text-offwhite/40 hover:text-offwhite/80 hover:bg-offwhite/5'
@@ -99,13 +102,20 @@ export default function StaffNav() {
                 >
                   <div className="w-6 h-6">{item.icon}</div>
                   <span className="text-[10px] font-medium tracking-wide">{item.label.toUpperCase()}</span>
-                  {active && (
-                    <div className="absolute left-0 w-1 h-8 bg-gold rounded-r-full" />
-                  )}
                 </Link>
               );
             })}
           </nav>
+        </div>
+        <div className="p-3 border-t border-gold/10">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
+              <span className="text-gold text-xs font-heading">{initials || '?'}</span>
+            </div>
+            <div className="text-center">
+              <div className="text-offwhite/80 text-[10px] font-medium truncate w-full">{displayName}</div>
+            </div>
+          </div>
         </div>
       </div>
 
