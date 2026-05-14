@@ -10,6 +10,7 @@ import ClientLogin from './components/ClientLogin.jsx'
 import AdminLobby from './components/AdminLobby.jsx'
 import AdminReports from './components/AdminReports.jsx'
 import CashierCheckout from './components/CashierCheckout.jsx'
+import StaffManagement from './components/StaffManagement.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { RequireAuth } from './components/RequireAuth.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
@@ -40,6 +41,11 @@ createRoot(document.getElementById('root')).render(
           <Route path="/admin/reports" element={
             <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
               <AdminReports />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/staff" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
+              <StaffManagement />
             </ProtectedRoute>
           } />
           <Route path="/checkout" element={

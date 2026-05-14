@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from './Navbar';
@@ -18,15 +18,14 @@ const formatTime = (timestamp) => {
 };
 
 const CheckoutModal = ({ appointment, onConfirm, onClose }) => {
-  const [finalPrice, setFinalPrice] = useState('');
+  const [extrasAmount, setExtrasAmount] = useState('');
+  const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Card');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (appointment?.services?.price) {
-      setFinalPrice(appointment.services.price.toFixed(2));
-    }
-  }, [appointment]);
+  const estimatedPrice = appointment?.services?.price || 0;
+  const extras = parseFloat(extrasAmount) || 0;
+  const finalPrice = (estimatedPrice + extras).toFixed(2);
 
   if (!appointment) return null;
 
@@ -34,6 +33,8 @@ const CheckoutModal = ({ appointment, onConfirm, onClose }) => {
     setSaving(true);
     await onConfirm(appointment.id, {
       final_price: parseFloat(finalPrice),
+      extras_amount: extras,
+      notes: notes,
       payment_method: paymentMethod
     });
     setSaving(false);
@@ -41,7 +42,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-charcoal border border-gold/30 rounded-xl p-6 w-full max-w-md">
+      <div className="bg-charcoal border border-gold/30 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-heading text-2xl text-gold">Settle Payment</h3>
           <button onClick={onClose} className="text-offwhite/50 hover:text-offwhite text-2xl">&times;</button>
@@ -58,24 +59,36 @@ const CheckoutModal = ({ appointment, onConfirm, onClose }) => {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-offwhite/60">Estimated Price</span>
-            <span className="text-offwhite/50">${appointment.services?.price?.toFixed(2)}</span>
+            <span className="text-offwhite/50">${estimatedPrice.toFixed(2)}</span>
           </div>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-offwhite/80 text-sm mb-2">Final Price</label>
+            <label className="block text-offwhite/80 text-sm mb-2">Extras / Tip</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-offwhite/50">$</span>
               <input
                 type="number"
-                value={finalPrice}
-                onChange={(e) => setFinalPrice(e.target.value)}
+                value={extrasAmount}
+                onChange={(e) => setExtrasAmount(e.target.value)}
                 className="w-full pl-8 pr-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
                 step="0.01"
                 min="0"
+                placeholder="0.00"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-offwhite/80 text-sm mb-2">Notes</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg resize-none"
+              rows="3"
+              placeholder="Customer added a gel-off at the last minute..."
+            />
           </div>
 
           <div>
@@ -92,6 +105,23 @@ const CheckoutModal = ({ appointment, onConfirm, onClose }) => {
           </div>
         </div>
 
+        <div className="bg-gold/10 border border-gold/30 rounded-lg p-4 mt-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-offwhite/60">Service</span>
+            <span className="text-offwhite">${estimatedPrice.toFixed(2)}</span>
+          </div>
+          {extras > 0 && (
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-offwhite/60">Extras / Tip</span>
+              <span className="text-offwhite">+${extras.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center pt-2 border-t border-gold/20">
+            <span className="text-offwhite font-medium">Final Total</span>
+            <span className="font-heading text-2xl text-gold">${finalPrice}</span>
+          </div>
+        </div>
+
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
@@ -101,7 +131,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose }) => {
           </button>
           <button
             onClick={handleConfirm}
-            disabled={saving || !finalPrice}
+            disabled={saving}
             className="flex-1 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg disabled:opacity-50 transition-colors"
           >
             {saving ? 'Processing...' : 'Confirm Payment'}
@@ -113,7 +143,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose }) => {
 };
 
 export default function CashierCheckout() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [servingAppointments, setServingAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(null);
@@ -146,12 +176,14 @@ export default function CashierCheckout() {
     return () => supabase.removeChannel(channel);
   }, []);
 
-  const handleCheckout = async (appointmentId, { final_price, payment_method }) => {
+  const handleCheckout = async (appointmentId, { final_price, extras_amount, notes, payment_method }) => {
     const { error } = await supabase
       .from('appointments')
       .update({
         status: 'completed',
         final_price,
+        extras_amount,
+        notes,
         payment_method,
         cashier_id: user.id,
         completed_at: new Date().toISOString(),
@@ -172,7 +204,6 @@ export default function CashierCheckout() {
     setCheckingOut(null);
   };
 
-  const firstName = user?.full_name?.split(' ')[0] || 'Cashier';
   const navigate = useNavigate();
   const handleNavigate = (page) => {
     if (page === 'home') navigate('/');
