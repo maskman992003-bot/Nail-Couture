@@ -20,11 +20,60 @@ const statusLabels = {
   cancelled: 'Cancelled',
 };
 
-const tierInfo = (points) => {
-  if (points >= 1000) return { name: 'Diamond', color: 'text-cyan-400', bg: 'from-cyan-200/30 to-blue-200/30' };
-  if (points >= 500) return { name: 'Platinum', color: 'text-gray-300', bg: 'from-gray-200/30 to-gray-300/30' };
-  if (points >= 100) return { name: 'Gold', color: 'text-gold', bg: 'from-gold/20 to-amber-100/30' };
-  return { name: 'Silver', color: 'text-gray-400', bg: 'from-gray-100/30 to-gray-200/30' };
+const tierBenefits = {
+  Silver: '5% off your next service',
+  Gold: '10% off + free refreshment',
+  Platinum: '15% off + priority booking + free refreshment',
+  Diamond: '20% off + VIP priority + free premium service',
+};
+
+const getTierInfo = (points) => {
+  if (points >= 1000) {
+    return {
+      name: 'Diamond',
+      color: 'text-cyan-400',
+      bg: 'from-cyan-200/30 to-blue-200/30',
+      border: 'border-cyan-400',
+      benefit: tierBenefits.Diamond,
+      nextTier: null,
+      nextThreshold: null,
+      progress: 100
+    };
+  }
+  if (points >= 500) {
+    return {
+      name: 'Platinum',
+      color: 'text-gray-300',
+      bg: 'from-gray-200/30 to-gray-300/30',
+      border: 'border-gray-400',
+      benefit: tierBenefits.Platinum,
+      nextTier: 'Diamond',
+      nextThreshold: 1000,
+      progress: ((points - 500) / 500) * 100
+    };
+  }
+  if (points >= 100) {
+    return {
+      name: 'Gold',
+      color: 'text-gold',
+      bg: 'from-gold/20 to-amber-100/30',
+      border: 'border-gold',
+      benefit: tierBenefits.Gold,
+      nextTier: 'Platinum',
+      nextThreshold: 500,
+      progress: ((points - 100) / 400) * 100
+    };
+  }
+  return {
+    name: 'Silver',
+    color: 'text-gray-400',
+    bg: 'from-gray-100/30 to-gray-200/30',
+    border: 'border-gray-400',
+    benefit: tierBenefits.Silver,
+    nextTier: 'Gold',
+    nextThreshold: 100,
+    progress: (points / 100) * 100
+  };
 };
 
 export default function ClientPortal() {
@@ -319,6 +368,46 @@ export default function ClientPortal() {
                   </div>
                 )}
 
+                <div className={`bg-gradient-to-r ${getTierInfo(profile.loyalty_points || 0).bg} border-2 ${getTierInfo(profile.loyalty_points || 0).border} rounded-xl p-6`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">⭐</span>
+                      <div>
+                        <h2 className="font-heading text-charcoal text-xl">Loyalty Rewards</h2>
+                        <p className={`font-heading text-lg ${getTierInfo(profile.loyalty_points || 0).color}`}>
+                          {getTierInfo(profile.loyalty_points || 0).name} Member
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-heading text-gold">{profile.loyalty_points || 0}</div>
+                      <div className="text-charcoal/60 text-sm">Points</div>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm text-charcoal/60 mb-1">
+                      <span>Progress to {getTierInfo(profile.loyalty_points || 0).nextTier || 'Max Tier'}</span>
+                      <span>{profile.loyalty_points || 0} / {getTierInfo(profile.loyalty_points || 0).nextThreshold || '∞'} pts</span>
+                    </div>
+                    <div className="w-full bg-charcoal/20 rounded-full h-3">
+                      <div
+                        className={`h-3 rounded-full ${getTierInfo(profile.loyalty_points || 0).color.replace('text-', 'bg-')}`}
+                        style={{ width: `${getTierInfo(profile.loyalty_points || 0).progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="bg-white/50 rounded-lg p-4">
+                    <div className="text-charcoal/60 text-sm mb-1">Your {getTierInfo(profile.loyalty_points || 0).name} Benefit:</div>
+                    <div className="text-charcoal font-medium">{getTierInfo(profile.loyalty_points || 0).benefit}</div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('loyalty')}
+                    className="mt-4 w-full py-2 bg-gold text-charcoal font-medium hover:bg-gold/90 transition-colors"
+                  >
+                    View Rewards & Redeem
+                  </button>
+                </div>
+
                 <div className="bg-white border border-charcoal/10 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-heading text-charcoal text-xl">Upcoming Appointments</h2>
@@ -545,15 +634,19 @@ export default function ClientPortal() {
                       <div className="text-5xl font-heading text-gold mb-2">{profile.loyalty_points || 0}</div>
                       <div className="text-charcoal/60 text-sm">Earn 1 point per $1 spent</div>
                     </div>
-                    <div className={`bg-gradient-to-r ${tierInfo(profile.loyalty_points || 0).bg} border border-charcoal/20 p-6 text-center`}>
+                    <div className={`bg-gradient-to-r ${getTierInfo(profile.loyalty_points || 0).bg} border ${getTierInfo(profile.loyalty_points || 0).border} p-6 text-center`}>
                       <div className="text-charcoal/60 text-sm mb-1">Your Tier</div>
-                      <div className={`text-3xl font-heading ${tierInfo(profile.loyalty_points || 0).color} mb-2`}>
-                        {tierInfo(profile.loyalty_points || 0).name}
+                      <div className={`text-3xl font-heading ${getTierInfo(profile.loyalty_points || 0).color} mb-2`}>
+                        {getTierInfo(profile.loyalty_points || 0).name}
                       </div>
                       <div className="text-charcoal/60 text-sm">
                         {profile.loyalty_points >= 1000 ? 'Top tier!' : profile.loyalty_points >= 500 ? '1000+ = Diamond' : profile.loyalty_points >= 100 ? '500+ = Platinum' : '100+ = Gold'}
                       </div>
                     </div>
+                  </div>
+                  <div className="mt-6 bg-white/50 rounded-lg p-4">
+                    <div className="text-charcoal/60 text-sm mb-1">Your {getTierInfo(profile.loyalty_points || 0).name} Benefit:</div>
+                    <div className="text-charcoal font-medium text-lg">{getTierInfo(profile.loyalty_points || 0).benefit}</div>
                   </div>
                 </div>
 
