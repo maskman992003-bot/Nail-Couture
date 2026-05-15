@@ -146,20 +146,39 @@ export default function ClientPortal() {
   const saveProfile = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
+      const cleanPhone = editForm.phone_number.replace(/\D/g, '');
+      console.log('Saving profile with id:', profile.id);
+      console.log('Update data:', {
+        full_name: editForm.full_name,
+        email: editForm.email,
+        phone_number: cleanPhone,
+        nail_goal: editForm.nail_goal || null,
+        refreshment_pref: editForm.refreshment_pref || null
+      });
+
+      const { data, error } = await supabase
         .from('profiles')
         .update({
           full_name: editForm.full_name,
           email: editForm.email,
-          phone_number: editForm.phone_number.replace(/\D/g, ''),
+          phone_number: cleanPhone,
           nail_goal: editForm.nail_goal || null,
           refreshment_pref: editForm.refreshment_pref || null
         })
-        .eq('id', profile.id);
+        .eq('id', profile.id)
+        .select()
+        .single();
 
-      if (!error) {
-        setProfile({ ...profile, ...editForm, phone_number: editForm.phone_number.replace(/\D/g, '') });
+      console.log('Update result - data:', data, 'error:', error);
+
+      if (error) {
+        console.error('Profile update error:', error);
+        alert('Failed to save: ' + error.message);
+      } else {
+        setProfile(data);
+        localStorage.setItem('salon_user_data', JSON.stringify(data));
         setEditingProfile(false);
+        setEditForm({});
       }
     } catch (err) {
       console.error('Error saving profile:', err);
