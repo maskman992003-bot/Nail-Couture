@@ -20,6 +20,13 @@ const statusLabels = {
   cancelled: 'Cancelled',
 };
 
+const tierInfo = (points) => {
+  if (points >= 1000) return { name: 'Diamond', color: 'text-cyan-400', bg: 'from-cyan-200/30 to-blue-200/30' };
+  if (points >= 500) return { name: 'Platinum', color: 'text-gray-300', bg: 'from-gray-200/30 to-gray-300/30' };
+  if (points >= 100) return { name: 'Gold', color: 'text-gold', bg: 'from-gold/20 to-amber-100/30' };
+  return { name: 'Silver', color: 'text-gray-400', bg: 'from-gray-100/30 to-gray-200/30' };
+};
+
 export default function ClientPortal() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('appointments');
@@ -538,10 +545,14 @@ export default function ClientPortal() {
                       <div className="text-5xl font-heading text-gold mb-2">{profile.loyalty_points || 0}</div>
                       <div className="text-charcoal/60 text-sm">Earn 1 point per $1 spent</div>
                     </div>
-                    <div className="bg-charcoal/5 border border-charcoal/20 p-6 text-center">
+                    <div className={`bg-gradient-to-r ${tierInfo(profile.loyalty_points || 0).bg} border border-charcoal/20 p-6 text-center`}>
                       <div className="text-charcoal/60 text-sm mb-1">Your Tier</div>
-                      <div className="text-3xl font-heading text-charcoal mb-2">{profile.tier || 'Silver'}</div>
-                      <div className="text-charcoal/60 text-sm">100+ points = Gold</div>
+                      <div className={`text-3xl font-heading ${tierInfo(profile.loyalty_points || 0).color} mb-2`}>
+                        {tierInfo(profile.loyalty_points || 0).name}
+                      </div>
+                      <div className="text-charcoal/60 text-sm">
+                        {profile.loyalty_points >= 1000 ? 'Top tier!' : profile.loyalty_points >= 500 ? '1000+ = Diamond' : profile.loyalty_points >= 100 ? '500+ = Platinum' : '100+ = Gold'}
+                      </div>
                     </div>
                   </div>
                 </div>
