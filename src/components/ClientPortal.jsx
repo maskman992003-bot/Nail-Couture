@@ -147,28 +147,23 @@ export default function ClientPortal() {
     setSaving(true);
     try {
       const cleanPhone = editForm.phone_number.replace(/\D/g, '');
-      console.log('Saving profile with id:', profile.id);
-      console.log('Update data:', {
+      const updateData = {
         full_name: editForm.full_name,
         email: editForm.email,
         phone_number: cleanPhone,
         nail_goal: editForm.nail_goal || null,
         refreshment_pref: editForm.refreshment_pref || null
-      });
+      };
+      console.log('Saving profile with id:', profile.id);
+      console.log('Update data:', updateData);
 
       const { data, error } = await supabase
         .from('profiles')
-        .update({
-          full_name: editForm.full_name,
-          email: editForm.email,
-          phone_number: cleanPhone,
-          nail_goal: editForm.nail_goal || null,
-          refreshment_pref: editForm.refreshment_pref || null
-        })
+        .update(updateData)
         .eq('id', profile.id)
         .select();
 
-      console.log('Update result - data:', data, 'error:', error);
+      console.log('Update result - data:', JSON.stringify(data), 'error:', error);
 
       if (error) {
         console.error('Profile update error:', error);
@@ -179,8 +174,21 @@ export default function ClientPortal() {
         setEditingProfile(false);
         setEditForm({});
       } else {
-        console.error('No data returned from update');
-        alert('Update failed - please try again');
+        console.error('No data returned - checking if update actually happened');
+        const { data: verifyData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', profile.id)
+          .single();
+        console.log('Verification fetch:', verifyData);
+        if (verifyData) {
+          setProfile(verifyData);
+          localStorage.setItem('salon_user_data', JSON.stringify(verifyData));
+          setEditingProfile(false);
+          setEditForm({});
+        } else {
+          alert('Update failed - please try again');
+        }
       }
     } catch (err) {
       console.error('Error saving profile:', err);
