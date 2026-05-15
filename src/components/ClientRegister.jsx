@@ -7,7 +7,8 @@ export default function ClientRegister() {
   const [formData, setFormData] = useState({
     full_name: '',
     phone_number: '',
-    email: ''
+    email: '',
+    referral_code: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -59,15 +60,17 @@ export default function ClientRegister() {
         return;
       }
 
-      const referralCode = generateReferralCode(formData.full_name);
+      const referralCode = formData.referral_code.trim().toUpperCase() || generateReferralCode(formData.full_name);
       let initialPoints = 0;
       let referredById = null;
 
-      if (referredBy) {
+      const codeToUse = referralCode || referredBy;
+
+      if (codeToUse) {
         const { data: referrer } = await supabase
           .from('profiles')
           .select('id, loyalty_points')
-          .eq('referral_code', referredBy)
+          .eq('referral_code', codeToUse)
           .single();
 
         if (referrer) {
@@ -173,6 +176,20 @@ export default function ClientRegister() {
                   onChange={handleChange}
                   placeholder="Enter your email"
                   className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
+                  Referral Code <span className="text-charcoal/30">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  name="referral_code"
+                  value={formData.referral_code}
+                  onChange={handleChange}
+                  placeholder="Enter friend's referral code"
+                  className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none uppercase"
                 />
               </div>
 
