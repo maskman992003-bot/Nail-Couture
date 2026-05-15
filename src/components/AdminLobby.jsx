@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '../services/services'
 import { useAuth } from '../contexts/AuthContext'
 import Navbar from './Navbar'
-import StaffNav from './StaffNav'
+import UniversalNav from './UniversalNav'
 
 const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, updating, onAccept, onComplete, wiggle }) => {
   const { isOver, setNodeRef } = useDroppable({ id: tech.id, disabled: isBusy || isPending })
@@ -536,7 +536,7 @@ export default function AdminLobby() {
   if (loading) {
     return (
       <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <StaffNav />
+        <UniversalNav />
         <div className="flex-1 overflow-x-hidden">
           <Navbar currentPage="admin" onNavigate={handleNavigate} />
           <div className="flex items-center justify-center py-20 px-6">
@@ -550,7 +550,7 @@ export default function AdminLobby() {
 return (
       <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
         <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-          <StaffNav />
+          <UniversalNav />
           <div className="flex-1 overflow-x-hidden">
             <Navbar currentPage="admin" onNavigate={handleNavigate} />
             <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8">

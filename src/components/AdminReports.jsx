@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
 import Navbar from './Navbar'
-import StaffNav from './StaffNav'
+import UniversalNav from './UniversalNav'
 
 const getDateRange = (period) => {
   const now = new Date()
@@ -317,7 +317,7 @@ export default function AdminReports() {
   if (loading) {
     return (
       <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <StaffNav />
+        <UniversalNav />
         <div className="flex-1 overflow-x-hidden">
           <Navbar currentPage="admin" onNavigate={() => {}} />
           <div className="flex items-center justify-center py-20 px-6">
@@ -330,7 +330,7 @@ export default function AdminReports() {
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-      <StaffNav />
+      <UniversalNav />
       <div className="flex-1 overflow-x-hidden">
         <Navbar currentPage="admin" onNavigate={() => {}} />
         <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Navbar from './Navbar';
-import StaffNav from './StaffNav';
+import UniversalNav from './UniversalNav';
 
 const roleColors = {
   super_admin: 'bg-purple-900/50 text-purple-300 border-purple-700',
@@ -127,7 +127,7 @@ export default function StaffProfile() {
   if (loading) {
     return (
       <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <StaffNav />
+        <UniversalNav />
         <div className="flex-1 overflow-x-hidden">
           <Navbar currentPage="admin" onNavigate={handleNavigate} />
           <div className="flex items-center justify-center py-20 px-6">
@@ -144,7 +144,7 @@ export default function StaffProfile() {
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-      <StaffNav />
+      <UniversalNav />
       <div className="flex-1 overflow-x-hidden">
         <Navbar currentPage="admin" onNavigate={handleNavigate} />
         <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">

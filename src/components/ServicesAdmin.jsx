@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getServices, updateService } from '../services/services';
 import Navbar from './Navbar';
-import StaffNav from './StaffNav';
+import UniversalNav from './UniversalNav';
 
 export default function ServicesAdmin() {
   const navigate = useNavigate();
@@ -68,7 +68,7 @@ export default function ServicesAdmin() {
   if (loading) {
     return (
       <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <StaffNav />
+        <UniversalNav />
         <div className="flex-1 overflow-x-hidden">
           <Navbar currentPage="admin" onNavigate={handleNavigate} />
           <div className="flex items-center justify-center py-20 px-6">
@@ -81,7 +81,7 @@ export default function ServicesAdmin() {
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-      <StaffNav />
+      <UniversalNav />
       <div className="flex-1 overflow-x-hidden">
         <Navbar currentPage="admin" onNavigate={handleNavigate} />
         <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">

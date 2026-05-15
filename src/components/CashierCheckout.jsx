@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from './Navbar';
-import StaffNav from './StaffNav';
+import UniversalNav from './UniversalNav';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -213,7 +213,7 @@ export default function CashierCheckout() {
   if (loading) {
     return (
       <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <StaffNav />
+        <UniversalNav />
         <div className="flex-1 overflow-x-hidden">
           <Navbar currentPage="checkout" onNavigate={handleNavigate} />
           <div className="flex items-center justify-center py-20 px-6">
@@ -226,7 +226,7 @@ export default function CashierCheckout() {
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-      <StaffNav />
+      <UniversalNav />
       <div className="flex-1 overflow-x-hidden">
         <Navbar currentPage="checkout" onNavigate={handleNavigate} />
         <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
