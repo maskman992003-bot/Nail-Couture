@@ -3,6 +3,23 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
+const Sparkle = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    {[...Array(12)].map((_, i) => (
+      <div
+        key={i}
+        className="absolute w-2 h-2 bg-gold rounded-full animate-ping"
+        style={{
+          left: `${Math.random() * 100}%`,
+          top: `${Math.random() * 100}%`,
+          animationDelay: `${Math.random() * 2}s`,
+          animationDuration: `${1 + Math.random()}s`
+        }}
+      />
+    ))}
+  </div>
+);
+
 export default function ClientRegister() {
   const [searchParams] = useSearchParams();
   const urlReferralCode = searchParams.get('ref') || '';
@@ -103,7 +120,7 @@ export default function ClientRegister() {
 
       setSuccess(true);
       login(data);
-      setTimeout(() => navigate('/portal'), 1500);
+      setTimeout(() => navigate('/portal'), 5000);
     } catch (err) {
       console.error('Registration error:', err);
       setError(err.message || 'Something went wrong. Please try again.');
@@ -111,6 +128,28 @@ export default function ClientRegister() {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-charcoal flex items-center justify-center p-8 relative overflow-hidden">
+        <Sparkle />
+        <div className="relative z-10 text-center animate-fade-in">
+          <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-8">
+            <svg className="w-12 h-12 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+            </svg>
+          </div>
+          <h2 className="font-heading text-4xl text-gold mb-4 tracking-wide">Welcome to the Club</h2>
+          <p className="font-heading text-2xl text-offwhite mb-6">{formData.full_name}</p>
+          {formData.referral_code && (
+            <p className="text-xl text-offwhite/70">
+              Your <span className="text-gold">50 loyalty points</span> are being added
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-offwhite flex items-center justify-center px-4">
@@ -128,81 +167,73 @@ export default function ClientRegister() {
             )}
           </div>
 
-          {success ? (
-            <div className="text-center">
-              <div className="text-gold text-4xl mb-4">✓</div>
-              <h2 className="text-xl font-heading text-charcoal mb-2">Welcome!</h2>
-              <p className="text-charcoal/60">Your account has been created. Redirecting to your portal...</p>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                name="full_name"
+                value={formData.full_name}
+                onChange={handleChange}
+                placeholder="Enter your full name"
+                className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+              />
             </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="full_name"
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  placeholder="Enter your full name"
-                  className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
-                />
-              </div>
 
-              <div className="mb-4">
-                <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                  placeholder="Enter your phone number"
-                  className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
-                />
-              </div>
+            <div className="mb-4">
+              <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                name="phone_number"
+                value={formData.phone_number}
+                onChange={handleChange}
+                placeholder="Enter your phone number"
+                className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+              />
+            </div>
 
-              <div className="mb-6">
-                <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter your email"
-                  className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
-                />
-              </div>
+            <div className="mb-6">
+              <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter your email"
+                className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+              />
+            </div>
 
-              <div className="mb-6">
-                <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
-                  Referral Code <span className="text-charcoal/30">(Optional)</span>
-                </label>
-                <input
-                  type="text"
-                  name="referral_code"
-                  value={formData.referral_code}
-                  onChange={handleChange}
-                  placeholder="Enter friend's referral code"
-                  className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none uppercase"
-                />
-              </div>
+            <div className="mb-6">
+              <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
+                Referral Code <span className="text-charcoal/30">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                name="referral_code"
+                value={formData.referral_code}
+                onChange={handleChange}
+                placeholder="Enter friend's referral code"
+                className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none uppercase"
+              />
+            </div>
 
-              {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gold text-charcoal py-3 font-heading tracking-wider hover:bg-gold/90 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </button>
-            </form>
-          )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gold text-charcoal py-3 font-heading tracking-wider hover:bg-gold/90 transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </button>
+          </form>
 
           <div className="mt-6 text-center">
             <Link to="/login" className="text-sm text-gold hover:text-gold/80">
