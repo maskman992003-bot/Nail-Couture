@@ -7,6 +7,7 @@ import Admin from './components/Admin.jsx'
 import AdminDashboard from './components/AdminDashboard.jsx'
 import ClientPortal from './components/ClientPortal.jsx'
 import ClientLogin from './components/ClientLogin.jsx'
+import ClientRegister from './components/ClientRegister.jsx'
 import AdminLobby from './components/AdminLobby.jsx'
 import AdminReports from './components/AdminReports.jsx'
 import CashierCheckout from './components/CashierCheckout.jsx'
@@ -31,6 +32,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/about" element={<App />} />
           <Route path="/check-in" element={<App />} />
           <Route path="/login" element={<ClientLogin />} />
+          <Route path="/register" element={<ClientRegister />} />
 
           <Route path="/admin" element={
             <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>

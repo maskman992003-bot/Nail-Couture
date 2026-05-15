@@ -92,6 +92,13 @@ export default function ClientLogin() {
           </form>
 
           <div className="mt-6 text-center">
+            <span className="text-sm text-charcoal/50">New customer? </span>
+            <Link to="/register" className="text-sm text-gold hover:text-gold/80 font-medium">
+              Register here
+            </Link>
+          </div>
+
+          <div className="mt-4 text-center">
             <Link to="/" className="text-sm text-charcoal/50 hover:text-charcoal">
               ← Back to Home
             </Link>
