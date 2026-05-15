@@ -166,19 +166,21 @@ export default function ClientPortal() {
           refreshment_pref: editForm.refreshment_pref || null
         })
         .eq('id', profile.id)
-        .select()
-        .single();
+        .select();
 
       console.log('Update result - data:', data, 'error:', error);
 
       if (error) {
         console.error('Profile update error:', error);
         alert('Failed to save: ' + error.message);
-      } else {
-        setProfile(data);
-        localStorage.setItem('salon_user_data', JSON.stringify(data));
+      } else if (data && data.length > 0) {
+        setProfile(data[0]);
+        localStorage.setItem('salon_user_data', JSON.stringify(data[0]));
         setEditingProfile(false);
         setEditForm({});
+      } else {
+        console.error('No data returned from update');
+        alert('Update failed - please try again');
       }
     } catch (err) {
       console.error('Error saving profile:', err);
