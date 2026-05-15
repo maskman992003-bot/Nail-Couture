@@ -26,6 +26,9 @@ export default function ClientPortal() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
   const { user, logout, loading: authLoading } = useAuth();
 
   console.log('ClientPortal render - user:', user?.id, 'authLoading:', authLoading);
@@ -122,6 +125,46 @@ export default function ClientPortal() {
 
   const handleNavigate = (page) => {
     if (page === 'home') navigate('/');
+  };
+
+  const startEditProfile = () => {
+    setEditForm({
+      full_name: profile.full_name || '',
+      email: profile.email || '',
+      phone_number: profile.phone_number || '',
+      nail_goal: profile.nail_goal || '',
+      refreshment_pref: profile.refreshment_pref || ''
+    });
+    setEditingProfile(true);
+  };
+
+  const cancelEditProfile = () => {
+    setEditingProfile(false);
+    setEditForm({});
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editForm.full_name,
+          email: editForm.email,
+          phone_number: editForm.phone_number.replace(/\D/g, ''),
+          nail_goal: editForm.nail_goal || null,
+          refreshment_pref: editForm.refreshment_pref || null
+        })
+        .eq('id', profile.id);
+
+      if (!error) {
+        setProfile({ ...profile, ...editForm, phone_number: editForm.phone_number.replace(/\D/g, '') });
+        setEditingProfile(false);
+      }
+    } catch (err) {
+      console.error('Error saving profile:', err);
+    }
+    setSaving(false);
   };
 
   const currentAppointment = appointments.find(a => 
@@ -323,31 +366,119 @@ export default function ClientPortal() {
             {activeTab === 'profile' && (
               <div className="space-y-6">
                 <div className="bg-white border border-charcoal/10 p-6">
-                  <h2 className="font-heading text-charcoal text-xl mb-6">Profile Information</h2>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Full Name</label>
-                      <p className="text-charcoal">{profile.full_name || 'Not set'}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Email</label>
-                      <p className="text-charcoal">{profile.email || 'Not set'}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Phone</label>
-                      <p className="text-charcoal">{profile.phone_number || 'Not set'}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Nail Goal</label>
-                      <p className="text-charcoal">{profile.nail_goal || 'Not set'}</p>
-                    </div>
-                    {profile.refreshment_pref && (
-                      <div>
-                        <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Refreshment Preference</label>
-                        <p className="text-charcoal">{profile.refreshment_pref}</p>
-                      </div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="font-heading text-charcoal text-xl">Profile Information</h2>
+                    {!editingProfile && (
+                      <button
+                        onClick={startEditProfile}
+                        className="px-4 py-2 bg-gold text-charcoal text-sm font-medium hover:bg-gold/90 transition-colors"
+                      >
+                        Edit Profile
+                      </button>
                     )}
                   </div>
+
+                  {editingProfile ? (
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Full Name</label>
+                        <input
+                          type="text"
+                          value={editForm.full_name}
+                          onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                          className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Email</label>
+                        <input
+                          type="email"
+                          value={editForm.email}
+                          onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                          className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Phone</label>
+                        <input
+                          type="tel"
+                          value={editForm.phone_number}
+                          onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
+                          className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Nail Goal</label>
+                        <select
+                          value={editForm.nail_goal}
+                          onChange={(e) => setEditForm({ ...editForm, nail_goal: e.target.value })}
+                          className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+                        >
+                          <option value="">Select a goal</option>
+                          <option value="Healthy Natural Nails">Healthy Natural Nails</option>
+                          <option value="Long Extensions">Long Extensions</option>
+                          <option value="Intricate Art">Intricate Art</option>
+                          <option value="Gel Polish">Gel Polish</option>
+                          <option value="Acrylic Nails">Acrylic Nails</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Refreshment Preference</label>
+                        <select
+                          value={editForm.refreshment_pref}
+                          onChange={(e) => setEditForm({ ...editForm, refreshment_pref: e.target.value })}
+                          className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+                        >
+                          <option value="">Select preference</option>
+                          <option value="Water">Water</option>
+                          <option value="Tea">Tea</option>
+                          <option value="Coffee">Coffee</option>
+                          <option value="Juice">Juice</option>
+                          <option value="No drink">No drink</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2 flex gap-3 mt-4">
+                        <button
+                          onClick={saveProfile}
+                          disabled={saving}
+                          className="px-6 py-3 bg-gold text-charcoal font-medium hover:bg-gold/90 transition-colors disabled:opacity-50"
+                        >
+                          {saving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                        <button
+                          onClick={cancelEditProfile}
+                          className="px-6 py-3 border border-charcoal/20 text-charcoal/60 hover:text-charcoal transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Full Name</label>
+                        <p className="text-charcoal">{profile.full_name || 'Not set'}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Email</label>
+                        <p className="text-charcoal">{profile.email || 'Not set'}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Phone</label>
+                        <p className="text-charcoal">{profile.phone_number || 'Not set'}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Nail Goal</label>
+                        <p className="text-charcoal">{profile.nail_goal || 'Not set'}</p>
+                      </div>
+                      {profile.refreshment_pref && (
+                        <div>
+                          <label className="text-xs text-charcoal/50 uppercase tracking-wider block mb-2">Refreshment Preference</label>
+                          <p className="text-charcoal">{profile.refreshment_pref}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-charcoal/5 border border-charcoal/20 p-6">
