@@ -154,40 +154,33 @@ export default function ClientPortal() {
         nail_goal: editForm.nail_goal || null,
         refreshment_pref: editForm.refreshment_pref || null
       };
-      console.log('Saving profile with id:', profile.id);
-      console.log('Update data:', updateData);
+      console.log('Saving profile with id:', profile.id, 'data:', updateData);
 
-      const { data, error } = await supabase
+      const { error: updateError } = await supabase
         .from('profiles')
         .update(updateData)
-        .eq('id', profile.id)
-        .select();
+        .eq('id', profile.id);
 
-      console.log('Update result - data:', JSON.stringify(data), 'error:', error);
+      console.log('Update error:', updateError);
 
-      if (error) {
-        console.error('Profile update error:', error);
-        alert('Failed to save: ' + error.message);
-      } else if (data && data.length > 0) {
-        setProfile(data[0]);
-        localStorage.setItem('salon_user_data', JSON.stringify(data[0]));
-        setEditingProfile(false);
-        setEditForm({});
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        alert('Failed to save: ' + updateError.message);
       } else {
-        console.error('No data returned - checking if update actually happened');
-        const { data: verifyData } = await supabase
+        const { data: verifyData, error: verifyError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', profile.id)
           .single();
-        console.log('Verification fetch:', verifyData);
+        console.log('Verification - data:', verifyData, 'error:', verifyError);
         if (verifyData) {
           setProfile(verifyData);
           localStorage.setItem('salon_user_data', JSON.stringify(verifyData));
           setEditingProfile(false);
           setEditForm({});
         } else {
-          alert('Update failed - please try again');
+          console.error('Verification fetch failed:', verifyError);
+          alert('Update may have failed - please refresh and try again');
         }
       }
     } catch (err) {
