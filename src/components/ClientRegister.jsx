@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -14,10 +14,18 @@ export default function ClientRegister() {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const referredBy = searchParams.get('ref');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
+  };
+
+  const generateReferralCode = (name) => {
+    const cleanName = name.replace(/\s+/g, '').toUpperCase().slice(0, 4);
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `${cleanName}${random}`;
   };
 
   const handleSubmit = async (e) => {
@@ -51,6 +59,27 @@ export default function ClientRegister() {
         return;
       }
 
+      const referralCode = generateReferralCode(formData.full_name);
+      let initialPoints = 0;
+      let referredById = null;
+
+      if (referredBy) {
+        const { data: referrer } = await supabase
+          .from('profiles')
+          .select('id, loyalty_points')
+          .eq('referral_code', referredBy)
+          .single();
+
+        if (referrer) {
+          referredById = referrer.id;
+          initialPoints = 50;
+          await supabase
+            .from('profiles')
+            .update({ loyalty_points: (referrer.loyalty_points || 0) + 50 })
+            .eq('id', referrer.id);
+        }
+      }
+
       const { data, error: insertError } = await supabase
         .from('profiles')
         .insert({
@@ -58,7 +87,10 @@ export default function ClientRegister() {
           phone_number: cleanPhone,
           email: formData.email,
           is_staff: false,
-          role: 'customer'
+          role: 'customer',
+          referral_code: referralCode,
+          referral_by: referredById,
+          loyalty_points: initialPoints
         })
         .select()
         .single();
@@ -87,6 +119,11 @@ export default function ClientRegister() {
               <img src="/NC.jpg" alt="Nail Couture" className="h-28 w-auto mx-auto" />
             </Link>
             <p className="text-charcoal/60 mt-2">Create Your Account</p>
+            {referredBy && (
+              <p className="text-green-600 text-sm mt-2 font-medium">
+                You have a referral code! You'll earn 50 loyalty points after signup.
+              </p>
+            )}
           </div>
 
           {success ? (

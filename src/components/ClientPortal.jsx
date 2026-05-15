@@ -236,6 +236,7 @@ export default function ClientPortal() {
   const tabs = [
     { id: 'appointments', label: 'Appointments', icon: '📅' },
     { id: 'profile', label: 'Profile', icon: '👤' },
+    { id: 'loyalty', label: 'Rewards', icon: '⭐' },
   ];
 
   return (
@@ -510,6 +511,114 @@ export default function ClientPortal() {
                       <p className="text-charcoal/60 text-sm">Your appointment count</p>
                     </div>
                     <div className="text-4xl font-heading text-gold">{pastAppointments.length}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'loyalty' && (
+              <div className="space-y-6">
+                <div className="bg-white border border-charcoal/10 p-6">
+                  <h2 className="font-heading text-charcoal text-xl mb-6">Loyalty Rewards</h2>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-gradient-to-r from-gold/20 to-amber-100 border-2 border-gold p-6 text-center">
+                      <div className="text-charcoal/60 text-sm mb-1">Your Points</div>
+                      <div className="text-5xl font-heading text-gold mb-2">{profile.loyalty_points || 0}</div>
+                      <div className="text-charcoal/60 text-sm">Earn 1 point per $1 spent</div>
+                    </div>
+                    <div className="bg-charcoal/5 border border-charcoal/20 p-6 text-center">
+                      <div className="text-charcoal/60 text-sm mb-1">Your Tier</div>
+                      <div className="text-3xl font-heading text-charcoal mb-2">{profile.tier || 'Silver'}</div>
+                      <div className="text-charcoal/60 text-sm">100+ points = Gold</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-charcoal/10 p-6">
+                  <h3 className="font-heading text-charcoal text-lg mb-4">Share & Earn</h3>
+                  <p className="text-charcoal/60 text-sm mb-4">
+                    Share your referral code with friends. They get $10 off their first visit, and you earn 50 loyalty points!
+                  </p>
+                  <div className="bg-gold/10 border border-gold/30 p-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-charcoal/50 uppercase tracking-wider">Your Referral Code</div>
+                      <div className="text-2xl font-heading text-gold">{profile.referral_code || 'N/A'}</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const code = profile.referral_code || '';
+                        const shareUrl = `${window.location.origin}/register?ref=${code}`;
+                        const shareText = `Get $10 off your first visit at Nail Couture! Use my code: ${code}`;
+                        if (navigator.share) {
+                          navigator.share({
+                            title: 'Nail Couture Referral',
+                            text: shareText,
+                            url: shareUrl
+                          });
+                        } else {
+                          navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+                          alert('Referral link copied to clipboard!');
+                        }
+                      }}
+                      className="px-4 py-2 bg-gold text-charcoal text-sm font-medium hover:bg-gold/90 transition-colors"
+                    >
+                      Share Code
+                    </button>
+                  </div>
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={() => {
+                        const code = profile.referral_code || '';
+                        const shareUrl = `${window.location.origin}/register?ref=${code}`;
+                        navigator.clipboard.writeText(shareUrl);
+                        alert('Referral link copied!');
+                      }}
+                      className="text-sm text-gold hover:text-gold/80 underline"
+                    >
+                      Copy referral link
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-charcoal/10 p-6">
+                  <h3 className="font-heading text-charcoal text-lg mb-4">Points Redemption</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-charcoal/5">
+                      <div>
+                        <div className="text-charcoal font-medium">$5 off</div>
+                        <div className="text-charcoal/50 text-sm">100 points</div>
+                      </div>
+                      <button
+                        disabled={(profile.loyalty_points || 0) < 100}
+                        className="px-4 py-2 bg-gold text-charcoal text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gold/90"
+                      >
+                        Redeem
+                      </button>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-charcoal/5">
+                      <div>
+                        <div className="text-charcoal font-medium">$10 off</div>
+                        <div className="text-charcoal/50 text-sm">200 points</div>
+                      </div>
+                      <button
+                        disabled={(profile.loyalty_points || 0) < 200}
+                        className="px-4 py-2 bg-gold text-charcoal text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gold/90"
+                      >
+                        Redeem
+                      </button>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-charcoal/5">
+                      <div>
+                        <div className="text-charcoal font-medium">$25 off</div>
+                        <div className="text-charcoal/50 text-sm">500 points</div>
+                      </div>
+                      <button
+                        disabled={(profile.loyalty_points || 0) < 500}
+                        className="px-4 py-2 bg-gold text-charcoal text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gold/90"
+                      >
+                        Redeem
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
