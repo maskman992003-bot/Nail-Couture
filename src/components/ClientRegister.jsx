@@ -8,7 +8,7 @@ export default function ClientRegister() {
     full_name: '',
     phone_number: '',
     email: '',
-    referral_code: ''
+    referral_code: searchParams.get('ref') || ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,7 +16,6 @@ export default function ClientRegister() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [searchParams] = useSearchParams();
-  const referredBy = searchParams.get('ref');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -60,17 +59,15 @@ export default function ClientRegister() {
         return;
       }
 
-      const referralCode = formData.referral_code.trim().toUpperCase() || generateReferralCode(formData.full_name);
+      const referralCode = formData.referral_code.trim().toUpperCase();
       let initialPoints = 0;
       let referredById = null;
 
-      const codeToUse = referralCode || referredBy;
-
-      if (codeToUse) {
+      if (referralCode) {
         const { data: referrer } = await supabase
           .from('profiles')
           .select('id, loyalty_points')
-          .eq('referral_code', codeToUse)
+          .eq('referral_code', referralCode)
           .single();
 
         if (referrer) {
@@ -122,7 +119,7 @@ export default function ClientRegister() {
               <img src="/NC.jpg" alt="Nail Couture" className="h-28 w-auto mx-auto" />
             </Link>
             <p className="text-charcoal/60 mt-2">Create Your Account</p>
-            {referredBy && (
+            {formData.referral_code && (
               <p className="text-green-600 text-sm mt-2 font-medium">
                 You have a referral code! You'll earn 50 loyalty points after signup.
               </p>
