@@ -57,6 +57,18 @@ export default function ClientPortal() {
       } else {
         console.log('Profile loaded:', profileData);
         setProfile(profileData);
+
+        if (profileData && !profileData.referral_code) {
+          const cleanName = (profileData.full_name || 'USER').replace(/\s+/g, '').toUpperCase().slice(0, 4);
+          const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+          const newCode = `${cleanName}${random}`;
+          await supabase
+            .from('profiles')
+            .update({ referral_code: newCode })
+            .eq('id', profileData.id);
+          setProfile({ ...profileData, referral_code: newCode });
+          localStorage.setItem('salon_user_data', JSON.stringify({ ...profileData, referral_code: newCode }));
+        }
       }
 
       const { data: appointmentsData, error: appointmentsError } = await supabase
