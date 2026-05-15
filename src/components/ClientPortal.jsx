@@ -85,6 +85,8 @@ export default function ClientPortal() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
+  const [redeeming, setRedeeming] = useState(null);
+  const [confirmationCode, setConfirmationCode] = useState(null);
   const { user, logout, loading: authLoading } = useAuth();
 
   console.log('ClientPortal render - user:', user?.id, 'authLoading:', authLoading);
@@ -209,6 +211,37 @@ export default function ClientPortal() {
   const cancelEditProfile = () => {
     setEditingProfile(false);
     setEditForm({});
+  };
+
+  const generateConfirmationCode = () => {
+    return Math.random().toString(36).substring(2, 8).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
+  };
+
+  const handleRedeem = async (pointsCost, rewardName) => {
+    if ((profile.loyalty_points || 0) < pointsCost) return;
+    
+    setRedeeming(pointsCost);
+    try {
+      const newPoints = (profile.loyalty_points || 0) - pointsCost;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ loyalty_points: newPoints })
+        .eq('id', profile.id);
+
+      if (!error) {
+        const code = generateConfirmationCode();
+        setConfirmationCode({ code, reward: rewardName, points: pointsCost });
+        setProfile({ ...profile, loyalty_points: newPoints });
+        localStorage.setItem('salon_user_data', JSON.stringify({ ...profile, loyalty_points: newPoints }));
+      }
+    } catch (err) {
+      console.error('Redeem error:', err);
+    }
+    setRedeeming(null);
+  };
+
+  const closeConfirmation = () => {
+    setConfirmationCode(null);
   };
 
   const saveProfile = async () => {
@@ -615,7 +648,7 @@ export default function ClientPortal() {
                     </div>
                   </div>
                   <div className="bg-white/50 rounded-lg p-4">
-                    <div className="text-charcoal/60 text-sm mb-1">Your {getTierInfo(profile.loyalty_points || 0).name} Benefit:</div>
+                    <div className="text-charcoal/60 text-sm mb-1">Current Tier Perk:</div>
                     <div className="text-charcoal font-medium text-lg">{getTierInfo(profile.loyalty_points || 0).benefit}</div>
                   </div>
                   <div className="mt-6 pt-4 border-t border-charcoal/20">
@@ -713,13 +746,28 @@ export default function ClientPortal() {
 
                 <div className="bg-white border border-charcoal/10 p-6">
                   <h3 className="font-heading text-charcoal text-lg mb-4">Points Redemption</h3>
+                  {confirmationCode && (
+                    <div className="mb-6 p-4 bg-gold/20 border border-gold/30 text-center">
+                      <div className="text-charcoal/60 text-sm mb-2">Your Redemption Code</div>
+                      <div className="text-3xl font-heading text-gold tracking-widest">{confirmationCode.code}</div>
+                      <div className="text-charcoal mt-2">{confirmationCode.reward}</div>
+                      <div className="text-charcoal/50 text-sm mt-1">Show this code to redeem</div>
+                      <button
+                        onClick={closeConfirmation}
+                        className="mt-4 px-4 py-2 bg-gold text-charcoal text-sm hover:bg-gold/90"
+                      >
+                        Got it!
+                      </button>
+                    </div>
+                  )}
                   <div className="space-y-3">
                     <div className="flex justify-between items-center p-3 bg-charcoal/5">
                       <div>
-                        <div className="text-charcoal font-medium">$5 off</div>
+                        <div className="text-charcoal font-medium">Free Basic Nail Art</div>
                         <div className="text-charcoal/50 text-sm">100 points</div>
                       </div>
                       <button
+                        onClick={() => handleRedeem(100, 'Free Basic Nail Art')}
                         disabled={(profile.loyalty_points || 0) < 100}
                         className="px-4 py-2 bg-gold text-charcoal text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gold/90"
                       >
@@ -728,10 +776,11 @@ export default function ClientPortal() {
                     </div>
                     <div className="flex justify-between items-center p-3 bg-charcoal/5">
                       <div>
-                        <div className="text-charcoal font-medium">$10 off</div>
+                        <div className="text-charcoal font-medium">Free Refreshment & Hand Massage</div>
                         <div className="text-charcoal/50 text-sm">200 points</div>
                       </div>
                       <button
+                        onClick={() => handleRedeem(200, 'Free Refreshment & Hand Massage')}
                         disabled={(profile.loyalty_points || 0) < 200}
                         className="px-4 py-2 bg-gold text-charcoal text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gold/90"
                       >
@@ -740,10 +789,11 @@ export default function ClientPortal() {
                     </div>
                     <div className="flex justify-between items-center p-3 bg-charcoal/5">
                       <div>
-                        <div className="text-charcoal font-medium">$25 off</div>
+                        <div className="text-charcoal font-medium">$25 Voucher for Premium Service</div>
                         <div className="text-charcoal/50 text-sm">500 points</div>
                       </div>
                       <button
+                        onClick={() => handleRedeem(500, '$25 Voucher for Premium Service')}
                         disabled={(profile.loyalty_points || 0) < 500}
                         className="px-4 py-2 bg-gold text-charcoal text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gold/90"
                       >
