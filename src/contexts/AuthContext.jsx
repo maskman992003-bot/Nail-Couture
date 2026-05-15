@@ -9,7 +9,6 @@ function getStoredUser() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const user = JSON.parse(stored);
-      console.log('Synchronous Session Check:', user?.id, user?.full_name);
       return user;
     }
   } catch (err) {
@@ -20,17 +19,17 @@ function getStoredUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getStoredUser());
-  const [loading, setLoading] = useState(!!getStoredUser());
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('AuthContext mounted, user:', user);
-    if (user) {
-      setLoading(false);
+    const stored = getStoredUser();
+    if (stored) {
+      setUser(stored);
     }
-  }, [user]);
+    setLoading(false);
+  }, []);
 
   const login = (profile) => {
-    console.log('Login - Saving to localStorage:', profile.id, profile.full_name);
     const userData = {
       id: profile.id,
       full_name: profile.full_name,
@@ -43,13 +42,12 @@ export function AuthProvider({ children }) {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
     setUser(userData);
-    setLoading(false);
   };
 
   const logout = () => {
-    console.log('Logout - Clearing localStorage');
     localStorage.removeItem(STORAGE_KEY);
     setUser(null);
+    setLoading(false);
   };
 
   return (

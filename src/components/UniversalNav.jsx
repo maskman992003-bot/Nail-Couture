@@ -27,9 +27,10 @@ const allNavItems = {
     { id: 'lobby', label: 'Schedule', href: '/admin/lobby', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
   ],
   customer: [
-    { id: 'home', label: 'Home', href: '/portal', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    { id: 'home', label: 'Home', href: '/portal?tab=home', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
     { id: 'book', label: 'Book', href: '/booking', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-    { id: 'appointments', label: 'Appointments', href: '/portal?tab=appointments', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+    { id: 'appointments', label: 'Appts', href: '/portal?tab=appointments', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+    { id: 'profile', label: 'Profile', href: '/portal?tab=profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
     { id: 'rewards', label: 'Rewards', href: '/portal?tab=loyalty', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
   ],
 };
@@ -42,12 +43,19 @@ function renderIcon(iconPath) {
   );
 }
 
-function isActive(pathname, href) {
+function isActive(pathname, search, href) {
   if (href === '/admin' || href === '/portal') {
-    return pathname === href;
+    return pathname === href && !search;
   }
   if (href.includes('?')) {
-    return pathname === href.split('?')[0];
+    const basePath = href.split('?')[0];
+    if (pathname !== basePath && pathname !== basePath + '/') return false;
+    const params = new URLSearchParams(href.split('?')[1]);
+    const currentParams = new URLSearchParams(search);
+    for (const [key, value] of params) {
+      if (currentParams.get(key) !== value) return false;
+    }
+    return true;
   }
   return pathname.startsWith(href);
 }
@@ -76,20 +84,19 @@ export default function UniversalNav() {
   const accentColor = 'text-gold';
   const hoverBg = 'hover:bg-offwhite/5';
   const activeBg = 'bg-gold/10';
+  const borderColor = isStaff ? 'rgba(197, 160, 89, 0.1)' : 'rgba(255, 255, 255, 0.05)';
 
   return (
     <>
-      <div className="hidden lg:flex w-20 flex-shrink-0 flex-col z-50" style={{ backgroundColor: sidebarBg, height: '100vh', position: 'sticky', top: 0, borderRight: isStaff ? '1px solid rgba(197, 160, 89, 0.1)' : '1px solid rgba(26, 26, 26, 0.3)' }}>
-        {isStaff && (
-          <div className="py-4 px-4 border-b border-gold/10">
+      <div className="hidden lg:flex w-20 flex-shrink-0 flex-col z-50 fixed left-0 top-0 h-screen" style={{ backgroundColor: sidebarBg, borderRight: `1px solid ${borderColor}` }}>
+        <div className="py-4 px-4 border-b" style={{ borderColor }}>
             <img src="/NC.jpg" alt="Nail Couture" className="h-10 w-10 rounded-full mx-auto" />
           </div>
-        )}
 
         <div className="flex-1 py-4">
           <nav className="flex flex-col gap-1 px-3">
             {navItems.map((item) => {
-              const active = isActive(location.pathname, item.href);
+              const active = isActive(location.pathname, location.search, item.href);
               return (
                 <Link
                   key={item.id}
@@ -108,7 +115,7 @@ export default function UniversalNav() {
           </nav>
         </div>
 
-        <div className="p-3 border-t" style={{ borderColor: isStaff ? 'rgba(197, 160, 89, 0.1)' : 'rgba(26, 26, 26, 0.3)' }}>
+        <div className="p-3 border-t flex-shrink-0" style={{ borderColor }}>
           <div className="flex flex-col items-center gap-2">
             <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
               <span className="text-gold text-xs font-heading">{initials || '?'}</span>
@@ -128,9 +135,9 @@ export default function UniversalNav() {
       </div>
 
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50" style={{ backgroundColor: sidebarBg }}>
-        <nav className="flex items-center justify-around px-1 py-2" style={{ borderTop: isStaff ? '1px solid rgba(197, 160, 89, 0.1)' : '1px solid rgba(26, 26, 26, 0.3)' }}>
+        <nav className="flex items-center justify-around px-1 py-2" style={{ borderTop: `1px solid ${borderColor}` }}>
           {navItems.map((item) => {
-            const active = isActive(location.pathname, item.href);
+            const active = isActive(location.pathname, location.search, item.href);
             return (
               <Link
                 key={item.id}

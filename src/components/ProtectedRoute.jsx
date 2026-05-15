@@ -1,13 +1,26 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-export function ProtectedRoute({ allowedRoles, children, blockStaff }) {
+const getHomePath = (role) => {
+  switch (role) {
+    case 'super_admin':
+    case 'owner':
+    case 'partner': return '/superadmin';
+    case 'admin': return '/admin';
+    case 'cashier': return '/cashier';
+    case 'technician': return '/technician';
+    case 'customer': return '/portal';
+    default: return '/login';
+  }
+};
+
+export function ProtectedRoute({ allowedRoles, children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (!user && loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-offwhite flex items-center justify-center">
+      <div className="min-h-screen bg-charcoal flex items-center justify-center">
         <div className="text-gold animate-pulse">Loading...</div>
       </div>
     );
@@ -18,30 +31,11 @@ export function ProtectedRoute({ allowedRoles, children, blockStaff }) {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const redirectPath = getRedirectPath(user.role);
-    return <Navigate to={redirectPath} state={{ from: location }} replace />;
-  }
-
-  if (blockStaff && user.is_staff) {
-    const redirectPath = getRedirectPath(user.role);
-    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+    const redirectPath = getHomePath(user.role);
+    if (location.pathname !== redirectPath) {
+      return <Navigate to={redirectPath} replace />;
+    }
   }
 
   return children;
-}
-
-function getRedirectPath(role) {
-  switch (role) {
-    case 'super_admin':
-    case 'owner':
-    case 'partner':
-      return '/admin';
-    case 'admin':
-      return '/admin/lobby';
-    case 'cashier':
-      return '/checkout';
-    case 'customer':
-    default:
-      return '/portal';
-  }
 }

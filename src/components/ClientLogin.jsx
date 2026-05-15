@@ -3,6 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
+const getHomePath = (role) => {
+  switch (role) {
+    case 'super_admin':
+    case 'owner':
+    case 'partner': return '/superadmin';
+    case 'admin': return '/admin';
+    case 'cashier': return '/cashier';
+    case 'technician': return '/technician';
+    case 'customer': return '/portal';
+    default: return '/portal';
+  }
+};
+
 export default function ClientLogin() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,9 +55,15 @@ export default function ClientLogin() {
         return;
       }
 
+      console.log('Profile role:', profile.role, 'is_staff:', profile.role && ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(profile.role));
+      
       login(profile);
-      console.log('Login successful, navigating to /portal');
-      navigate('/portal');
+      
+      const isStaff = profile.role && ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(profile.role);
+      const redirectTo = isStaff ? getHomePath(profile.role) : '/portal';
+      
+      console.log('Login successful, navigating to', redirectTo);
+      navigate(redirectTo);
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'Something went wrong. Please try again.');

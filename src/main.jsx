@@ -3,11 +3,17 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
-import Admin from './components/Admin.jsx'
-import AdminDashboard from './components/AdminDashboard.jsx'
-import ClientPortal from './components/ClientPortal.jsx'
 import ClientLogin from './components/ClientLogin.jsx'
 import ClientRegister from './components/ClientRegister.jsx'
+import ClientPortal from './components/ClientPortal.jsx'
+import CustomerBooking from './components/CustomerBooking.jsx'
+import CustomerHistory from './components/CustomerHistory.jsx'
+import CustomerLoyalty from './components/CustomerLoyalty.jsx'
+import CustomerProfile from './components/CustomerProfile.jsx'
+import SuperAdmin from './components/SuperAdmin.jsx'
+import Admin from './components/Admin.jsx'
+import Cashier from './components/Cashier.jsx'
+import Technician from './components/Technician.jsx'
 import AdminLobby from './components/AdminLobby.jsx'
 import AdminReports from './components/AdminReports.jsx'
 import CashierCheckout from './components/CashierCheckout.jsx'
@@ -15,10 +21,20 @@ import StaffManagement from './components/StaffManagement.jsx'
 import StaffProfile from './components/StaffProfile.jsx'
 import Settings from './components/Settings.jsx'
 import Services from './components/Services.jsx'
-import ServicesPublic from './components/ServicesPublic.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
-import { RequireAuth } from './components/RequireAuth.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
+
+const getHomePath = (role) => {
+  switch (role) {
+    case 'super_admin':
+    case 'owner':
+    case 'partner': return '/superadmin';
+    case 'admin': return '/admin';
+    case 'cashier': return '/cashier';
+    case 'technician': return '/technician';
+    default: return '/portal';
+  }
+};
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -34,52 +50,123 @@ createRoot(document.getElementById('root')).render(
           <Route path="/login" element={<ClientLogin />} />
           <Route path="/register" element={<ClientRegister />} />
 
-          <Route path="/admin" element={
+          <Route path="/superadmin" element={
             <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <Admin />
+              <SuperAdmin />
             </ProtectedRoute>
           } />
-          <Route path="/admin/lobby" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
+          <Route path="/superadmin/lobby" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
               <AdminLobby />
             </ProtectedRoute>
           } />
-          <Route path="/admin/reports" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
+          <Route path="/superadmin/reports" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
               <AdminReports />
             </ProtectedRoute>
           } />
-          <Route path="/admin/services" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
+          <Route path="/superadmin/services" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
               <Services />
             </ProtectedRoute>
           } />
-          <Route path="/admin/staff" element={
+          <Route path="/superadmin/staff" element={
             <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
               <StaffManagement />
             </ProtectedRoute>
           } />
-          <Route path="/admin/staff/:id" element={
+          <Route path="/superadmin/staff/:id" element={
             <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
               <StaffProfile />
             </ProtectedRoute>
           } />
-          <Route path="/admin/settings" element={
+          <Route path="/superadmin/settings" element={
             <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician']}>
               <Settings />
             </ProtectedRoute>
           } />
-          <Route path="/checkout" element={
+
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Admin />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/lobby" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminLobby />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/reports" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminReports />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/services" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Services />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/staff" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <StaffManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/staff/:id" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <StaffProfile />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/cashier" element={
+            <ProtectedRoute allowedRoles={['cashier']}>
+              <Cashier />
+            </ProtectedRoute>
+          } />
+          <Route path="/cashier/checkout" element={
             <ProtectedRoute allowedRoles={['cashier', 'super_admin', 'owner', 'partner']}>
               <CashierCheckout />
             </ProtectedRoute>
           } />
+          <Route path="/cashier/reports" element={
+            <ProtectedRoute allowedRoles={['cashier', 'super_admin', 'owner', 'partner']}>
+              <AdminReports />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/technician" element={
+            <ProtectedRoute allowedRoles={['technician']}>
+              <Technician />
+            </ProtectedRoute>
+          } />
+          <Route path="/technician/schedule" element={
+            <ProtectedRoute allowedRoles={['technician', 'super_admin', 'owner', 'partner', 'admin']}>
+              <AdminLobby />
+            </ProtectedRoute>
+          } />
 
           <Route path="/portal" element={
-            <ProtectedRoute blockStaff={true}>
-              <RequireAuth>
-                <ClientPortal />
-              </RequireAuth>
+            <ProtectedRoute allowedRoles={['customer']}>
+              <ClientPortal />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/book" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <CustomerBooking />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/history" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <CustomerHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/loyalty" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <CustomerLoyalty />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/profile" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <CustomerProfile />
             </ProtectedRoute>
           } />
         </Routes>

@@ -1,154 +1,102 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import Navbar from './Navbar';
-import UniversalNav from './UniversalNav';
-
-const actionCards = [
-  {
-    id: 'lobby',
-    label: 'Couture Lobby',
-    icon: '◈',
-    href: '/admin/lobby',
-    color: 'gold',
-    description: 'Floor management and technician grid'
-  },
-  {
-    id: 'reports',
-    label: 'Reports & Insights',
-    icon: '◉',
-    href: '/admin/reports',
-    color: 'charcoal',
-    description: 'Analytics and revenue data'
-  },
-  {
-    id: 'services',
-    label: 'Service Menu',
-    icon: '◇',
-    href: '/admin/services',
-    color: 'gold',
-    description: 'Manage services and pricing'
-  },
-  {
-    id: 'staff',
-    label: 'Staff Management',
-    icon: '◻',
-    href: '/admin/staff',
-    color: 'charcoal',
-    description: 'Manage technicians and roles'
-  }
-];
+import { useAuth } from '../contexts/AuthContext';
+import Sidebar from './Sidebar';
 
 export default function Admin() {
   const navigate = useNavigate();
-  const [quickStats, setQuickStats] = useState({
-    todayRevenue: 0,
-    activeTechnicians: 0,
-    lobbyCount: 0
-  });
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-
-  const handleNavigate = (page) => {
-    if (page === 'home') navigate('/');
-  };
+  const [stats, setStats] = useState({ activeTechnicians: 0, waitingCustomers: 0, completedToday: 0 });
 
   useEffect(() => {
-    fetchQuickStats();
-  }, []);
+    if (!user) { navigate('/login'); return; }
+    if (user.role !== 'admin') { 
+      navigate(getHomeRoute(user.role)); 
+      return; 
+    }
+    fetchDashboardData();
+  }, [user, navigate]);
 
-  const fetchQuickStats = async () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const { data: revenueData } = await supabase
-      .from('appointments')
-      .select('final_price')
-      .eq('status', 'completed')
-      .gte('completed_at', today.toISOString());
-
-    const todayRevenue = revenueData?.reduce((sum, a) => sum + (a.final_price || 0), 0) || 0;
-
-    const { count: techCount } = await supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .eq('role', 'technician');
-
-    const { count: lobbyCount } = await supabase
-      .from('appointments')
-      .select('id', { count: 'exact', head: true })
-      .in('status', ['waiting', 'assigned_pending', 'serving']);
-
-    setQuickStats({
-      todayRevenue,
-      activeTechnicians: techCount || 0,
-      lobbyCount: lobbyCount || 0
-    });
-    setLoading(false);
+  const getHomeRoute = (role) => {
+    switch (role) {
+      case 'super_admin':
+      case 'owner':
+      case 'partner': return '/superadmin';
+      case 'cashier': return '/cashier';
+      case 'technician': return '/technician';
+      default: return '/portal';
+    }
   };
 
+  const fetchDashboardData = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data: appointments } = await supabase
+        .from('appointments')
+        .select('*')
+        .gte('check_in_time', `${today}T00:00:00`);
+
+      if (appointments) {
+        setStats({
+          activeTechnicians: 5,
+          waitingCustomers: appointments.filter(a => a.status === 'waiting').length,
+          completedToday: appointments.filter(a => a.status === 'completed').length,
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-gold animate-pulse">Loading Dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-      <UniversalNav />
-      <div className="flex-1 overflow-x-hidden">
-        <Navbar currentPage="admin" onNavigate={handleNavigate} />
-        <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
-          <div className="mb-8 text-center">
-            <h1 className="font-heading text-3xl text-gold mb-2">Admin Command Center</h1>
-            <p className="text-offwhite/60">Select an action to manage the salon</p>
-          </div>
+    <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="px-8 py-6 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+          <h1 className="font-heading text-3xl text-gold">Admin Dashboard</h1>
+          <p className="text-offwhite/60 text-sm mt-1">Welcome, {user?.full_name}</p>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <div className="rounded-xl p-6 text-center border border-gold/20" style={{ backgroundColor: '#1a1a1a' }}>
-              <div className="text-offwhite/50 text-sm mb-1">Today&apos;s Revenue</div>
-              <div className="font-heading text-3xl text-gold">
-                {loading ? '...' : `$${quickStats.todayRevenue.toFixed(0)}`}
-              </div>
-            </div>
-            <div className="rounded-xl p-6 text-center border border-offwhite/10" style={{ backgroundColor: '#1a1a1a' }}>
+        <div className="flex-1 overflow-y-auto p-8">
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl">
               <div className="text-offwhite/50 text-sm mb-1">Active Technicians</div>
-              <div className="font-heading text-3xl text-offwhite">
-                {loading ? '...' : quickStats.activeTechnicians}
-              </div>
+              <div className="text-3xl font-heading text-offwhite">{stats.activeTechnicians}</div>
             </div>
-            <div className="rounded-xl p-6 text-center border border-offwhite/10" style={{ backgroundColor: '#1a1a1a' }}>
-              <div className="text-offwhite/50 text-sm mb-1">Customers in Lobby</div>
-              <div className="font-heading text-3xl text-offwhite">
-                {loading ? '...' : quickStats.lobbyCount}
-              </div>
+            <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl">
+              <div className="text-offwhite/50 text-sm mb-1">Waiting</div>
+              <div className="text-3xl font-heading text-yellow-400">{stats.waitingCustomers}</div>
+            </div>
+            <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl">
+              <div className="text-offwhite/50 text-sm mb-1">Completed</div>
+              <div className="text-3xl font-heading text-green-400">{stats.completedToday}</div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {actionCards.map((card) => {
-              return (
-                <Link
-                  key={card.id}
-                  to={card.href}
-                  className={`group relative border-2 rounded-xl p-8 text-center transition-all duration-300 hover:-translate-y-1 ${
-                    card.color === 'gold'
-                      ? 'border-gold hover:shadow-lg hover:shadow-gold/20'
-                      : 'border-offwhite/10 hover:border-offwhite/30'
-                  }`}
-                  style={{ backgroundColor: '#1a1a1a' }}
-                >
-                  <div className={`text-5xl mb-4 ${
-                    card.color === 'gold' ? 'text-gold' : 'text-offwhite/30'
-                  } group-hover:scale-110 transition-transform`}>
-                    {card.icon}
-                  </div>
-                  <h3 className="font-heading text-xl text-offwhite mb-2">{card.label}</h3>
-                  <p className="text-offwhite/40 text-sm">{card.description}</p>
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="mt-12 text-center">
-            <Link
-              to="/"
-              className="text-offwhite/40 hover:text-offwhite/60 text-sm transition-colors"
-            >
-              Back to Site
+          <div className="grid md:grid-cols-2 gap-6">
+            <Link to="/admin/lobby" className="block p-8 bg-offwhite/5 border border-gold/20 rounded-xl hover:bg-gold/10 transition-colors">
+              <h3 className="font-heading text-2xl text-gold mb-2">Manage Lobby</h3>
+              <p className="text-offwhite/60">Assign customers to technicians and manage floor</p>
+            </Link>
+            <Link to="/admin/services" className="block p-8 bg-offwhite/5 border border-gold/20 rounded-xl hover:bg-gold/10 transition-colors">
+              <h3 className="font-heading text-2xl text-gold mb-2">Services</h3>
+              <p className="text-offwhite/60">Manage services and pricing</p>
             </Link>
           </div>
         </div>
