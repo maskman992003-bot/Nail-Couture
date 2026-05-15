@@ -4,18 +4,20 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function ClientRegister() {
+  const [searchParams] = useSearchParams();
+  const urlReferralCode = searchParams.get('ref') || '';
+
   const [formData, setFormData] = useState({
     full_name: '',
     phone_number: '',
     email: '',
-    referral_code: searchParams.get('ref') || ''
+    referral_code: urlReferralCode
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [searchParams] = useSearchParams();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
