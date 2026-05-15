@@ -368,70 +368,6 @@ export default function ClientPortal() {
                   </div>
                 )}
 
-                <div className={`bg-gradient-to-r ${getTierInfo(profile.loyalty_points || 0).bg} border-2 ${getTierInfo(profile.loyalty_points || 0).border} rounded-xl p-6`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">⭐</span>
-                      <div>
-                        <h2 className="font-heading text-charcoal text-xl">Loyalty Rewards</h2>
-                        <p className={`font-heading text-lg ${getTierInfo(profile.loyalty_points || 0).color}`}>
-                          {getTierInfo(profile.loyalty_points || 0).name} Member
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-heading text-gold">{profile.loyalty_points || 0}</div>
-                      <div className="text-charcoal/60 text-sm">Points</div>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm text-charcoal/60 mb-1">
-                      <span>Progress to {getTierInfo(profile.loyalty_points || 0).nextTier || 'Max Tier'}</span>
-                      <span>{profile.loyalty_points || 0} / {getTierInfo(profile.loyalty_points || 0).nextThreshold || '∞'} pts</span>
-                    </div>
-                    <div className="w-full bg-charcoal/20 rounded-full h-3">
-                      <div
-                        className={`h-3 rounded-full ${getTierInfo(profile.loyalty_points || 0).color.replace('text-', 'bg-')}`}
-                        style={{ width: `${getTierInfo(profile.loyalty_points || 0).progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div className="bg-white/50 rounded-lg p-4">
-                    <div className="text-charcoal/60 text-sm mb-1">Your {getTierInfo(profile.loyalty_points || 0).name} Benefit:</div>
-                    <div className="text-charcoal font-medium">{getTierInfo(profile.loyalty_points || 0).benefit}</div>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('loyalty')}
-                    className="mt-4 w-full py-2 bg-gold text-charcoal font-medium hover:bg-gold/90 transition-colors"
-                  >
-                    View Rewards & Redeem
-                  </button>
-                  <div className="mt-6 pt-4 border-t border-charcoal/10">
-                    <h4 className="font-heading text-charcoal text-sm mb-3">Tier Roadmap</h4>
-                    <div className="space-y-2">
-                      {['Silver', 'Gold', 'Platinum', 'Diamond'].map((tier) => {
-                        const currentTier = getTierInfo(profile.loyalty_points || 0).name;
-                        const isUnlocked = ['Silver', 'Gold', 'Platinum', 'Diamond'].indexOf(currentTier) >= ['Silver', 'Gold', 'Platinum', 'Diamond'].indexOf(tier);
-                        const isCurrent = tier === currentTier;
-                        return (
-                          <div key={tier} className={`flex items-center gap-3 p-2 rounded-lg ${isCurrent ? 'bg-gold/20' : 'bg-charcoal/5'}`}>
-                            {isUnlocked ? (
-                              <span className="text-gold text-lg">✓</span>
-                            ) : (
-                              <span className="text-gray-400 text-lg">🔒</span>
-                            )}
-                            <div className="flex-1">
-                              <span className={`font-medium ${isCurrent ? 'text-gold' : isUnlocked ? 'text-charcoal' : 'text-charcoal/40'}`}>{tier}</span>
-                              {isCurrent && <span className="text-xs text-gold ml-2">(Current)</span>}
-                            </div>
-                            <span className={`text-xs ${isUnlocked ? 'text-charcoal/60' : 'text-charcoal/30'}`}>{tierBenefits[tier]}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
                 <div className="bg-white border border-charcoal/10 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-heading text-charcoal text-xl">Upcoming Appointments</h2>
@@ -650,27 +586,82 @@ export default function ClientPortal() {
 
             {activeTab === 'loyalty' && (
               <div className="space-y-6">
-                <div className="bg-white border border-charcoal/10 p-6">
-                  <h2 className="font-heading text-charcoal text-xl mb-6">Loyalty Rewards</h2>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-gradient-to-r from-gold/20 to-amber-100 border-2 border-gold p-6 text-center">
-                      <div className="text-charcoal/60 text-sm mb-1">Your Points</div>
-                      <div className="text-5xl font-heading text-gold mb-2">{profile.loyalty_points || 0}</div>
-                      <div className="text-charcoal/60 text-sm">Earn 1 point per $1 spent</div>
+                <div className={`bg-gradient-to-r ${getTierInfo(profile.loyalty_points || 0).bg} border-2 ${getTierInfo(profile.loyalty_points || 0).border} rounded-xl p-6`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">⭐</span>
+                      <div>
+                        <h2 className="font-heading text-charcoal text-xl">Loyalty Rewards</h2>
+                        <p className={`font-heading text-lg ${getTierInfo(profile.loyalty_points || 0).color}`}>
+                          {getTierInfo(profile.loyalty_points || 0).name} Member
+                        </p>
+                      </div>
                     </div>
-                    <div className={`bg-gradient-to-r ${getTierInfo(profile.loyalty_points || 0).bg} border ${getTierInfo(profile.loyalty_points || 0).border} p-6 text-center`}>
-                      <div className="text-charcoal/60 text-sm mb-1">Your Tier</div>
-                      <div className={`text-3xl font-heading ${getTierInfo(profile.loyalty_points || 0).color} mb-2`}>
-                        {getTierInfo(profile.loyalty_points || 0).name}
-                      </div>
-                      <div className="text-charcoal/60 text-sm">
-                        {profile.loyalty_points >= 1000 ? 'Top tier!' : profile.loyalty_points >= 500 ? '1000+ = Diamond' : profile.loyalty_points >= 100 ? '500+ = Platinum' : '100+ = Gold'}
-                      </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-heading text-gold">{profile.loyalty_points || 0}</div>
+                      <div className="text-charcoal/60 text-sm">Points</div>
                     </div>
                   </div>
-                  <div className="mt-6 bg-white/50 rounded-lg p-4">
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm text-charcoal/60 mb-1">
+                      <span>Progress to {getTierInfo(profile.loyalty_points || 0).nextTier || 'Max Tier'}</span>
+                      <span>{profile.loyalty_points || 0} / {getTierInfo(profile.loyalty_points || 0).nextThreshold || '∞'} pts</span>
+                    </div>
+                    <div className="w-full bg-charcoal/20 rounded-full h-3">
+                      <div
+                        className={`h-3 rounded-full ${getTierInfo(profile.loyalty_points || 0).color.replace('text-', 'bg-')}`}
+                        style={{ width: `${getTierInfo(profile.loyalty_points || 0).progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="bg-white/50 rounded-lg p-4">
                     <div className="text-charcoal/60 text-sm mb-1">Your {getTierInfo(profile.loyalty_points || 0).name} Benefit:</div>
                     <div className="text-charcoal font-medium text-lg">{getTierInfo(profile.loyalty_points || 0).benefit}</div>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-charcoal/20">
+                    <h4 className="font-heading text-charcoal text-sm mb-3">Tier Roadmap</h4>
+                    <div className="space-y-2">
+                      {['Silver', 'Gold', 'Platinum', 'Diamond'].map((tier) => {
+                        const currentTier = getTierInfo(profile.loyalty_points || 0).name;
+                        const tierOrder = ['Silver', 'Gold', 'Platinum', 'Diamond'];
+                        const isUnlocked = tierOrder.indexOf(currentTier) >= tierOrder.indexOf(tier);
+                        const isCurrent = tier === currentTier;
+                        return (
+                          <div key={tier} className={`flex items-center gap-3 p-2 rounded-lg ${isCurrent ? 'bg-white/30' : 'bg-black/5'}`}>
+                            {isUnlocked ? (
+                              <span className="text-gold text-lg">✓</span>
+                            ) : (
+                              <span className="text-gray-400 text-lg">🔒</span>
+                            )}
+                            <div className="flex-1">
+                              <span className={`font-medium ${isCurrent ? 'text-gold' : isUnlocked ? 'text-charcoal' : 'text-charcoal/40'}`}>{tier}</span>
+                              {isCurrent && <span className="text-xs text-gold ml-2">(Current)</span>}
+                            </div>
+                            <span className={`text-xs ${isUnlocked ? 'text-charcoal/60' : 'text-charcoal/30'}`}>{tierBenefits[tier]}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-charcoal/10 p-6">
+                  <h3 className="font-heading text-charcoal text-lg mb-4">How to Earn Points</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-charcoal/5">
+                      <span className="text-gold text-xl">💰</span>
+                      <div>
+                        <div className="text-charcoal font-medium">Earn 1 Point Per $1 Spent</div>
+                        <div className="text-charcoal/50 text-sm">On every service payment</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-charcoal/5">
+                      <span className="text-gold text-xl">🎁</span>
+                      <div>
+                        <div className="text-charcoal font-medium">Refer a Friend</div>
+                        <div className="text-charcoal/50 text-sm">Get 50 points when they sign up</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
