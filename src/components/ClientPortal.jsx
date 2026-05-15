@@ -21,7 +21,7 @@ const statusLabels = {
 };
 
 const tierBenefits = {
-  Silver: '5% off your next service',
+  Silver: '5% off all services',
   Gold: '10% off + free refreshment',
   Platinum: '15% off + priority booking + free refreshment',
   Diamond: '20% off + VIP priority + free premium service',
@@ -406,6 +406,30 @@ export default function ClientPortal() {
                   >
                     View Rewards & Redeem
                   </button>
+                  <div className="mt-6 pt-4 border-t border-charcoal/10">
+                    <h4 className="font-heading text-charcoal text-sm mb-3">Tier Roadmap</h4>
+                    <div className="space-y-2">
+                      {['Silver', 'Gold', 'Platinum', 'Diamond'].map((tier) => {
+                        const currentTier = getTierInfo(profile.loyalty_points || 0).name;
+                        const isUnlocked = ['Silver', 'Gold', 'Platinum', 'Diamond'].indexOf(currentTier) >= ['Silver', 'Gold', 'Platinum', 'Diamond'].indexOf(tier);
+                        const isCurrent = tier === currentTier;
+                        return (
+                          <div key={tier} className={`flex items-center gap-3 p-2 rounded-lg ${isCurrent ? 'bg-gold/20' : 'bg-charcoal/5'}`}>
+                            {isUnlocked ? (
+                              <span className="text-gold text-lg">✓</span>
+                            ) : (
+                              <span className="text-gray-400 text-lg">🔒</span>
+                            )}
+                            <div className="flex-1">
+                              <span className={`font-medium ${isCurrent ? 'text-gold' : isUnlocked ? 'text-charcoal' : 'text-charcoal/40'}`}>{tier}</span>
+                              {isCurrent && <span className="text-xs text-gold ml-2">(Current)</span>}
+                            </div>
+                            <span className={`text-xs ${isUnlocked ? 'text-charcoal/60' : 'text-charcoal/30'}`}>{tierBenefits[tier]}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="bg-white border border-charcoal/10 p-6">
