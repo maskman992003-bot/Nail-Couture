@@ -46,7 +46,7 @@ export default function CustomerHistory() {
     try {
       const [onlineRes, kioskRes, notifRes] = await Promise.all([
         supabase.from('online_bookings').select('*').eq('profile_id', userId).order('scheduled_time', { ascending: false }),
-        supabase.from('appointments').select('*, services(name, price, duration_minutes), profiles(full_name)').eq('profile_id', userId).order('check_in_time', { ascending: false }),
+        supabase.from('appointments').select('*, services(name, price, duration_minutes), profiles!appointments_client_id_fkey(full_name)').eq('profile_id', userId).order('check_in_time', { ascending: false }),
         supabase.from('notifications').select('*').eq('profile_id', userId).order('created_at', { ascending: false }).limit(10),
       ]);
       const onlineList = onlineRes.data || [];

@@ -78,9 +78,7 @@ export default function ClientPortal() {
       try {
         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', sessionUser.id).single();
         if (profileData) setProfile(profileData);
-      } catch (err) {
-        console.error('Error fetching staff profile:', err);
-      }
+      } catch { }
     }
 
     const currentUser = localStorage.getItem('salon_user_data');
@@ -108,11 +106,8 @@ export default function ClientPortal() {
         .in('status', ['waiting', 'assigned_pending', 'serving'])
         .order('check_in_time', { ascending: false });
       setAppointments(appointmentsData || []);
-    } catch (err) {
-      console.error('Error fetching user data:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch { }
+    setLoading(false);
   }, [navigate]);
 
   const startEditProfile = () => {
