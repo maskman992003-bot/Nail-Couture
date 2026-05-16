@@ -17,6 +17,10 @@ export default function CustomerBooking() {
   const [bookLoading, setBookLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
+  const currentUser = localStorage.getItem('salon_user_data');
+  const userData = currentUser ? JSON.parse(currentUser) : null;
+  const firstName = userData?.full_name ? userData.full_name.split(' ')[0] : 'there';
+
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
     if (user.is_staff) {
@@ -91,11 +95,13 @@ export default function CustomerBooking() {
             <div className="text-center max-w-md">
               <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 30px rgba(197, 160, 89, 0.3)' }}>
                 <svg className="w-10 h-10 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h2 className="font-heading text-3xl text-gold mb-4">Booking Confirmed!</h2>
-              <p className="text-offwhite/60 mb-8">Your appointment has been booked successfully. We'll see you soon!</p>
+              <h2 className="font-heading text-3xl text-gold mb-2">Thank you, {firstName}!</h2>
+              <h3 className="font-heading text-2xl text-offwhite mb-6">Booking Pending</h3>
+              <p className="text-offwhite/60 mb-4">Your appointment request has been submitted successfully and is awaiting confirmation. We'll notify you shortly once it's confirmed.</p>
+              <p className="text-offwhite text-sm mb-8">We look forward to welcoming you.</p>
               <Link to="/portal" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
                 Return to Home
               </Link>
@@ -231,7 +237,7 @@ export default function CustomerBooking() {
                 disabled={bookLoading}
                 className="w-full py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20 disabled:opacity-50"
               >
-                {bookLoading ? 'Booking...' : 'Confirm Booking'}
+                {bookLoading ? 'Submitting...' : 'Submit Booking Request'}
               </button>
             </div>
           )}

@@ -1,47 +1,75 @@
 -- ============================================
--- Migration: Update existing notifications table
+-- Migration: Secure notifications via RPC functions (phone-based auth)
 -- Run this in Supabase > SQL Editor
 -- ============================================
 
--- 1. Add the new columns (ignore errors if they already exist due to prior partial changes)
-ALTER TABLE notifications ADD COLUMN IF NOT EXISTS target_user_id UUID REFERENCES profiles(id) ON DELETE CASCADE;
-ALTER TABLE notifications ADD COLUMN IF NOT EXISTS title TEXT;
-ALTER TABLE notifications ALTER COLUMN message SET NOT NULL;
-
--- 2. If profile_id exists, backfill target_user_id from it (for existing rows)
-UPDATE notifications SET target_user_id = profile_id WHERE target_user_id IS NULL AND profile_id IS NOT NULL;
-
--- 3. Backfill a default title for rows that don't have one
-UPDATE notifications SET title = 'Notification' WHERE title IS NULL;
-
--- 4. Make target_user_id NOT NULL (only safe if you have data backfilled)
-ALTER TABLE notifications ALTER COLUMN target_user_id SET NOT NULL;
-ALTER TABLE notifications ALTER COLUMN title SET NOT NULL;
-
--- 5. Add indexes for fast queries
-CREATE INDEX IF NOT EXISTS notifications_target_user_id_is_read_idx
-  ON notifications(target_user_id, is_read)
-  WHERE is_read = FALSE;
-
-CREATE INDEX IF NOT EXISTS notifications_created_at_idx
-  ON notifications(created_at DESC);
-
--- 6. Ensure RLS is on and policies exist
+-- Re-enable RLS on notifications table
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing RLS policies on notifications
 DROP POLICY IF EXISTS "Allow all notifications" ON notifications;
 DROP POLICY IF EXISTS "Customers can read own notifications" ON notifications;
+DROP POLICY IF EXISTS "Staff can read all notifications" ON notifications;
 DROP POLICY IF EXISTS "Admins can insert for any customer" ON notifications;
+DROP POLICY IF EXISTS "Staff can insert any notification" ON notifications;
 DROP POLICY IF EXISTS "Customers can update own notifications" ON notifications;
+DROP POLICY IF EXISTS "Staff can update any notification" ON notifications;
 
-CREATE POLICY "Customers can read own notifications"
-  ON notifications FOR SELECT
-  USING (auth.uid() = target_user_id);
+-- Allow SELECT/UPDATE via RPC only (RLS is bypassed for RPC with security definer)
+-- The actual access control lives inside the plpgsql functions above
 
-CREATE POLICY "Admins can insert for any customer"
-  ON notifications FOR INSERT
-  WITH CHECK (true);
+-- Drop existing function if re-running
+CREATE OR REPLACE FUNCTION get_my_notifications(p_phone TEXT)
+RETURNS SETOF notifications
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT n.*
+  FROM notifications n
+  WHERE n.target_user_id = (
+    SELECT id FROM profiles WHERE phone_number = p_phone
+  )
+  ORDER BY n.created_at DESC
+  LIMIT 20;
+END;
+$$;
 
-CREATE POLICY "Customers can update own notifications"
-  ON notifications FOR UPDATE
-  USING (auth.uid() = target_user_id);
+CREATE OR REPLACE FUNCTION mark_my_notifications_read(p_phone TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE notifications
+  SET is_read = TRUE
+  WHERE is_read = FALSE
+    AND target_user_id = (
+      SELECT id FROM profiles WHERE phone_number = p_phone
+    );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION mark_notification_read(p_phone TEXT, p_notif_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE notifications
+  SET is_read = TRUE
+  WHERE id = p_notif_id
+    AND target_user_id = (
+      SELECT id FROM profiles WHERE phone_number = p_phone
+    );
+END;
+$$;
+
+-- Grant execute to authenticated and anon (phone-based login has no auth.uid)
+GRANT EXECUTE ON FUNCTION get_my_notifications(TEXT) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION mark_my_notifications_read(TEXT) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION mark_notification_read(TEXT, UUID) TO authenticated, anon;

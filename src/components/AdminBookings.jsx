@@ -77,7 +77,9 @@ export default function AdminBookings() {
   }, []);
 
   const sendNotification = async (booking, newStatus) => {
-    if (!booking.customer?.phone_number && !booking.customer?.email) return;
+    console.log('[sendNotification] booking.id:', booking.id, '| profile_id:', booking.profile_id, '| status:', newStatus);
+    console.log('[sendNotification] customer object:', JSON.stringify(booking.customer));
+    if (!booking.customer?.phone_number && !booking.customer?.email) { console.warn('[sendNotification] no contact info'); return; }
     const customerName = booking.customer?.full_name || 'Customer';
     const serviceName = booking.services?.name || 'your service';
     const statusMessages = {
@@ -87,20 +89,35 @@ export default function AdminBookings() {
       cancelled: `Hi ${customerName}, your appointment for ${serviceName} has been cancelled. Please rebook at your convenience.`,
     };
     const message = statusMessages[newStatus];
-    if (!message) return;
+    const titleMap = {
+      confirmed: 'Booking Confirmed',
+      in_progress: 'Service Started',
+      completed: 'Service Completed',
+      cancelled: 'Booking Cancelled',
+    };
+    if (!message) { console.warn('[sendNotification] no message for:', newStatus); return; }
+    const notifPayload = {
+      target_user_id: booking.profile_id,
+      online_booking_id: booking.id,
+      title: titleMap[newStatus],
+      message,
+      is_read: false,
+    };
+    console.log('[sendNotification] payload:', JSON.stringify(notifPayload));
     try {
-      await supabase.from('notifications').insert({
-        profile_id: booking.profile_id,
-        online_booking_id: booking.id,
-        message,
-        is_read: false,
-      });
+      const { data, error } = await supabase.from('notifications').insert(notifPayload);
+      if (error) {
+        console.error('[sendNotification] ERROR:', JSON.stringify(error));
+      } else {
+        console.log('[sendNotification] SUCCESS, inserted id:', data?.[0]?.id);
+      }
     } catch (err) {
-      console.error('Notification error:', err);
+      console.error('[sendNotification] EXCEPTION:', err);
     }
   };
 
   const updateStatus = useCallback(async (booking, newStatus) => {
+    console.log('[updateStatus] called', { bookingId: booking.id, status: newStatus });
     setUpdatingId(booking.id);
     try {
       const { error } = await supabase
@@ -148,8 +165,9 @@ export default function AdminBookings() {
       const newDateStr = new Date(newScheduled).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       const newTimeStr = new Date(newScheduled).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
       await supabase.from('notifications').insert({
-        profile_id: editingBooking.profile_id,
+        target_user_id: editingBooking.profile_id,
         online_booking_id: editingBooking.id,
+        title: 'Appointment Rescheduled',
         message: `Hi ${customerName}, your ${serviceName} appointment has been rescheduled to ${newDateStr} at ${newTimeStr}.`,
         is_read: false,
       });
@@ -338,7 +356,7 @@ export default function AdminBookings() {
                           </button>
                           {booking.status === 'pending' && (
                             <button
-                              onClick={() => updateStatus(booking, 'confirmed')}
+                              onClick={() => { console.log('[Confirm button] clicked, booking:', booking.id, 'status:', booking.status); updateStatus(booking, 'confirmed'); }}
                               disabled={isUpdating}
                               className="px-4 py-2 text-xs font-medium rounded-lg border text-blue-300 hover:bg-blue-900/20 hover:border-blue-500/50 transition-all disabled:opacity-30"
                               style={{ borderColor: 'rgba(255,255,255,0.1)' }}
@@ -348,7 +366,7 @@ export default function AdminBookings() {
                           )}
                           {booking.status === 'confirmed' && (
                             <button
-                              onClick={() => updateStatus(booking, 'in_progress')}
+                              onClick={() => { console.log('[Start button] clicked'); updateStatus(booking, 'in_progress'); }}
                               disabled={isUpdating}
                               className="px-4 py-2 text-xs font-medium rounded-lg border text-green-300 hover:bg-green-900/20 hover:border-green-500/50 transition-all disabled:opacity-30"
                               style={{ borderColor: 'rgba(255,255,255,0.1)' }}

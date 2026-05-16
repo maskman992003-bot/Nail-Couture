@@ -88,17 +88,14 @@ export default function Sidebar() {
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
-    if (!user) return;
+    if (!user?.phone_number) return;
     try {
-      const { data } = await supabase
-        .from('notifications')
-        .select('id, title, message, is_read, created_at')
-        .eq('target_user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const { data, error } = await supabase.rpc('get_my_notifications', { p_phone: user.phone_number });
+      if (error) { console.error('[fetchNotifications] error:', error); return; }
+      console.log('[fetchNotifications] got', data?.length, 'notifications for phone', user.phone_number);
       setNotifications(data || []);
     } catch (err) {
-      console.error('Error fetching notifications:', err);
+      console.error('[fetchNotifications] exception:', err);
     }
   }, [user]);
 
@@ -112,22 +109,28 @@ export default function Sidebar() {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const markAllRead = async () => {
-    if (unreadCount === 0) return;
-    const ids = notifications.filter((n) => !n.is_read).map((n) => n.id);
+    if (unreadCount === 0 || !user?.phone_number) return;
+    console.log('[markAllRead] called for phone:', user.phone_number);
     try {
-      await supabase.from('notifications').update({ is_read: true }).in('id', ids);
+      const { error } = await supabase.rpc('mark_my_notifications_read', { p_phone: user.phone_number });
+      if (error) console.error('[markAllRead] error:', error);
+      else console.log('[markAllRead] success');
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch (err) {
-      console.error('Error marking notifications read:', err);
+      console.error('[markAllRead] exception:', err);
     }
   };
 
   const markOneRead = async (id) => {
+    if (!user?.phone_number) return;
+    console.log('[markOneRead] called for id:', id);
     try {
-      await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+      const { error } = await supabase.rpc('mark_notification_read', { p_phone: user.phone_number, p_notif_id: id });
+      if (error) console.error('[markOneRead] error:', error);
+      else console.log('[markOneRead] success');
       setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true } : n));
     } catch (err) {
-      console.error('Error marking notification read:', err);
+      console.error('[markOneRead] exception:', err);
     }
   };
 
