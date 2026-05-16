@@ -7,7 +7,6 @@ import BookingWizard from './components/BookingWizard'
 import Lookbook from './components/Lookbook'
 import AboutContact from './components/AboutContact'
 import CheckIn from './components/CheckIn'
-import BannerCarousel from './components/BannerCarousel'
 import './index.css'
 
 function App() {
@@ -70,14 +69,40 @@ function App() {
       <main className="flex-1 relative z-10">
         {currentPage === 'home' && (
           <>
-            <Lookbook />
-            
             <section className="min-h-[70vh] sm:min-h-[80vh] bg-charcoal flex items-center justify-center relative overflow-hidden px-4 sm:px-6">
-              <BannerCarousel />
+              <div className="absolute inset-0 bg-gradient-to-b from-charcoal via-charcoal/95 to-charcoal" />
+              <div className="text-center z-10 max-w-3xl mx-auto">
+                <h1 className="font-heading text-offwhite text-3xl sm:text-4xl md:text-5xl lg:text-7xl mb-4 sm:mb-6 tracking-wide">
+                  Couture Nails. Expertly Tailored.
+                </h1>
+                <p className="text-offwhite/70 text-base sm:text-lg md:text-xl max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
+                  Discover the precision of the Russian Manicure technique. Medical-grade sterilization,
+                  non-toxic products, and artisans trained in the finest traditions of nail couture.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={scrollToLookbook}
+                    className="px-6 sm:px-8 py-3 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal transition-all tracking-wider text-sm sm:text-base"
+                  >
+                    EXPLORE THE LOOKBOOK
+                  </button>
+                  <button
+                    onClick={() => navigate('/check-in')}
+                    className="px-6 sm:px-8 py-3 bg-gold text-charcoal hover:bg-gold/90 transition-all tracking-wider text-sm sm:text-base"
+                  >
+                    CHECK IN
+                  </button>
+                  <button
+                    onClick={scrollToBooking}
+                    className="px-6 sm:px-8 py-3 border-2 border-offwhite/30 text-offwhite hover:border-offwhite hover:text-offwhite transition-all tracking-wider text-sm sm:text-base"
+                  >
+                    REQUEST APPOINTMENT
+                  </button>
+                </div>
+              </div>
             </section>
-            
+            <Lookbook />
             <Services />
-            
             <BookingWizard />
           </>
         )}
