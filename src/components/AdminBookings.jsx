@@ -222,7 +222,7 @@ export default function AdminBookings() {
     <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="px-8 py-6 border-b flex-shrink-0" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+        <div className="px-4 sm:px-6 lg:px-8 py-6 border-b flex-shrink-0" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-heading text-3xl text-gold">Booking Management</h1>
@@ -238,7 +238,7 @@ export default function AdminBookings() {
           </div>
         </div>
 
-        <div className="flex-shrink-0 px-8 pt-6">
+        <div className="flex-shrink-0 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
           <div className="rounded-xl p-1 flex gap-1 overflow-x-auto" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(197, 160, 89, 0.1)' }}>
             <button
               onClick={() => setActiveTab('all')}
@@ -277,12 +277,12 @@ export default function AdminBookings() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by name, service, or phone..."
-              className="w-full sm:w-80 p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/30 rounded-lg focus:border-gold focus:outline-none text-sm"
+              className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/30 rounded-lg focus:border-gold focus:outline-none text-sm"
             />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-8 pb-8">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pb-24 lg:pb-8">
           {filteredBookings.length === 0 ? (
             <div className="rounded-xl p-12 text-center mt-4" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="text-offwhite/30 text-4xl mb-4">&#128197;</div>

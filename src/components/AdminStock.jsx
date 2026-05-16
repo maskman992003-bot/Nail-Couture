@@ -171,7 +171,7 @@ export default function AdminStock() {
     <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="px-8 py-6 border-b flex-shrink-0" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+        <div className="px-4 sm:px-6 lg:px-8 py-6 border-b flex-shrink-0" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-heading text-3xl text-gold">Inventory Management</h1>
@@ -201,7 +201,7 @@ export default function AdminStock() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
           <div className="rounded-xl p-5 mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(197, 160, 89, 0.1)' }}>
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex-1 w-full sm:max-w-sm">

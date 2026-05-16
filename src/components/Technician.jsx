@@ -115,7 +115,7 @@ export default function Technician() {
     <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="px-8 py-6 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+        <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-heading text-3xl text-gold">Hello, {firstName}</h1>
@@ -127,7 +127,7 @@ export default function Technician() {
           </div>
         </div>
 
-        <div className="px-8 py-4 flex gap-2 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+        <div className="px-4 sm:px-6 lg:px-8 py-4 flex gap-2 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
           <button onClick={() => setActiveTab('home')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'home' ? 'bg-gold text-charcoal' : 'bg-offwhite/10 text-offwhite/60 hover:bg-offwhite/20'}`}>
             Home
           </button>
@@ -136,10 +136,10 @@ export default function Technician() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
           {activeTab === 'home' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl text-center">
                   <div className="text-offwhite/50 text-sm mb-2">Services Done Today</div>
                   <div className="text-5xl font-heading text-green-400">{stats.completedToday}</div>

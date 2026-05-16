@@ -71,7 +71,7 @@ export default function Cashier() {
           <p className="text-offwhite/60 text-sm mt-1">Welcome, {user?.full_name}</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             <Link to="/cashier/checkout" className="block p-8 bg-gold/10 border-2 border-gold rounded-xl hover:bg-gold/20 transition-colors text-center">
               <div className="text-4xl mb-3">💳</div>

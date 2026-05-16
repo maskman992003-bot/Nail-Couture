@@ -51,6 +51,7 @@ export default function ClientPortal() {
   const [confirmationCode, setConfirmationCode] = useState(null);
   const [showEarningModal, setShowEarningModal] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [refreshments, setRefreshments] = useState([]);
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
@@ -61,7 +62,15 @@ export default function ClientPortal() {
       return;
     }
     fetchUserData();
+    fetchRefreshments();
   }, [user, authLoading, navigate]);
+
+  const fetchRefreshments = async () => {
+    try {
+      const { data } = await supabase.from('stock').select('name').eq('category', 'refreshment').gt('quantity', 0).order('name')
+      setRefreshments(data || [])
+    } catch (err) { console.error('Error fetching refreshments:', err) }
+  }
 
   const fetchUserData = useCallback(async () => {
     const { user: sessionUser } = await supabase.auth.getUser();
@@ -175,7 +184,7 @@ export default function ClientPortal() {
     <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto px-10 py-8 space-y-10">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 pb-24 lg:pb-8">
           <div className="pt-4">
             <h1 className="font-heading text-4xl text-gold">Welcome, {profile.full_name?.split(' ')[0] || 'back'}</h1>
             <p className="text-offwhite/50 text-sm mt-1">We're glad to have you here</p>
@@ -287,6 +296,19 @@ export default function ClientPortal() {
                 <div>
                   <div className="text-offwhite/40 text-xs mb-2">Phone</div>
                   <input type="tel" value={editForm.phone_number} onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })} className="w-full p-3 text-offwhite border border-offwhite/10 rounded-lg focus:border-gold focus:outline-none bg-transparent" />
+                </div>
+                <div>
+                  <div className="text-offwhite/40 text-xs mb-2">Refreshment Preference</div>
+                  <select
+                    value={editForm.refreshment_pref || ''}
+                    onChange={(e) => setEditForm({ ...editForm, refreshment_pref: e.target.value })}
+                    className="w-full p-3 text-offwhite border border-offwhite/10 rounded-lg focus:border-gold focus:outline-none bg-transparent appearance-none cursor-pointer"
+                  >
+                    <option value="">None</option>
+                    {refreshments.map((item) => (
+                      <option key={item.name} value={item.name}>{item.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex items-end gap-3">
                   <button onClick={saveProfile} disabled={saving} className="px-6 py-3 bg-gold text-charcoal font-heading text-sm rounded-lg hover:bg-gold/90 disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>

@@ -7,6 +7,7 @@ export default function Navbar({ currentPage, onNavigate }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const isAdminPage = location.pathname.startsWith('/admin') || location.pathname === '/checkout';
 
@@ -75,7 +76,7 @@ export default function Navbar({ currentPage, onNavigate }) {
                     </Link>
                   )}
                   <button
-                    onClick={handleLogout}
+                    onClick={() => setShowLogoutConfirm(true)}
                     className="px-4 py-2 border border-offwhite/30 text-offwhite/60 hover:border-offwhite hover:text-offwhite transition-all text-sm tracking-wider"
                   >
                     Logout
@@ -146,16 +147,46 @@ export default function Navbar({ currentPage, onNavigate }) {
                     {user.is_staff && isAdminPage && (
                       <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">BACK TO ADMIN</Link>
                     )}
-                    <button onClick={handleLogout} className="py-3 text-red-400 hover:text-red-300 text-left px-2 text-sm tracking-wider">LOGOUT</button>
+                    <button onClick={() => setShowLogoutConfirm(true)} className="py-3 text-red-400 hover:text-red-300 text-left px-2 text-sm tracking-wider">LOGOUT</button>
                   </>
                 ) : (
                   <a href="/login" className="py-3 text-charcoal bg-gold text-center px-2 text-sm tracking-wider font-medium">LOGIN</a>
                 )}
               </div>
+</div>
+            </div>
+          )}
+      </div>
+
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center z-[200]" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
+          <div className="w-full max-w-sm rounded-2xl p-8 border mx-4" style={{ backgroundColor: '#141414', borderColor: 'rgba(197,160,89,0.3)' }}>
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </div>
+              <h3 className="font-heading text-xl text-offwhite mb-2">Log Out?</h3>
+              <p className="text-offwhite/50 text-sm">Are you sure you want to log out of your account?</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-xl hover:bg-offwhite/20 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setShowLogoutConfirm(false); logout(); navigate('/login'); }}
+                className="flex-1 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors text-sm font-medium"
+              >
+                Log Out
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </nav>
   );
 }

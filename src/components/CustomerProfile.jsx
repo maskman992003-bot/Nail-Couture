@@ -102,7 +102,7 @@ export default function CustomerProfile() {
     <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto px-10 py-8 space-y-10">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 pb-24 lg:pb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Link to="/portal" className="text-offwhite/40 hover:text-gold text-sm">Home</Link>
@@ -114,7 +114,7 @@ export default function CustomerProfile() {
           </div>
 
           <div className="rounded-2xl p-8 border-2" style={{ background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.05) 0%, rgba(26, 26, 26, 1) 100%)', borderColor: 'rgba(197, 160, 89, 0.3)' }}>
-            <div className="flex items-center justify-between mb-8 pb-6 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pb-6 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-5">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)' }}>
                   <span className="text-charcoal font-heading text-xl font-bold">{profile.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
@@ -125,7 +125,7 @@ export default function CustomerProfile() {
                 </div>
               </div>
               {!editing && (
-                <button onClick={() => setEditing(true)} className="px-5 py-2 border rounded-lg text-sm transition-colors hover:border-gold/50" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', color: '#c5a059' }}>
+                <button onClick={() => setEditing(true)} className="px-5 py-2 border rounded-lg text-sm transition-colors hover:border-gold/50 whitespace-nowrap" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', color: '#c5a059' }}>
                   Edit Profile
                 </button>
               )}
@@ -179,29 +179,17 @@ export default function CustomerProfile() {
                 <div>
                   <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Refreshment Preference</div>
                   {refreshments.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {refreshments.map((item) => {
-                        const selected = form.refreshment_pref === item.name;
-                        return (
-                          <button
-                            key={item.name}
-                            onClick={() => setForm({ ...form, refreshment_pref: selected ? '' : item.name })}
-                            className="py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left"
-                            style={{
-                              backgroundColor: selected ? 'rgba(197, 160, 89, 0.12)' : 'rgba(255,255,255,0.02)',
-                              borderColor: selected ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.08)',
-                              borderWidth: selected ? '2px' : '1px',
-                              color: selected ? '#c5a059' : '#e2e8f0',
-                            }}
-                          >
-                            <span className="flex items-center gap-2">
-                              {selected && <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
-                              {item.name}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <select
+                      value={form.refreshment_pref}
+                      onChange={(e) => setForm({ ...form, refreshment_pref: e.target.value })}
+                      className="w-full p-3 text-offwhite border rounded-lg focus:border-gold focus:outline-none appearance-none cursor-pointer"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' }}
+                    >
+                      <option value="">None</option>
+                      {refreshments.map((item) => (
+                        <option key={item.name} value={item.name} style={{ backgroundColor: '#111' }}>{item.name}</option>
+                      ))}
+                    </select>
                   ) : (
                     <div className="py-4 text-offwhite/30 text-sm italic">No refreshments available at this time</div>
                   )}

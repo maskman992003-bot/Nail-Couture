@@ -128,6 +128,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [nailGoal, setNailGoal] = useState('')
+  const [refreshmentList, setRefreshmentList] = useState([])
   const [refreshmentPref, setRefreshmentPref] = useState('')
   const [selectedService, setSelectedService] = useState(null)
   const [showServiceSelection, setShowServiceSelection] = useState(false)
@@ -143,6 +144,16 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
       return () => clearTimeout(timer)
     }
   }, [success])
+
+  useEffect(() => {
+    const fetchRefreshments = async () => {
+      try {
+        const { data } = await supabase.from('stock').select('name').eq('category', 'refreshment').gt('quantity', 0).order('name')
+        setRefreshmentList(data || [])
+      } catch (err) { console.error('Error fetching refreshments:', err) }
+    }
+    fetchRefreshments()
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -315,11 +326,9 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
               className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:outline-none focus:border-gold transition-colors appearance-none cursor-pointer"
             >
               <option value="" className="bg-charcoal">Select a refreshment (optional)</option>
-              <option value="Coffee" className="bg-charcoal">Coffee</option>
-              <option value="Tea" className="bg-charcoal">Tea</option>
-              <option value="Sparkling Water" className="bg-charcoal">Sparkling Water</option>
-              <option value="Still Water" className="bg-charcoal">Still Water</option>
-              <option value="Wine" className="bg-charcoal">Wine</option>
+              {refreshmentList.map((item) => (
+                <option key={item.name} value={item.name} className="bg-charcoal">{item.name}</option>
+              ))}
             </select>
           </div>
 

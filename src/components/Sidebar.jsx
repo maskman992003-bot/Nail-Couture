@@ -54,7 +54,6 @@ const navItemsByRole = {
     { id: 'book', label: 'Book', href: '/customer/book', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { id: 'loyalty', label: 'Rewards', href: '/customer/loyalty', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id: 'history', label: 'History', href: '/customer/history', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { id: 'profile', label: 'Profile', href: '/customer/profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
   ],
 };
 
@@ -86,6 +85,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.phone_number) return;
@@ -201,7 +201,7 @@ export default function Sidebar() {
         </div>
 
         <div className="p-3 border-t flex-shrink-0" style={{ borderColor }}>
-          <Link to="/portal" className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link to="/customer/profile" className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
               <span className="text-gold text-xs font-heading">{initials || '?'}</span>
             </div>
@@ -210,7 +210,7 @@ export default function Sidebar() {
             </div>
           </Link>
           <button
-            onClick={handleLogout}
+            onClick={() => setShowLogoutConfirm(true)}
             className="w-full text-offwhite/40 hover:text-red-400 text-[9px] mt-1 py-1 px-2 rounded transition-colors hover:bg-red-400/10"
           >
             Logout
@@ -255,8 +255,8 @@ export default function Sidebar() {
             <span className="text-[8px] font-medium">Notifications</span>
           </button>
           <Link
-            to="/portal"
-            className="flex flex-col items-center gap-0.5 px-2 py-1.5 flex-1 max-w-[60px] text-offwhite/40 hover:text-gold"
+            to="/customer/profile"
+            className="flex flex-col items-center gap-0.5 px-2 py-1.5 flex-1 max-w-[60px] text-offwhite/40 hover:text-gold hover:bg-offwhite/5 transition-colors rounded-lg mx-1"
           >
             <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center">
               <span className="text-[10px] text-gold font-heading">{initials || '?'}</span>
@@ -264,7 +264,7 @@ export default function Sidebar() {
             <span className="text-[8px] font-medium truncate max-w-[50px]">{displayName}</span>
           </Link>
           <button
-            onClick={handleLogout}
+            onClick={() => setShowLogoutConfirm(true)}
             className="flex flex-col items-center gap-0.5 px-2 py-1.5 flex-1 max-w-[60px] text-offwhite/40 hover:text-red-400"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -350,6 +350,36 @@ export default function Sidebar() {
           </div>
         </div>
       ) : null}
+
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center z-[200]" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
+          <div className="w-full max-w-sm rounded-2xl p-8 border" style={{ backgroundColor: '#141414', borderColor: 'rgba(197,160,89,0.3)' }}>
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </div>
+              <h3 className="font-heading text-xl text-offwhite mb-2">Log Out?</h3>
+              <p className="text-offwhite/50 text-sm">Are you sure you want to log out of your account?</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-xl hover:bg-offwhite/20 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setShowLogoutConfirm(false); handleLogout(); }}
+                className="flex-1 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors text-sm font-medium"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

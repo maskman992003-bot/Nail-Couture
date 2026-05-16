@@ -73,7 +73,7 @@ export default function Admin() {
           <p className="text-offwhite/60 text-sm mt-1">Welcome, {user?.full_name}</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl">
               <div className="text-offwhite/50 text-sm mb-1">Active Technicians</div>
