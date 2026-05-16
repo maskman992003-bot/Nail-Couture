@@ -31,16 +31,7 @@ export default function Technician() {
     fetchMyAppointments();
   }, [user, navigate]);
 
-  useEffect(() => {
-    const path = location.pathname;
-    if (path.includes('/schedule')) {
-      setActiveTab('schedule');
-    } else {
-      setActiveTab('home');
-    }
-  }, [location.pathname]);
-
-  const getHomeRoute = (role) => {
+const getHomeRoute = (role) => {
     switch (role) {
       case 'super_admin':
       case 'owner':
@@ -50,6 +41,17 @@ export default function Technician() {
       default: return '/portal';
     }
   };
+
+  const userRole = user?.role;
+
+  useEffect(() => {
+    if (!user) { navigate('/login'); return; }
+    if (userRole && userRole !== 'technician') {
+      navigate(getHomeRoute(userRole));
+      return;
+    }
+    fetchMyAppointments();
+  }, [user, userRole, navigate]);
 
   const fetchMyAppointments = async () => {
     try {

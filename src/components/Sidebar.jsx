@@ -87,21 +87,23 @@ export default function Sidebar() {
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  const userPhone = user?.phone_number;
+
   const fetchNotifications = useCallback(async () => {
-    if (!user?.phone_number) return;
+    if (!userPhone) return;
     try {
-      const { data, error } = await supabase.rpc('get_my_notifications', { p_phone: user.phone_number });
+      const { data, error } = await supabase.rpc('get_my_notifications', { p_phone: userPhone });
       if (error) return;
       setNotifications(data || []);
     } catch { }
-  }, [user]);
+  }, [userPhone]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userPhone) return;
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 15000);
     return () => clearInterval(interval);
-  }, [user, fetchNotifications]);
+  }, [userPhone, fetchNotifications]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
