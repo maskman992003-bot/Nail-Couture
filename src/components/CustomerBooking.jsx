@@ -53,13 +53,13 @@ export default function CustomerBooking() {
     if (!userId) { setBookLoading(false); navigate('/login'); return; }
 
     const checkInTime = new Date(`${selectedDate}T${selectedTime}:00`);
-    const { error } = await supabase.from('appointments').insert({
-      profile_id: sessionUser.id,
+    const { error } = await supabase.from('online_bookings').insert({
+      profile_id: userId,
       service_id: selectedService.id,
       technician_id: selectedTech?.id || null,
-      check_in_time: checkInTime.toISOString(),
-      status: 'waiting',
-      final_price: selectedService.price,
+      scheduled_time: checkInTime.toISOString(),
+      status: 'pending',
+      price: selectedService.price,
     });
 
     if (!error) {

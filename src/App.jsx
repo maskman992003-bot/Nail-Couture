@@ -14,6 +14,8 @@ function App() {
   const navigate = useNavigate()
   const [currentPage, setCurrentPage] = useState('home')
 
+  console.log('[App] rendering, path:', location.pathname, 'currentPage:', currentPage)
+
   useEffect(() => {
     const path = location.pathname.replace('/', '')
     if (path === 'check-in') {

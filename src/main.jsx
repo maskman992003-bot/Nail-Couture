@@ -21,6 +21,8 @@ import StaffManagement from './components/StaffManagement.jsx'
 import StaffProfile from './components/StaffProfile.jsx'
 import Settings from './components/Settings.jsx'
 import Services from './components/Services.jsx'
+import AdminStock from './components/AdminStock.jsx'
+import AdminBookings from './components/AdminBookings.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 
@@ -114,6 +116,26 @@ createRoot(document.getElementById('root')).render(
           <Route path="/admin/staff/:id" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <StaffProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/stock" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminStock />
+            </ProtectedRoute>
+          } />
+          <Route path="/superadmin/stock" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
+              <AdminStock />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/bookings" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminBookings />
+            </ProtectedRoute>
+          } />
+          <Route path="/superadmin/bookings" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
+              <AdminBookings />
             </ProtectedRoute>
           } />
 
