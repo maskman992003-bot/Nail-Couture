@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import emblaCarouselReact from 'embla-carousel-react'
 import nail1 from '../assets/nail1.jpg'
@@ -39,25 +39,29 @@ const bannerHeadlines = [
 export default function BannerCarousel() {
   const navigate = useNavigate()
   const [emblaRef, emblaApi] = emblaCarouselReact({ loop: true, skipSnaps: false })
-
-  const parallaxImagesRef = []
+  const parallaxNodesRef = useRef([])
+  const rootRef = useRef(null)
 
   const applyParallax = useCallback((api) => {
     if (!api) return
     const engine = api.internalEngine()
     const scrollProgress = api.scrollProgress()
-    const slidesInView = api.slidesInView()
+    const loop = engine.options.loop
+    const slideCount = engine.slideRegistry.length
 
-    slidesInView.forEach((index) => {
-      const imgEl = parallaxImagesRef.current[index]
-      if (!imgEl) return
+    parallaxNodesRef.current.forEach((node, index) => {
+      if (!node) return
 
-      const realIndex = engine.index.resolveSlideToPlug(index)
-      const scrollProg = engine.scrollTarget.determineScrollTarget(realIndex).progress || 0
-      const diff = scrollProgress - scrollProg
+      const realIndex = loop
+        ? engine.index.resolveSlideToPlug(index)
+        : index
+
+      const scrollTarget = engine.scrollTarget
+      const slideProgress = scrollTarget.determineScrollTarget(realIndex).progress || 0
+      const diff = scrollProgress - slideProgress
       const transformOffset = diff * PARALLAX_FACTOR * 100
 
-      imgEl.style.transform = `translateX(${transformOffset}%)`
+      node.style.transform = `translateX(${transformOffset}%)`
     })
   }, [])
 
@@ -100,15 +104,11 @@ export default function BannerCarousel() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-charcoal/90 via-charcoal/60 to-charcoal/40 z-10" />
                 <img
-                  ref={(el) => { parallaxImagesRef.current[index] = el }}
+                  ref={(el) => { parallaxNodesRef.current[index] = el }}
                   src={img}
                   alt={`Nail Couture slide ${index + 1}`}
-                  className="absolute inset-0 w-[130%] h-full object-cover"
-                  style={{
-                    left: '-15%',
-                    willChange: 'transform',
-                    transition: 'transform 100ms ease-out',
-                  }}
+                  className="absolute inset-0 w-[130%] h-full object-cover will-change-transform transition-transform duration-100 ease-out"
+                  style={{ left: '-15%' }}
                 />
                 <div className="relative z-20 h-full flex flex-col items-center justify-center px-8">
                   <div className="text-center max-w-2xl" style={{ pointerEvents: 'none', userSelect: 'none' }}>
