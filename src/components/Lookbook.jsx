@@ -4,32 +4,20 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import { EffectCoverflow } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/effect-coverflow'
-import nail1 from '../assets/nail1.jpg'
-import nail2 from '../assets/nail2.jpg'
-import nail3 from '../assets/nail3.jpg'
-import nail4 from '../assets/nail4.jpg'
-import nail5 from '../assets/nail5.jpg'
-import nail6 from '../assets/nail6.jpg'
-import nail7 from '../assets/nail7.jpg'
-import nail8 from '../assets/nail8.jpg'
-import nail9 from '../assets/nail9.jpg'
-import nail10 from '../assets/nail10.jpg'
-import nail11 from '../assets/nail11.jpg'
-import nail12 from '../assets/nail12.jpg'
 
 const galleryData = [
-  { id: 1, category: 'Bridal', title: 'Pearl Rose Manicure', description: 'Delicate pink ombre with pearl accents, perfect for your special day.', service: 'Gel-X Extensions with Custom Art', price: '$150', image: nail1 },
-  { id: 2, category: 'Minimalist', title: 'Modern French', description: 'Clean lines and negative space design for the sophisticated minimalist.', service: 'Russian Manicure', price: '$80', image: nail2 },
-  { id: 3, category: 'Extravagant', title: 'Crystal Embellishment', description: 'Hand-placed crystals with gradient ombre for maximum impact.', service: 'Gel-X with Full Crystal Set', price: '$200', image: nail3 },
-  { id: 4, category: 'Bridal', title: 'Heart Pink Tips', description: 'Sweet heart-designed nails with pink and white accents.', service: 'Gel-X Extensions', price: '$120', image: nail4 },
-  { id: 5, category: 'Minimalist', title: 'Blue Ombre Elegance', description: 'Soft blue ombre gel manicure with elegant simplicity.', service: 'Signature Russian Manicure', price: '$80', image: nail5 },
-  { id: 6, category: 'Extravagant', title: 'Navy Gold Art', description: 'Ornate navy and gold nail art with glossy finishes.', service: 'Gel-X with Chrome Finish', price: '$140', image: nail6 },
-  { id: 7, category: 'Bridal', title: 'Pearl Luminance', description: 'Iridescent pearls with soft pink base for bridal beauty.', service: 'Gel-X with Pearl Add-on', price: '$135', image: nail7 },
-  { id: 8, category: 'Minimalist', title: 'Nude Elegance', description: 'Sophisticated nude tones with subtle shimmer finish.', service: 'Russian Manicure', price: '$85', image: nail8 },
-  { id: 9, category: 'Extravagant', title: '3D Flower Art', description: 'Sculpted 3D roses with Swarovski crystal centers.', service: 'Full Nail Art Set', price: '$250', image: nail9 },
-  { id: 10, category: 'Bridal', title: 'Rose Gold Glam', description: 'Elegant rose gold polish with delicate floral nail art.', service: 'Gel-X Extensions', price: '$145', image: nail10 },
-  { id: 11, category: 'Minimalist', title: 'Pastel Ombre', description: 'Subtle pastel gradient for everyday elegance.', service: 'Russian Manicure', price: '$75', image: nail11 },
-  { id: 12, category: 'Extravagant', title: 'Diamond Dust', description: 'Full coverage sparkle with crushed diamond effect.', service: 'Gel-X with Chrome Finish', price: '$180', image: nail12 },
+  { id: 1, category: 'Bridal', title: 'Pearl Rose Manicure', description: 'Delicate pink ombre with pearl accents, perfect for your special day.', service: 'Gel-X Extensions with Custom Art', price: '$150', image: '/lookbook/nail1.jpg' },
+  { id: 2, category: 'Minimalist', title: 'Modern French', description: 'Clean lines and negative space design for the sophisticated minimalist.', service: 'Russian Manicure', price: '$80', image: '/lookbook/nail2.jpg' },
+  { id: 3, category: 'Extravagant', title: 'Crystal Embellishment', description: 'Hand-placed crystals with gradient ombre for maximum impact.', service: 'Gel-X with Full Crystal Set', price: '$200', image: '/lookbook/nail3.jpg' },
+  { id: 4, category: 'Bridal', title: 'Heart Pink Tips', description: 'Sweet heart-designed nails with pink and white accents.', service: 'Gel-X Extensions', price: '$120', image: '/lookbook/nail4.jpg' },
+  { id: 5, category: 'Minimalist', title: 'Blue Ombre Elegance', description: 'Soft blue ombre gel manicure with elegant simplicity.', service: 'Signature Russian Manicure', price: '$80', image: '/lookbook/nail5.jpg' },
+  { id: 6, category: 'Extravagant', title: 'Navy Gold Art', description: 'Ornate navy and gold nail art with glossy finishes.', service: 'Gel-X with Chrome Finish', price: '$140', image: '/lookbook/nail6.jpg' },
+  { id: 7, category: 'Bridal', title: 'Pearl Luminance', description: 'Iridescent pearls with soft pink base for bridal beauty.', service: 'Gel-X with Pearl Add-on', price: '$135', image: '/lookbook/nail7.jpg' },
+  { id: 8, category: 'Minimalist', title: 'Nude Elegance', description: 'Sophisticated nude tones with subtle shimmer finish.', service: 'Russian Manicure', price: '$85', image: '/lookbook/nail8.jpg' },
+  { id: 9, category: 'Extravagant', title: '3D Flower Art', description: 'Sculpted 3D roses with Swarovski crystal centers.', service: 'Full Nail Art Set', price: '$250', image: '/lookbook/nail9.jpg' },
+  { id: 10, category: 'Bridal', title: 'Rose Gold Glam', description: 'Elegant rose gold polish with delicate floral nail art.', service: 'Gel-X Extensions', price: '$145', image: '/lookbook/nail10.jpg' },
+  { id: 11, category: 'Minimalist', title: 'Pastel Ombre', description: 'Subtle pastel gradient for everyday elegance.', service: 'Russian Manicure', price: '$75', image: '/lookbook/nail11.jpg' },
+  { id: 12, category: 'Extravagant', title: 'Diamond Dust', description: 'Full coverage sparkle with crushed diamond effect.', service: 'Gel-X with Chrome Finish', price: '$180', image: '/lookbook/nail12.jpg' },
 ]
 
 const categories = ['All', 'Bridal', 'Minimalist', 'Extravagant']
