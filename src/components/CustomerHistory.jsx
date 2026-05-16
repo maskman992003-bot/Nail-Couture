@@ -123,13 +123,16 @@ export default function CustomerHistory() {
   };
 
   const generateReceipt = (booking) => {
+    const appointmentDate = booking.scheduled_time || booking.check_in_time;
+    const dateStr = appointmentDate ? new Date(appointmentDate).toLocaleDateString() : 'Walk-in';
+    const timeStr = appointmentDate ? new Date(appointmentDate).toLocaleTimeString() : '';
     const receiptContent = `
 NAIL COUTURE - RECEIPT
 =======================
 Service: ${booking.services?.name || 'N/A'}
 Duration: ${booking.services?.duration_minutes || 'N/A'} minutes
-Date: ${new Date(booking.scheduled_time).toLocaleDateString()}
-Time: ${new Date(booking.scheduled_time).toLocaleTimeString()}
+Date: ${dateStr}
+Time: ${timeStr}
 ${booking.technician ? `Technician: ${booking.technician.full_name}` : ''}
 ------------------------
 Price: $${booking.services?.price || booking.price || 0}
@@ -159,7 +162,7 @@ Thank you for visiting Nail Couture!
     const cfg = statusConfig[booking.status];
     const isUpdating = updatingId === booking.id;
     const isPending = booking.status === 'pending';
-    const canCancel = ['pending', 'confirmed', 'in_progress', 'waiting', 'assigned_pending', 'serving'].includes(booking.status);
+    const canCancel = booking.source === 'online' && ['pending', 'confirmed', 'in_progress'].includes(booking.status);
     const appointmentDate = booking.scheduled_time || booking.check_in_time;
 
     return (
