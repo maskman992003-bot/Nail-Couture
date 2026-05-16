@@ -77,9 +77,6 @@ export default function AdminBookings() {
   }, []);
 
   const sendNotification = async (booking, newStatus) => {
-    console.log('[sendNotification] booking.id:', booking.id, '| profile_id:', booking.profile_id, '| status:', newStatus);
-    console.log('[sendNotification] customer object:', JSON.stringify(booking.customer));
-    if (!booking.customer?.phone_number && !booking.customer?.email) { console.warn('[sendNotification] no contact info'); return; }
     const customerName = booking.customer?.full_name || 'Customer';
     const serviceName = booking.services?.name || 'your service';
     const statusMessages = {
@@ -95,7 +92,7 @@ export default function AdminBookings() {
       completed: 'Service Completed',
       cancelled: 'Booking Cancelled',
     };
-    if (!message) { console.warn('[sendNotification] no message for:', newStatus); return; }
+    if (!message) return;
     const notifPayload = {
       target_user_id: booking.profile_id,
       online_booking_id: booking.id,
@@ -103,16 +100,21 @@ export default function AdminBookings() {
       message,
       is_read: false,
     };
-    console.log('[sendNotification] payload:', JSON.stringify(notifPayload));
-    try {
-      const { data, error } = await supabase.from('notifications').insert(notifPayload);
-      if (error) {
-        console.error('[sendNotification] ERROR:', JSON.stringify(error));
-      } else {
-        console.log('[sendNotification] SUCCESS, inserted id:', data?.[0]?.id);
+    await supabase.from('notifications').insert(notifPayload).catch(() => {});
+
+    if (newStatus === 'completed') {
+      const earnedPoints = Math.floor(booking.services?.price || booking.price || 0);
+      if (earnedPoints > 0) {
+        await supabase.from('profiles').update({ loyalty_points: supabase.sql`loyalty_points + ${earnedPoints}` }).eq('id', booking.profile_id).catch(() => {});
+        const pointsNotif = {
+          target_user_id: booking.profile_id,
+          online_booking_id: booking.id,
+          title: 'Loyalty Points Earned!',
+          message: `You earned ${earnedPoints} loyalty points from your ${serviceName} visit!`,
+          is_read: false,
+        };
+        await supabase.from('notifications').insert(pointsNotif).catch(() => {});
       }
-    } catch (err) {
-      console.error('[sendNotification] EXCEPTION:', err);
     }
   };
 

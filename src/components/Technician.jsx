@@ -84,20 +84,17 @@ const getHomeRoute = (role) => {
     }
   };
 
-  const markComplete = async (appointmentId) => {
+  const markComplete = async (appointment) => {
     try {
-      await supabase
-        .from('appointments')
-        .update({ 
-          status: 'completed',
-          end_time: new Date().toISOString()
-        })
-        .eq('id', appointmentId);
-      
+      await supabase.from('appointments').update({ status: 'completed', end_time: new Date().toISOString() }).eq('id', appointment.id);
+      const earnedPoints = Math.floor(appointment.services?.price || 0);
+      if (earnedPoints > 0 && appointment.profile_id) {
+        await supabase.rpc('award_loyalty_points', { p_profile_id: appointment.profile_id, p_points: earnedPoints }).catch(() => {
+          supabase.from('profiles').update({ loyalty_points: supabase.sql`coalesce(loyalty_points, 0) + ${earnedPoints}` }).eq('id', appointment.profile_id).catch(() => {});
+        });
+      }
       fetchMyAppointments();
-    } catch (err) {
-      console.error('Error completing appointment:', err);
-    }
+    } catch { }
   };
 
   if (loading) {
@@ -172,7 +169,7 @@ const getHomeRoute = (role) => {
                     </div>
                   )}
                   <button
-                    onClick={() => markComplete(currentAppointment.id)}
+                    onClick={() => markComplete(currentAppointment)}
                     className="mt-6 w-full py-4 bg-gold text-charcoal font-heading text-xl rounded-xl hover:bg-gold/90 transition-colors"
                   >
                     Complete Service ✓
