@@ -144,7 +144,7 @@ Thank you for visiting Nail Couture!
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `receipt_${booking.id}.txt`;
+    a.download = `Nail-Couture.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
