@@ -23,12 +23,15 @@ const Sparkle = () => (
 
 const CATEGORIES = ['All', 'Extensions', 'Nail Art', 'Russian Manicure', 'Treatment', 'Packages'];
 
-const ServiceSelection = ({ onSelect, onBack }) => {
+const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) => {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeCategory, setActiveCategory] = useState('All')
   const [expandedCategory, setExpandedCategory] = useState(null)
+  const [selectedService, setSelectedService] = useState(initialService || null)
+  const [selectedAddOns, setSelectedAddOns] = useState(initialAddOns || [])
+  const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -54,7 +57,12 @@ const ServiceSelection = ({ onSelect, onBack }) => {
     )
   }
 
+  const addOns = services.filter((s) => s.is_addon)
+  const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id))
+  const totalPrice = (selectedService?.price || 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
+
   const groupedServices = services.reduce((acc, service) => {
+    if (service.is_addon) return acc
     const category = service.category || 'Other'
     if (!acc[category]) acc[category] = []
     acc[category].push(service)
@@ -66,24 +74,30 @@ const ServiceSelection = ({ onSelect, onBack }) => {
     ? allCategories
     : allCategories.filter((c) => c === activeCategory)
 
+  const toggleAddOn = (id) => {
+    setSelectedAddOns((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
+
   return (
     <div className="min-h-screen bg-charcoal/95 flex items-center justify-center p-4 sm:p-8">
       <div className="w-full max-w-3xl animate-fade-in">
         <button
           onClick={onBack}
-          className="absolute top-6 left-6 text-offwhite/50 hover:text-offwhite transition-colors"
+          className="absolute top-6 left-6 text-offwhite/50 hover:text-offwhite transition-colors z-10"
         >
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
-        <div className="text-center mb-6">
+        <div className="text-center mb-4">
           <h2 className="font-heading text-3xl text-gold mb-2">Select Your Service</h2>
           <p className="text-offwhite/60">Choose your treatment</p>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 pb-1">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-1">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
@@ -117,10 +131,7 @@ const ServiceSelection = ({ onSelect, onBack }) => {
                       <h3 className="font-heading text-base text-gold">{category}</h3>
                       <span className="text-offwhite/30 text-xs">({groupedServices[category].length})</span>
                     </div>
-                    <svg
-                      className={`w-4 h-4 text-gold transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    >
+                    <svg className={`w-4 h-4 text-gold transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
@@ -129,16 +140,26 @@ const ServiceSelection = ({ onSelect, onBack }) => {
                       {groupedServices[category].map((service) => (
                         <button
                           key={service.id}
-                          onClick={() => onSelect(service)}
-                          className="bg-offwhite/5 border border-gold/20 hover:border-gold hover:bg-gold/10 rounded-xl p-4 text-left transition-all group"
+                          onClick={() => { setSelectedService(service); setSelectedAddOns([]); setShowConfirm(true); }}
+                          className={`rounded-xl p-4 text-left border transition-all flex items-center gap-3 ${
+                            selectedService?.id === service.id ? 'border-2' : 'border-offwhite/10'
+                          }`}
+                          style={{ borderColor: selectedService?.id === service.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}
                         >
-                          <div className="font-heading text-base text-offwhite group-hover:text-gold mb-1">
-                            {service.name}
+                          <div className={`w-5 h-5 rounded-full border flex-shrink-0 flex items-center justify-center ${
+                            selectedService?.id === service.id ? 'border-gold bg-gold' : 'border-offwhite/30'
+                          }`}>
+                            {selectedService?.id === service.id && (
+                              <svg className="w-3 h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-gold font-heading text-lg">${service.price}</span>
-                            <span className="text-offwhite/50 text-sm">{service.duration_minutes} min</span>
+                          <div className="flex-1">
+                            <div className="font-heading text-base text-offwhite">{service.name}</div>
+                            <div className="text-offwhite/40 text-xs">{service.duration_minutes} min</div>
                           </div>
+                          <div className="text-gold font-heading text-lg">${service.price}</div>
                         </button>
                       ))}
                     </div>
@@ -148,6 +169,77 @@ const ServiceSelection = ({ onSelect, onBack }) => {
             })}
           </div>
         )}
+
+        {showConfirm && selectedService && (
+          <>
+            {addOns.length > 0 && (
+              <div className="mt-4 rounded-xl border p-4" style={{ borderColor: 'rgba(197,160,89,0.3)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-3">Add-Ons (Optional)</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {addOns.map((addOn) => (
+                    <label
+                      key={addOn.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        selectedAddOns.includes(addOn.id) ? 'border-gold bg-gold/10' : 'border-offwhite/10 hover:border-gold/40'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedAddOns.includes(addOn.id)}
+                        onChange={() => toggleAddOn(addOn.id)}
+                        className="sr-only"
+                      />
+                      <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+                        selectedAddOns.includes(addOn.id) ? 'border-gold bg-gold' : 'border-offwhite/30'
+                      }`}>
+                        {selectedAddOns.includes(addOn.id) && (
+                          <svg className="w-2.5 h-2.5 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-offwhite font-heading text-sm">{addOn.name}</div>
+                        <div className="text-offwhite/40 text-xs">+{addOn.duration_minutes} min</div>
+                      </div>
+                      <div className="text-gold font-heading text-sm">+${addOn.price}</div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 rounded-xl border p-4" style={{ borderColor: 'rgba(197,160,89,0.4)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-offwhite font-heading">{selectedService.name}</div>
+                  {selectedAddOnDetails.length > 0 && (
+                    <div className="text-offwhite/50 text-xs">+ {selectedAddOnDetails.map((a) => a.name).join(', ')}</div>
+                  )}
+                </div>
+                <div className="text-gold font-heading text-xl">${totalPrice}</div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="flex-1 py-3 border border-offwhite/20 text-offwhite/60 hover:text-offwhite rounded-lg transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => {
+                    onSelect({ service: selectedService, addOns: selectedAddOnDetails })
+                    setShowConfirm(false)
+                  }}
+                  className="flex-1 py-3 bg-gold text-charcoal font-heading rounded-lg hover:bg-gold/90 transition-colors"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
         <p className="text-center text-offwhite/30 text-sm mt-6">Times are approximate to ensure couture quality.</p>
       </div>
     </div>
@@ -423,7 +515,7 @@ export default function CheckIn({ onNavigate }) {
   const [services, setServices] = useState([])
 
   useEffect(() => {
-    getServices().then(setServices).catch(console.error)
+    getServices().then(setServices).catch(() => {})
   }, [])
 
   const handleKeyPress = (key) => {
@@ -451,25 +543,25 @@ export default function CheckIn({ onNavigate }) {
     }
   }
 
-  const handleExistingUserServiceSelect = async (service) => {
+  const handleExistingUserServiceSelect = async (payload) => {
+    const { service, addOns } = payload
     if (!result?.appointment?.id) return
-    
     setLoading(true)
     try {
-      const { error: updateError } = await supabase
-        .from('appointments')
-        .update({ service_id: service.id })
-        .eq('id', result.appointment.id)
-
-      if (updateError) throw updateError
-      
+      const addOnNames = addOns.map((a) => a.name).join(', ')
+      await supabase.from('appointments').update({ service_id: service.id, add_ons: addOnNames || null }).eq('id', result.appointment.id)
       setSelectedService(service)
+      setSelectedAddOns(addOns)
       setShowServiceSelection(false)
-    } catch (err) {
-      console.error('Error updating service:', err)
-    } finally {
-      setLoading(false)
-    }
+    } catch { }
+    setLoading(false)
+  }
+
+  const handleNewUserServiceSelect = (payload) => {
+    const { service, addOns } = payload
+    setSelectedService(service)
+    setSelectedAddOns(addOns)
+    setShowServiceSelection(false)
   }
 
   const formatDisplay = (num) => {
@@ -481,16 +573,17 @@ export default function CheckIn({ onNavigate }) {
 
   if (showServiceSelection) {
     return (
-      <ServiceSelection 
-        onSelect={(service) => {
+      <ServiceSelection
+        onSelect={(payload) => {
           if (result && !result.isNew && result.appointment) {
-            handleExistingUserServiceSelect(service)
+            handleExistingUserServiceSelect(payload)
           } else {
-            setSelectedService(service)
-            setShowServiceSelection(false)
+            handleNewUserServiceSelect(payload)
           }
         }}
         onBack={() => setShowServiceSelection(false)}
+        initialService={selectedService}
+        initialAddOns={selectedAddOns.map((a) => a.id)}
       />
     )
   }
@@ -510,11 +603,17 @@ export default function CheckIn({ onNavigate }) {
           <div className="mb-6">
             <p className="text-offwhite/60 mb-3">Select your service:</p>
             <div className="grid grid-cols-2 gap-3">
-              {services.map((service) => (
+              {services.filter((s) => !s.is_addon).map((service) => (
                 <button
                   key={service.id}
-                  onClick={() => handleExistingUserServiceSelect(service)}
-                  className="bg-offwhite/10 border border-gold/30 hover:border-gold rounded-xl p-4 text-left"
+                  onClick={() => {
+                    setSelectedService(service)
+                    setSelectedAddOns([])
+                    setShowServiceSelection(true)
+                  }}
+                  className={`bg-offwhite/10 border rounded-xl p-4 text-left transition-all ${
+                    selectedService?.id === service.id ? 'border-gold' : 'border-gold/30 hover:border-gold'
+                  }`}
                 >
                   <div className="text-offwhite font-heading text-sm">{service.name}</div>
                   <div className="text-gold">${service.price}</div>
@@ -524,9 +623,12 @@ export default function CheckIn({ onNavigate }) {
           </div>
 
           {selectedService && (
-            <div className="bg-gold/20 border border-gold/50 rounded-xl p-4 mb-6">
+            <div className="bg-gold/20 border border-gold/50 rounded-xl p-4 mb-4">
               <p className="text-offwhite/60 text-sm">Selected:</p>
               <p className="text-gold font-heading">{selectedService.name} - ${selectedService.price}</p>
+              {selectedAddOns.length > 0 && (
+                <p className="text-offwhite/50 text-xs mt-1">+ {selectedAddOns.map((a) => a.name).join(', ')}</p>
+              )}
             </div>
           )}
 
