@@ -149,14 +149,15 @@ Thank you for visiting Nail Couture!
   }, {});
 
   const filteredBookings = activeTab === 'all' ? bookings : bookings.filter((b) => b.status === activeTab);
-  const activeBookings = bookings.filter((b) => ['pending', 'confirmed', 'in_progress'].includes(b.status));
+  const activeBookings = bookings.filter((b) => ['pending', 'confirmed', 'in_progress', 'waiting', 'assigned_pending', 'serving'].includes(b.status));
   const pastBookings = bookings.filter((b) => ['completed', 'cancelled'].includes(b.status));
 
   const renderCard = (booking) => {
     const cfg = statusConfig[booking.status];
     const isUpdating = updatingId === booking.id;
     const isPending = booking.status === 'pending';
-    const canCancel = ['pending', 'confirmed', 'in_progress'].includes(booking.status);
+    const canCancel = ['pending', 'confirmed', 'in_progress', 'waiting', 'assigned_pending', 'serving'].includes(booking.status);
+    const appointmentDate = booking.scheduled_time || booking.check_in_time;
 
     return (
       <div
@@ -168,20 +169,19 @@ Thank you for visiting Nail Couture!
           <div>
             <div className="text-offwhite font-heading text-base">{booking.services?.name || 'Service'}</div>
             <div className="text-offwhite/40 text-xs mt-0.5">
-              {booking.services?.duration_minutes} min
+              {booking.services?.duration_minutes ? `${booking.services.duration_minutes} min` : ''}
               {booking.technician && ` · ${booking.technician.full_name}`}
             </div>
           </div>
-          <span className={`px-2.5 py-1 text-[10px] rounded-full border flex-shrink-0 ${cfg.color}`}>
-            {cfg.label}
+          <span className={`px-2.5 py-1 text-[10px] rounded-full border flex-shrink-0 ${cfg?.color || ''}`}>
+            {cfg?.label || booking.status}
           </span>
         </div>
 
         <div className="text-offwhite/50 text-sm mb-1">
-          {new Date(booking.scheduled_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at{' '}
-          {new Date(booking.scheduled_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+          {appointmentDate ? `${new Date(appointmentDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${new Date(appointmentDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : 'Walk-in Appointment'}
         </div>
-        <div className="text-gold font-heading text-lg">${booking.services?.price || booking.price}</div>
+        <div className="text-gold font-heading text-lg">${booking.services?.price || booking.price || 0}</div>
 
         <div className="flex items-center gap-2 mt-3 flex-wrap">
           {isPending && (
