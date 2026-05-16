@@ -25,7 +25,6 @@ export default function CustomerProfile() {
     const currentUser = localStorage.getItem('salon_user_data');
     const userId = currentUser ? JSON.parse(currentUser).id : null;
     if (!userId) { navigate('/login'); return; }
-
     try {
       const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
       if (data) {
@@ -38,25 +37,15 @@ export default function CustomerProfile() {
           refreshment_pref: data.refreshment_pref || '',
         });
       }
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch { }
+    setLoading(false);
   };
 
   const fetchRefreshments = async () => {
     try {
-      const { data } = await supabase
-        .from('stock')
-        .select('name')
-        .eq('category', 'refreshment')
-        .gt('quantity', 0)
-        .order('name');
+      const { data } = await supabase.from('stock').select('name').eq('category', 'refreshment').gt('quantity', 0).order('name');
       setRefreshments(data || []);
-    } catch (err) {
-      console.error('Error fetching refreshments:', err);
-    }
+    } catch { }
   };
 
   const handleSave = async () => {

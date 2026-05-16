@@ -40,40 +40,27 @@ export default function CustomerHistory() {
     const currentUser = localStorage.getItem('salon_user_data');
     const userId = currentUser ? JSON.parse(currentUser).id : null;
     if (!userId) { setLoading(false); navigate('/login'); return; }
-
     try {
       const [bookingsRes, notifRes] = await Promise.all([
         supabase.from('online_bookings').select('*').eq('profile_id', userId).order('scheduled_time', { ascending: false }),
         supabase.from('notifications').select('*').eq('profile_id', userId).order('created_at', { ascending: false }).limit(10),
       ]);
-
       const bookingList = bookingsRes.data || [];
       const serviceIds = [...new Set(bookingList.map((b) => b.service_id).filter(Boolean))];
       const techIds = [...new Set(bookingList.map((b) => b.technician_id).filter(Boolean))];
-
       const [servicesRes, techsRes] = await Promise.all([
         serviceIds.length ? supabase.from('services').select('id, name, price, duration_minutes').in('id', serviceIds) : { data: [] },
         techIds.length ? supabase.from('profiles').select('id, full_name').in('id', techIds) : { data: [] },
       ]);
-
       const serviceMap = {};
       (servicesRes.data || []).forEach((s) => { serviceMap[s.id] = s; });
       const techMap = {};
       (techsRes.data || []).forEach((t) => { techMap[t.id] = t; });
-
-      const enriched = bookingList.map((b) => ({
-        ...b,
-        services: serviceMap[b.service_id] || null,
-        technician: techMap[b.technician_id] || null,
-      }));
-
+      const enriched = bookingList.map((b) => ({ ...b, services: serviceMap[b.service_id] || null, technician: techMap[b.technician_id] || null }));
       setBookings(enriched);
       setNotifications(notifRes.data || []);
-    } catch (err) {
-      console.error('Error fetching data:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch { }
+    setLoading(false);
   }, [navigate]);
 
   useEffect(() => {

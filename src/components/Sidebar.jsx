@@ -91,12 +91,9 @@ export default function Sidebar() {
     if (!user?.phone_number) return;
     try {
       const { data, error } = await supabase.rpc('get_my_notifications', { p_phone: user.phone_number });
-      if (error) { console.error('[fetchNotifications] error:', error); return; }
-      console.log('[fetchNotifications] got', data?.length, 'notifications for phone', user.phone_number);
+      if (error) return;
       setNotifications(data || []);
-    } catch (err) {
-      console.error('[fetchNotifications] exception:', err);
-    }
+    } catch { }
   }, [user]);
 
   useEffect(() => {
@@ -110,28 +107,18 @@ export default function Sidebar() {
 
   const markAllRead = async () => {
     if (unreadCount === 0 || !user?.phone_number) return;
-    console.log('[markAllRead] called for phone:', user.phone_number);
     try {
-      const { error } = await supabase.rpc('mark_my_notifications_read', { p_phone: user.phone_number });
-      if (error) console.error('[markAllRead] error:', error);
-      else console.log('[markAllRead] success');
+      await supabase.rpc('mark_my_notifications_read', { p_phone: user.phone_number });
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    } catch (err) {
-      console.error('[markAllRead] exception:', err);
-    }
+    } catch { }
   };
 
   const markOneRead = async (id) => {
     if (!user?.phone_number) return;
-    console.log('[markOneRead] called for id:', id);
     try {
-      const { error } = await supabase.rpc('mark_notification_read', { p_phone: user.phone_number, p_notif_id: id });
-      if (error) console.error('[markOneRead] error:', error);
-      else console.log('[markOneRead] success');
+      await supabase.rpc('mark_notification_read', { p_phone: user.phone_number, p_notif_id: id });
       setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true } : n));
-    } catch (err) {
-      console.error('[markOneRead] exception:', err);
-    }
+    } catch { }
   };
 
   if (!user) return null;

@@ -29,14 +29,8 @@ const ServiceSelection = ({ onSelect, onBack }) => {
   useEffect(() => {
     setLoading(true)
     getServices()
-      .then((data) => {
-        console.log('Services loaded:', data)
-        setServices(data)
-      })
-      .catch((err) => {
-        console.error('Failed to load services:', err)
-        setError(err.message)
-      })
+      .then((data) => { setServices(data) })
+      .catch((err) => { setError(err.message) })
       .finally(() => setLoading(false))
   }, [])
 

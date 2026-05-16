@@ -69,7 +69,7 @@ export default function ClientPortal() {
     try {
       const { data } = await supabase.from('stock').select('name').eq('category', 'refreshment').gt('quantity', 0).order('name')
       setRefreshments(data || [])
-    } catch (err) { console.error('Error fetching refreshments:', err) }
+    } catch { }
   }
 
   const fetchUserData = useCallback(async () => {
