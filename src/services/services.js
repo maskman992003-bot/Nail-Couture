@@ -6,13 +6,6 @@ export async function getServices() {
     .select('*')
     .order('category', { ascending: true })
     .order('price', { ascending: true })
-
-  console.log('Services from DB:', data, error)
-  if (error) {
-    console.error('Error fetching services:', error)
-    throw error
-  }
-
   return data || []
 }
 

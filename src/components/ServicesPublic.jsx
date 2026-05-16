@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
+const CATEGORIES = ['All', 'Nail Art', 'Extensions', 'Russian Manicure', 'Treatment', 'Packages'];
 const categoryOrder = ['Nail Art', 'Extensions', 'Russian Manicure', 'Treatment', 'Packages'];
 
 export default function ServicesPublic() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [expandedCategory, setExpandedCategory] = useState(null);
 
   useEffect(() => {
     fetchServices();
@@ -18,7 +21,6 @@ export default function ServicesPublic() {
       .select('*')
       .order('category', { ascending: true })
       .order('price', { ascending: true });
-    
     setServices(data || []);
     setLoading(false);
   };
@@ -36,28 +38,49 @@ export default function ServicesPublic() {
     return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
   });
 
+  const displayCategories = activeCategory === 'All'
+    ? sortedCategories
+    : sortedCategories.filter((c) => c === activeCategory);
+
   return (
     <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
       <div className="sticky top-0 z-50 bg-charcoal border-b border-gold/30">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-4">
             <img src="/NC.jpg" alt="Nail Couture" className="h-12 w-auto" />
-            <span className="font-heading text-gold text-xl">Services & Pricing</span>
+            <span className="font-heading text-gold text-xl hidden sm:block">Services & Pricing</span>
           </Link>
-          <Link 
-            to="/booking" 
+          <Link
+            to="/booking"
             className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-sm rounded-lg"
           >
             Book Appointment
           </Link>
         </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-4">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => { setActiveCategory(cat); setExpandedCategory(null); }}
+                className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 ${
+                  activeCategory === cat
+                    ? 'bg-gold text-charcoal'
+                    : 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="text-center mb-12">
           <h1 className="font-heading text-4xl sm:text-5xl text-gold mb-4">Our Services</h1>
           <p className="text-offwhite/60 text-lg max-w-2xl mx-auto">
-            Expert craftsmanship in nail couture. Each service is performed with precision, 
+            Expert craftsmanship in nail couture. Each service is performed with precision,
             medical-grade sterilization, and premium non-toxic products.
           </p>
         </div>
@@ -67,40 +90,56 @@ export default function ServicesPublic() {
             <div className="text-gold animate-pulse text-lg">Loading services...</div>
           </div>
         ) : (
-          <div className="space-y-12">
-            {sortedCategories.map((category) => (
-              <div key={category}>
-                <div className="flex items-center gap-4 mb-6">
-                  <h2 className="font-heading text-2xl text-offwhite">{category}</h2>
-                  <div className="flex-1 h-px bg-gold/20"></div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {groupedServices[category].map((service) => (
-                    <div 
-                      key={service.id} 
-                      className="bg-white/5 border border-gold/10 rounded-xl p-6 hover:border-gold/30 transition-all"
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="font-heading text-xl text-offwhite">{service.name}</h3>
-                        <span className="text-gold font-heading text-2xl">${service.price?.toFixed(0)}</span>
-                      </div>
-                      {service.description && (
-                        <p className="text-offwhite/50 text-sm mb-4">{service.description}</p>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-offwhite/40 text-sm">~{service.duration_minutes} min</span>
-                        <Link
-                          to="/booking"
-                          className="px-6 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-sm rounded-lg transition-colors"
-                        >
-                          Book Now
-                        </Link>
-                      </div>
+          <div className="space-y-4">
+            {displayCategories.map((category) => {
+              const isOpen = displayCategories.length === 1 || expandedCategory === category;
+              return (
+                <div key={category} className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(197,160,89,0.2)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                  <button
+                    onClick={() => setExpandedCategory(isOpen ? null : category)}
+                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/3 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <h2 className="font-heading text-xl text-offwhite">{category}</h2>
+                      <span className="text-offwhite/40 text-sm">({groupedServices[category].length})</span>
                     </div>
-                  ))}
+                    <svg
+                      className={`w-5 h-5 text-gold transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {groupedServices[category].map((service) => (
+                        <div
+                          key={service.id}
+                          className="bg-white/3 border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-heading text-lg text-offwhite">{service.name}</h3>
+                            <span className="text-gold font-heading text-xl">${service.price?.toFixed(0)}</span>
+                          </div>
+                          {service.description && (
+                            <p className="text-offwhite/50 text-sm mb-4">{service.description}</p>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <span className="text-offwhite/40 text-sm">~{service.duration_minutes} min</span>
+                            <Link
+                              to="/booking"
+                              className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-xs rounded-lg transition-colors"
+                            >
+                              Book Now
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

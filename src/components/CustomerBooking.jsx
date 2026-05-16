@@ -4,18 +4,24 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
 
+const CATEGORIES = ['All', 'Extensions', 'Nail Art', 'Russian Manicure', 'Treatment', 'Packages'];
+const categoryOrder = ['Extensions', 'Nail Art', 'Russian Manicure', 'Treatment', 'Packages'];
+
 export default function CustomerBooking() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [technicians, setTechnicians] = useState([]);
   const [selectedTech, setSelectedTech] = useState(null);
   const [bookLoading, setBookLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [expandedCategory, setExpandedCategory] = useState(null);
 
   const currentUser = localStorage.getItem('salon_user_data');
   const userData = currentUser ? JSON.parse(currentUser) : null;
@@ -35,40 +41,62 @@ export default function CustomerBooking() {
     const currentUser = localStorage.getItem('salon_user_data');
     const userId = currentUser ? JSON.parse(currentUser).id : null;
     if (!userId) { setLoading(false); navigate('/login'); return; }
-
     try {
-      const { data: servicesData } = await supabase.from('services').select('*').order('name');
+      const { data: servicesData } = await supabase.from('services').select('*').order('category').order('name');
       const { data: techData } = await supabase.from('profiles').select('*').eq('role', 'technician').order('full_name');
       setServices(servicesData || []);
       setTechnicians(techData || []);
-    } catch (err) {
-      console.error('Error fetching data:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch { }
+    setLoading(false);
+  };
+
+  const groupedServices = services.reduce((acc, service) => {
+    const cat = service.category || 'Other';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(service);
+    return acc;
+  }, {});
+
+  const sortedCategories = Object.keys(groupedServices).sort((a, b) => {
+    const aIdx = categoryOrder.indexOf(a);
+    const bIdx = categoryOrder.indexOf(b);
+    return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+  });
+
+  const displayCategories = activeCategory === 'All'
+    ? sortedCategories
+    : sortedCategories.filter((c) => c === activeCategory);
+
+  const mainServices = groupedServices[selectedService?.category]?.filter((s) => !s.is_addon && s.id !== selectedService?.id) || [];
+  const addOns = services.filter((s) => s.is_addon);
+  const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id));
+
+  const totalPrice = (selectedService?.price || 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0);
+  const totalMinutes = (selectedService?.duration_minutes || 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.duration_minutes || 0), 0);
+
+  const toggleAddOn = (addOnId) => {
+    setSelectedAddOns((prev) =>
+      prev.includes(addOnId) ? prev.filter((id) => id !== addOnId) : [...prev, addOnId]
+    );
   };
 
   const handleBooking = async () => {
     if (!selectedService || !selectedDate || !selectedTime) return;
     setBookLoading(true);
-
     const currentUser = localStorage.getItem('salon_user_data');
     const userId = currentUser ? JSON.parse(currentUser).id : null;
     if (!userId) { setBookLoading(false); navigate('/login'); return; }
-
     const checkInTime = new Date(`${selectedDate}T${selectedTime}:00`);
+    const addOnNames = selectedAddOnDetails.map((a) => a.name).join(', ');
     const { error } = await supabase.from('online_bookings').insert({
       profile_id: userId,
       service_id: selectedService.id,
       technician_id: selectedTech?.id || null,
       scheduled_time: checkInTime.toISOString(),
       status: 'pending',
-      price: selectedService.price,
+      price: totalPrice,
     });
-
-    if (!error) {
-      setBookingSuccess(true);
-    }
+    if (!error) setBookingSuccess(true);
     setBookLoading(false);
   };
 
@@ -116,7 +144,7 @@ export default function CustomerBooking() {
     <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 pb-24 lg:pb-8">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24 lg:pb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Link to="/portal" className="text-offwhite/40 hover:text-gold text-sm">Home</Link>
@@ -126,26 +154,120 @@ export default function CustomerBooking() {
             <h1 className="font-heading text-4xl text-gold">Book Your Experience</h1>
             <p className="text-offwhite/50 text-sm mt-1">Select your service and preferred time</p>
           </div>
-          <div className="rounded-2xl p-8 border-2" style={{ background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, rgba(26, 26, 26, 1) 100%)', borderColor: 'rgba(197, 160, 89, 0.4)' }}>
-            <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Choose Your Service</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {services.map((service) => (
-                <button
-                  key={service.id}
-                  onClick={() => setSelectedService(service)}
-                  className={`rounded-xl p-5 text-left border transition-all ${selectedService?.id === service.id ? 'border-2' : 'border-offwhite/5'}`}
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.02)',
-                    borderColor: selectedService?.id === service.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)',
-                  }}
-                >
-                  <div className="font-heading text-xl text-offwhite mb-1">{service.name}</div>
-                  <div className="text-offwhite/50 text-sm mb-3">{service.duration_minutes} minutes</div>
-                  <div className="text-gold font-heading text-2xl">${service.price}</div>
-                </button>
-              ))}
+
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => { setActiveCategory(cat); setExpandedCategory(null); setSelectedService(null); setSelectedAddOns([]); }}
+                className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 ${
+                  activeCategory === cat ? 'bg-gold text-charcoal' : 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border-2" style={{ background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, rgba(26, 26, 26, 1) 100%)', borderColor: 'rgba(197, 160, 89, 0.4)' }}>
+            <div className="px-6 pt-6 pb-2 text-offwhite/40 text-xs uppercase tracking-widest">Choose Your Service</div>
+            <div className="px-6 pb-6 space-y-3">
+              {displayCategories.map((category) => {
+                const isOpen = displayCategories.length === 1 || expandedCategory === category;
+                const catServices = groupedServices[category];
+                return (
+                  <div key={category} className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(197,160,89,0.2)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    <button
+                      onClick={() => { setExpandedCategory(isOpen ? null : category); }}
+                      className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/3 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-heading text-base text-gold">{category}</h3>
+                        <span className="text-offwhite/30 text-xs">({catServices.length})</span>
+                      </div>
+                      <svg className={`w-4 h-4 text-gold transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                      <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {catServices.map((service) => {
+                          const isMain = service.is_addon;
+                          return (
+                            <button
+                              key={service.id}
+                              onClick={() => { if (!isMain) { setSelectedService(service); setSelectedAddOns([]); } }}
+                              className={`rounded-xl p-4 text-left border transition-all flex items-center gap-3 ${
+                                selectedService?.id === service.id ? 'border-2' : 'border-offwhite/5'
+                              } ${isMain ? 'opacity-60' : ''}`}
+                              style={{
+                                backgroundColor: 'rgba(255,255,255,0.02)',
+                                borderColor: selectedService?.id === service.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)',
+                              }}
+                            >
+                              {!isMain && (
+                                <div className={`w-5 h-5 rounded-full border flex-shrink-0 flex items-center justify-center ${
+                                  selectedService?.id === service.id ? 'border-gold bg-gold' : 'border-offwhite/30'
+                                }`}>
+                                  {selectedService?.id === service.id && (
+                                    <svg className="w-3 h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <div className="font-heading text-base text-offwhite mb-0.5">{service.name}</div>
+                                <div className="text-offwhite/40 text-xs">{service.duration_minutes} min</div>
+                              </div>
+                              <div className="text-gold font-heading text-lg">${service.price}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
+
+          {selectedService && addOns.length > 0 && (
+            <div className="rounded-2xl p-6 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
+              <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Add-Ons (Optional)</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {addOns.map((addOn) => (
+                  <label
+                    key={addOn.id}
+                    className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                      selectedAddOns.includes(addOn.id) ? 'border-gold bg-gold/10' : 'border-offwhite/10 hover:border-gold/40'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedAddOns.includes(addOn.id)}
+                      onChange={() => toggleAddOn(addOn.id)}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center ${
+                      selectedAddOns.includes(addOn.id) ? 'border-gold bg-gold' : 'border-offwhite/30'
+                    }`}>
+                      {selectedAddOns.includes(addOn.id) && (
+                        <svg className="w-3 h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-offwhite font-heading text-sm">{addOn.name}</div>
+                      <div className="text-offwhite/40 text-xs">+{addOn.duration_minutes} min</div>
+                    </div>
+                    <div className="text-gold font-heading text-sm">+${addOn.price}</div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {selectedService && (
             <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
@@ -187,10 +309,7 @@ export default function CustomerBooking() {
                 <button
                   onClick={() => setSelectedTech(null)}
                   className={`rounded-xl p-4 text-center border transition-all ${!selectedTech ? 'border-2' : 'border-offwhite/5'}`}
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.02)',
-                    borderColor: !selectedTech ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)',
-                  }}
+                  style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: !selectedTech ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)' }}
                 >
                   <div className="w-12 h-12 rounded-full mx-auto mb-2 bg-offwhite/10 flex items-center justify-center">
                     <span className="text-offwhite/60 font-heading">Any</span>
@@ -202,10 +321,7 @@ export default function CustomerBooking() {
                     key={tech.id}
                     onClick={() => setSelectedTech(tech)}
                     className={`rounded-xl p-4 text-center border transition-all ${selectedTech?.id === tech.id ? 'border-2' : 'border-offwhite/5'}`}
-                    style={{
-                      backgroundColor: 'rgba(255,255,255,0.02)',
-                      borderColor: selectedTech?.id === tech.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)',
-                    }}
+                    style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: selectedTech?.id === tech.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)' }}
                   >
                     <div className="w-12 h-12 rounded-full mx-auto mb-2 bg-gold/20 flex items-center justify-center">
                       <span className="text-gold font-heading text-sm">{tech.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
@@ -220,16 +336,26 @@ export default function CustomerBooking() {
           {selectedService && selectedDate && selectedTime && (
             <div className="rounded-2xl p-8 border-2" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.05) 0%, #111 100%)' }}>
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Booking Summary</div>
-              <div className="flex items-start justify-between mb-8">
+              <div className="flex items-start justify-between mb-6">
                 <div>
                   <div className="font-heading text-2xl text-offwhite mb-1">{selectedService.name}</div>
-                  <div className="text-offwhite/50 text-sm">{selectedService.duration_minutes} minutes with {selectedTech?.full_name || 'Any Technician'}</div>
+                  {selectedAddOnDetails.length > 0 && (
+                    <div className="text-offwhite/50 text-sm mb-2">
+                      + {selectedAddOnDetails.map((a) => a.name).join(', ')}
+                    </div>
+                  )}
+                  <div className="text-offwhite/50 text-sm">{totalMinutes} min with {selectedTech?.full_name || 'Any Technician'}</div>
                   <div className="text-offwhite/50 text-sm mt-1">
                     {new Date(`${selectedDate}T${selectedTime}`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {selectedTime}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-gold font-heading text-3xl">${selectedService.price}</div>
+                  <div className="text-gold font-heading text-3xl">${totalPrice}</div>
+                  {selectedAddOnDetails.length > 0 && (
+                    <div className="text-offwhite/40 text-xs mt-1">
+                      ({selectedService.price} + {selectedAddOnDetails.length} add-on{selectedAddOnDetails.length > 1 ? 's' : ''})
+                    </div>
+                  )}
                 </div>
               </div>
               <button

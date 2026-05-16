@@ -21,10 +21,14 @@ const Sparkle = () => (
   </div>
 )
 
+const CATEGORIES = ['All', 'Extensions', 'Nail Art', 'Russian Manicure', 'Treatment', 'Packages'];
+
 const ServiceSelection = ({ onSelect, onBack }) => {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [activeCategory, setActiveCategory] = useState('All')
+  const [expandedCategory, setExpandedCategory] = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -57,8 +61,13 @@ const ServiceSelection = ({ onSelect, onBack }) => {
     return acc
   }, {})
 
+  const allCategories = Object.keys(groupedServices).sort()
+  const displayCategories = activeCategory === 'All'
+    ? allCategories
+    : allCategories.filter((c) => c === activeCategory)
+
   return (
-    <div className="min-h-screen bg-charcoal/95 flex items-center justify-center p-8">
+    <div className="min-h-screen bg-charcoal/95 flex items-center justify-center p-4 sm:p-8">
       <div className="w-full max-w-3xl animate-fade-in">
         <button
           onClick={onBack}
@@ -69,9 +78,25 @@ const ServiceSelection = ({ onSelect, onBack }) => {
           </svg>
         </button>
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h2 className="font-heading text-3xl text-gold mb-2">Select Your Service</h2>
           <p className="text-offwhite/60">Choose your treatment</p>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 pb-1">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => { setActiveCategory(cat); setExpandedCategory(null); }}
+              className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 ${
+                activeCategory === cat
+                  ? 'bg-gold text-charcoal'
+                  : 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
 
         {services.length === 0 ? (
@@ -79,39 +104,51 @@ const ServiceSelection = ({ onSelect, onBack }) => {
             <p className="text-offwhite/40">No services available</p>
           </div>
         ) : (
-          <>
-            <div className="space-y-8">
-              {Object.entries(groupedServices).map(([category, categoryServices]) => (
-                <div key={category}>
-                  <h3 className="font-heading text-lg text-gold mb-3 border-b border-gold/20 pb-2">
-                    {category}
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {categoryServices.map((service) => (
-                      <button
-                        key={service.id}
-                        onClick={() => {
-                          console.log('Selected service:', service)
-                          onSelect(service)
-                        }}
-                        className="bg-offwhite/5 border border-gold/30 hover:border-gold hover:bg-gold/10 rounded-xl p-5 text-left transition-all group"
-                      >
-                        <div className="font-heading text-lg text-offwhite group-hover:text-gold mb-1">
-                          {service.name}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-gold text-xl font-heading">${service.price}</span>
-                          <span className="text-offwhite/50 text-sm">{service.duration_minutes} min</span>
-                        </div>
-                      </button>
-                    ))}
+          <div className="space-y-3">
+            {displayCategories.map((category) => {
+              const isOpen = displayCategories.length === 1 || expandedCategory === category
+              return (
+                <div key={category} className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(197,160,89,0.25)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                  <button
+                    onClick={() => setExpandedCategory(isOpen ? null : category)}
+                    className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/3 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-heading text-base text-gold">{category}</h3>
+                      <span className="text-offwhite/30 text-xs">({groupedServices[category].length})</span>
+                    </div>
+                    <svg
+                      className={`w-4 h-4 text-gold transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {groupedServices[category].map((service) => (
+                        <button
+                          key={service.id}
+                          onClick={() => onSelect(service)}
+                          className="bg-offwhite/5 border border-gold/20 hover:border-gold hover:bg-gold/10 rounded-xl p-4 text-left transition-all group"
+                        >
+                          <div className="font-heading text-base text-offwhite group-hover:text-gold mb-1">
+                            {service.name}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gold font-heading text-lg">${service.price}</span>
+                            <span className="text-offwhite/50 text-sm">{service.duration_minutes} min</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-            <p className="text-center text-offwhite/30 text-sm mt-6">Times are approximate to ensure couture quality.</p>
-          </>
+              )
+            })}
+          </div>
         )}
+        <p className="text-center text-offwhite/30 text-sm mt-6">Times are approximate to ensure couture quality.</p>
       </div>
     </div>
   )
