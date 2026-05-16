@@ -41,13 +41,15 @@ export default function CustomerHistory() {
     const userId = currentUser ? JSON.parse(currentUser).id : null;
     if (!userId) { setLoading(false); navigate('/login'); return; }
     try {
-      const [bookingsRes, notifRes] = await Promise.all([
+      const [onlineRes, kioskRes, notifRes] = await Promise.all([
         supabase.from('online_bookings').select('*').eq('profile_id', userId).order('scheduled_time', { ascending: false }),
+        supabase.from('appointments').select('*, services(name, price, duration_minutes), profiles(full_name)').eq('profile_id', userId).order('check_in_time', { ascending: false }),
         supabase.from('notifications').select('*').eq('profile_id', userId).order('created_at', { ascending: false }).limit(10),
       ]);
-      const bookingList = bookingsRes.data || [];
-      const serviceIds = [...new Set(bookingList.map((b) => b.service_id).filter(Boolean))];
-      const techIds = [...new Set(bookingList.map((b) => b.technician_id).filter(Boolean))];
+      const onlineList = onlineRes.data || [];
+      const kioskList = kioskRes.data || [];
+      const serviceIds = [...new Set([...onlineList, ...kioskList].map((b) => b.service_id).filter(Boolean))];
+      const techIds = [...new Set(onlineList.map((b) => b.technician_id).filter(Boolean))];
       const [servicesRes, techsRes] = await Promise.all([
         serviceIds.length ? supabase.from('services').select('id, name, price, duration_minutes').in('id', serviceIds) : { data: [] },
         techIds.length ? supabase.from('profiles').select('id, full_name').in('id', techIds) : { data: [] },
@@ -56,8 +58,14 @@ export default function CustomerHistory() {
       (servicesRes.data || []).forEach((s) => { serviceMap[s.id] = s; });
       const techMap = {};
       (techsRes.data || []).forEach((t) => { techMap[t.id] = t; });
-      const enriched = bookingList.map((b) => ({ ...b, services: serviceMap[b.service_id] || null, technician: techMap[b.technician_id] || null }));
-      setBookings(enriched);
+      const enrichedOnline = onlineList.map((b) => ({ ...b, services: serviceMap[b.service_id] || null, technician: techMap[b.technician_id] || null, source: 'online' }));
+      const enrichedKiosk = kioskList.map((b) => ({ ...b, services: b.services || serviceMap[b.service_id] || null, source: 'kiosk' }));
+      const combined = [...enrichedOnline, ...enrichedKiosk].sort((a, b) => {
+        const dateA = new Date(a.scheduled_time || a.check_in_time);
+        const dateB = new Date(b.scheduled_time || b.check_in_time);
+        return dateB - dateA;
+      });
+      setBookings(combined);
       setNotifications(notifRes.data || []);
     } catch { }
     setLoading(false);
