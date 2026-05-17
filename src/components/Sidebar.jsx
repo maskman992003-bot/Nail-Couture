@@ -195,8 +195,7 @@ export default function Sidebar() {
 
             {showUserMenu && (
               <div
-                className="absolute right-0 bottom-full mb-2 w-48 rounded-xl border overflow-hidden shadow-2xl z-50"
-                style={{ backgroundColor: '#141414', borderColor: 'rgba(197,160,89,0.4)' }}
+                className="absolute bottom-16 left-4 md:left-full md:right-auto lg:left-4 md:ml-2 z-50 w-48 rounded-xl bg-[#121214] border border-zinc-800/80 shadow-2xl origin-bottom-left transition-all"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
