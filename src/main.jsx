@@ -19,6 +19,8 @@ import AdminReports from './components/AdminReports.jsx'
 import CashierCheckout from './components/CashierCheckout.jsx'
 import StaffManagement from './components/StaffManagement.jsx'
 import StaffProfile from './components/StaffProfile.jsx'
+import StaffSchedule from './components/StaffSchedule.jsx'
+import TechnicianSchedule from './components/TechnicianSchedule.jsx'
 import Settings from './components/Settings.jsx'
 import Services from './components/Services.jsx'
 import AdminStock from './components/AdminStock.jsx'
@@ -123,9 +125,19 @@ createRoot(document.getElementById('root')).render(
               <AdminStock />
             </ProtectedRoute>
           } />
+          <Route path="/admin/schedule" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <StaffSchedule />
+            </ProtectedRoute>
+          } />
           <Route path="/superadmin/stock" element={
             <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
               <AdminStock />
+            </ProtectedRoute>
+          } />
+          <Route path="/superadmin/schedule" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
+              <StaffSchedule />
             </ProtectedRoute>
           } />
           <Route path="/admin/bookings" element={
@@ -161,8 +173,8 @@ createRoot(document.getElementById('root')).render(
             </ProtectedRoute>
           } />
           <Route path="/technician/schedule" element={
-            <ProtectedRoute allowedRoles={['technician', 'super_admin', 'owner', 'partner', 'admin']}>
-              <AdminLobby />
+            <ProtectedRoute allowedRoles={['technician', 'cashier']}>
+              <TechnicianSchedule />
             </ProtectedRoute>
           } />
 
