@@ -320,22 +320,19 @@ export default function AdminReports() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <div className="flex-1 overflow-x-hidden">
-          <Sidebar />
-          <div className="flex items-center justify-center py-20 px-6">
-            <div className="text-gold animate-pulse">Loading...</div>
-          </div>
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+        <Sidebar />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-gold animate-pulse">Loading...</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-      <div className="flex-1 overflow-x-hidden">
-        <Sidebar />
-        <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 py-8 pb-24 lg:pb-8">
+    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <Sidebar />
+      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
           <div className="mb-6 sm:mb-8">
             <h1 className="font-heading text-2xl sm:text-3xl text-gold">Reports & Insights</h1>
             <p className="text-offwhite/60 mt-1">Comprehensive business analytics</p>
@@ -424,7 +421,6 @@ export default function AdminReports() {
                   </BarChart>
                 </ResponsiveContainer>
               )}
-            </div>
           </div>
         </div>
       </div>

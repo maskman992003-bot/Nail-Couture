@@ -103,9 +103,9 @@ export default function CustomerBooking() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen w-full" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
       </div>
@@ -114,24 +114,22 @@ export default function CustomerBooking() {
 
   if (bookingSuccess) {
     return (
-      <div className="flex min-h-screen w-full" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="flex-1 flex items-center justify-center p-10">
-            <div className="text-center max-w-md">
-              <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 30px rgba(197, 160, 89, 0.3)' }}>
-                <svg className="w-10 h-10 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h2 className="font-heading text-3xl text-gold mb-2">Thank you, {firstName}!</h2>
-              <h3 className="font-heading text-2xl text-offwhite mb-6">Booking Pending</h3>
-              <p className="text-offwhite/60 mb-4">Your appointment request has been submitted successfully and is awaiting confirmation. We'll notify you shortly once it's confirmed.</p>
-              <p className="text-offwhite text-sm mb-8">We look forward to welcoming you.</p>
-              <Link to="/portal" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
-                Return to Home
-              </Link>
+        <div className="flex items-center justify-center p-4 md:p-10">
+          <div className="text-center max-w-md">
+            <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 30px rgba(197, 160, 89, 0.3)' }}>
+              <svg className="w-10 h-10 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
+            <h2 className="font-heading text-3xl text-gold mb-2">Thank you, {firstName}!</h2>
+            <h3 className="font-heading text-2xl text-offwhite mb-6">Booking Pending</h3>
+            <p className="text-offwhite/60 mb-4">Your appointment request has been submitted successfully and is awaiting confirmation. We'll notify you shortly once it's confirmed.</p>
+            <p className="text-offwhite text-sm mb-8">We look forward to welcoming you.</p>
+            <Link to="/portal" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
+              Return to Home
+            </Link>
           </div>
         </div>
       </div>
@@ -139,10 +137,9 @@ export default function CustomerBooking() {
   }
 
   return (
-    <div className="flex min-h-screen w-full" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
-         <div className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Link to="/portal" className="text-offwhite/40 hover:text-gold text-sm">Home</Link>
@@ -153,12 +150,12 @@ export default function CustomerBooking() {
             <p className="text-offwhite/50 text-sm mt-1">Select your service and preferred time</p>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x w-full px-1 pb-1">
+          <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none snap-x w-full px-4 gap-2 pb-2">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => { setActiveCategory(cat); setExpandedCategory(null); setSelectedService(null); setSelectedAddOns([]); }}
-                className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 snap-start ${
+                className={`inline-flex px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 snap-start ${
                   activeCategory === cat ? 'bg-gold text-charcoal' : 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
                 }`}
               >
@@ -386,10 +383,8 @@ export default function CustomerBooking() {
               </button>
             </div>
           )}
-        </div>
-      </div>
 
-      {showGroupModal && (
+          {showGroupModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-md rounded-2xl border-2 p-6" style={{ backgroundColor: '#111', borderColor: 'rgba(197, 160, 89, 0.5)' }}>
             <div className="text-center mb-6">
@@ -452,6 +447,7 @@ export default function CustomerBooking() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

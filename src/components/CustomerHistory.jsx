@@ -250,9 +250,9 @@ ${addOnLines ? `Add-Ons:\n${addOnLines}\n` : ''}Date: ${dateStr}
 
   if (loading) {
     return (
-      <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
       </div>
@@ -260,10 +260,9 @@ ${addOnLines ? `Add-Ons:\n${addOnLines}\n` : ''}Date: ${dateStr}
   }
 
   return (
-<div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24 lg:pb-8">
+    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <Sidebar />
+      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Link to="/portal" className="text-offwhite/40 hover:text-gold text-sm">Home</Link>
@@ -339,10 +338,8 @@ ${addOnLines ? `Add-Ons:\n${addOnLines}\n` : ''}Date: ${dateStr}
                )}
             </>
           )}
-        </div>
-      </div>
 
-      {editingBooking && (
+          {editingBooking && (
         <div className="fixed inset-0 flex items-center justify-center z-[100] p-4" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
           <div className="w-full max-w-md rounded-2xl p-8 border-2" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.4)' }}>
             <div className="flex items-center justify-between mb-6">
@@ -424,6 +421,7 @@ ${addOnLines ? `Add-Ons:\n${addOnLines}\n` : ''}Date: ${dateStr}
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

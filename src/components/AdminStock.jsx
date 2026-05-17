@@ -168,9 +168,9 @@ export default function AdminStock() {
   }
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b flex-shrink-0" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
           <div className="flex items-center justify-between">
             <div>

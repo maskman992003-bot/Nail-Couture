@@ -176,10 +176,9 @@ export default function ClientPortal() {
   const tier = getTierInfo(profile.loyalty_points || 0);
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 pb-24 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-10">
           <div className="pt-4">
             <h1 className="font-heading text-4xl text-gold">Welcome, {profile.full_name?.split(' ')[0] || 'back'}</h1>
             <p className="text-offwhite/50 text-sm mt-1">We're glad to have you here</p>
@@ -363,10 +362,8 @@ export default function ClientPortal() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {showEarningModal && (
+          {showEarningModal && (
         <div className="fixed inset-0 flex items-center justify-center z-[100] p-4" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
           <div className="w-full max-w-lg rounded-2xl p-8 border-2" style={{ backgroundColor: '#111', borderColor: 'rgba(197, 160, 89, 0.4)' }}>
             <div className="flex items-center justify-between mb-6">
@@ -406,6 +403,7 @@ export default function ClientPortal() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
