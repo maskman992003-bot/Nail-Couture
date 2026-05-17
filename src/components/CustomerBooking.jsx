@@ -3,9 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
-
-const CATEGORIES = ['All', 'Extensions', 'Nail Art', 'Russian Manicure', 'Treatment', 'Packages'];
-const categoryOrder = ['Extensions', 'Nail Art', 'Russian Manicure', 'Treatment', 'Packages'];
+import { CATEGORIES, CATEGORY_ORDER, SERVICES } from '../data/servicesData';
 
 export default function CustomerBooking() {
   const navigate = useNavigate();
@@ -22,6 +20,8 @@ export default function CustomerBooking() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
   const [expandedCategory, setExpandedCategory] = useState(null);
+  const [showGroupModal, setShowGroupModal] = useState(false);
+  const [groupSize, setGroupSize] = useState('');
 
   const currentUser = localStorage.getItem('salon_user_data');
   const userData = currentUser ? JSON.parse(currentUser) : null;
@@ -50,7 +50,7 @@ export default function CustomerBooking() {
     setLoading(false);
   };
 
-  const groupedServices = services.reduce((acc, service) => {
+  const groupedServices = [...services, ...SERVICES].reduce((acc, service) => {
     const cat = service.category || 'Other';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(service);
@@ -58,8 +58,8 @@ export default function CustomerBooking() {
   }, {});
 
   const sortedCategories = Object.keys(groupedServices).sort((a, b) => {
-    const aIdx = categoryOrder.indexOf(a);
-    const bIdx = categoryOrder.indexOf(b);
+    const aIdx = CATEGORY_ORDER.indexOf(a);
+    const bIdx = CATEGORY_ORDER.indexOf(b);
     return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
   });
 
@@ -67,7 +67,6 @@ export default function CustomerBooking() {
     ? sortedCategories
     : sortedCategories.filter((c) => c === activeCategory);
 
-  const mainServices = groupedServices[selectedService?.category]?.filter((s) => !s.is_addon && s.id !== selectedService?.id) || [];
   const addOns = services.filter((s) => s.is_addon);
   const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id));
 
@@ -87,7 +86,6 @@ export default function CustomerBooking() {
     const userId = currentUser ? JSON.parse(currentUser).id : null;
     if (!userId) { setBookLoading(false); navigate('/login'); return; }
     const checkInTime = new Date(`${selectedDate}T${selectedTime}:00`);
-    const addOnNames = selectedAddOnDetails.map((a) => a.name).join(', ');
     const { error } = await supabase.from('online_bookings').insert({
       profile_id: userId,
       service_id: selectedService.id,
@@ -144,7 +142,7 @@ export default function CustomerBooking() {
     <div className="flex min-h-screen w-full" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24 lg:pb-8">
+         <div className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24 lg:pb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Link to="/portal" className="text-offwhite/40 hover:text-gold text-sm">Home</Link>
@@ -155,12 +153,12 @@ export default function CustomerBooking() {
             <p className="text-offwhite/50 text-sm mt-1">Select your service and preferred time</p>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x w-full px-1 pb-1">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => { setActiveCategory(cat); setExpandedCategory(null); setSelectedService(null); setSelectedAddOns([]); }}
-                className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 ${
+                className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 snap-start ${
                   activeCategory === cat ? 'bg-gold text-charcoal' : 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
                 }`}
               >
@@ -190,13 +188,16 @@ export default function CustomerBooking() {
                       </svg>
                     </button>
                     <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                      <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {catServices.map((service) => {
                           const isMain = service.is_addon;
                           return (
                             <button
                               key={service.id}
-                              onClick={() => { if (!isMain) { setSelectedService(service); setSelectedAddOns([]); } }}
+                              onClick={() => {
+                                if (service.id === 'bridal-party') { setShowGroupModal(true); return; }
+                                if (!isMain) { setSelectedService(service); setSelectedAddOns([]); }
+                              }}
                               className={`rounded-xl p-4 text-left border transition-all flex items-center gap-3 ${
                                 selectedService?.id === service.id ? 'border-2' : 'border-offwhite/5'
                               } ${isMain ? 'opacity-60' : ''}`}
@@ -218,12 +219,30 @@ export default function CustomerBooking() {
                               )}
                               <div className="flex-1">
                                 <div className="font-heading text-base text-offwhite mb-0.5">{service.name}</div>
-                                <div className="text-offwhite/40 text-xs">{service.duration_minutes} min</div>
+                                <div className="text-offwhite/40 text-xs">{service.duration_minutes || service.duration || 0} min</div>
                               </div>
-                              <div className="text-gold font-heading text-lg">${service.price}</div>
+                              <div className="text-gold font-heading text-lg">{service.price ? `$${service.price}` : 'From'}</div>
                             </button>
                           );
                         })}
+                        {category === 'Packages' && (
+                          <button
+                            key="bridal-party"
+                            onClick={() => setShowGroupModal(true)}
+                            className="rounded-xl p-4 text-left border-2 transition-all flex flex-col gap-2"
+                            style={{
+                              background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.15) 0%, rgba(197, 160, 89, 0.05) 100%)',
+                              borderColor: 'rgba(197, 160, 89, 0.5)',
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 text-[10px] rounded-full bg-gold/30 border border-gold/50 text-gold font-heading uppercase tracking-widest">Group Special</span>
+                            </div>
+                            <div className="font-heading text-base text-offwhite">Bridal Party Bundle</div>
+                            <div className="text-offwhite/50 text-xs leading-relaxed">Group booking for 4+ people — enjoy a 25% discount applied automatically to your total bill at checkout!</div>
+                            <div className="text-gold font-heading text-sm">Book Now</div>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -235,7 +254,7 @@ export default function CustomerBooking() {
           {selectedService && addOns.length > 0 && (
             <div className="rounded-2xl p-6 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Add-Ons (Optional)</div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {addOns.map((addOn) => (
                   <label
                     key={addOn.id}
@@ -316,13 +335,13 @@ export default function CustomerBooking() {
                   </div>
                   <div className="text-offwhite font-heading text-sm">No Preference</div>
                 </button>
-                {technicians.map((tech) => (
-                  <button
-                    key={tech.id}
-                    onClick={() => setSelectedTech(tech)}
-                    className={`rounded-xl p-4 text-center border transition-all ${selectedTech?.id === tech.id ? 'border-2' : 'border-offwhite/5'}`}
-                    style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: selectedTech?.id === tech.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)' }}
-                  >
+                 {technicians.map((tech) => (
+                   <button
+                     key={tech.id}
+                     onClick={() => setSelectedTech(tech)}
+                     className={`min-w-0 rounded-xl p-4 text-center border transition-all ${selectedTech?.id === tech.id ? 'border-2' : 'border-offwhite/5'}`}
+                     style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: selectedTech?.id === tech.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)' }}
+                   >
                     <div className="w-12 h-12 rounded-full mx-auto mb-2 bg-gold/20 flex items-center justify-center">
                       <span className="text-gold font-heading text-sm">{tech.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
                     </div>
@@ -369,6 +388,70 @@ export default function CustomerBooking() {
           )}
         </div>
       </div>
+
+      {showGroupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-2xl border-2 p-6" style={{ backgroundColor: '#111', borderColor: 'rgba(197, 160, 89, 0.5)' }}>
+            <div className="text-center mb-6">
+              <span className="px-3 py-1 text-[10px] rounded-full bg-gold/30 border border-gold/50 text-gold font-heading uppercase tracking-widest">Group Special</span>
+              <h3 className="font-heading text-2xl text-offwhite mt-3">Bridal Party Bundle</h3>
+              <p className="text-offwhite/50 text-sm mt-2">Booking for 4+ people — enjoy a 25% discount at checkout!</p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-offwhite/60 text-sm mb-2">Number of Guests</label>
+                <input
+                  type="number"
+                  min="4"
+                  value={groupSize}
+                  onChange={(e) => setGroupSize(e.target.value)}
+                  placeholder="Min. 4 guests"
+                  className="w-full p-4 text-offwhite border border-offwhite/10 rounded-xl focus:border-gold focus:outline-none"
+                  style={{ backgroundColor: '#1a1a1a' }}
+                />
+                <p className="text-offwhite/30 text-xs mt-1">Minimum 4 guests required for the group discount</p>
+              </div>
+              <div className="p-4 rounded-xl border" style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(197, 160, 89, 0.2)' }}>
+                <p className="text-offwhite/60 text-sm">
+                  Your group booking will be saved and our team will contact you to confirm services and timing for each guest.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowGroupModal(false); setGroupSize(''); }}
+                  className="flex-1 py-3 border border-offwhite/20 text-offwhite/60 rounded-xl hover:text-offwhite transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (groupSize >= 4) {
+                      const currentUser = localStorage.getItem('salon_user_data');
+                      const userId = currentUser ? JSON.parse(currentUser).id : null;
+                      if (userId) {
+                        supabase.from('online_bookings').insert({
+                          profile_id: userId,
+                          service_id: null,
+                          scheduled_time: null,
+                          status: 'pending',
+                          price: 0,
+                          notes: `Bridal Party Bundle - Group size: ${groupSize} guests (25% discount)`,
+                        });
+                      }
+                      setShowGroupModal(false);
+                      setBookingSuccess(true);
+                    }
+                  }}
+                  disabled={!groupSize || groupSize < 4}
+                  className="flex-1 py-3 bg-gold text-charcoal font-heading rounded-xl hover:bg-gold/90 transition-colors disabled:opacity-50"
+                >
+                  Confirm Group Booking
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

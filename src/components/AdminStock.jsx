@@ -158,7 +158,7 @@ export default function AdminStock() {
 
   if (loading) {
     return (
-      <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -168,9 +168,9 @@ export default function AdminStock() {
   }
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b flex-shrink-0" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
           <div className="flex items-center justify-between">
             <div>

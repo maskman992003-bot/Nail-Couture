@@ -3,6 +3,7 @@ import { processCheckIn } from '../services/kioskService'
 import { getServices } from '../services/services'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
+import { CATEGORIES } from '../data/servicesData'
 
 const Sparkle = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -21,12 +22,12 @@ const Sparkle = () => (
   </div>
 )
 
-const CATEGORIES = ['All', 'Extensions', 'Nail Art', 'Russian Manicure', 'Treatment', 'Packages'];
-
 const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) => {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [refreshmentList, setRefreshmentList] = useState([])
+  const [refreshmentPref, setRefreshmentPref] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [expandedCategory, setExpandedCategory] = useState(null)
   const [selectedService, setSelectedService] = useState(initialService || null)
@@ -35,8 +36,14 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
 
   useEffect(() => {
     setLoading(true)
-    getServices()
-      .then((data) => { setServices(data) })
+    Promise.all([
+      getServices(),
+      supabase.from('stock').select('name').eq('category', 'refreshment').gt('quantity', 0).order('name')
+    ])
+      .then(([svcData, refData]) => {
+        setServices(svcData)
+        setRefreshmentList(refData.data || [])
+      })
       .catch((err) => { setError(err.message) })
       .finally(() => setLoading(false))
   }, [])
@@ -97,12 +104,12 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
           <p className="text-offwhite/60">Choose your treatment</p>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-1">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x w-full px-1 pb-1">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => { setActiveCategory(cat); setExpandedCategory(null); }}
-              className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 snap-start ${
                 activeCategory === cat
                   ? 'bg-gold text-charcoal'
                   : 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
@@ -219,6 +226,23 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
                 </div>
                 <div className="text-gold font-heading text-xl">${totalPrice}</div>
               </div>
+
+              {refreshmentList.length > 0 && (
+                <div className="mb-3">
+                  <label className="block text-offwhite/50 text-xs uppercase tracking-wider mb-2">Refreshment</label>
+                  <select
+                    value={refreshmentPref}
+                    onChange={(e) => setRefreshmentPref(e.target.value)}
+                    className="w-full px-3 py-2 bg-offwhite/5 border border-offwhite/20 text-offwhite rounded-lg focus:outline-none focus:border-gold text-sm"
+                  >
+                    <option value="" className="bg-charcoal">No refreshment</option>
+                    {refreshmentList.map((item) => (
+                      <option key={item.name} value={item.name} className="bg-charcoal">{item.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowConfirm(false)}
@@ -228,7 +252,7 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
                 </button>
                 <button
                   onClick={() => {
-                    onSelect({ service: selectedService, addOns: selectedAddOnDetails })
+                    onSelect({ service: selectedService, addOns: selectedAddOnDetails, refreshmentPref })
                     setShowConfirm(false)
                   }}
                   className="flex-1 py-3 bg-gold text-charcoal font-heading rounded-lg hover:bg-gold/90 transition-colors"
@@ -512,6 +536,7 @@ export default function CheckIn({ onNavigate }) {
   const [error, setError] = useState(null)
   const [showServiceSelection, setShowServiceSelection] = useState(false)
   const [selectedService, setSelectedService] = useState(null)
+  const [selectedAddOns, setSelectedAddOns] = useState([])
   const [services, setServices] = useState([])
 
   useEffect(() => {
@@ -544,12 +569,12 @@ export default function CheckIn({ onNavigate }) {
   }
 
   const handleExistingUserServiceSelect = async (payload) => {
-    const { service, addOns } = payload
+    const { service, addOns, refreshmentPref } = payload
     if (!result?.appointment?.id) return
     setLoading(true)
     try {
       const addOnNames = addOns.map((a) => a.name).join(', ')
-      await supabase.from('appointments').update({ service_id: service.id, add_ons: addOnNames || null }).eq('id', result.appointment.id)
+      await supabase.from('appointments').update({ service_id: service.id, add_ons: addOnNames || null, refreshment_choice: refreshmentPref || null }).eq('id', result.appointment.id)
       setSelectedService(service)
       setSelectedAddOns(addOns)
       setShowServiceSelection(false)
@@ -589,8 +614,12 @@ export default function CheckIn({ onNavigate }) {
   }
 
   if (result && !result.isNew && result.appointment) {
+    const addOns = services.filter((s) => s.is_addon)
+    const selectedAddOnDetails = selectedAddOns
+    const totalPrice = (selectedService?.price || 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
+
     return (
-      <div className="min-h-screen bg-charcoal flex flex-col items-center justify-center p-8">
+      <div className="min-h-screen bg-charcoal flex flex-col items-center justify-center p-4 sm:p-8">
         <div className="text-center animate-fade-in max-w-md w-full">
           <div className="w-20 h-20 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -598,51 +627,79 @@ export default function CheckIn({ onNavigate }) {
             </svg>
           </div>
           <h2 className="font-heading text-3xl text-offwhite mb-2">Welcome Back</h2>
-          <p className="text-xl text-gold mb-8">{result.name}</p>
-          
-          <div className="mb-6">
-            <p className="text-offwhite/60 mb-3">Select your service:</p>
-            <div className="grid grid-cols-2 gap-3">
-              {services.filter((s) => !s.is_addon).map((service) => (
-                <button
-                  key={service.id}
-                  onClick={() => {
-                    setSelectedService(service)
-                    setSelectedAddOns([])
-                    setShowServiceSelection(true)
-                  }}
-                  className={`bg-offwhite/10 border rounded-xl p-4 text-left transition-all ${
-                    selectedService?.id === service.id ? 'border-gold' : 'border-gold/30 hover:border-gold'
-                  }`}
-                >
-                  <div className="text-offwhite font-heading text-sm">{service.name}</div>
-                  <div className="text-gold">${service.price}</div>
-                </button>
-              ))}
-            </div>
-          </div>
+          <p className="text-xl text-gold mb-6">{result.name}</p>
+
+          <button
+            onClick={() => setShowServiceSelection(true)}
+            className="w-full py-3 border border-gold/50 text-gold hover:bg-gold/10 rounded-xl transition-all mb-6"
+          >
+            {selectedService ? 'Change Service' : 'Select a Service'}
+          </button>
 
           {selectedService && (
-            <div className="bg-gold/20 border border-gold/50 rounded-xl p-4 mb-4">
-              <p className="text-offwhite/60 text-sm">Selected:</p>
-              <p className="text-gold font-heading">{selectedService.name} - ${selectedService.price}</p>
-              {selectedAddOns.length > 0 && (
-                <p className="text-offwhite/50 text-xs mt-1">+ {selectedAddOns.map((a) => a.name).join(', ')}</p>
+            <div className="bg-gold/20 border border-gold/50 rounded-xl p-4 mb-6">
+              <p className="text-offwhite/60 text-sm mb-2">Selected:</p>
+              <p className="text-offwhite font-heading text-lg">{selectedService.name}</p>
+              {selectedAddOnDetails.length > 0 && (
+                <p className="text-offwhite/50 text-sm">+ {selectedAddOnDetails.map((a) => a.name).join(', ')}</p>
               )}
+              <div className="text-gold font-heading text-2xl mt-2">${totalPrice}</div>
             </div>
           )}
 
-          <p className="text-offwhite/60 mb-8">You have been checked in</p>
+          {addOns.length > 0 && selectedService && (
+            <div className="mb-6">
+              <p className="text-offwhite/60 text-sm mb-3">Add-Ons (Optional)</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {addOns.map((addOn) => {
+                  const isSelected = selectedAddOns.some((a) => a.id === addOn.id)
+                  return (
+                    <button
+                      key={addOn.id}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedAddOns((prev) => prev.filter((a) => a.id !== addOn.id))
+                        } else {
+                          setSelectedAddOns((prev) => [...prev, addOn])
+                        }
+                      }}
+                      className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${
+                        isSelected ? 'border-gold bg-gold/10' : 'border-offwhite/10 hover:border-gold/40'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+                        isSelected ? 'border-gold bg-gold' : 'border-offwhite/30'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-2.5 h-2.5 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-offwhite font-heading text-sm">{addOn.name}</div>
+                        <div className="text-offwhite/40 text-xs">+{addOn.duration_minutes} min</div>
+                      </div>
+                      <div className="text-gold font-heading text-sm">+${addOn.price}</div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {addOns.length === 0 && selectedService && (
+            <div className="mb-6 text-offwhite/40 text-sm">No add-ons available</div>
+          )}
+
           <button
-            onClick={() => {
-              setPhone('')
-              setResult(null)
-              setSelectedService(null)
-            }}
-            className="px-8 py-3 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal transition-all"
-          >
-            CHECK IN ANOTHER GUEST
-          </button>
+              onClick={() => {
+                setPhone(''); setResult(null); setSelectedService(null); setSelectedAddOns([]); setShowServiceSelection(false)
+              }}
+              className="px-8 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 transition-all w-full max-w-xs"
+            >
+              CONFIRM
+            </button>
         </div>
       </div>
     )

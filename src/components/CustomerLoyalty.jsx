@@ -74,7 +74,7 @@ export default function CustomerLoyalty() {
 
   if (loading) {
     return (
-      <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -85,7 +85,7 @@ export default function CustomerLoyalty() {
 
   if (!profile) {
     return (
-      <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -100,9 +100,9 @@ export default function CustomerLoyalty() {
   const tier = getTierInfo(profile.loyalty_points || 0);
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 pb-24 lg:pb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">

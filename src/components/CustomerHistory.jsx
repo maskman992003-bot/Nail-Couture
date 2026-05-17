@@ -46,23 +46,37 @@ export default function CustomerHistory() {
     try {
       const [onlineRes, kioskRes, notifRes] = await Promise.all([
         supabase.from('online_bookings').select('*').eq('profile_id', userId).order('scheduled_time', { ascending: false }),
-        supabase.from('appointments').select('*, services(name, price, duration_minutes), profiles!appointments_client_id_fkey(full_name)').eq('profile_id', userId).order('check_in_time', { ascending: false }),
+        supabase.from('appointments').select('*').eq('profile_id', userId).order('check_in_time', { ascending: false }),
         supabase.from('notifications').select('*').eq('profile_id', userId).order('created_at', { ascending: false }).limit(10),
       ]);
       const onlineList = onlineRes.data || [];
       const kioskList = kioskRes.data || [];
       const serviceIds = [...new Set([...onlineList, ...kioskList].map((b) => b.service_id).filter(Boolean))];
-      const techIds = [...new Set(onlineList.map((b) => b.technician_id).filter(Boolean))];
-      const [servicesRes, techsRes] = await Promise.all([
-        serviceIds.length ? supabase.from('services').select('id, name, price, duration_minutes').in('id', serviceIds) : { data: [] },
-        techIds.length ? supabase.from('profiles').select('id, full_name').in('id', techIds) : { data: [] },
+      const techIds = [...new Set([...onlineList, ...kioskList].map((b) => b.technician_id).filter(Boolean))];
+      const allAddonNames = [...new Set(kioskList.flatMap((b) => (b.add_ons ? b.add_ons.split(',').map((n) => n.trim()) : [])))];
+      const [servicesRes, techsRes, addOnsRes] = await Promise.all([
+        serviceIds.length ? supabase.from('services').select('id, name, price, duration_minutes, is_addon').in('id', serviceIds) : { data: [] },
+        techIds.length ? supabase.from('profiles').select('id, full_name, role').in('id', techIds) : { data: [] },
+        allAddonNames.length ? supabase.from('services').select('id, name, price, duration_minutes, is_addon').in('name', allAddonNames) : { data: [] },
       ]);
       const serviceMap = {};
       (servicesRes.data || []).forEach((s) => { serviceMap[s.id] = s; });
       const techMap = {};
       (techsRes.data || []).forEach((t) => { techMap[t.id] = t; });
+      const addOnMap = {};
+      (addOnsRes.data || []).forEach((a) => { addOnMap[a.name] = a; });
       const enrichedOnline = onlineList.map((b) => ({ ...b, services: serviceMap[b.service_id] || null, technician: techMap[b.technician_id] || null, source: 'online' }));
-      const enrichedKiosk = kioskList.map((b) => ({ ...b, services: b.services || serviceMap[b.service_id] || null, source: 'kiosk' }));
+      const enrichedKiosk = kioskList.map((b) => {
+        const addonNames = b.add_ons ? b.add_ons.split(',').map((n) => n.trim()) : [];
+        const addonDetails = addonNames.map((n) => addOnMap[n]).filter(Boolean);
+        return {
+          ...b,
+          services: serviceMap[b.service_id] || null,
+          technician: techMap[b.technician_id] || null,
+          addonDetails,
+          source: 'kiosk',
+        };
+      });
       const combined = [...enrichedOnline, ...enrichedKiosk].sort((a, b) => {
         const dateA = new Date(a.scheduled_time || a.check_in_time);
         const dateB = new Date(b.scheduled_time || b.check_in_time);
@@ -122,23 +136,27 @@ export default function CustomerHistory() {
     }
   };
 
-  const generateReceipt = (booking) => {
+const generateReceipt = (booking) => {
     const appointmentDate = booking.scheduled_time || booking.check_in_time;
     const dateStr = appointmentDate ? new Date(appointmentDate).toLocaleDateString() : 'Walk-in';
     const timeStr = appointmentDate ? new Date(appointmentDate).toLocaleTimeString() : '';
+    const basePrice = booking.services?.price || booking.price || 0;
+    const addOnTotal = (booking.addonDetails || []).reduce((sum, a) => sum + (a.price || 0), 0);
+    const totalPrice = basePrice + addOnTotal;
+    const addOnLines = (booking.addonDetails || []).map((a) => `  + ${a.name}: $${a.price}`).join('\n');
     const receiptContent = `
-NAIL COUTURE - RECEIPT
-=======================
-Service: ${booking.services?.name || 'N/A'}
-Duration: ${booking.services?.duration_minutes || 'N/A'} minutes
-Date: ${dateStr}
-Time: ${timeStr}
-${booking.technician ? `Technician: ${booking.technician.full_name}` : ''}
-------------------------
-Price: $${booking.services?.price || booking.price || 0}
-Status: ${(booking.status || '').toUpperCase()}
-=======================
-Thank you for visiting Nail Couture!
+ NAIL COUTURE - RECEIPT
+ =======================
+ Service: ${booking.services?.name || 'N/A'}
+ Duration: ${booking.services?.duration_minutes || 'N/A'} minutes
+${addOnLines ? `Add-Ons:\n${addOnLines}\n` : ''}Date: ${dateStr}
+ Time: ${timeStr}
+ ${booking.technician ? `Technician: ${booking.technician.full_name}` : ''}
+ ------------------------
+ Price: $${totalPrice.toFixed(2)}
+ Status: ${(booking.status || '').toUpperCase()}
+ =======================
+ Thank you for visiting Nail Couture!
     `.trim();
     const blob = new Blob([receiptContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -164,6 +182,9 @@ Thank you for visiting Nail Couture!
     const isPending = booking.status === 'pending';
     const canCancel = booking.source === 'online' && ['pending', 'confirmed', 'in_progress'].includes(booking.status);
     const appointmentDate = booking.scheduled_time || booking.check_in_time;
+    const basePrice = booking.services?.price || booking.price || 0;
+    const addOnTotal = (booking.addonDetails || []).reduce((sum, a) => sum + (a.price || 0), 0);
+    const totalPrice = basePrice + addOnTotal;
 
     return (
       <div
@@ -171,13 +192,16 @@ Thank you for visiting Nail Couture!
         className="rounded-xl p-5 border transition-all"
         style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(197,160,89,0.15)' }}
       >
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-2">
           <div>
             <div className="text-offwhite font-heading text-base">{booking.services?.name || 'Service'}</div>
             <div className="text-offwhite/40 text-xs mt-0.5">
               {booking.services?.duration_minutes ? `${booking.services.duration_minutes} min` : ''}
               {booking.technician && ` · ${booking.technician.full_name}`}
             </div>
+            {(booking.addonDetails || []).map((addon) => (
+              <div key={addon.id} className="text-offwhite/30 text-xs mt-1">+ {addon.name} (+${addon.price})</div>
+            ))}
           </div>
           <span className={`px-2.5 py-1 text-[10px] rounded-full border flex-shrink-0 ${cfg?.color || ''}`}>
             {cfg?.label || booking.status}
@@ -187,7 +211,7 @@ Thank you for visiting Nail Couture!
         <div className="text-offwhite/50 text-sm mb-1">
           {appointmentDate ? `${new Date(appointmentDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${new Date(appointmentDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : 'Walk-in Appointment'}
         </div>
-        <div className="text-gold font-heading text-lg">${booking.services?.price || booking.price || 0}</div>
+        <div className="text-gold font-heading text-lg">${totalPrice.toFixed(2)}</div>
 
         <div className="flex items-center gap-2 mt-3 flex-wrap">
           {isPending && (
@@ -226,7 +250,7 @@ Thank you for visiting Nail Couture!
 
   if (loading) {
     return (
-      <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -236,9 +260,9 @@ Thank you for visiting Nail Couture!
   }
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+<div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24 lg:pb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -292,27 +316,27 @@ Thank you for visiting Nail Couture!
             </div>
           ) : (
             <>
-              {activeTab === 'all' && activeBookings.length > 0 && (
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Upcoming & Active</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {activeBookings.map(renderCard)}
-                  </div>
-                </div>
-              )}
-              {activeTab === 'all' && pastBookings.length > 0 && (
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Past Visits</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {pastBookings.map(renderCard)}
-                  </div>
-                </div>
-              )}
-              {activeTab !== 'all' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredBookings.map(renderCard)}
-                </div>
-              )}
+               {activeTab === 'all' && activeBookings.length > 0 && (
+                 <div>
+                   <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Upcoming & Active</div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {activeBookings.map(renderCard)}
+                   </div>
+                 </div>
+               )}
+               {activeTab === 'all' && pastBookings.length > 0 && (
+                 <div>
+                   <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Past Visits</div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {pastBookings.map(renderCard)}
+                   </div>
+                 </div>
+               )}
+               {activeTab !== 'all' && (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                   {filteredBookings.map(renderCard)}
+                 </div>
+               )}
             </>
           )}
         </div>

@@ -9,7 +9,33 @@ export default function Navbar({ currentPage, onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const isAdminPage = location.pathname.startsWith('/admin') || location.pathname === '/checkout';
+  const getHomeHref = () => {
+    if (!user) return '/';
+    if (user.is_staff) {
+      const role = user.role;
+      if (role === 'super_admin' || role === 'owner' || role === 'partner') return '/superadmin';
+      if (role === 'admin') return '/admin';
+      if (role === 'cashier') return '/cashier';
+      if (role === 'technician') return '/technician';
+      return '/admin';
+    }
+    return '/portal';
+  };
+
+  const handleLogoClick = () => {
+    navigate(getHomeHref());
+  };
+
+  const handleHomeClick = () => {
+    setMobileMenuOpen(false);
+    navigate(getHomeHref());
+  };
+
+  const handleLogout = () => {
+    setMobileMenuOpen(false);
+    logout();
+    navigate('/');
+  };
 
   const scrollToSection = (id) => {
     setMobileMenuOpen(false);
@@ -31,22 +57,6 @@ export default function Navbar({ currentPage, onNavigate }) {
     }
   };
 
-  const handleLogoClick = () => {
-    if (currentPage === 'portal') navigate('/');
-    else onNavigate('home');
-  };
-
-  const handleLogout = () => {
-    setMobileMenuOpen(false);
-    logout();
-    navigate('/');
-  };
-
-  const handleHomeClick = () => {
-    setMobileMenuOpen(false);
-    navigate('/');
-  };
-
   const firstName = user?.full_name ? user.full_name.split(' ')[0] : '';
 
   return (
@@ -64,12 +74,6 @@ export default function Navbar({ currentPage, onNavigate }) {
               {user ? (
                 <>
                   <span className="text-gold font-heading text-sm">Hi, {firstName}</span>
-
-                  {user.is_staff && !isAdminPage && (
-                    <Link to="/admin" className="px-4 py-2 border border-gold/50 text-gold/80 hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider">
-                      Dashboard
-                    </Link>
-                  )}
                   {!user.is_staff && (
                     <Link to="/portal" className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium">
                       My Portal
@@ -87,14 +91,12 @@ export default function Navbar({ currentPage, onNavigate }) {
                   <a href="/login" className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium">
                     Login
                   </a>
-                  {!user?.is_staff && (
-                    <button
-                      onClick={() => scrollToSection('book')}
-                      className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
-                    >
-                      BOOK
-                    </button>
-                  )}
+                  <button
+                    onClick={() => scrollToSection('book')}
+                    className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                  >
+                    BOOK
+                  </button>
                 </>
               )}
             </div>
@@ -124,11 +126,11 @@ export default function Navbar({ currentPage, onNavigate }) {
               {currentPage === 'portal' ? (
                 <>
                   <button onClick={handleHomeClick} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">HOME</button>
-                  <Link to="/" onClick={() => setMobileMenuOpen(false)} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">SERVICES</Link>
+                  <Link to="/admin/services" onClick={() => setMobileMenuOpen(false)} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">SERVICES</Link>
                   <Link to="/" onClick={() => setMobileMenuOpen(false)} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">LOOKBOOK</Link>
                 </>
               ) : user && user.is_staff ? (
-                <button onClick={() => { setMobileMenuOpen(false); navigate('/admin'); }} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">ADMIN DASHBOARD</button>
+                <button onClick={() => { setMobileMenuOpen(false); navigate(getHomeHref()); }} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">STAFF HOME</button>
               ) : (
                 <>
                   <button onClick={() => scrollToSection('services')} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">SERVICES</button>
@@ -144,18 +146,15 @@ export default function Navbar({ currentPage, onNavigate }) {
                     {!user.is_staff && currentPage !== 'portal' && (
                       <Link to="/portal" onClick={() => setMobileMenuOpen(false)} className="py-3 text-charcoal bg-gold text-center px-2 text-sm tracking-wider font-medium">MY PORTAL</Link>
                     )}
-                    {user.is_staff && isAdminPage && (
-                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">BACK TO ADMIN</Link>
-                    )}
                     <button onClick={() => setShowLogoutConfirm(true)} className="py-3 text-red-400 hover:text-red-300 text-left px-2 text-sm tracking-wider">LOGOUT</button>
                   </>
                 ) : (
                   <a href="/login" className="py-3 text-charcoal bg-gold text-center px-2 text-sm tracking-wider font-medium">LOGIN</a>
                 )}
               </div>
-</div>
             </div>
-          )}
+          </div>
+        )}
       </div>
 
       {showLogoutConfirm && (

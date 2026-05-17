@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import Navbar from './Navbar';
-import UniversalNav from './UniversalNav';
+import Sidebar from './Sidebar';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -213,9 +212,8 @@ export default function CashierCheckout() {
   if (loading) {
     return (
       <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <UniversalNav />
         <div className="flex-1 overflow-x-hidden">
-          <Navbar currentPage="checkout" onNavigate={handleNavigate} />
+          <Sidebar />
           <div className="flex items-center justify-center py-20 px-6">
             <div className="text-gold animate-pulse">Loading...</div>
           </div>
@@ -226,9 +224,8 @@ export default function CashierCheckout() {
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-      <UniversalNav />
       <div className="flex-1 overflow-x-hidden">
-        <Navbar currentPage="checkout" onNavigate={handleNavigate} />
+        <Sidebar />
         <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
           <div className="mb-8">
             <h1 className="font-heading text-3xl text-gold mb-2">Checkout Station</h1>

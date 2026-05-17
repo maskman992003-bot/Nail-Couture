@@ -211,7 +211,7 @@ export default function AdminBookings() {
 
   if (loading) {
     return (
-      <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -221,9 +221,9 @@ export default function AdminBookings() {
   }
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b flex-shrink-0" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
           <div className="flex items-center justify-between">
             <div>
@@ -244,7 +244,7 @@ export default function AdminBookings() {
           <div className="rounded-xl p-1 flex gap-1 overflow-x-auto" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(197, 160, 89, 0.1)' }}>
             <button
               onClick={() => setActiveTab('all')}
-              className={`flex-1 min-w-[100px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              className={`min-w-[90px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                 activeTab === 'all' ? 'text-charcoal' : 'text-offwhite/60'
               }`}
               style={activeTab === 'all' ? { background: 'linear-gradient(135deg, #c5a059, #f0d78c)' } : {}}
@@ -259,7 +259,7 @@ export default function AdminBookings() {
                 <button
                   key={s}
                   onClick={() => setActiveTab(s)}
-                  className={`flex-1 min-w-[100px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all border whitespace-nowrap ${
+                  className={`min-w-[90px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all border whitespace-nowrap ${
                     activeTab === s ? '' : 'text-offwhite/60'
                   }`}
                   style={
@@ -293,120 +293,117 @@ export default function AdminBookings() {
             </div>
           ) : (
             <div className="space-y-4 mt-2">
-              {filteredBookings.map((booking) => {
-                const fb = feedback[booking.id];
-                const isUpdating = updatingId === booking.id;
-                const cfg = statusConfig[booking.status];
-                const customer = booking.customer;
-                return (
-                  <div
-                    key={booking.id}
-                    className="rounded-xl p-6 border transition-all hover:border-gold/40"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-start gap-5">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <div className="text-offwhite font-heading text-xl">{customer?.full_name || 'Guest'}</div>
-                            <div className="text-offwhite/40 text-sm mt-0.5">{customer?.phone_number || 'No phone'}</div>
-                          </div>
-                          <span className={`px-3 py-1 text-xs rounded-full border flex-shrink-0 ${cfg.color}`}>
-                            {cfg.label}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-4 text-sm">
-                          <div>
-                            <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Service</div>
-                            <div className="text-gold font-heading">{booking.services?.name || 'Service'}</div>
-                          </div>
-                          <div>
-                            <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Price</div>
-                            <div className="text-offwhite font-heading">${booking.services?.price || booking.price}</div>
-                          </div>
-                          <div>
-                            <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Scheduled</div>
-                            <div className="text-offwhite font-heading">
-                              {new Date(booking.scheduled_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at{' '}
-                              {new Date(booking.scheduled_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                            </div>
-                          </div>
-                          {booking.technician && (
-                            <div>
-                              <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Technician</div>
-                              <div className="text-offwhite font-heading">{booking.technician.full_name}</div>
-                            </div>
-                          )}
-                        </div>
-                        {customer?.nail_goal && (
-                          <div className="text-offwhite/40 text-xs italic mt-3">Goal: {customer.nail_goal}</div>
-                        )}
-                        {customer?.refreshment_pref && (
-                          <div className="text-offwhite/40 text-xs mt-1">Refreshment: {customer.refreshment_pref}</div>
-                        )}
-                      </div>
+           {filteredBookings.map((booking) => {
+                 const fb = feedback[booking.id];
+                 const isUpdating = updatingId === booking.id;
+                 const cfg = statusConfig[booking.status];
+                 const customer = booking.customer;
+                 return (
+                   <div
+                     key={booking.id}
+                     className="min-w-0 rounded-xl p-6 border transition-all hover:border-gold/40"
+                     style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}
+                   >
+                     <div className="flex flex-col lg:flex-row lg:items-start gap-5">
+                       <div className="flex-1">
+                         <div className="flex items-start justify-between mb-3">
+                           <div>
+                             <div className="text-offwhite font-heading text-xl">{customer?.full_name || 'Guest'}</div>
+                             <div className="text-offwhite/40 text-sm mt-0.5">{customer?.phone_number || 'No phone'}</div>
+                           </div>
+                           <span className={`px-3 py-1 text-xs rounded-full border flex-shrink-0 ${cfg.color}`}>
+                             {cfg.label}
+                           </span>
+                         </div>
+                         <div className="flex flex-wrap gap-4 text-sm">
+                           <div>
+                             <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Service</div>
+                             <div className="text-gold font-heading">{booking.services?.name || 'Service'}</div>
+                           </div>
+                           <div>
+                             <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Price</div>
+                             <div className="text-offwhite font-heading">{booking.services?.price || booking.price}</div>
+                           </div>
+                           <div>
+                             <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Scheduled</div>
+                             <div className="text-offwhite font-heading">
+                               {new Date(booking.scheduled_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at{' '}
+                               {new Date(booking.scheduled_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                             </div>
+                           </div>
+                           {booking.technician && (
+                             <div>
+                               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Technician</div>
+                               <div className="text-offwhite font-heading">{booking.technician.full_name}</div>
+                             </div>
+                           )}
+                         </div>
+                         {customer?.nail_goal && (
+                           <div className="text-offwhite/40 text-xs italic mt-3">Goal: {customer.nail_goal}</div>
+                         )}
+                       </div>
 
-                      <div className="flex flex-col gap-2 lg:w-64 lg:items-end flex-shrink-0">
-                        <div className="flex items-center gap-2 flex-wrap lg:justify-end">
-                          <button
-                            onClick={() => openEdit(booking)}
-                            disabled={isUpdating}
-                            className="px-4 py-2 text-xs font-medium rounded-lg border text-offwhite/60 hover:text-gold hover:border-gold/50 transition-all disabled:opacity-30"
-                            style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                          >
-                            Edit Schedule
-                          </button>
-                          {booking.status === 'pending' && (
-                            <button
-                              onClick={() => { console.log('[Confirm button] clicked, booking:', booking.id, 'status:', booking.status); updateStatus(booking, 'confirmed'); }}
-                              disabled={isUpdating}
-                              className="px-4 py-2 text-xs font-medium rounded-lg border text-blue-300 hover:bg-blue-900/20 hover:border-blue-500/50 transition-all disabled:opacity-30"
-                              style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                            >
-                              {isUpdating ? 'Processing...' : 'Confirm'}
-                            </button>
-                          )}
-                          {booking.status === 'confirmed' && (
-                            <button
-                              onClick={() => { console.log('[Start button] clicked'); updateStatus(booking, 'in_progress'); }}
-                              disabled={isUpdating}
-                              className="px-4 py-2 text-xs font-medium rounded-lg border text-green-300 hover:bg-green-900/20 hover:border-green-500/50 transition-all disabled:opacity-30"
-                              style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                            >
-                              Start Service
-                            </button>
-                          )}
-                          {booking.status === 'in_progress' && (
-                            <button
-                              onClick={() => updateStatus(booking, 'completed')}
-                              disabled={isUpdating}
-                              className="px-4 py-2 text-xs font-medium rounded-lg bg-gold text-charcoal hover:bg-gold/90 transition-all disabled:opacity-30"
-                            >
-                              Mark Completed
-                            </button>
-                          )}
-                          {!['completed', 'cancelled'].includes(booking.status) && (
-                            <button
-                              onClick={() => updateStatus(booking, 'cancelled')}
-                              disabled={isUpdating}
-                              className="px-4 py-2 text-xs font-medium rounded-lg border text-red-400 hover:bg-red-900/20 hover:border-red-500/50 transition-all disabled:opacity-30"
-                              style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                            >
-                              Cancel
-                            </button>
-                          )}
-                          {(booking.status === 'completed' || booking.status === 'cancelled') && (
-                            <div className="px-4 py-2 text-xs text-center">
-                              {fb === 'ok' && <span className="text-green-400 font-heading">&#10003; Updated</span>}
-                              {fb === 'error' && <span className="text-red-400 font-heading">Failed</span>}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                       <div className="flex flex-col gap-2 lg:w-64 lg:items-end flex-shrink-0">
+                         <div className="flex items-center gap-2 flex-wrap lg:justify-end">
+                           <button
+                             onClick={() => openEdit(booking)}
+                             disabled={isUpdating}
+                             className="px-4 py-2 text-xs font-medium rounded-lg border text-offwhite/60 hover:text-gold hover:border-gold/50 transition-all disabled:opacity-30"
+                             style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                           >
+                             Edit Schedule
+                           </button>
+                           {booking.status === 'pending' && (
+                             <button
+                               onClick={() => { console.log('[Confirm button] clicked, booking:', booking.id, 'status:', booking.status); updateStatus(booking, 'confirmed'); }}
+                               disabled={isUpdating}
+                               className="px-4 py-2 text-xs font-medium rounded-lg border text-blue-300 hover:bg-blue-900/20 hover:border-blue-500/50 transition-all disabled:opacity-30"
+                               style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                             >
+                               {isUpdating ? 'Processing...' : 'Confirm'}
+                             </button>
+                           )}
+                           {booking.status === 'confirmed' && (
+                             <button
+                               onClick={() => { console.log('[Start button] clicked'); updateStatus(booking, 'in_progress'); }}
+                               disabled={isUpdating}
+                               className="px-4 py-2 text-xs font-medium rounded-lg border text-green-300 hover:bg-green-900/20 hover:border-green-500/50 transition-all disabled:opacity-30"
+                               style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                             >
+                               Start Service
+                             </button>
+                           )}
+                           {booking.status === 'in_progress' && (
+                             <button
+                               onClick={() => updateStatus(booking, 'completed')}
+                               disabled={isUpdating}
+                               className="px-4 py-2 text-xs font-medium rounded-lg bg-gold text-charcoal hover:bg-gold/90 transition-all disabled:opacity-30"
+                             >
+                               Mark Completed
+                             </button>
+                           )}
+                           {!['completed', 'cancelled'].includes(booking.status) && (
+                             <button
+                               onClick={() => updateStatus(booking, 'cancelled')}
+                               disabled={isUpdating}
+                               className="px-4 py-2 text-xs font-medium rounded-lg border text-red-400 hover:bg-red-900/20 hover:border-red-500/50 transition-all disabled:opacity-30"
+                               style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                             >
+                               Cancel
+                             </button>
+                           )}
+                           {(booking.status === 'completed' || booking.status === 'cancelled') && (
+                             <div className="px-4 py-2 text-xs text-center">
+                               {fb === 'ok' && <span className="text-green-400 font-heading">&#10003; Updated</span>}
+                               {fb === 'error' && <span className="text-red-400 font-heading">Failed</span>}
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 );
+               })}
             </div>
           )}
         </div>

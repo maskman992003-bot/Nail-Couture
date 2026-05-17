@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
-import Navbar from './Navbar'
-import UniversalNav from './UniversalNav'
+import Sidebar from './Sidebar'
 
 const getDateRange = (period) => {
   const now = new Date()
@@ -218,42 +217,47 @@ const MetricColumn = ({ label, data, isCurrent, showRevenue }) => {
   const opacity = isCurrent ? 1 : 0.6
   
   return (
-    <div className="flex flex-col text-center" style={{ opacity }}>
+    <div className="text-center" style={{ opacity }}>
       <div className="py-4 border-b border-gold/20">
         <span className="font-heading text-gold text-base">{label}</span>
       </div>
       
-      <div className="py-6 border-b border-gold/10">
-        <div className="text-offwhite/40 text-sm mb-2">New Customers</div>
-        <div className="font-heading text-4xl text-[#D4D4D4]">{data.new}</div>
-      </div>
-      <div className="py-6 border-b border-gold/10">
-        <div className="text-offwhite/40 text-sm mb-2">Regular Customers</div>
-        <div className="font-heading text-4xl text-gold">{data.regular}</div>
-      </div>
-      <div className="py-6 border-b border-gold/10">
-        <div className="text-offwhite/40 text-sm mb-1">Total Guests</div>
-        <div className="font-heading text-3xl text-offwhite">{data.total}</div>
-      </div>
-      
-      {showRevenue && (
-        <div className="py-4 border-b border-gold/10">
-          <div className="text-offwhite/40 text-sm mb-2">Revenue Estimate</div>
-          <div className="font-heading text-2xl text-gold">${data.revenue?.toLocaleString() || 0}</div>
+      <div className="grid gap-4 py-6 grid-cols-1 sm:grid-cols-2">
+        {/* New Customers */}
+        <div>
+          <div className="text-offwhite/40 text-sm mb-1">New Customers</div>
+          <div className="font-heading text-2xl text-[#D4D4D4]">{data.new}</div>
         </div>
-      )}
-      
-      <div className="py-4 min-h-[80px]">
-        <div className="text-offwhite/40 text-sm mb-2">Avg Service Time</div>
-        <div className="font-heading text-xl text-offwhite/80">{data.avgServiceTime || 0} min</div>
+        {/* Regular Customers */}
+        <div>
+          <div className="text-offwhite/40 text-sm mb-1">Regular Customers</div>
+          <div className="font-heading text-2xl text-gold">{data.regular}</div>
+        </div>
+        {/* Total Guests */}
+        <div>
+          <div className="text-offwhite/40 text-sm mb-1">Total Guests</div>
+          <div className="font-heading text-xl text-offwhite">{data.total}</div>
+        </div>
+        {/* Revenue (if applicable) */}
+        {showRevenue && (
+          <div>
+            <div className="text-offwhite/40 text-sm mb-1">Revenue Estimate</div>
+            <div className="font-heading text-xl text-gold">${data.revenue?.toLocaleString() || 0}</div>
+          </div>
+        )}
+        {/* Avg Service Time */}
+        <div>
+          <div className="text-offwhite/40 text-sm mb-1">Avg Service Time</div>
+          <div className="font-heading text-xl text-offwhite/80">{data.avgServiceTime || 0} min</div>
+        </div>
+        {/* Cancellations */}
+        <div>
+          <div className="text-offwhite/40 text-sm mb-1">Cancellations</div>
+          <div className="font-heading text-xl text-red-400">{data.cancelled || 0}</div>
+        </div>
       </div>
       
-      <div className="py-4 min-h-[80px]">
-        <div className="text-offwhite/40 text-sm mb-2">Cancellations</div>
-        <div className="font-heading text-xl text-red-400">{data.cancelled || 0}</div>
-      </div>
-      
-      <div className="py-4 flex-1 min-h-[200px] flex items-center justify-center">
+      <div className="py-4">
         <DonutChart data={data} size={160} />
       </div>
     </div>
@@ -317,9 +321,8 @@ export default function AdminReports() {
   if (loading) {
     return (
       <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <UniversalNav />
         <div className="flex-1 overflow-x-hidden">
-          <Navbar currentPage="admin" onNavigate={() => {}} />
+          <Sidebar />
           <div className="flex items-center justify-center py-20 px-6">
             <div className="text-gold animate-pulse">Loading...</div>
           </div>
@@ -330,10 +333,9 @@ export default function AdminReports() {
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-      <UniversalNav />
       <div className="flex-1 overflow-x-hidden">
-        <Navbar currentPage="admin" onNavigate={() => {}} />
-        <div className="w-full max-w-[1400px] mx-auto px-6 py-8 pb-24 lg:pb-8">
+        <Sidebar />
+        <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 py-8 pb-24 lg:pb-8">
           <div className="mb-6 sm:mb-8">
             <h1 className="font-heading text-2xl sm:text-3xl text-gold">Reports & Insights</h1>
             <p className="text-offwhite/60 mt-1">Comprehensive business analytics</p>

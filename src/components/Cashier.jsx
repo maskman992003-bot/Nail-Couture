@@ -53,7 +53,7 @@ export default function Cashier() {
 
   if (loading) {
     return (
-      <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -63,22 +63,22 @@ export default function Cashier() {
   }
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="px-8 py-6 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="px-6 sm:px-8 py-4 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
           <h1 className="font-heading text-3xl text-gold">Cashier Dashboard</h1>
           <p className="text-offwhite/60 text-sm mt-1">Welcome, {user?.full_name}</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 pb-24 lg:pb-8">
           <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <Link to="/cashier/checkout" className="block p-8 bg-gold/10 border-2 border-gold rounded-xl hover:bg-gold/20 transition-colors text-center">
+            <Link to="/cashier/checkout" className="block p-6 sm:p-8 bg-gold/10 border-2 border-gold rounded-xl hover:bg-gold/20 transition-colors text-center">
               <div className="text-4xl mb-3">💳</div>
               <h3 className="font-heading text-2xl text-gold mb-2">Checkout</h3>
               <p className="text-offwhite/60">Process payments and settlements</p>
             </Link>
-            <Link to="/cashier/reports" className="block p-8 bg-offwhite/5 border border-gold/20 rounded-xl hover:bg-offwhite/10 transition-colors text-center">
+            <Link to="/cashier/reports" className="block p-6 sm:p-8 bg-offwhite/5 border border-gold/20 rounded-xl hover:bg-offwhite/10 transition-colors text-center">
               <div className="text-4xl mb-3">📊</div>
               <h3 className="font-heading text-2xl text-offwhite mb-2">Daily Reports</h3>
               <p className="text-offwhite/60">View transactions and revenue</p>
