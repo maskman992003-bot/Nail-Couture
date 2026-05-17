@@ -52,7 +52,7 @@ const navItemsByRole = {
 
 function renderIcon(iconPath) {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={iconPath} />
     </svg>
   );
@@ -143,47 +143,52 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Desktop Sidebar (lg: and up) - Full width w-64 with labels */}
-      <div
-        className="hidden lg:flex fixed left-0 top-0 h-full w-64 flex-col z-40 flex-shrink-0"
+      {/* Unified Sidebar - hidden on mobile, w-20 on tablet, w-64 on desktop */}
+      <aside
+        className="fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-300 hidden md:flex md:w-20 lg:w-64"
         style={{ backgroundColor: sidebarBg, borderRight: `1px solid ${borderColor}` }}
       >
-        <div className="py-4 px-6 border-b flex-shrink-0" style={{ borderColor }}>
-          <img src="/NC.jpg" alt="Nail Couture" className="h-10 w-10 rounded-full" />
+        {/* Logo */}
+        <div className="py-4 px-4 lg:px-6 border-b flex-shrink-0 flex justify-center lg:justify-start" style={{ borderColor }}>
+          <img src="/NC.jpg" alt="Nail Couture" className="h-8 w-8 lg:h-10 lg:w-10 rounded-full" />
         </div>
 
+        {/* Nav Items */}
         <div className="flex-1 py-4 overflow-hidden">
-          <nav className="flex flex-col gap-1 px-4 overflow-y-auto scrollbar-none">
+          <nav className="flex flex-col gap-1 px-0 lg:px-4 overflow-y-auto scrollbar-none">
             {navItems.map((item) => {
               const active = isActive(location.pathname, location.search, item.href);
               return (
                 <Link
                   key={item.id}
                   to={item.href}
-                  className={`relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+                  className={`relative flex items-center gap-3 px-0 lg:px-3 py-3 transition-all md:justify-center lg:justify-start ${
                     active
-                      ? 'text-gold bg-gold/10'
-                      : 'text-offwhite/40 hover:text-offwhite/80 hover:bg-offwhite/5'
+                      ? 'text-gold bg-gold/10 md:mx-1 lg:mx-0 rounded-xl lg:rounded-xl'
+                      : 'text-offwhite/40 hover:text-offwhite/80 hover:bg-offwhite/5 md:mx-1 lg:mx-0 rounded-xl lg:rounded-xl'
                   }`}
                 >
-                  <div className="w-5 h-5 flex-shrink-0">{renderIcon(item.icon)}</div>
-                  <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                  <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                    {renderIcon(item.icon)}
+                  </div>
+                  <span className="text-sm font-medium tracking-wide hidden lg:inline whitespace-nowrap">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        <div className="p-4 border-t flex-shrink-0" style={{ borderColor }}>
-          <div className="relative user-menu">
+        {/* User Menu */}
+        <div className="p-4 border-t flex-shrink-0 flex justify-center lg:justify-start" style={{ borderColor }}>
+          <div className="relative user-menu w-full md:flex md:justify-center lg:block">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity w-full"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity w-full md:justify-center lg:justify-start"
             >
-              <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-gold text-xs font-heading">{initials || '?'}</span>
+              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-gold text-xs lg:text-sm font-heading">{initials || '?'}</span>
               </div>
-              <div className="text-left min-w-0">
+              <div className="text-left min-w-0 hidden lg:block">
                 <div className="text-offwhite/80 text-sm font-medium truncate">{displayName}</div>
               </div>
             </button>
@@ -233,97 +238,9 @@ export default function Sidebar() {
             )}
           </div>
         </div>
-      </div>
+      </aside>
 
-      {/* Tablet Sidebar (md to lg) - Icon-only strip w-20 */}
-      <div
-        className="hidden md:flex lg:hidden fixed left-0 top-0 h-full w-20 flex-col z-40 flex-shrink-0"
-        style={{ backgroundColor: sidebarBg, borderRight: `1px solid ${borderColor}` }}
-      >
-        <div className="py-4 px-4 border-b flex-shrink-0 flex justify-center" style={{ borderColor }}>
-          <img src="/NC.jpg" alt="Nail Couture" className="h-8 w-8 rounded-full" />
-        </div>
-
-        <div className="flex-1 py-4 overflow-hidden">
-          <nav className="flex flex-col gap-1 px-2 overflow-y-auto scrollbar-none">
-            {navItems.map((item) => {
-              const active = isActive(location.pathname, location.search, item.href);
-              return (
-                <Link
-                  key={item.id}
-                  to={item.href}
-                  className={`relative flex flex-col items-center gap-1 px-2 py-3 rounded-xl transition-all ${
-                    active
-                      ? 'text-gold bg-gold/10'
-                      : 'text-offwhite/40 hover:text-offwhite/80 hover:bg-offwhite/5'
-                  }`}
-                >
-                  <div className="w-5 h-5">{renderIcon(item.icon)}</div>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="p-3 border-t flex-shrink-0" style={{ borderColor }}>
-          <div className="relative flex flex-col items-center user-menu">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity w-full"
-            >
-              <div className="w-8 h-8 bg-gold/20 rounded-full flex items-center justify-center">
-                <span className="text-gold text-[10px] font-heading">{initials || '?'}</span>
-              </div>
-            </button>
-
-            {showUserMenu && (
-              <div
-                className="absolute right-0 bottom-full mb-2 w-44 rounded-xl border overflow-hidden shadow-2xl z-50"
-                style={{ backgroundColor: '#141414', borderColor: 'rgba(197,160,89,0.4)' }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => { navigate(user?.is_staff ? '/superadmin/settings' : '/customer/profile'); setShowUserMenu(false); }}
-                  className="w-full px-4 py-3 text-left text-offwhite/80 hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b"
-                  style={{ borderColor: 'rgba(197,160,89,0.15)' }}
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Settings
-                </button>
-                <button
-                  onClick={() => { setNotifPanelOpen(true); setShowUserMenu(false); }}
-                  className="w-full px-4 py-3 text-left text-offwhite/80 hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b"
-                  style={{ borderColor: 'rgba(197,160,89,0.15)' }}
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  Notifications
-                  {unreadCount > 0 && (
-                    <span className="ml-auto min-w-[16px] h-4 flex items-center justify-center rounded-full text-[8px] font-bold text-charcoal" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)' }}>
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => { setShowLogoutConfirm(true); setShowUserMenu(false); }}
-                  className="w-full px-4 py-3 text-left text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Bottom Navigation (below md) */}
+      {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 shadow-2xl" style={{ backgroundColor: sidebarBg }}>
         <nav className="flex items-center justify-around px-1 py-2" style={{ borderTop: `1px solid ${borderColor}` }}>
           {navItems.map((item) => {

@@ -64,9 +64,9 @@ export default function CustomerProfile() {
 
   if (loading) {
     return (
-      <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
       </div>
@@ -75,9 +75,9 @@ export default function CustomerProfile() {
 
   if (!profile) {
     return (
-      <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <p className="text-offwhite/60 mb-4">Unable to load profile</p>
             <Link to="/login" className="px-4 py-2 bg-gold text-charcoal rounded-lg">Return to Login</Link>
@@ -88,10 +88,9 @@ export default function CustomerProfile() {
   }
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 pb-24 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-10">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Link to="/portal" className="text-offwhite/40 hover:text-gold text-sm">Home</Link>
@@ -243,7 +242,6 @@ export default function CustomerProfile() {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 }

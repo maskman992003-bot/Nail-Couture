@@ -530,12 +530,10 @@ export default function AdminLobby() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <div className="flex-1 overflow-x-hidden">
-          <Sidebar />
-          <div className="flex items-center justify-center py-20 px-6">
-            <div className="text-gold animate-pulse">Loading...</div>
-          </div>
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+        <Sidebar />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-gold animate-pulse">Loading...</div>
         </div>
       </div>
     );

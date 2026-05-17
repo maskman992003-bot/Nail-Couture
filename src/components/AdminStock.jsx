@@ -158,9 +158,9 @@ export default function AdminStock() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
       </div>
