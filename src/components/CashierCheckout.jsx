@@ -211,22 +211,19 @@ export default function CashierCheckout() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-        <div className="flex-1 overflow-x-hidden">
-          <Sidebar />
-          <div className="flex items-center justify-center py-20 px-6">
-            <div className="text-gold animate-pulse">Loading...</div>
-          </div>
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+        <Sidebar />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-gold animate-pulse">Loading...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#0a0a0a' }}>
-      <div className="flex-1 overflow-x-hidden">
-        <Sidebar />
-        <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
+    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <Sidebar />
+      <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
           <div className="mb-8">
             <h1 className="font-heading text-3xl text-gold mb-2">Checkout Station</h1>
             <p className="text-offwhite/60">Complete payments for customers being served</p>
@@ -291,7 +288,6 @@ export default function CashierCheckout() {
               onClose={() => setCheckingOut(null)}
             />
           )}
-        </div>
       </div>
     </div>
   );
