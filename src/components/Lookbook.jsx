@@ -116,7 +116,7 @@ export default function Lookbook() {
             className="!pb-12"
           >
             {filteredItems.map((item) => (
-              <SwiperSlide key={`lookbook-slide-${item.id}`} className="!w-full min-w-[280px] md:min-w-[320px] lg:min-w-[360px]">
+              <SwiperSlide key={`lookbook-slide-${item.id}`} className="!w-[300px] md:!w-[380px] !h-[450px]">
                 {({ isActive }) => (
                   <div
                     className="relative w-full h-full overflow-hidden cursor-pointer group"
