@@ -28,23 +28,19 @@ export default function ClientLogin() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handlePinDigit = (digit) => {
+  const handlePinDigit = async (digit) => {
     if (pinInput.length < 4 && /^\d$/.test(digit)) {
-      setPinInput(pinInput + digit);
+      const newPin = pinInput + digit;
+      setPinInput(newPin);
       setPinError('');
+
+      if (newPin.length === 4) {
+        await verifyPin(newPin);
+      }
     }
   };
 
-  const handlePinBackspace = () => {
-    setPinInput(pinInput.slice(0, -1));
-    setPinError('');
-  };
-
-  const handlePinVerify = async () => {
-    if (pinInput.length !== 4) {
-      setPinError('Enter your 4-digit PIN');
-      return;
-    }
+  const verifyPin = async (pin) => {
     setPinLoading(true);
     setPinError('');
 
@@ -55,7 +51,7 @@ export default function ClientLogin() {
         .eq('id', profile.id)
         .single();
 
-      if (data?.pin && data.pin === pinInput) {
+      if (data?.pin && data.pin === pin) {
         doLogin(profile);
       } else {
         setPinError('Incorrect PIN. Please try again.');
@@ -66,6 +62,11 @@ export default function ClientLogin() {
     } finally {
       setPinLoading(false);
     }
+  };
+
+  const handlePinBackspace = () => {
+    setPinInput(pinInput.slice(0, -1));
+    setPinError('');
   };
 
   const doLogin = (profileData) => {
@@ -183,41 +184,49 @@ export default function ClientLogin() {
       </div>
 
       {step === 'pin' && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
-          <div className="bg-[#1a1a1a] rounded-2xl p-6 w-full max-w-sm">
-            <h3 className="font-heading text-xl text-gold mb-1 text-center">
-              Welcome back
-            </h3>
-            <p className="text-offwhite/60 text-sm mb-6 text-center">
-              {profile?.full_name ? `Hello, ${profile.full_name.split(' ')[0]}` : 'Enter your PIN to continue'}
-            </p>
+        <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+          <div className="w-full max-w-sm px-4">
+            <div className="text-center mb-12">
+              <h3 className="font-heading text-2xl text-white mb-2">
+                {profile?.full_name ? `Hello, ${profile.full_name.split(' ')[0]}` : 'Enter PIN'}
+              </h3>
+              <p className="text-white/50 text-sm">Enter your 4-digit PIN</p>
+            </div>
 
-            <div className="flex justify-center gap-4 mb-4">
+            <div className="flex justify-center gap-5 mb-8">
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className="w-14 h-14 rounded-xl bg-[#0B0B0C] border border-offwhite/20 flex items-center justify-center text-2xl font-heading"
-                >
-                  <span className={pinInput[i - 1] ? 'text-white' : 'text-transparent'}>●</span>
-                </div>
+                  className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
+                    pinLoading 
+                      ? 'bg-white/30 animate-pulse' 
+                      : pinInput[i - 1] 
+                        ? 'bg-gold scale-110 shadow-[0_0_12px_rgba(212,175,55,0.5)]' 
+                        : 'bg-white/30'
+                  }`}
+                />
               ))}
             </div>
 
-            {pinError && <p className="text-red-400 text-sm text-center mb-4">{pinError}</p>}
+            {pinError && <p className="text-red-400 text-sm text-center mb-6">{pinError}</p>}
 
-            <div className="grid grid-cols-3 gap-3">
-              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((key, idx) => {
+            <div className="grid grid-cols-3 gap-6 max-w-[280px] mx-auto">
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'delete'].map((key, idx) => {
                 if (key === '') {
-                  return <div key={idx} className="h-12" />;
+                  return <div key={idx} className="h-16" />;
                 }
-                if (key === '⌫') {
+                if (key === 'delete') {
                   return (
                     <button
                       key={idx}
                       type="button"
                       onClick={handlePinBackspace}
-                      className="h-12 bg-[#0B0B0C] rounded-xl text-offwhite hover:bg-white/10 transition-colors text-lg"
-                    >{key}</button>
+                      className="h-16 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" />
+                      </svg>
+                    </button>
                   );
                 }
                 return (
@@ -225,27 +234,21 @@ export default function ClientLogin() {
                     key={idx}
                     type="button"
                     onClick={() => handlePinDigit(key)}
-                    className="h-12 bg-[#0B0B0C] rounded-xl text-offwhite hover:bg-white/10 transition-colors text-xl font-heading"
-                  >{key}</button>
+                    className="h-16 rounded-full bg-white/10 text-white text-2xl font-light hover:bg-white/20 active:bg-white/30 transition-all active:scale-95"
+                  >
+                    {key}
+                  </button>
                 );
               })}
             </div>
 
-            <div className="flex gap-3 mt-5">
+            <div className="mt-12">
               <button
                 type="button"
                 onClick={handlePinCancel}
-                className="flex-1 py-3 rounded-xl border border-offwhite/20 text-offwhite hover:bg-white/5 transition-colors text-sm"
+                className="w-full py-4 text-white/60 hover:text-white text-sm transition-colors"
               >
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={handlePinVerify}
-                disabled={pinLoading || pinInput.length !== 4}
-                className="flex-1 py-3 rounded-xl bg-gold text-[#0B0B0C] font-heading text-sm hover:bg-gold/90 transition-colors disabled:opacity-40"
-              >
-                {pinLoading ? 'Verifying...' : 'Verify'}
+                Cancel
               </button>
             </div>
           </div>
