@@ -57,8 +57,15 @@ export default function StaffSchedule() {
   const [addShiftForm, setAddShiftForm] = useState({ staff_id: '', shift_date: '', shift_type: 'morning', start_time: '09:00', end_time: '15:00' });
   const [addingShift, setAddingShift] = useState(false);
   const [addingShiftError, setAddingShiftError] = useState('');
+  const [selectedStaffId, setSelectedStaffId] = useState(null);
 
   const weekDates = getWeekDates(new Date(Date.now() + weekOffset * 7 * 24 * 60 * 60 * 1000));
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const staffParam = params.get('staff');
+    if (staffParam) setSelectedStaffId(staffParam);
+  }, []);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -67,7 +74,7 @@ export default function StaffSchedule() {
       return;
     }
     fetchData();
-  }, [user, navigate, weekOffset]);
+  }, [user, navigate, weekOffset, selectedStaffId]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -77,7 +84,7 @@ export default function StaffSchedule() {
 
       const [staffRes, shiftsRes, torRes] = await Promise.all([
         supabase.from('profiles').select('*').in('role', ['admin', 'cashier', 'technician']).order('full_name'),
-        supabase.rpc('get_staff_schedule', { p_start_date: startDate, p_end_date: endDate }),
+        supabase.rpc('get_staff_schedule', { p_start_date: startDate, p_end_date: endDate, p_staff_id: selectedStaffId }),
         supabase.rpc('get_time_off_requests', { p_status: null }),
       ]);
 
@@ -171,15 +178,40 @@ export default function StaffSchedule() {
             <h1 className="font-heading text-3xl text-gold">Staff Schedule</h1>
             <p className="text-offwhite/60 text-sm mt-1">Manage shifts and time-off requests</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setWeekOffset(w => w - 1)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-offwhite/10 hover:bg-offwhite/20 transition-colors text-offwhite/60">&#8249;</button>
-            <div className="px-3 py-2 text-sm text-offwhite/80 rounded-lg bg-offwhite/5 border border-offwhite/10 min-w-[180px] text-center">
-              {formatDate(weekDates[0])} &ndash; {formatDate(weekDates[6])}
-            </div>
-            <button onClick={() => setWeekOffset(w => w + 1)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-offwhite/10 hover:bg-offwhite/20 transition-colors text-offwhite/60">&#8250;</button>
-            {weekOffset !== 0 && (
-              <button onClick={() => setWeekOffset(0)} className="px-3 py-2 text-xs text-gold border border-gold/30 rounded-lg hover:bg-gold/10 transition-colors">Today</button>
+          <div className="flex items-center gap-3">
+            {selectedStaffId && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/30">
+                <span className="text-blue-400 text-xs">
+                  Viewing: {staff.find(s => s.id === selectedStaffId)?.full_name || 'Staff'}
+                </span>
+                <button
+                  onClick={() => { setSelectedStaffId(null); const url = new URL(window.location); url.searchParams.delete('staff'); window.history.replaceState({}, '', url); }}
+                  className="text-blue-400 hover:text-blue-300 text-xs"
+                >
+                  &times;
+                </button>
+              </div>
             )}
+            <select
+              value={selectedStaffId || ''}
+              onChange={e => { setSelectedStaffId(e.target.value || null); const url = new URL(window.location); if (e.target.value) url.searchParams.set('staff', e.target.value); else url.searchParams.delete('staff'); window.history.replaceState({}, '', url); }}
+              className="px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite text-sm rounded-lg focus:border-gold focus:outline-none"
+            >
+              <option value="">All Staff</option>
+              {staff.map(m => (
+                <option key={m.id} value={m.id}>{m.full_name} ({m.role})</option>
+              ))}
+            </select>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setWeekOffset(w => w - 1)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-offwhite/10 hover:bg-offwhite/20 transition-colors text-offwhite/60">&#8249;</button>
+              <div className="px-3 py-2 text-sm text-offwhite/80 rounded-lg bg-offwhite/5 border border-offwhite/10 min-w-[180px] text-center">
+                {formatDate(weekDates[0])} &ndash; {formatDate(weekDates[6])}
+              </div>
+              <button onClick={() => setWeekOffset(w => w + 1)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-offwhite/10 hover:bg-offwhite/20 transition-colors text-offwhite/60">&#8250;</button>
+              {weekOffset !== 0 && (
+                <button onClick={() => setWeekOffset(0)} className="px-3 py-2 text-xs text-gold border border-gold/30 rounded-lg hover:bg-gold/10 transition-colors">Today</button>
+              )}
+            </div>
           </div>
         </div>
 

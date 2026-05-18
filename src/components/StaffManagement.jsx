@@ -209,9 +209,14 @@ export default function StaffManagement() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <Link to={`${staffPath}/${member.id}`} className="text-gold hover:underline text-sm">
-                            Edit
-                          </Link>
+                          <div className="flex items-center justify-center gap-3">
+                            <Link to={`${staffPath}/schedule?staff=${member.id}`} className="text-blue-400 hover:underline text-sm">
+                              Schedule
+                            </Link>
+                            <Link to={`${staffPath}/${member.id}`} className="text-gold hover:underline text-sm">
+                              Edit
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ))}

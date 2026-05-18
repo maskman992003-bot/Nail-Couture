@@ -239,9 +239,14 @@ export default function SuperAdmin() {
                           <span className="px-2 py-1 text-xs rounded bg-green-500/20 text-green-400">Active</span>
                         </td>
                         <td className="py-3 px-4">
-                          <Link to={`/superadmin/staff/${member.id}`} className="text-gold hover:underline text-sm">
-                            Edit
-                          </Link>
+                          <div className="flex items-center gap-3">
+                            <Link to={`/superadmin/schedule?staff=${member.id}`} className="text-blue-400 hover:underline text-sm">
+                              Schedule
+                            </Link>
+                            <Link to={`/superadmin/staff/${member.id}`} className="text-gold hover:underline text-sm">
+                              Edit
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ))}
