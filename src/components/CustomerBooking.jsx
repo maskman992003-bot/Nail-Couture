@@ -368,14 +368,6 @@ export default function CustomerBooking() {
 
               {!loadingTechs && availableTechnicians.length > 0 && (
                 <>
-                  {techError && (
-                    <div className="text-center py-2 text-red-400 text-sm mb-4 flex items-center justify-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {techError}
-                    </div>
-                  )}
                   <div className="text-center py-2 text-gold text-xs mb-4">{availableTechnicians.length} technician(s) available</div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {availableTechnicians.map((tech) => (
@@ -395,10 +387,15 @@ export default function CustomerBooking() {
                   </div>
                 </>
               )}
+              {availableTechnicians.length === 0 && (
+                <div className="text-center py-2 text-offwhite/40 text-sm">
+                  No technicians scheduled - booking without assigned technician
+                </div>
+              )}
             </div>
           )}
 
-          {selectedService && selectedDate && selectedTime && availableTechnicians.length > 0 && (
+          {selectedService && selectedDate && selectedTime && (
             <div className="rounded-2xl p-8 border-2" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.05) 0%, #111 100%)' }}>
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Booking Summary</div>
               <div className="flex items-start justify-between mb-6">
@@ -409,7 +406,7 @@ export default function CustomerBooking() {
                       + {selectedAddOnDetails.map((a) => a.name).join(', ')}
                     </div>
                   )}
-                  <div className="text-offwhite/50 text-sm">{totalMinutes} min with {selectedTech?.staff_name || 'Please select a technician'}</div>
+                  <div className="text-offwhite/50 text-sm">{totalMinutes} min {selectedTech?.staff_name ? `with ${selectedTech.staff_name}` : '(technician optional)'}</div>
                   <div className="text-offwhite/50 text-sm mt-1">
                     {new Date(`${selectedDate}T${selectedTime}`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {selectedTime}
                   </div>

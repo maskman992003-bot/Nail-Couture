@@ -402,20 +402,22 @@ export default function StaffSchedule() {
                                   </div>
                                 );
                               })}
-                              {dayShifts.length > 0 && !copiedDay && (
+                              <div className="flex gap-1">
+                                {dayShifts.length > 0 && !copiedDay && (
+                                  <button
+                                    onClick={() => handleCopyDay(member.id, dateStr)}
+                                    className="flex-1 text-[9px] text-gold/60 hover:text-gold py-0.5 transition-colors"
+                                  >
+                                    copy
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() => handleCopyDay(member.id, dateStr)}
-                                  className="w-full text-[9px] text-gold/60 hover:text-gold py-0.5 transition-colors"
+                                  onClick={() => openAddShift(member.id, dateStr)}
+                                  className={`text-[9px] text-white/30 hover:text-gold py-0.5 transition-colors ${dayShifts.length > 0 && !copiedDay ? 'flex-1' : 'w-full'}`}
                                 >
-                                  copy
+                                  + more
                                 </button>
-                              )}
-                              <button
-                                onClick={() => openAddShift(member.id, dateStr)}
-                                className="w-full text-[9px] text-white/30 hover:text-gold py-0.5 transition-colors"
-                              >
-                                + more
-                              </button>
+                              </div>
                             </div>
                           ) : (
                             <button
