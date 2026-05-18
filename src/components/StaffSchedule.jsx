@@ -54,6 +54,8 @@ export default function StaffSchedule() {
   const [addingShiftError, setAddingShiftError] = useState('');
   const [selectedStaffId, setSelectedStaffId] = useState(null);
   const [detailModal, setDetailModal] = useState({ open: false, staffMember: null, date: null, dayAppts: [] });
+  const [copiedDay, setCopiedDay] = useState(null);
+  const [selectedDays, setSelectedDays] = useState([]);
 
   const weekDates = getWeekDates(new Date(Date.now() + weekOffset * 7 * 24 * 60 * 60 * 1000));
 
@@ -147,6 +149,47 @@ export default function StaffSchedule() {
     } catch (err) {
       console.error('Error quick adding shift:', err);
     }
+  };
+
+  const handleCopyDay = (staffId, dateStr) => {
+    const dayShifts = getStaffShift(staffId, dateStr);
+    if (dayShifts.length === 0) return;
+    setCopiedDay({ staffId, dateStr, shifts: dayShifts });
+  };
+
+  const handlePasteToSelected = async () => {
+    if (!copiedDay || selectedDays.length === 0) return;
+    setAddingShift(true);
+    try {
+      for (const { staffId, dateStr } of selectedDays) {
+        for (const shift of copiedDay.shifts) {
+          await supabase.rpc('create_shift', {
+            p_staff_id: staffId,
+            p_shift_date: dateStr,
+            p_shift_type: shift.shift_type,
+            p_start_time: shift.start_time,
+            p_end_time: shift.end_time,
+          });
+        }
+      }
+      setCopiedDay(null);
+      setSelectedDays([]);
+      await fetchData();
+    } catch (err) {
+      setAddingShiftError(err.message || 'Failed to paste shifts');
+    } finally {
+      setAddingShift(false);
+    }
+  };
+
+  const toggleDaySelection = (staffId, dateStr) => {
+    const key = `${staffId}-${dateStr}`;
+    setSelectedDays(prev => {
+      if (prev.some(d => d.staffId === staffId && d.dateStr === dateStr)) {
+        return prev.filter(d => !(d.staffId === staffId && d.dateStr === dateStr));
+      }
+      return [...prev, { staffId, dateStr }];
+    });
   };
 
   const handleReviewTimeOff = async (requestId, status) => {
@@ -247,14 +290,38 @@ export default function StaffSchedule() {
           </div>
         </div>
 
+        {activeTab === 'schedule' && copiedDay && (
+          <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-gold/10 border border-gold/30">
+            <div className="text-gold text-sm">
+              Copied {copiedDay.shifts.length} shift(s) from {new Date(copiedDay.dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            </div>
+            <div className="flex-1" />
+            {selectedDays.length > 0 && (
+              <button
+                onClick={handlePasteToSelected}
+                disabled={addingShift}
+                className="px-4 py-2 bg-gold text-charcoal text-sm font-medium rounded-lg hover:bg-gold/90 transition-colors"
+              >
+                Paste to {selectedDays.length} day(s)
+              </button>
+            )}
+            <button
+              onClick={() => { setCopiedDay(null); setSelectedDays([]); }}
+              className="px-3 py-2 text-offwhite/60 text-sm hover:text-offwhite"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
         {activeTab === 'schedule' && (
-          <div className="grid grid-cols-7 gap-2 mb-4">
+          <div className="grid grid-cols-7 gap-1 mb-3">
             {weekDates.map((d, i) => {
               const isToday = i === new Date().getDay();
               return (
-                <div key={i} className="text-center">
-                  <div className={`text-xs font-medium uppercase tracking-wider mb-2 ${isToday ? 'text-gold' : 'text-offwhite/40'}`}>{DAYS[i]}</div>
-                  <div className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-lg font-medium ${isToday ? 'bg-gold text-charcoal' : 'text-offwhite/60'}`}>
+                <div key={i} className="text-center py-2">
+                  <div className={`text-[10px] font-medium uppercase tracking-wider ${isToday ? 'text-gold' : 'text-offwhite/40'}`}>{DAYS[i]}</div>
+                  <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-sm font-medium ${isToday ? 'bg-gold text-charcoal' : 'text-offwhite/50'}`}>
                     {d.getDate()}
                   </div>
                 </div>
@@ -264,78 +331,99 @@ export default function StaffSchedule() {
         )}
 
         {activeTab === 'schedule' && (
-          <div className="space-y-3">
-            {staff.map((member) => {
+          <div className="space-y-2">
+            {(selectedStaffId ? staff.filter(s => s.id === selectedStaffId) : staff).map((member) => {
               const memberShifts = weekDates.map(d => {
                 const dateStr = d.toISOString().split('T')[0];
                 return { date: d, dateStr, shifts: getStaffShift(member.id, dateStr) };
               });
               return (
-                <div key={member.id} className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div className="flex items-center gap-4 px-5 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                    <div className="w-12 h-12 rounded-2xl bg-gold/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-gold font-heading text-sm">{(member.full_name || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
+                <div key={member.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div className="flex items-center gap-3 px-4 py-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                    <div className="w-8 h-8 rounded-lg bg-gold/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-gold text-xs font-medium">{(member.full_name || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-offwhite font-medium">{member.full_name}</div>
-                      <div className="text-offwhite/40 text-xs capitalize">{member.role}</div>
+                      <div className="text-offwhite text-sm font-medium">{member.full_name}</div>
                     </div>
+                    {selectedStaffId && (
+                      <button
+                        onClick={() => { setSelectedStaffId(null); const url = new URL(window.location); url.searchParams.delete('staff'); window.history.replaceState({}, '', url); }}
+                        className="text-offwhite/40 hover:text-offwhite text-lg"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
-                  <div className="grid grid-cols-7 divide-x" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                    {memberShifts.map(({ date, dateStr, shifts: dayShifts }, dayIdx) => {
+                  <div className="grid grid-cols-7 divide-x" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                    {memberShifts.map(({ dateStr, shifts: dayShifts }, dayIdx) => {
                       const isToday = dayIdx === new Date().getDay();
-                      const total = dayShifts.reduce((sum, s) => sum + (s.appointment_count || 0) + (s.confirmed_online_count || 0), 0);
+                      const dayKey = `${member.id}-${dateStr}`;
+                      const isSelected = selectedDays.some(d => d.staffId === member.id && d.dateStr === dateStr);
+                      const hasShifts = dayShifts.length > 0;
                       return (
-                        <div key={dayIdx} className={`p-3 min-h-[120px] ${isToday ? 'bg-gold/5' : ''}`}>
-                          {dayShifts.length === 0 ? (
+                        <div
+                          key={dayIdx}
+                          className={`p-2 min-h-[90px] relative ${isToday ? 'bg-gold/5' : ''} ${isSelected ? 'ring-2 ring-gold ring-inset' : ''}`}
+                        >
+                          {copiedDay && (
                             <button
-                              onClick={() => handleQuickAddShift(member.id, dateStr, 'morning')}
-                              onContextMenu={(e) => { e.preventDefault(); openAddShift(member.id, dateStr); }}
-                              className="w-full h-full flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/10 hover:border-gold/50 hover:bg-gold/5 transition-all group"
+                              onClick={() => toggleDaySelection(member.id, dateStr)}
+                              className={`absolute top-1 left-1 w-5 h-5 rounded border flex items-center justify-center text-[10px] transition-all z-10 ${
+                                isSelected ? 'bg-gold border-gold text-charcoal' : 'border-white/30 text-white/30 hover:border-gold'
+                              }`}
                             >
-                              <span className="text-2xl text-white/20 group-hover:text-gold transition-colors">+</span>
-                              <span className="text-[10px] text-white/30 group-hover:text-gold/70 mt-1">Add</span>
+                              {isSelected ? '✓' : '+'}
                             </button>
-                          ) : (
-                            <div className="space-y-2">
+                          )}
+                          {hasShifts ? (
+                            <div className="space-y-1">
                               {dayShifts.map(s => {
                                 const shiftTotal = (s.appointment_count || 0) + (s.confirmed_online_count || 0);
                                 return (
                                   <div
                                     key={s.shift_id}
-                                    className="group relative rounded-xl p-3 bg-gradient-to-br from-gold/10 to-gold/5 border border-gold/20 hover:border-gold/40 transition-all cursor-pointer"
+                                    className="group relative rounded-lg p-1.5 bg-gold/10 border border-gold/20 hover:border-gold/40 transition-all cursor-pointer"
                                     onClick={() => openDetailModal(member, new Date(s.shift_date + 'T00:00:00'))}
                                   >
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs font-medium text-gold capitalize">{s.shift_type}</span>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-medium text-gold capitalize">{s.shift_type}</span>
                                       <button
                                         onClick={(e) => { e.stopPropagation(); handleDeleteShift(s.shift_id); }}
-                                        className="w-5 h-5 flex items-center justify-center rounded text-white/30 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                        className="w-4 h-4 flex items-center justify-center rounded text-white/30 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all text-xs"
                                       >
                                         ×
                                       </button>
                                     </div>
-                                    <div className="text-[10px] text-offwhite/50">{formatTime(s.start_time)} - {formatTime(s.end_time)}</div>
-                                    {shiftTotal > 0 ? (
-                                      <div className="mt-2 inline-flex items-center px-2 py-1 rounded-full bg-gold/20 text-gold text-[10px] font-medium">
-                                        {shiftTotal} appt{shiftTotal !== 1 ? 's' : ''}
-                                      </div>
-                                    ) : (
-                                      <div className="mt-2 inline-flex items-center px-2 py-1 rounded-full bg-white/5 text-white/30 text-[10px]">
-                                        No appts
-                                      </div>
-                                    )}
+                                    <div className="text-[9px] text-offwhite/40">{formatTime(s.start_time)}-{formatTime(s.end_time)}</div>
+                                    <div className={`text-[9px] mt-1 ${shiftTotal > 0 ? 'text-gold' : 'text-white/30'}`}>
+                                      {shiftTotal} appt
+                                    </div>
                                   </div>
                                 );
                               })}
                               <button
-                                onClick={() => handleQuickAddShift(member.id, dateStr, 'morning')}
-                                onContextMenu={(e) => { e.preventDefault(); openAddShift(member.id, dateStr); }}
-                                className="w-full text-[10px] text-white/30 hover:text-gold py-1 transition-colors"
+                                onClick={() => openAddShift(member.id, dateStr)}
+                                className="w-full text-[9px] text-white/30 hover:text-gold py-0.5 transition-colors"
                               >
-                                + Add shift
+                                + more
                               </button>
+                              {dayShifts.length > 0 && !copiedDay && (
+                                <button
+                                  onClick={() => handleCopyDay(member.id, dateStr)}
+                                  className="w-full text-[9px] text-gold/60 hover:text-gold py-0.5 transition-colors"
+                                >
+                                  copy
+                                </button>
+                              )}
                             </div>
+                          ) : (
+                            <button
+                              onClick={() => openAddShift(member.id, dateStr)}
+                              className="w-full h-full flex flex-col items-center justify-center rounded-lg border border-dashed border-white/10 hover:border-gold/50 hover:bg-gold/5 transition-all group"
+                            >
+                              <span className="text-lg text-white/20 group-hover:text-gold transition-colors">+</span>
+                            </button>
                           )}
                         </div>
                       );
@@ -345,8 +433,8 @@ export default function StaffSchedule() {
               );
             })}
             {staff.length === 0 && (
-              <div className="text-center py-16" style={{ backgroundColor: '#1a1a1a', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="text-offwhite/40 text-lg">No staff members found</p>
+              <div className="text-center py-8 rounded-xl" style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <p className="text-offwhite/40">No staff members found</p>
               </div>
             )}
           </div>
