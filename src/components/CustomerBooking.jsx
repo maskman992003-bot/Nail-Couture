@@ -63,9 +63,7 @@ export default function CustomerBooking() {
         p_time: selectedTime,
       });
       setAvailableTechnicians(data || []);
-      if (data?.length === 0) {
-        setSelectedTech(null);
-      }
+      if (data?.length === 0) setSelectedTech(null);
     } catch {
       setAvailableTechnicians([]);
     }
@@ -365,22 +363,25 @@ export default function CustomerBooking() {
               )}
 
               {!loadingTechs && availableTechnicians.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {availableTechnicians.map((tech) => (
-                    <button
-                      key={tech.staff_id}
-                      onClick={() => setSelectedTech(tech)}
-                      className={`min-w-0 rounded-xl p-4 text-center border transition-all ${selectedTech?.staff_id === tech.staff_id ? 'border-2' : 'border-offwhite/5'}`}
-                      style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: selectedTech?.staff_id === tech.staff_id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)' }}
-                    >
-                      <div className="w-12 h-12 rounded-full mx-auto mb-2 bg-gold/20 flex items-center justify-center">
-                        <span className="text-gold font-heading text-sm">{tech.staff_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
-                      </div>
-                      <div className="text-offwhite font-heading text-sm">{tech.staff_name}</div>
-                      <div className="text-offwhite/40 text-xs capitalize mt-1">{tech.shift_type}</div>
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <div className="text-center py-2 text-gold text-xs mb-4">{availableTechnicians.length} technician(s) available</div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {availableTechnicians.map((tech) => (
+                      <button
+                        key={tech.staff_id}
+                        onClick={() => setSelectedTech(tech)}
+                        className={`min-w-0 rounded-xl p-4 text-center border transition-all ${selectedTech?.staff_id === tech.staff_id ? 'border-2' : 'border-offwhite/5'}`}
+                        style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: selectedTech?.staff_id === tech.staff_id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)' }}
+                      >
+                        <div className="w-12 h-12 rounded-full mx-auto mb-2 bg-gold/20 flex items-center justify-center">
+                          <span className="text-gold font-heading text-sm">{tech.staff_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
+                        </div>
+                        <div className="text-offwhite font-heading text-sm">{tech.staff_name}</div>
+                        <div className="text-offwhite/40 text-xs capitalize mt-1">{tech.shift_type}</div>
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           )}

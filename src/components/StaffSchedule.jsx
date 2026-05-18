@@ -82,8 +82,7 @@ export default function StaffSchedule() {
         supabase.from('profiles').select('*').in('role', ['admin', 'cashier', 'technician']).order('full_name'),
         supabase.rpc('get_staff_schedule', { p_start_date: startDate, p_end_date: endDate, p_staff_id: selectedStaffId }),
         supabase.rpc('get_time_off_requests', { p_status: null }),
-      ]);
-
+]);
       if (staffRes.data) setStaff(staffRes.data);
       if (shiftsRes.data) setShifts(shiftsRes.data);
       if (torRes.data) setTimeOffRequests(torRes.data);
@@ -154,8 +153,8 @@ export default function StaffSchedule() {
 
   const openDetailModal = async (staffMember, date) => {
     setDetailModal({ open: true, staffMember, date, dayAppts: [] });
+    const dateStr = date.toISOString().split('T')[0];
     try {
-      const dateStr = date.toISOString().split('T')[0];
       const { data } = await supabase.rpc('get_technician_appointments', {
         p_staff_id: staffMember.id,
         p_start_date: dateStr,

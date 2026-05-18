@@ -89,7 +89,6 @@ export default function TechnicianSchedule() {
         supabase.rpc('get_staff_schedule', { p_start_date: startDate, p_end_date: endDate, p_staff_id: user.id }),
         supabase.rpc('get_technician_appointments', { p_staff_id: user.id, p_start_date: startDate, p_end_date: endDate }),
       ]);
-
       if (shiftsRes.data) setShifts(shiftsRes.data);
       if (apptsRes.data) setAppointments(apptsRes.data || []);
     } catch (err) {
