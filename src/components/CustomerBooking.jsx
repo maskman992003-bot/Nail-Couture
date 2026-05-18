@@ -103,15 +103,8 @@ export default function CustomerBooking() {
     );
   };
 
-  const [techError, setTechError] = useState('');
-
   const handleBooking = async () => {
     if (!selectedService || !selectedDate || !selectedTime) return;
-    if (!selectedTech?.staff_id) {
-      setTechError('Please select a technician to continue');
-      return;
-    }
-    setTechError('');
     setBookLoading(true);
     const currentUser = localStorage.getItem('salon_user_data');
     const userId = currentUser ? JSON.parse(currentUser).id : null;
@@ -437,14 +430,6 @@ export default function CustomerBooking() {
               >
                 {bookLoading ? 'Confirming...' : 'Confirm Booking'}
               </button>
-              {techError && (
-                <p className="text-center text-red-400 text-sm mt-3">{techError}</p>
-              )}
-              {!techError && !selectedTech?.staff_id && (
-                <p className="text-center text-offwhite/40 text-xs mt-3">
-                  {availableTechnicians.length === 0 ? 'No technicians available for this time' : 'Select a technician above to continue'}
-                </p>
-              )}
             </div>
           )}
 
