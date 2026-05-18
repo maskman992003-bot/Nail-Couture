@@ -432,13 +432,18 @@ export default function CustomerBooking() {
               </div>
               <button
                 onClick={handleBooking}
-                disabled={bookLoading || availableTechnicians.length === 0 || !selectedTech?.staff_id}
-                className="w-full py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20 disabled:opacity-50"
+                disabled={bookLoading}
+                className="w-full py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {bookLoading ? 'Confirming...' : 'Confirm Booking'}
               </button>
-              {!selectedTech?.staff_id && availableTechnicians.length > 0 && (
-                <p className="text-center text-offwhite/40 text-xs mt-3">Select a technician above to continue</p>
+              {techError && (
+                <p className="text-center text-red-400 text-sm mt-3">{techError}</p>
+              )}
+              {!techError && !selectedTech?.staff_id && (
+                <p className="text-center text-offwhite/40 text-xs mt-3">
+                  {availableTechnicians.length === 0 ? 'No technicians available for this time' : 'Select a technician above to continue'}
+                </p>
               )}
             </div>
           )}
