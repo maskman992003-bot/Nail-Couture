@@ -402,12 +402,6 @@ export default function StaffSchedule() {
                                   </div>
                                 );
                               })}
-                              <button
-                                onClick={() => openAddShift(member.id, dateStr)}
-                                className="w-full text-[9px] text-white/30 hover:text-gold py-0.5 transition-colors"
-                              >
-                                + more
-                              </button>
                               {dayShifts.length > 0 && !copiedDay && (
                                 <button
                                   onClick={() => handleCopyDay(member.id, dateStr)}
@@ -416,6 +410,12 @@ export default function StaffSchedule() {
                                   copy
                                 </button>
                               )}
+                              <button
+                                onClick={() => openAddShift(member.id, dateStr)}
+                                className="w-full text-[9px] text-white/30 hover:text-gold py-0.5 transition-colors"
+                              >
+                                + more
+                              </button>
                             </div>
                           ) : (
                             <button
