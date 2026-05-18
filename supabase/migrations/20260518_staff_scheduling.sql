@@ -321,44 +321,60 @@ ALTER TABLE shifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE time_off_requests ENABLE ROW LEVEL SECURITY;
 
 -- Staff can manage their own schedules
-CREATE POLICY "Staff manage own schedules" ON staff_schedules
-  FOR ALL USING (auth.uid() = staff_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Staff manage own schedules' AND tablename = 'staff_schedules') THEN
+    CREATE POLICY "Staff manage own schedules" ON staff_schedules FOR ALL USING (auth.uid() = staff_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Staff manage own shifts" ON shifts
-  FOR ALL USING (auth.uid() = staff_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Staff manage own shifts' AND tablename = 'shifts') THEN
+    CREATE POLICY "Staff manage own shifts" ON shifts FOR ALL USING (auth.uid() = staff_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Staff manage own time off" ON time_off_requests
-  FOR ALL USING (auth.uid() = staff_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Staff manage own time off' AND tablename = 'time_off_requests') THEN
+    CREATE POLICY "Staff manage own time off" ON time_off_requests FOR ALL USING (auth.uid() = staff_id);
+  END IF;
+END $$;
 
 -- Admins can manage staff under them
-CREATE POLICY "Admins manage staff schedules" ON staff_schedules
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM profiles WHERE id = auth.uid()
-      AND role IN ('super_admin', 'owner', 'partner', 'admin')
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins manage staff schedules' AND tablename = 'staff_schedules') THEN
+    CREATE POLICY "Admins manage staff schedules" ON staff_schedules FOR ALL USING (
+      EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('super_admin', 'owner', 'partner', 'admin'))
+    );
+  END IF;
+END $$;
 
-CREATE POLICY "Admins manage staff shifts" ON shifts
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM profiles WHERE id = auth.uid()
-      AND role IN ('super_admin', 'owner', 'partner', 'admin')
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins manage staff shifts' AND tablename = 'shifts') THEN
+    CREATE POLICY "Admins manage staff shifts" ON shifts FOR ALL USING (
+      EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('super_admin', 'owner', 'partner', 'admin'))
+    );
+  END IF;
+END $$;
 
-CREATE POLICY "Admins view all time off" ON time_off_requests
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM profiles WHERE id = auth.uid()
-      AND role IN ('super_admin', 'owner', 'partner', 'admin')
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins view all time off' AND tablename = 'time_off_requests') THEN
+    CREATE POLICY "Admins view all time off" ON time_off_requests FOR SELECT USING (
+      EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('super_admin', 'owner', 'partner', 'admin'))
+    );
+  END IF;
+END $$;
 
-CREATE POLICY "Admins manage time off" ON time_off_requests
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM profiles WHERE id = auth.uid()
-      AND role IN ('super_admin', 'owner', 'partner', 'admin')
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins manage time off' AND tablename = 'time_off_requests') THEN
+    CREATE POLICY "Admins manage time off" ON time_off_requests FOR ALL USING (
+      EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('super_admin', 'owner', 'partner', 'admin'))
+    );
+  END IF;
+END $$;

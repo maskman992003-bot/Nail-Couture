@@ -38,7 +38,8 @@ export function AuthProvider({ children }) {
       refreshment_pref: profile.refreshment_pref || '',
       phone_number: profile.phone_number || '',
       role: profile.role || 'customer',
-      is_staff: ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(profile.role)
+      is_staff: ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(profile.role),
+      pin: profile.pin || '',
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
     setUser(userData);

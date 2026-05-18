@@ -37,6 +37,22 @@ function getDayName(dayIdx) {
   return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayIdx];
 }
 
+const STATUS_COLORS = {
+  waiting: 'bg-yellow-400',
+  assigned_pending: 'bg-blue-400',
+  serving: 'bg-green-400',
+  completed: 'bg-offwhite/30',
+  cancelled: 'bg-red-400',
+};
+
+const STATUS_LABELS = {
+  waiting: 'Waiting',
+  assigned_pending: 'Confirmed',
+  serving: 'In Service',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+};
+
 export default function TechnicianSchedule() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -50,6 +66,7 @@ export default function TechnicianSchedule() {
   const [submittingTimeOff, setSubmittingTimeOff] = useState(false);
   const [timeOffError, setTimeOffError] = useState('');
   const [timeOffSuccess, setTimeOffSuccess] = useState(false);
+  const [detailModal, setDetailModal] = useState({ open: false, date: null, dayAppts: [] });
 
   const weekDates = getWeekDates(new Date(Date.now() + weekOffset * 7 * 24 * 60 * 60 * 1000));
 
@@ -70,7 +87,7 @@ export default function TechnicianSchedule() {
 
       const [shiftsRes, apptsRes] = await Promise.all([
         supabase.rpc('get_staff_schedule', { p_start_date: startDate, p_end_date: endDate, p_staff_id: user.id }),
-        supabase.from('appointments').select('*, services(name, price), profiles(full_name)').eq('technician_id', user.id).gte('check_in_time', `${startDate}T00:00:00`).order('check_in_time', { ascending: true }),
+        supabase.rpc('get_technician_appointments', { p_staff_id: user.id, p_start_date: startDate, p_end_date: endDate }),
       ]);
 
       if (shiftsRes.data) setShifts(shiftsRes.data);
@@ -87,7 +104,14 @@ export default function TechnicianSchedule() {
   };
 
   const getAppointmentsForDate = (dateStr) => {
-    return appointments.filter(a => a.check_in_time && a.check_in_time.startsWith(dateStr));
+    return appointments.filter(a => {
+      const apptDate = new Date(a.appointment_time).toISOString().split('T')[0];
+      return apptDate === dateStr;
+    });
+  };
+
+  const openDetailModal = (date, dayAppts) => {
+    setDetailModal({ open: true, date, dayAppts });
   };
 
   const handleSubmitTimeOff = async (e) => {
@@ -199,47 +223,70 @@ export default function TechnicianSchedule() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {dayShifts.map(s => (
-                        <div key={s.shift_id} className="rounded-lg p-3 bg-gold/10 border border-gold/20">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="text-gold text-sm font-medium capitalize">{s.shift_type}</span>
-                              <span className="text-offwhite/40 text-xs ml-2">{formatTime(s.start_time)} &ndash; {formatTime(s.end_time)}</span>
+                      {dayShifts.map(s => {
+                        const total = (s.appointment_count || 0) + (s.confirmed_online_count || 0);
+                        return (
+                          <div key={s.shift_id} className="rounded-lg p-3 bg-gold/10 border border-gold/20">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-gold text-sm font-medium capitalize">{s.shift_type}</span>
+                                <span className="text-offwhite/40 text-xs ml-2">{formatTime(s.start_time)} &ndash; {formatTime(s.end_time)}</span>
+                              </div>
+                              {total > 0 ? (
+                                <button
+                                  onClick={() => openDetailModal(d, dayAppts)}
+                                  className="px-3 py-1 rounded-full text-xs font-medium bg-gold/20 text-gold hover:bg-gold/30 transition-colors border border-gold/30"
+                                >
+                                  {total} appointment{total !== 1 ? 's' : ''}
+                                </button>
+                              ) : (
+                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-offwhite/10 text-offwhite/40">
+                                  No appointments
+                                </span>
+                              )}
                             </div>
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              s.appointment_count > 0 ? 'bg-gold/20 text-gold' : 'bg-offwhite/10 text-offwhite/40'
-                            }`}>
-                              {s.appointment_count} appointment{s.appointment_count !== 1 ? 's' : ''}
-                            </span>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
                   {dayAppts.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-offwhite/5 space-y-2">
-                      <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-1">Appointments</div>
-                      {dayAppts.map(a => (
-                        <div key={a.id} className="flex items-center justify-between p-2 bg-offwhite/5 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="text-offwhite/40 text-xs uppercase tracking-wider">
+                          {dayAppts.length} appointment{dayAppts.length !== 1 ? 's' : ''} this day
+                        </div>
+                        <button
+                          onClick={() => openDetailModal(d, dayAppts)}
+                          className="text-gold text-xs hover:underline"
+                        >
+                          View details
+                        </button>
+                      </div>
+                      {dayAppts.slice(0, 3).map(a => (
+                        <div key={a.appointment_id} className="flex items-center justify-between p-2 bg-offwhite/5 rounded-lg">
                           <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${
-                              a.status === 'waiting' ? 'bg-yellow-400' :
-                              a.status === 'assigned_pending' ? 'bg-blue-400' :
-                              a.status === 'serving' ? 'bg-green-400' :
-                              'bg-offwhite/30'
-                            }`} />
+                            <span className={`w-2 h-2 rounded-full ${a.source === 'online' ? 'bg-gold' : 'bg-yellow-400'}`} />
                             <div>
-                              <div className="text-offwhite text-sm">{a.profiles?.full_name || 'Customer'}</div>
-                              <div className="text-offwhite/40 text-xs">{a.services?.name}</div>
+                              <div className="text-offwhite text-sm">{a.customer_name}</div>
+                              <div className="text-offwhite/40 text-xs">{a.service_name}</div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-gold text-sm font-heading">${a.final_price || a.services?.price}</div>
+                            <div className="text-gold text-sm font-heading">${a.final_price}</div>
                             <div className="text-offwhite/30 text-xs capitalize">{a.status.replace('_', ' ')}</div>
                           </div>
                         </div>
                       ))}
+                      {dayAppts.length > 3 && (
+                        <button
+                          onClick={() => openDetailModal(d, dayAppts)}
+                          className="w-full text-center text-gold text-xs py-2 hover:underline"
+                        >
+                          +{dayAppts.length - 3} more
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -312,6 +359,64 @@ export default function TechnicianSchedule() {
           </div>
         )}
       </div>
+
+      {detailModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4" onClick={() => setDetailModal({ open: false, date: null, dayAppts: [] })}>
+          <div className="w-full max-w-md rounded-2xl border-2 p-6 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.3)' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-heading text-xl text-gold">
+                {detailModal.date?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </h3>
+              <button
+                onClick={() => setDetailModal({ open: false, date: null, dayAppts: [] })}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-offwhite/40 hover:text-offwhite hover:bg-white/5 transition-colors text-xl"
+              >&#215;</button>
+            </div>
+
+            {detailModal.dayAppts.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-offwhite/50">No appointments for this day.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {detailModal.dayAppts.map((a) => (
+                  <div key={a.appointment_id} className="rounded-xl p-4 border" style={{ borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full ${a.source === 'online' ? 'bg-gold' : 'bg-yellow-400'}`} />
+                        <div className="text-offwhite font-heading text-sm">{a.customer_name}</div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${
+                        a.status === 'waiting' ? 'bg-yellow-400/20 text-yellow-400' :
+                        a.status === 'assigned_pending' ? 'bg-blue-400/20 text-blue-400' :
+                        a.status === 'serving' ? 'bg-green-400/20 text-green-400' :
+                        a.status === 'completed' ? 'bg-offwhite/10 text-offwhite/60' :
+                        'bg-red-400/20 text-red-400'
+                      }`}>
+                        {STATUS_LABELS[a.status] || a.status}
+                      </span>
+                    </div>
+                    <div className="ml-4 space-y-1">
+                      <div className="text-offwhite/50 text-xs">{a.service_name}</div>
+                      <div className="text-offwhite/30 text-xs">
+                        {new Date(a.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      </div>
+                      <div className="text-gold font-heading text-sm">${a.final_price}</div>
+                    </div>
+                    <div className="mt-2 ml-4">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                        a.source === 'online' ? 'bg-gold/20 text-gold' : 'bg-yellow-400/20 text-yellow-400'
+                      }`}>
+                        {a.source === 'online' ? 'Online Booking' : 'Walk-in'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

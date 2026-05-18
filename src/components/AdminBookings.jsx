@@ -5,14 +5,14 @@ import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
 
 const statusConfig = {
-  pending: { label: 'Pending', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50', dot: 'bg-yellow-400', tab: 'bg-yellow-900/20 border-yellow-700/50 text-yellow-300' },
-  confirmed: { label: 'Confirmed', color: 'bg-blue-900/50 text-blue-300 border-blue-700/50', dot: 'bg-blue-400', tab: 'bg-blue-900/20 border-blue-700/50 text-blue-300' },
-  in_progress: { label: 'In Progress', color: 'bg-green-900/50 text-green-300 border-green-700/50', dot: 'bg-green-400', tab: 'bg-green-900/20 border-green-700/50 text-green-300' },
+  waiting: { label: 'Waiting', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50', dot: 'bg-yellow-400', tab: 'bg-yellow-900/20 border-yellow-700/50 text-yellow-300' },
+  assigned_pending: { label: 'Assigned', color: 'bg-blue-900/50 text-blue-300 border-blue-700/50', dot: 'bg-blue-400', tab: 'bg-blue-900/20 border-blue-700/50 text-blue-300' },
+  serving: { label: 'In Chair', color: 'bg-green-900/50 text-green-300 border-green-700/50', dot: 'bg-green-400', tab: 'bg-green-900/20 border-green-700/50 text-green-300' },
   completed: { label: 'Completed', color: 'bg-green-800/40 text-green-300 border-green-700/30', dot: 'bg-green-400', tab: 'bg-green-900/20 border-green-700/50 text-green-300' },
   cancelled: { label: 'Cancelled', color: 'bg-red-900/50 text-red-300 border-red-700/50', dot: 'bg-red-500', tab: 'bg-red-900/20 border-red-700/50 text-red-300' },
 };
 
-const statusOrder = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'];
+const statusOrder = ['waiting', 'assigned_pending', 'serving', 'completed', 'cancelled'];
 
 export default function AdminBookings() {
   const navigate = useNavigate();
@@ -38,8 +38,9 @@ export default function AdminBookings() {
     if (isRefreshing) setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('online_bookings')
+        .from('appointments')
         .select('*')
+        .eq('source', 'online')
         .order('scheduled_time', { ascending: false });
       if (error) throw error;
 
@@ -64,8 +65,8 @@ export default function AdminBookings() {
       const enriched = bookingList.map((b) => ({
         ...b,
         customer: profileMap[b.profile_id] || null,
-        services: serviceMap[b.service_id] || null,
-        technician: techMap[b.technician_id] || null,
+        service: serviceMap[b.service_id] || null,
+        tech: techMap[b.technician_id] || null,
       }));
 
       setBookings(enriched);
@@ -78,17 +79,17 @@ export default function AdminBookings() {
 
   const sendNotification = async (booking, newStatus) => {
     const customerName = booking.customer?.full_name || 'Customer';
-    const serviceName = booking.services?.name || 'your service';
+    const serviceName = booking.service?.name || 'your service';
     const statusMessages = {
-      confirmed: `Hi ${customerName}, your appointment for ${serviceName} is confirmed. See you soon!`,
-      in_progress: `Hi ${customerName}, your ${serviceName} appointment has started. We'll let you know when it's done!`,
+      assigned_pending: `Hi ${customerName}, your appointment for ${serviceName} is confirmed. See you soon!`,
+      serving: `Hi ${customerName}, your ${serviceName} appointment has started. We'll let you know when it's done!`,
       completed: `Hi ${customerName}, your ${serviceName} appointment is complete. Thanks for visiting! We hope to see you again.`,
       cancelled: `Hi ${customerName}, your appointment for ${serviceName} has been cancelled. Please rebook at your convenience.`,
     };
     const message = statusMessages[newStatus];
     const titleMap = {
-      confirmed: 'Booking Confirmed',
-      in_progress: 'Service Started',
+      assigned_pending: 'Booking Confirmed',
+      serving: 'Service Started',
       completed: 'Service Completed',
       cancelled: 'Booking Cancelled',
     };
@@ -103,9 +104,9 @@ export default function AdminBookings() {
     await supabase.from('notifications').insert(notifPayload).catch(() => {});
 
     if (newStatus === 'completed') {
-      const earnedPoints = Math.floor(booking.services?.price || booking.price || 0);
+      const earnedPoints = Math.floor(booking.service?.price || booking.final_price || booking.price || 0);
       if (earnedPoints > 0) {
-        await supabase.from('profiles').update({ loyalty_points: supabase.sql`loyalty_points + ${earnedPoints}` }).eq('id', booking.profile_id).catch(() => {});
+        await supabase.rpc('add_loyalty_points', { p_profile_id: booking.profile_id, p_points: earnedPoints }).catch(() => {});
         const pointsNotif = {
           target_user_id: booking.profile_id,
           online_booking_id: booking.id,
@@ -123,7 +124,7 @@ export default function AdminBookings() {
     setUpdatingId(booking.id);
     try {
       const { error } = await supabase
-        .from('online_bookings')
+        .from('appointments')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', booking.id);
       if (error) throw error;
@@ -153,7 +154,7 @@ export default function AdminBookings() {
     const newScheduled = new Date(`${editDate}T${editTime}:00`).toISOString();
     try {
       const { error } = await supabase
-        .from('online_bookings')
+        .from('appointments')
         .update({ scheduled_time: newScheduled, updated_at: new Date().toISOString() })
         .eq('id', editingBooking.id);
       if (error) throw error;
@@ -163,7 +164,7 @@ export default function AdminBookings() {
       setEditingBooking(null);
       showFeedback(editingBooking.id, 'ok');
       const customerName = editingBooking.customer?.full_name || 'Customer';
-      const serviceName = editingBooking.services?.name || 'your appointment';
+      const serviceName = editingBooking.service?.name || 'your appointment';
       const newDateStr = new Date(newScheduled).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       const newTimeStr = new Date(newScheduled).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
       await supabase.from('notifications').insert({
@@ -191,7 +192,7 @@ export default function AdminBookings() {
 
   const filteredBookings = bookings.filter((b) => {
     const name = b.customer?.full_name || '';
-    const service = b.services?.name || '';
+    const service = b.service?.name || '';
     const phone = b.customer?.phone_number || '';
     const matchesSearch =
       name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -316,14 +317,14 @@ export default function AdminBookings() {
                            </span>
                          </div>
                          <div className="flex flex-wrap gap-4 text-sm">
-                           <div>
-                             <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Service</div>
-                             <div className="text-gold font-heading">{booking.services?.name || 'Service'}</div>
-                           </div>
-                           <div>
-                             <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Price</div>
-                             <div className="text-offwhite font-heading">{booking.services?.price || booking.price}</div>
-                           </div>
+<div>
+                              <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Service</div>
+                              <div className="text-gold font-heading">{booking.service?.name || 'Service'}</div>
+                            </div>
+                            <div>
+                              <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Price</div>
+                              <div className="text-offwhite font-heading">{booking.service?.price || booking.final_price || booking.price}</div>
+                            </div>
                            <div>
                              <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Scheduled</div>
                              <div className="text-offwhite font-heading">
@@ -331,12 +332,12 @@ export default function AdminBookings() {
                                {new Date(booking.scheduled_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                              </div>
                            </div>
-                           {booking.technician && (
-                             <div>
-                               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Technician</div>
-                               <div className="text-offwhite font-heading">{booking.technician.full_name}</div>
-                             </div>
-                           )}
+{booking.tech && (
+                              <div>
+                                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-0.5">Technician</div>
+                                <div className="text-offwhite font-heading">{booking.tech.full_name}</div>
+                              </div>
+                            )}
                          </div>
                          {customer?.nail_goal && (
                            <div className="text-offwhite/40 text-xs italic mt-3">Goal: {customer.nail_goal}</div>
@@ -345,43 +346,43 @@ export default function AdminBookings() {
 
                        <div className="flex flex-col gap-2 lg:w-64 lg:items-end flex-shrink-0">
                          <div className="flex items-center gap-2 flex-wrap lg:justify-end">
-                           <button
-                             onClick={() => openEdit(booking)}
-                             disabled={isUpdating}
-                             className="px-4 py-2 text-xs font-medium rounded-lg border text-offwhite/60 hover:text-gold hover:border-gold/50 transition-all disabled:opacity-30"
-                             style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                           >
-                             Edit Schedule
-                           </button>
-                           {booking.status === 'pending' && (
-                             <button
-                               onClick={() => { console.log('[Confirm button] clicked, booking:', booking.id, 'status:', booking.status); updateStatus(booking, 'confirmed'); }}
-                               disabled={isUpdating}
-                               className="px-4 py-2 text-xs font-medium rounded-lg border text-blue-300 hover:bg-blue-900/20 hover:border-blue-500/50 transition-all disabled:opacity-30"
-                               style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                             >
-                               {isUpdating ? 'Processing...' : 'Confirm'}
-                             </button>
-                           )}
-                           {booking.status === 'confirmed' && (
-                             <button
-                               onClick={() => { console.log('[Start button] clicked'); updateStatus(booking, 'in_progress'); }}
-                               disabled={isUpdating}
-                               className="px-4 py-2 text-xs font-medium rounded-lg border text-green-300 hover:bg-green-900/20 hover:border-green-500/50 transition-all disabled:opacity-30"
-                               style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                             >
-                               Start Service
-                             </button>
-                           )}
-                           {booking.status === 'in_progress' && (
-                             <button
-                               onClick={() => updateStatus(booking, 'completed')}
-                               disabled={isUpdating}
-                               className="px-4 py-2 text-xs font-medium rounded-lg bg-gold text-charcoal hover:bg-gold/90 transition-all disabled:opacity-30"
-                             >
-                               Mark Completed
-                             </button>
-                           )}
+<button
+                              onClick={() => openEdit(booking)}
+                              disabled={isUpdating}
+                              className="px-4 py-2 text-xs font-medium rounded-lg border text-offwhite/60 hover:text-gold hover:border-gold/50 transition-all disabled:opacity-30"
+                              style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                            >
+                              Edit Schedule
+                            </button>
+                            {booking.status === 'waiting' && (
+                              <button
+                                onClick={() => updateStatus(booking, 'assigned_pending')}
+                                disabled={isUpdating}
+                                className="px-4 py-2 text-xs font-medium rounded-lg border text-blue-300 hover:bg-blue-900/20 hover:border-blue-500/50 transition-all disabled:opacity-30"
+                                style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                              >
+                                {isUpdating ? 'Processing...' : 'Confirm'}
+                              </button>
+                            )}
+                            {booking.status === 'assigned_pending' && (
+                              <button
+                                onClick={() => updateStatus(booking, 'serving')}
+                                disabled={isUpdating}
+                                className="px-4 py-2 text-xs font-medium rounded-lg border text-green-300 hover:bg-green-900/20 hover:border-green-500/50 transition-all disabled:opacity-30"
+                                style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                              >
+                                Start Service
+                              </button>
+                            )}
+                            {booking.status === 'serving' && (
+                              <button
+                                onClick={() => updateStatus(booking, 'completed')}
+                                disabled={isUpdating}
+                                className="px-4 py-2 text-xs font-medium rounded-lg bg-gold text-charcoal hover:bg-gold/90 transition-all disabled:opacity-30"
+                              >
+                                Mark Completed
+                              </button>
+                            )}
                            {!['completed', 'cancelled'].includes(booking.status) && (
                              <button
                                onClick={() => updateStatus(booking, 'cancelled')}
@@ -419,7 +420,7 @@ export default function AdminBookings() {
             <div className="space-y-4">
               <div className="p-4 rounded-lg text-sm" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className="text-offwhite font-heading mb-1">{editingBooking.customer?.full_name}</div>
-                <div className="text-offwhite/50 text-xs">{editingBooking.services?.name} &middot; ${editingBooking.services?.price || editingBooking.price}</div>
+                <div className="text-offwhite/50 text-xs">{editingBooking.service?.name} &middot; ${editingBooking.service?.price || editingBooking.price || editingBooking.final_price}</div>
               </div>
               <div>
                 <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Date</label>

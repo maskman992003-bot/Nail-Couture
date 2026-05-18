@@ -14,7 +14,8 @@ export default function CustomerBooking() {
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
-  const [technicians, setTechnicians] = useState([]);
+  const [availableTechnicians, setAvailableTechnicians] = useState([]);
+  const [loadingTechs, setLoadingTechs] = useState(false);
   const [selectedTech, setSelectedTech] = useState(null);
   const [bookLoading, setBookLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
@@ -34,20 +35,41 @@ export default function CustomerBooking() {
       navigate(route);
       return;
     }
-    fetchData();
+    fetchServices();
   }, [user, navigate]);
 
-  const fetchData = async () => {
-    const currentUser = localStorage.getItem('salon_user_data');
-    const userId = currentUser ? JSON.parse(currentUser).id : null;
-    if (!userId) { setLoading(false); navigate('/login'); return; }
+  const fetchServices = async () => {
     try {
       const { data: servicesData } = await supabase.from('services').select('*').order('category').order('name');
-      const { data: techData } = await supabase.from('profiles').select('*').eq('role', 'technician').order('full_name');
       setServices(servicesData || []);
-      setTechnicians(techData || []);
     } catch { }
     setLoading(false);
+  };
+
+  useEffect(() => {
+    if (selectedDate && selectedTime) {
+      fetchAvailableTechnicians();
+    } else {
+      setAvailableTechnicians([]);
+      setSelectedTech(null);
+    }
+  }, [selectedDate, selectedTime]);
+
+  const fetchAvailableTechnicians = async () => {
+    setLoadingTechs(true);
+    try {
+      const { data } = await supabase.rpc('get_available_technicians', {
+        p_date: selectedDate,
+        p_time: selectedTime,
+      });
+      setAvailableTechnicians(data || []);
+      if (data?.length === 0) {
+        setSelectedTech(null);
+      }
+    } catch {
+      setAvailableTechnicians([]);
+    }
+    setLoadingTechs(false);
   };
 
   const groupedServices = [...services, ...SERVICES].reduce((acc, service) => {
@@ -86,13 +108,15 @@ export default function CustomerBooking() {
     const userId = currentUser ? JSON.parse(currentUser).id : null;
     if (!userId) { setBookLoading(false); navigate('/login'); return; }
     const checkInTime = new Date(`${selectedDate}T${selectedTime}:00`);
-    const { error } = await supabase.from('online_bookings').insert({
+    const { error } = await supabase.from('appointments').insert({
       profile_id: userId,
       service_id: selectedService.id,
-      technician_id: selectedTech?.id || null,
+      technician_id: selectedTech?.staff_id || null,
       scheduled_time: checkInTime.toISOString(),
-      status: 'pending',
-      price: totalPrice,
+      check_in_time: checkInTime.toISOString(),
+      status: 'assigned_pending',
+      source: 'online',
+      final_price: totalPrice,
     });
     if (!error) setBookingSuccess(true);
     setBookLoading(false);
@@ -124,8 +148,8 @@ export default function CustomerBooking() {
               </svg>
             </div>
             <h2 className="font-heading text-3xl text-gold mb-2">Thank you, {firstName}!</h2>
-            <h3 className="font-heading text-2xl text-offwhite mb-6">Booking Pending</h3>
-            <p className="text-offwhite/60 mb-4">Your appointment request has been submitted successfully and is awaiting confirmation. We'll notify you shortly once it's confirmed.</p>
+            <h3 className="font-heading text-2xl text-offwhite mb-6">Booking Confirmed</h3>
+            <p className="text-offwhite/60 mb-4">Your appointment has been confirmed. We'll see you at your scheduled time.</p>
             <p className="text-offwhite text-sm mb-8">We look forward to welcoming you.</p>
             <Link to="/portal" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
               Return to Home
@@ -294,7 +318,7 @@ export default function CustomerBooking() {
                   <input
                     type="date"
                     value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    onChange={(e) => { setSelectedDate(e.target.value); setSelectedTech(null); }}
                     min={today}
                     className="w-full p-4 text-offwhite border border-offwhite/10 rounded-xl focus:border-gold focus:outline-none"
                     style={{ backgroundColor: '#1a1a1a' }}
@@ -304,7 +328,7 @@ export default function CustomerBooking() {
                   <div className="text-offwhite/50 text-sm mb-3">Preferred Time</div>
                   <select
                     value={selectedTime}
-                    onChange={(e) => setSelectedTime(e.target.value)}
+                    onChange={(e) => { setSelectedTime(e.target.value); setSelectedTech(null); }}
                     className="w-full p-4 text-offwhite border border-offwhite/10 rounded-xl focus:border-gold focus:outline-none"
                     style={{ backgroundColor: '#1a1a1a' }}
                   >
@@ -320,36 +344,48 @@ export default function CustomerBooking() {
 
           {selectedService && selectedDate && selectedTime && (
             <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
-              <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Choose Technician (Optional)</div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <button
-                  onClick={() => setSelectedTech(null)}
-                  className={`rounded-xl p-4 text-center border transition-all ${!selectedTech ? 'border-2' : 'border-offwhite/5'}`}
-                  style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: !selectedTech ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)' }}
-                >
-                  <div className="w-12 h-12 rounded-full mx-auto mb-2 bg-offwhite/10 flex items-center justify-center">
-                    <span className="text-offwhite/60 font-heading">Any</span>
+              <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Choose Technician</div>
+
+              {loadingTechs && (
+                <div className="text-center py-4">
+                  <div className="text-offwhite/50 text-sm">Loading available technicians...</div>
+                </div>
+              )}
+
+              {!loadingTechs && availableTechnicians.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center bg-red-500/10">
+                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
-                  <div className="text-offwhite font-heading text-sm">No Preference</div>
-                </button>
-                 {technicians.map((tech) => (
-                   <button
-                     key={tech.id}
-                     onClick={() => setSelectedTech(tech)}
-                     className={`min-w-0 rounded-xl p-4 text-center border transition-all ${selectedTech?.id === tech.id ? 'border-2' : 'border-offwhite/5'}`}
-                     style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: selectedTech?.id === tech.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)' }}
-                   >
-                    <div className="w-12 h-12 rounded-full mx-auto mb-2 bg-gold/20 flex items-center justify-center">
-                      <span className="text-gold font-heading text-sm">{tech.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
-                    </div>
-                    <div className="text-offwhite font-heading text-sm">{tech.full_name}</div>
-                  </button>
-                ))}
-              </div>
+                  <p className="text-offwhite/70 font-heading text-lg mb-2">No technicians available</p>
+                  <p className="text-offwhite/40 text-sm">No one is scheduled for {selectedTime} on this date. Please choose another time.</p>
+                </div>
+              )}
+
+              {!loadingTechs && availableTechnicians.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {availableTechnicians.map((tech) => (
+                    <button
+                      key={tech.staff_id}
+                      onClick={() => setSelectedTech(tech)}
+                      className={`min-w-0 rounded-xl p-4 text-center border transition-all ${selectedTech?.staff_id === tech.staff_id ? 'border-2' : 'border-offwhite/5'}`}
+                      style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: selectedTech?.staff_id === tech.staff_id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)' }}
+                    >
+                      <div className="w-12 h-12 rounded-full mx-auto mb-2 bg-gold/20 flex items-center justify-center">
+                        <span className="text-gold font-heading text-sm">{tech.staff_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
+                      </div>
+                      <div className="text-offwhite font-heading text-sm">{tech.staff_name}</div>
+                      <div className="text-offwhite/40 text-xs capitalize mt-1">{tech.shift_type}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {selectedService && selectedDate && selectedTime && (
+          {selectedService && selectedDate && selectedTime && availableTechnicians.length > 0 && (
             <div className="rounded-2xl p-8 border-2" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.05) 0%, #111 100%)' }}>
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Booking Summary</div>
               <div className="flex items-start justify-between mb-6">
@@ -360,7 +396,7 @@ export default function CustomerBooking() {
                       + {selectedAddOnDetails.map((a) => a.name).join(', ')}
                     </div>
                   )}
-                  <div className="text-offwhite/50 text-sm">{totalMinutes} min with {selectedTech?.full_name || 'Any Technician'}</div>
+                  <div className="text-offwhite/50 text-sm">{totalMinutes} min with {selectedTech?.staff_name || 'Any Technician'}</div>
                   <div className="text-offwhite/50 text-sm mt-1">
                     {new Date(`${selectedDate}T${selectedTime}`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {selectedTime}
                   </div>
@@ -376,10 +412,10 @@ export default function CustomerBooking() {
               </div>
               <button
                 onClick={handleBooking}
-                disabled={bookLoading}
+                disabled={bookLoading || availableTechnicians.length === 0}
                 className="w-full py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20 disabled:opacity-50"
               >
-                {bookLoading ? 'Submitting...' : 'Submit Booking Request'}
+                {bookLoading ? 'Confirming...' : 'Confirm Booking'}
               </button>
             </div>
           )}
@@ -424,11 +460,13 @@ export default function CustomerBooking() {
                       const currentUser = localStorage.getItem('salon_user_data');
                       const userId = currentUser ? JSON.parse(currentUser).id : null;
                       if (userId) {
-                        supabase.from('online_bookings').insert({
+                        supabase.from('appointments').insert({
                           profile_id: userId,
                           service_id: null,
                           scheduled_time: null,
-                          status: 'pending',
+                          check_in_time: null,
+                          status: 'waiting',
+                          source: 'online',
                           price: 0,
                           notes: `Bridal Party Bundle - Group size: ${groupSize} guests (25% discount)`,
                         });

@@ -10,6 +10,7 @@ import CustomerBooking from './components/CustomerBooking.jsx'
 import CustomerHistory from './components/CustomerHistory.jsx'
 import CustomerLoyalty from './components/CustomerLoyalty.jsx'
 import CustomerProfile from './components/CustomerProfile.jsx'
+import EditBooking from './components/EditBooking.jsx'
 import SuperAdmin from './components/SuperAdmin.jsx'
 import Admin from './components/Admin.jsx'
 import Cashier from './components/Cashier.jsx'
@@ -191,6 +192,11 @@ createRoot(document.getElementById('root')).render(
           <Route path="/customer/history" element={
             <ProtectedRoute allowedRoles={['customer']}>
               <CustomerHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/edit/:bookingId" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <EditBooking />
             </ProtectedRoute>
           } />
           <Route path="/customer/loyalty" element={
