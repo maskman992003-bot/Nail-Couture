@@ -64,13 +64,13 @@ export default function StaffProfile() {
 
   const fetchCashierActivity = async () => {
     const { data } = await supabase
-      .from('appointments')
-      .select('*, services(name), customer:profiles!appointments_profile_id_fkey(full_name)')
+      .from('payment_transactions')
+      .select('*, appointments(*, services(name), customer:profiles!appointments_customer_id_fkey(full_name))')
       .eq('cashier_id', id)
-      .order('completed_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(10);
 
-    setCashierActivity(data || []);
+    setCashierActivity((data || []).map(t => ({ ...t.appointments, payment: t })));
   };
 
   const fetchPerformanceStats = async () => {
@@ -80,31 +80,31 @@ export default function StaffProfile() {
     weekStart.setDate(weekStart.getDate() - 7);
 
     const { count: todayCount } = await supabase
-      .from('appointments')
+      .from('payment_transactions')
       .select('id', { count: 'exact', head: true })
       .eq('cashier_id', id)
       .eq('status', 'completed')
-      .gte('completed_at', today.toISOString());
+      .gte('created_at', today.toISOString());
 
     const { data: todayRevenue } = await supabase
-      .from('appointments')
-      .select('final_price')
+      .from('payment_transactions')
+      .select('final_amount')
       .eq('cashier_id', id)
       .eq('status', 'completed')
-      .gte('completed_at', today.toISOString());
+      .gte('created_at', today.toISOString());
 
-    const todayTotal = todayRevenue?.reduce((sum, a) => sum + (a.final_price || 0), 0) || 0;
+    const todayTotal = todayRevenue?.reduce((sum, a) => sum + (a.final_amount || 0), 0) || 0;
 
     const { count: weekCount } = await supabase
-      .from('appointments')
+      .from('payment_transactions')
       .select('id', { count: 'exact', head: true })
       .eq('cashier_id', id)
       .eq('status', 'completed')
-      .gte('completed_at', weekStart.toISOString());
+      .gte('created_at', weekStart.toISOString());
 
     const { data: weekRevenue } = await supabase
-      .from('appointments')
-      .select('final_price')
+      .from('payment_transactions')
+      .select('final_amount')
       .eq('cashier_id', id)
       .eq('status', 'completed')
       .gte('completed_at', weekStart.toISOString());
@@ -244,7 +244,7 @@ export default function StaffProfile() {
                         <div>
                           <div className="text-offwhite font-medium">{activity.services?.name || 'Service'}</div>
                           <div className="text-xs text-offwhite/50">
-                            {activity.customer?.full_name || activity.customer?.email || 'Unknown'} - {new Date(activity.completed_at).toLocaleDateString()}
+                            {activity.customer?.full_name || activity.customer?.email || 'Unknown'} - {activity.payment?.created_at ? new Date(activity.payment.created_at).toLocaleDateString() : '—'}
                           </div>
                         </div>
                         <div className="text-right">

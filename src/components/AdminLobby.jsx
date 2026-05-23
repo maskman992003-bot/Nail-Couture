@@ -122,7 +122,7 @@ const DraggableAppointmentCard = ({ appointment, isPriority, onTogglePriority, o
             </button>
           </div>
         </div>
-        <span className="text-offwhite/50 text-sm">{formatTime(appointment.check_in_time)}</span>
+        <span className="text-offwhite/50 text-sm">{formatTime(appointment.checked_in_at)}</span>
       </div>
 
       <div className="flex flex-wrap gap-2 text-sm">
@@ -340,9 +340,9 @@ export default function AdminLobby() {
     console.log('Fetching waiting appointments...')
     const { data, error, status } = await supabase
       .from('appointments')
-      .select('*, customer:profiles!appointments_profile_id_fkey(full_name, refreshment_pref, nail_goal), services(name, price, duration_minutes)')
+      .select('*, customer:profiles!appointments_customer_id_fkey(full_name, refreshment_pref, nail_goal), services(name, price, duration_minutes)')
       .eq('status', 'waiting')
-      .order('check_in_time', { ascending: true })
+      .order('checked_in_at', { ascending: true })
 
     if (error) {
       console.error('Error fetching waiting:', error, 'Status:', status)
@@ -356,7 +356,7 @@ export default function AdminLobby() {
     console.log('Fetching serving appointments...')
     const { data, error } = await supabase
       .from('appointments')
-      .select('*, customer:profiles!appointments_profile_id_fkey(full_name), technician:profiles!appointments_technician_id_fkey(full_name), services(name)')
+      .select('*, customer:profiles!appointments_customer_id_fkey(full_name), technician:profiles!appointments_technician_id_fkey(full_name), services(name)')
       .eq('status', 'serving')
       .order('start_time', { ascending: true })
 
@@ -374,7 +374,7 @@ export default function AdminLobby() {
       .from('appointments')
       .select('*, customer:profiles!appointments_profile_id_fkey(full_name), services(name)')
       .eq('status', 'assigned_pending')
-      .order('check_in_time', { ascending: true })
+      .order('checked_in_at', { ascending: true })
 
     if (error) {
       console.error('Error fetching pending:', error)
@@ -408,17 +408,12 @@ export default function AdminLobby() {
       .from('appointments')
       .select('id', { count: 'exact', head: true })
       .in('status', ['serving', 'completed'])
-      .gte('check_in_time', today.toISOString())
+      .gte('checked_in_at', today.toISOString())
     setTodayTotal(count || 0)
   }, [])
 
   const togglePriority = async (appointmentId) => {
-    const appt = lobbyAppointments.find(a => a.id === appointmentId)
-    await supabase
-      .from('appointments')
-      .update({ is_priority: true })
-      .eq('id', appointmentId)
-    fetchAppointments()
+    // is_priority column was removed - no-op
   }
 
   const updateStatus = async (appointmentId, status, techId = null) => {
@@ -461,11 +456,7 @@ export default function AdminLobby() {
     setUpdating(appointment.id)
     await supabase
       .from('appointments')
-      .update({ 
-        status: 'cancelled',
-        end_time: new Date().toISOString(),
-        cancel_reason: cancelReason
-      })
+      .update({ status: 'cancelled' })
       .eq('id', appointment.id)
     
     setNotification({ message: `Cancelled: ${cancelReason}`, name: appointment.customer?.full_name })

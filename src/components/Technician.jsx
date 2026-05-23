@@ -59,9 +59,9 @@ const getHomeRoute = (role) => {
       
       const { data: appointments } = await supabase
         .from('appointments')
-        .select('*, services(name, price, duration_minutes), profiles(full_name, phone_number, nail_goal)')
-        .gte('check_in_time', `${today}T00:00:00`)
-        .order('check_in_time', { ascending: true });
+        .select('*, services(name, price, duration_minutes), profiles(full_name, phone, nail_goal)')
+        .gte('checked_in_at', `${today}T00:00:00`)
+        .order('checked_in_at', { ascending: true });
 
       if (appointments) {
         const serving = appointments.find(a => a.status === 'serving');
@@ -86,11 +86,11 @@ const getHomeRoute = (role) => {
 
   const markComplete = async (appointment) => {
     try {
-      await supabase.from('appointments').update({ status: 'completed', end_time: new Date().toISOString() }).eq('id', appointment.id);
+      await supabase.from('appointments').update({ status: 'completed', start_time: new Date().toISOString() }).eq('id', appointment.id);
       const earnedPoints = Math.floor(appointment.services?.price || 0);
-      if (earnedPoints > 0 && appointment.profile_id) {
-        await supabase.rpc('award_loyalty_points', { p_profile_id: appointment.profile_id, p_points: earnedPoints }).catch(() => {
-          supabase.from('profiles').update({ loyalty_points: supabase.sql`coalesce(loyalty_points, 0) + ${earnedPoints}` }).eq('id', appointment.profile_id).catch(() => {});
+      if (earnedPoints > 0 && appointment.customer_id) {
+        await supabase.rpc('award_loyalty_points', { p_profile_id: appointment.customer_id, p_points: earnedPoints }).catch(() => {
+          supabase.from('profiles').update({ loyalty_points: supabase.sql`coalesce(loyalty_points, 0) + ${earnedPoints}` }).eq('id', appointment.customer_id).catch(() => {});
         });
       }
       fetchMyAppointments();
@@ -205,7 +205,7 @@ const getHomeRoute = (role) => {
                         </div>
                         <div className="text-right">
                           <div className="text-offwhite/50 text-sm">
-                            {new Date(appt.check_in_time).toLocaleTimeString()}
+                            {new Date(appt.checked_in_at).toLocaleTimeString()}
                           </div>
                           <span className="px-3 py-1 text-xs border bg-yellow-100 text-yellow-800 border-yellow-300 rounded mt-2 inline-block">
                             Position {index + 1}
@@ -229,7 +229,7 @@ const getHomeRoute = (role) => {
                       <div className="text-offwhite font-medium text-lg">{appt.profiles?.full_name || 'Guest'}</div>
                       <div className="text-offwhite/50 text-sm">{appt.services?.name}</div>
                       <div className="text-offwhite/40 text-xs mt-1">
-                        {new Date(appt.check_in_time).toLocaleTimeString()}
+                        {new Date(appt.checked_in_at).toLocaleTimeString()}
                         {appt.profiles?.nail_goal && ` • ${appt.profiles.nail_goal}`}
                       </div>
                     </div>

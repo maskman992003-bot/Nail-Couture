@@ -38,7 +38,7 @@ export default function CustomerProfile() {
         setForm({
           full_name: data.full_name || '',
           email: data.email || '',
-          phone_number: data.phone_number || '',
+          phone: data.phone || '',
           nail_goal: data.nail_goal || '',
           refreshment_pref: data.refreshment_pref || '',
         });
@@ -49,7 +49,7 @@ export default function CustomerProfile() {
 
   const fetchRefreshments = async () => {
     try {
-      const { data } = await supabase.from('stock').select('name').eq('category', 'refreshment').gt('quantity', 0).order('name');
+      const { data } = await supabase.from('inventory').select('item_name').eq('category', 'refreshment').gt('quantity', 0).order('item_name');
       setRefreshments(data || []);
     } catch { }
   };
@@ -59,7 +59,7 @@ export default function CustomerProfile() {
     const { data } = await supabase.from('profiles').update({
       full_name: form.full_name,
       email: form.email,
-      phone_number: form.phone_number.replace(/\D/g, ''),
+      phone: form.phone.replace(/\D/g, ''),
       nail_goal: form.nail_goal || null,
       refreshment_pref: form.refreshment_pref || null,
     }).eq('id', profile.id).select();
@@ -200,8 +200,8 @@ export default function CustomerProfile() {
                   <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Phone Number</div>
                   <input
                     type="tel"
-                    value={form.phone_number}
-                    onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     className="w-full p-4 text-offwhite border rounded-xl focus:border-gold focus:outline-none bg-transparent"
                     style={{ borderColor: 'rgba(255,255,255,0.1)' }}
                   />
@@ -245,7 +245,7 @@ export default function CustomerProfile() {
                   setForm({
                     full_name: profile.full_name,
                     email: profile.email,
-                    phone_number: profile.phone_number,
+                    phone: profile.phone,
                     nail_goal: profile.nail_goal,
                     refreshment_pref: profile.refreshment_pref,
                   });
@@ -267,7 +267,7 @@ export default function CustomerProfile() {
                 </div>
                 <div>
                   <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Phone Number</div>
-                  <div className="text-offwhite font-heading text-lg">{profile.phone_number || 'Not set'}</div>
+                  <div className="text-offwhite font-heading text-lg">{profile.phone || 'Not set'}</div>
                 </div>
                 <div>
                   <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Loyalty Points</div>

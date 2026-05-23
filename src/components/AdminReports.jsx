@@ -49,7 +49,7 @@ const getAppointmentsData = async (startDate, endDate) => {
   const { data } = await supabase
     .from('appointments')
     .select(`
-      profile_id,
+      customer_id,
       final_price,
       status,
       services (
@@ -60,7 +60,7 @@ const getAppointmentsData = async (startDate, endDate) => {
     `)
     .gte('check_in_time', startDate)
     .lt('check_in_time', endDate)
-    .not('profile_id', 'is', null)
+    .not('customer_id', 'is', null)
   
   return data || []
 }
@@ -73,7 +73,7 @@ const analyzePeriod = async (period) => {
     return { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0 }
   }
 
-  const profileIds = [...new Set(appointments.map(a => a.profile_id))]
+  const profileIds = [...new Set(appointments.map(a => a.customer_id))]
   
   let newCount = 0
   let regularCount = 0
@@ -82,7 +82,7 @@ const analyzePeriod = async (period) => {
     const { count } = await supabase
       .from('appointments')
       .select('*', { count: 'exact', head: true })
-      .eq('profile_id', profileId)
+      .eq('customer_id', profileId)
       .lt('check_in_time', range.end)
     
     if (count <= 1) {
@@ -135,22 +135,22 @@ const exportMonthlyData = async () => {
   const appointments = await getAppointmentsData(range.start, range.end)
   
   const customerData = []
-  const profileIds = [...new Set(appointments.map(a => a.profile_id))]
+  const profileIds = [...new Set(appointments.map(a => a.customer_id))]
   
   for (const profileId of profileIds) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name, email, phone_number')
+      .select('full_name, email, phone')
       .eq('id', profileId)
       .single()
     
-    const profileAppointments = appointments.filter(a => a.profile_id === profileId)
+    const profileAppointments = appointments.filter(a => a.customer_id === profileId)
     
     if (profile) {
       customerData.push({
         Name: profile.full_name || '',
         Email: profile.email || '',
-        Phone: profile.phone_number || '',
+        Phone: profile.phone || '',
         'Total Visits': profileAppointments.length,
         'Total Spent': `$${profileAppointments.reduce((sum, a) => sum + (a.final_price || a.services?.price || 0), 0)}`
       })

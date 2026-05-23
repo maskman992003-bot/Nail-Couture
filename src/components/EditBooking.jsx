@@ -40,15 +40,15 @@ export default function EditBooking({ bookingId }) {
       .from('appointments')
       .select('*')
       .eq('id', bookingId)
-      .eq('profile_id', userId)
-      .eq('source', 'online')
+      .eq('customer_id', userId)
+      .eq('booking_type', 'online')
       .single();
 
     if (error || !data) { setLoading(false); navigate('/customer/history'); return; }
 
     setBooking(data);
-    setSelectedDate(data.scheduled_time ? data.scheduled_time.split('T')[0] : '');
-    setSelectedTime(data.scheduled_time ? new Date(data.scheduled_time).toTimeString().slice(0, 5) : '');
+    setSelectedDate(data.scheduled_at ? data.scheduled_at.split('T')[0] : '');
+    setSelectedTime(data.scheduled_at ? new Date(data.scheduled_at).toTimeString().slice(0, 5) : '');
     setNotes(data.notes || '');
 
     const { data: svcData } = await supabase
@@ -142,10 +142,9 @@ export default function EditBooking({ bookingId }) {
       const { error } = await supabase.from('appointments').update({
         service_id: selectedService.id,
         technician_id: selectedTech?.staff_id || null,
-        scheduled_time: newScheduled.toISOString(),
+        scheduled_at: newScheduled.toISOString(),
         final_price: totalPrice,
         notes: notes || null,
-        updated_at: new Date().toISOString(),
       }).eq('id', bookingId);
       if (error) throw error;
 
@@ -153,10 +152,10 @@ export default function EditBooking({ bookingId }) {
       const userId = currentUser ? JSON.parse(currentUser).id : null;
       const userName = currentUser ? JSON.parse(currentUser).full_name : 'Customer';
       await supabase.from('notifications').insert({
-        target_user_id: userId,
-        online_booking_id: bookingId,
+        recipient_id: userId,
+        reference_id: bookingId,
         title: 'Appointment Updated',
-        message: `Hi ${userName?.split(' ')[0] || 'there'}, your appointment for ${selectedService.name} has been updated to ${newScheduled.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at ${selectedTime}.`,
+        body: `Hi ${userName?.split(' ')[0] || 'there'}, your appointment for ${selectedService.name} has been updated to ${newScheduled.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at ${selectedTime}.`,
         is_read: false,
       }).catch(() => {});
 

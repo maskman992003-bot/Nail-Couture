@@ -38,7 +38,7 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
     setLoading(true)
     Promise.all([
       getServices(),
-      supabase.from('stock').select('name').eq('category', 'refreshment').gt('quantity', 0).order('name')
+      supabase.from('inventory').select('item_name').eq('category', 'refreshment').gt('quantity', 0).order('item_name')
     ])
       .then(([svcData, refData]) => {
         setServices(svcData)
@@ -295,7 +295,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
   useEffect(() => {
     const fetchRefreshments = async () => {
       try {
-        const { data } = await supabase.from('stock').select('name').eq('category', 'refreshment').gt('quantity', 0).order('name')
+        const { data } = await supabase.from('inventory').select('item_name').eq('category', 'refreshment').gt('quantity', 0).order('item_name')
         setRefreshmentList(data || [])
       } catch (err) { console.error('Error fetching refreshments:', err) }
     }
@@ -311,11 +311,11 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
     try {
       const cleanPhone = phone.replace(/\D/g, '')
       
-      const { data: existingProfile, error: profileSearchError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('phone_number', cleanPhone)
-        .single()
+       const { data: existingProfile, error: profileSearchError } = await supabase
+         .from('profiles')
+         .select('*')
+         .eq('phone', cleanPhone)
+         .single()
       
       let profileId
       
@@ -348,11 +348,12 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
       const { error: appointmentError } = await supabase
         .from('appointments')
         .insert({
-          profile_id: profileId,
+          customer_id: profileId,
           service_id: selectedService.id,
           status: 'waiting',
-          check_in_time: new Date().toISOString(),
-          refreshment_choice: refreshmentPref || null
+          checked_in_at: new Date().toISOString(),
+          refreshment_pref: refreshmentPref || null,
+          booking_type: 'walk_in',
         })
 
       if (appointmentError) {
@@ -574,7 +575,7 @@ export default function CheckIn({ onNavigate }) {
     setLoading(true)
     try {
       const addOnNames = addOns.map((a) => a.name).join(', ')
-      await supabase.from('appointments').update({ service_id: service.id, add_ons: addOnNames || null, refreshment_choice: refreshmentPref || null }).eq('id', result.appointment.id)
+      await supabase.from('appointments').update({ service_id: service.id, add_ons: addOnNames || null, refreshment_pref: refreshmentPref || null }).eq('id', result.appointment.id)
       setSelectedService(service)
       setSelectedAddOns(addOns)
       setShowServiceSelection(false)

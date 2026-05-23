@@ -90,7 +90,7 @@ export default function ClientLogin() {
       const { data, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('phone_number', cleanPhone)
+        .eq('phone', cleanPhone)
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {

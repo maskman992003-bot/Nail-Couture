@@ -1,0 +1,153 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.appointments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  profile_id uuid,
+  service_id bigint,
+  status text DEFAULT 'Checked-In'::text CHECK (status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'waiting'::text, 'assigned_pending'::text, 'serving'::text, 'completed'::text, 'cancelled'::text, 'missed'::text, 'approved'::text, 'rejected'::text])),
+  check_in_time timestamp with time zone DEFAULT now(),
+  refreshment_choice text,
+  start_time timestamp with time zone,
+  end_time timestamp with time zone,
+  technician_id uuid,
+  discount_amount numeric DEFAULT 0,
+  discount_type text,
+  discount_reason text,
+  is_priority boolean DEFAULT false,
+  cancel_reason text,
+  final_price numeric,
+  payment_method text CHECK (payment_method = ANY (ARRAY['cash'::text, 'card'::text, 'transfer'::text, 'other'::text])),
+  cashier_id uuid,
+  completed_at timestamp with time zone,
+  extras_amount numeric DEFAULT 0,
+  notes text,
+  add_ons text,
+  source text DEFAULT 'walk_in'::text,
+  online_booking_id uuid,
+  scheduled_time timestamp with time zone,
+  cancelled_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  missed_at timestamp with time zone,
+  pending_at timestamp with time zone,
+  confirmed_at timestamp with time zone,
+  lobby_at timestamp with time zone,
+  serving_at timestamp with time zone,
+  CONSTRAINT appointments_pkey PRIMARY KEY (id),
+  CONSTRAINT appointments_client_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id),
+  CONSTRAINT appointments_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(id),
+  CONSTRAINT appointments_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id),
+  CONSTRAINT appointments_technician_id_fkey FOREIGN KEY (technician_id) REFERENCES public.profiles(id),
+  CONSTRAINT appointments_cashier_id_fkey FOREIGN KEY (cashier_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  profile_id uuid,
+  online_booking_id uuid,
+  message text NOT NULL,
+  is_read boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  target_user_id uuid NOT NULL,
+  title text NOT NULL,
+  CONSTRAINT notifications_pkey PRIMARY KEY (id),
+  CONSTRAINT notifications_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id),
+  CONSTRAINT notifications_online_booking_id_fkey FOREIGN KEY (online_booking_id) REFERENCES public.online_bookings_archived(id),
+  CONSTRAINT notifications_target_user_id_fkey FOREIGN KEY (target_user_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.online_bookings_archived (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  profile_id uuid NOT NULL,
+  service_id bigint NOT NULL,
+  technician_id uuid,
+  scheduled_time timestamp with time zone NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'in_progress'::text, 'completed'::text, 'cancelled'::text])),
+  price numeric NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT online_bookings_archived_pkey PRIMARY KEY (id),
+  CONSTRAINT online_bookings_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id),
+  CONSTRAINT online_bookings_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(id),
+  CONSTRAINT online_bookings_technician_id_fkey FOREIGN KEY (technician_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.profiles (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  full_name text,
+  phone_number text UNIQUE,
+  loyalty_points integer DEFAULT 0,
+  tier text DEFAULT 'Silver'::text,
+  refreshment_pref text,
+  created_at timestamp with time zone DEFAULT now(),
+  email text,
+  nail_goal text,
+  role USER-DEFINED DEFAULT 'customer'::user_role,
+  phone text,
+  is_staff boolean DEFAULT false,
+  referral_code text,
+  referral_by uuid,
+  pin text,
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_referral_by_fkey FOREIGN KEY (referral_by) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.services (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  name text NOT NULL,
+  price numeric NOT NULL,
+  duration_minutes integer DEFAULT 60,
+  category text,
+  is_addon boolean,
+  CONSTRAINT services_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.shifts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  staff_id uuid NOT NULL,
+  shift_date date NOT NULL,
+  shift_type text NOT NULL CHECK (shift_type = ANY (ARRAY['morning'::text, 'afternoon'::text, 'evening'::text, 'custom'::text])),
+  start_time time without time zone NOT NULL,
+  end_time time without time zone NOT NULL,
+  appointment_count integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  confirmed_online_count integer DEFAULT 0,
+  CONSTRAINT shifts_pkey PRIMARY KEY (id),
+  CONSTRAINT shifts_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.staff_schedules (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  staff_id uuid NOT NULL,
+  day_of_week integer NOT NULL CHECK (day_of_week >= 0 AND day_of_week <= 6),
+  shift_type text NOT NULL CHECK (shift_type = ANY (ARRAY['morning'::text, 'afternoon'::text, 'evening'::text, 'custom'::text])),
+  start_time time without time zone NOT NULL,
+  end_time time without time zone NOT NULL,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT staff_schedules_pkey PRIMARY KEY (id),
+  CONSTRAINT staff_schedules_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.stock (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  category text NOT NULL CHECK (category = ANY (ARRAY['refreshment'::text, 'material'::text])),
+  quantity integer NOT NULL DEFAULT 0,
+  unit text NOT NULL,
+  min_stock_alert integer NOT NULL DEFAULT 5,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT stock_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.time_off_requests (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  staff_id uuid NOT NULL,
+  start_date date NOT NULL,
+  end_date date NOT NULL,
+  reason text,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])),
+  reviewed_by uuid,
+  reviewed_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT time_off_requests_pkey PRIMARY KEY (id),
+  CONSTRAINT time_off_requests_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES public.profiles(id),
+  CONSTRAINT time_off_requests_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.profiles(id)
+);

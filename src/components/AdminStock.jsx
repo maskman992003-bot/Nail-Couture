@@ -4,13 +4,13 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
 
-const emptyForm = { name: '', category: 'material', quantity: '', unit: '', min_stock_alert: '' };
+const emptyForm = { item_name: '', category: 'material', quantity: '', unit: '', reorder_threshold: '' };
 
 export default function AdminStock() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [stock, setStock] = useState([]);
+  const [inventory, setStock] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [adjustingId, setAdjustingId] = useState(null);
@@ -29,19 +29,19 @@ export default function AdminStock() {
 
   const handleAddItem = async (e) => {
     e.preventDefault();
-    if (!addForm.name || !addForm.quantity || !addForm.unit) {
+    if (!addForm.item_name || !addForm.quantity || !addForm.unit) {
       setAddError('Name, quantity, and unit are required');
       return;
     }
     setAddLoading(true);
     setAddError('');
     try {
-      const { error } = await supabase.from('stock').insert({
-        name: addForm.name.trim(),
+      const { error } = await supabase.from('inventory').insert({
+        item_name: addForm.item_name.trim(),
         category: addForm.category,
         quantity: parseInt(addForm.quantity) || 0,
         unit: addForm.unit.trim(),
-        min_stock_alert: parseInt(addForm.min_stock_alert) || 5,
+        reorder_threshold: parseInt(addForm.reorder_threshold) || 5,
       });
       if (error) throw error;
       setShowAddModal(false);
@@ -57,14 +57,14 @@ export default function AdminStock() {
   const fetchStock = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
     try {
-      const { data, error } = await supabase.from('stock').select('*').order('name');
+      const { data, error } = await supabase.from('inventory').select('*').order('item_name');
       if (error) {
         console.error('Supabase error:', error);
         return;
       }
       setStock(data || []);
     } catch (err) {
-      console.error('Error fetching stock:', err);
+      console.error('Error fetching inventory:', err);
     } finally {
       setLoading(false);
       if (isRefreshing) setRefreshing(false);
@@ -72,7 +72,7 @@ export default function AdminStock() {
   };
 
   const adjustStock = useCallback(async (id, delta) => {
-    const item = stock.find((s) => s.id === id);
+    const item = inventory.find((s) => s.id === id);
     if (!item) return;
     if (item.quantity + delta < 0) return;
 
@@ -82,7 +82,7 @@ export default function AdminStock() {
 
     try {
       const { error } = await supabase
-        .from('stock')
+        .from('inventory')
         .update({ quantity: newQty })
         .eq('id', id);
 
@@ -95,24 +95,24 @@ export default function AdminStock() {
       setStock((prev) => prev.map((s) => (s.id === id ? { ...s, quantity: newQty } : s)));
       showFeedback(id, 'ok');
     } catch (err) {
-      console.error('Error adjusting stock:', err);
+      console.error('Error adjusting inventory:', err);
       showFeedback(id, 'error');
     } finally {
       setAdjustingId(null);
     }
-  }, [stock, showFeedback]);
+  }, [inventory, showFeedback]);
 
   const saveQuantity = useCallback(async (id, newQty) => {
     if (newQty < 0) return;
 
-    const item = stock.find((s) => s.id === id);
+    const item = inventory.find((s) => s.id === id);
     if (!item || item.quantity === newQty) return;
 
     setSavingId(id);
 
     try {
       const { error } = await supabase
-        .from('stock')
+        .from('inventory')
         .update({ quantity: newQty })
         .eq('id', id);
 
@@ -130,7 +130,7 @@ export default function AdminStock() {
     } finally {
       setSavingId(null);
     }
-  }, [stock, showFeedback]);
+  }, [inventory, showFeedback]);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -143,18 +143,18 @@ export default function AdminStock() {
 
   const getStatus = (item) => {
     if (item.quantity === 0) return { label: 'Out of Stock', color: 'bg-red-900/50 text-red-300', dot: 'bg-red-500' };
-    if (item.quantity <= item.min_stock_alert) return { label: 'Low Stock', color: 'bg-orange-900/50 text-orange-300', dot: 'bg-orange-400' };
+    if (item.quantity <= item.reorder_threshold) return { label: 'Low Stock', color: 'bg-orange-900/50 text-orange-300', dot: 'bg-orange-400' };
     return { label: 'In Stock', color: 'bg-green-900/50 text-green-300', dot: 'bg-green-400' };
   };
 
-  const filteredStock = stock.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredStock = inventory.filter((item) => {
+    const matchesSearch = item.item_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || item.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const lowStockCount = stock.filter((s) => s.quantity > 0 && s.quantity <= s.min_stock_alert).length;
-  const outOfStockCount = stock.filter((s) => s.quantity === 0).length;
+  const lowStockCount = inventory.filter((s) => s.quantity > 0 && s.quantity <= s.reorder_threshold).length;
+  const outOfStockCount = inventory.filter((s) => s.quantity === 0).length;
 
   if (loading) {
     return (
@@ -181,13 +181,13 @@ export default function AdminStock() {
               {lowStockCount > 0 && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255, 165, 0, 0.1)', border: '1px solid rgba(255, 165, 0, 0.3)' }}>
                   <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
-                  <span className="text-orange-300 text-sm font-medium">{lowStockCount} low stock</span>
+                  <span className="text-orange-300 text-sm font-medium">{lowStockCount} low inventory</span>
                 </div>
               )}
               {outOfStockCount > 0 && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255, 0, 0, 0.1)', border: '1px solid rgba(255, 0, 0, 0.3)' }}>
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                  <span className="text-red-300 text-sm font-medium">{outOfStockCount} out of stock</span>
+                  <span className="text-red-300 text-sm font-medium">{outOfStockCount} out of inventory</span>
                 </div>
               )}
               <button
@@ -236,7 +236,7 @@ export default function AdminStock() {
             <div className="rounded-xl p-12 text-center" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="text-offwhite/30 text-4xl mb-4">&#128230;</div>
               <h2 className="font-heading text-2xl text-offwhite mb-2">No Items Found</h2>
-              <p className="text-offwhite/50 text-sm">No stock items match your current search or filter.</p>
+              <p className="text-offwhite/50 text-sm">No inventory items match your current search or filter.</p>
             </div>
           ) : (
             <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(197, 160, 89, 0.1)' }}>
@@ -266,8 +266,8 @@ export default function AdminStock() {
                         >
                           <td className="px-6 py-4">
                             <div>
-                              <div className="text-offwhite font-heading text-base">{item.name}</div>
-                              <div className="text-offwhite/40 text-xs mt-0.5">Min: {item.min_stock_alert} {item.unit}</div>
+                              <div className="text-offwhite font-heading text-base">{item.item_name}</div>
+                              <div className="text-offwhite/40 text-xs mt-0.5">Min: {item.reorder_threshold} {item.unit}</div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
@@ -360,7 +360,7 @@ export default function AdminStock() {
             <form onSubmit={handleAddItem} className="space-y-4">
               <div>
                 <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Item Name *</label>
-                <input type="text" value={addForm.name} onChange={(e) => setAddForm({ ...addForm, name: e.target.value })} placeholder="e.g. OPI Nail Polish" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/20 rounded-lg focus:border-gold focus:outline-none" />
+                <input type="text" value={addForm.item_name} onChange={(e) => setAddForm({ ...addForm, item_name: e.target.value })} placeholder="e.g. OPI Nail Polish" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/20 rounded-lg focus:border-gold focus:outline-none" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -382,7 +382,7 @@ export default function AdminStock() {
                 </div>
                 <div>
                   <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Low Stock Alert</label>
-                  <input type="number" min={0} value={addForm.min_stock_alert} onChange={(e) => setAddForm({ ...addForm, min_stock_alert: e.target.value })} placeholder="5" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none" />
+                  <input type="number" min={0} value={addForm.reorder_threshold} onChange={(e) => setAddForm({ ...addForm, reorder_threshold: e.target.value })} placeholder="5" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none" />
                 </div>
               </div>
               {addError && <p className="text-red-400 text-sm">{addError}</p>}

@@ -28,16 +28,6 @@ export default function CustomerBooking() {
   const userData = currentUser ? JSON.parse(currentUser) : null;
   const firstName = userData?.full_name ? userData.full_name.split(' ')[0] : 'there';
 
-  useEffect(() => {
-    if (!user) { navigate('/login'); return; }
-    if (user.is_staff) {
-      const route = (user.role === 'super_admin' || user.role === 'owner' || user.role === 'partner') ? '/superadmin' : `/${user.role}`;
-      navigate(route);
-      return;
-    }
-    fetchServices();
-  }, [user, navigate]);
-
   const fetchServices = async () => {
     try {
       const { data: servicesData } = await supabase.from('services').select('*').order('category').order('name');
@@ -45,15 +35,6 @@ export default function CustomerBooking() {
     } catch { }
     setLoading(false);
   };
-
-  useEffect(() => {
-    if (selectedDate && selectedTime) {
-      fetchAvailableTechnicians();
-    } else {
-      setAvailableTechnicians([]);
-      setSelectedTech(null);
-    }
-  }, [selectedDate, selectedTime]);
 
   const fetchAvailableTechnicians = async () => {
     setLoadingTechs(true);
@@ -73,6 +54,44 @@ export default function CustomerBooking() {
     }
     setLoadingTechs(false);
   };
+
+  const handleBooking = async () => {
+    if (!selectedService || !selectedDate || !selectedTime) return;
+    setBookLoading(true);
+    const currentUser = localStorage.getItem('salon_user_data');
+    const userId = currentUser ? JSON.parse(currentUser).id : null;
+    if (!userId) { setBookLoading(false); navigate('/login'); return; }
+    const checkInTime = new Date(`${selectedDate}T${selectedTime}:00`);
+    const { error } = await supabase.from('appointments').insert({
+      customer_id: userId,
+      service_id: selectedService.id,
+      technician_id: selectedTech?.id || null,
+      scheduled_at: checkInTime.toISOString(),
+      status: 'confirmed',
+      booking_type: 'online',
+    });
+    if (!error) setBookingSuccess(true);
+    setBookLoading(false);
+  };
+
+  useEffect(() => {
+    if (!user) { navigate('/login'); return; }
+    if (user.is_staff) {
+      const route = (user.role === 'super_admin' || user.role === 'owner' || user.role === 'partner') ? '/superadmin' : `/${user.role}`;
+      navigate(route);
+      return;
+    }
+    fetchServices();
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (selectedDate && selectedTime) {
+      fetchAvailableTechnicians();
+    } else {
+      setAvailableTechnicians([]);
+      setSelectedTech(null);
+    }
+  }, [selectedDate, selectedTime]);
 
   const groupedServices = [...services, ...SERVICES].reduce((acc, service) => {
     const cat = service.category || 'Other';
@@ -101,27 +120,6 @@ export default function CustomerBooking() {
     setSelectedAddOns((prev) =>
       prev.includes(addOnId) ? prev.filter((id) => id !== addOnId) : [...prev, addOnId]
     );
-  };
-
-  const handleBooking = async () => {
-    if (!selectedService || !selectedDate || !selectedTime) return;
-    setBookLoading(true);
-    const currentUser = localStorage.getItem('salon_user_data');
-    const userId = currentUser ? JSON.parse(currentUser).id : null;
-    if (!userId) { setBookLoading(false); navigate('/login'); return; }
-    const checkInTime = new Date(`${selectedDate}T${selectedTime}:00`);
-    const { error } = await supabase.from('appointments').insert({
-      profile_id: userId,
-      service_id: selectedService.id,
-      technician_id: selectedTech?.staff_id || null,
-      scheduled_time: checkInTime.toISOString(),
-      check_in_time: checkInTime.toISOString(),
-      status: 'assigned_pending',
-      source: 'online',
-      final_price: totalPrice,
-    });
-    if (!error) setBookingSuccess(true);
-    setBookLoading(false);
   };
 
   const today = new Date().toISOString().split('T')[0];
@@ -471,13 +469,12 @@ export default function CustomerBooking() {
                       const userId = currentUser ? JSON.parse(currentUser).id : null;
                       if (userId) {
                         supabase.from('appointments').insert({
-                          profile_id: userId,
+                          customer_id: userId,
                           service_id: null,
-                          scheduled_time: null,
-                          check_in_time: null,
-                          status: 'waiting',
-                          source: 'online',
-                          price: 0,
+                          scheduled_at: null,
+                          checked_in_at: null,
+                          status: 'confirmed',
+                          booking_type: 'online',
                           notes: `Bridal Party Bundle - Group size: ${groupSize} guests (25% discount)`,
                         });
                       }

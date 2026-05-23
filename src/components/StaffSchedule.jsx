@@ -49,7 +49,7 @@ export default function StaffSchedule() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('schedule');
   const [showAddShiftModal, setShowAddShiftModal] = useState(false);
-  const [addShiftForm, setAddShiftForm] = useState({ staff_id: '', shift_date: '', shift_type: 'morning', start_time: '09:00', end_time: '15:00' });
+  const [addShiftForm, setAddShiftForm] = useState({ employee_id: '', shift_date: '', shift_type: 'morning', start_time: '09:00', end_time: '15:00' });
   const [addingShift, setAddingShift] = useState(false);
   const [addingShiftError, setAddingShiftError] = useState('');
   const [selectedStaffId, setSelectedStaffId] = useState(null);
@@ -82,7 +82,7 @@ export default function StaffSchedule() {
 
       const [staffRes, shiftsRes, torRes] = await Promise.all([
         supabase.from('profiles').select('*').in('role', ['admin', 'cashier', 'technician']).order('full_name'),
-        supabase.rpc('get_staff_schedule', { p_start_date: startDate, p_end_date: endDate, p_staff_id: selectedStaffId }),
+        supabase.rpc('get_staff_schedule', { p_start_date: startDate, p_end_date: endDate, p_employee_id: selectedStaffId }),
         supabase.rpc('get_time_off_requests', { p_status: null }),
 ]);
       if (staffRes.data) setStaff(staffRes.data);
@@ -96,20 +96,20 @@ export default function StaffSchedule() {
   };
 
   const getStaffShift = (staffId, date) => {
-    return shifts.filter(s => s.staff_id === staffId && s.shift_date === date);
+    return shifts.filter(s => s.employee_id === staffId && s.shift_date === date);
   };
 
   const handleAddShift = async (e) => {
     e.preventDefault();
     setAddingShiftError('');
-    if (!addShiftForm.staff_id || !addShiftForm.shift_date) {
+    if (!addShiftForm.employee_id || !addShiftForm.shift_date) {
       setAddingShiftError('Please select a staff member and date');
       return;
     }
     setAddingShift(true);
     try {
       const { error } = await supabase.rpc('create_shift', {
-        p_staff_id: addShiftForm.staff_id,
+        p_employee_id: addShiftForm.employee_id,
         p_shift_date: addShiftForm.shift_date,
         p_shift_type: addShiftForm.shift_type,
         p_start_time: addShiftForm.start_time,
@@ -117,7 +117,7 @@ export default function StaffSchedule() {
       });
       if (error) throw error;
       setShowAddShiftModal(false);
-      setAddShiftForm({ staff_id: '', shift_date: '', shift_type: 'morning', start_time: '09:00', end_time: '15:00' });
+      setAddShiftForm({ employee_id: '', shift_date: '', shift_type: 'morning', start_time: '09:00', end_time: '15:00' });
       await fetchData();
     } catch (err) {
       setAddingShiftError(err.message || 'Failed to add shift');
@@ -139,7 +139,7 @@ export default function StaffSchedule() {
     const shiftConfig = SHIFT_TYPES.find(t => t.value === shiftType) || SHIFT_TYPES[0];
     try {
       await supabase.rpc('create_shift', {
-        p_staff_id: staffId,
+        p_employee_id: staffId,
         p_shift_date: dateStr,
         p_shift_type: shiftType,
         p_start_time: shiftConfig.defaultStart,
@@ -164,7 +164,7 @@ export default function StaffSchedule() {
       for (const { staffId, dateStr } of selectedDays) {
         for (const shift of copiedDay.shifts) {
           await supabase.rpc('create_shift', {
-            p_staff_id: staffId,
+            p_employee_id: staffId,
             p_shift_date: dateStr,
             p_shift_type: shift.shift_type,
             p_start_time: shift.start_time,
@@ -206,7 +206,7 @@ export default function StaffSchedule() {
   };
 
   const openAddShift = (staffId, dateStr) => {
-    setAddShiftForm({ staff_id: staffId, shift_date: dateStr, shift_type: 'morning', start_time: '09:00', end_time: '15:00' });
+    setAddShiftForm({ employee_id: staffId, shift_date: dateStr, shift_type: 'morning', start_time: '09:00', end_time: '15:00' });
     setShowAddShiftModal(true);
   };
 
@@ -215,7 +215,7 @@ export default function StaffSchedule() {
     const dateStr = date.toISOString().split('T')[0];
     try {
       const { data } = await supabase.rpc('get_technician_appointments', {
-        p_staff_id: staffMember.id,
+        p_employee_id: staffMember.id,
         p_start_date: dateStr,
         p_end_date: dateStr,
       });
@@ -533,8 +533,8 @@ export default function StaffSchedule() {
               <div>
                 <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-3">Staff Member</label>
                 <select
-                  value={addShiftForm.staff_id}
-                  onChange={e => setAddShiftForm({ ...addShiftForm, staff_id: e.target.value })}
+                  value={addShiftForm.employee_id}
+                  onChange={e => setAddShiftForm({ ...addShiftForm, employee_id: e.target.value })}
                   className="w-full p-4 bg-[#0B0B0C] border border-white/10 text-offwhite rounded-xl focus:border-gold focus:outline-none"
                 >
                   <option value="">Select staff member...</option>

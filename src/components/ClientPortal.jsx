@@ -67,7 +67,7 @@ export default function ClientPortal() {
 
   const fetchRefreshments = async () => {
     try {
-      const { data } = await supabase.from('stock').select('name').eq('category', 'refreshment').gt('quantity', 0).order('name')
+      const { data } = await supabase.from('inventory').select('item_name').eq('category', 'refreshment').gt('quantity', 0).order('item_name')
       setRefreshments(data || [])
     } catch { }
   }
@@ -102,7 +102,7 @@ export default function ClientPortal() {
       const { data: appointmentsData } = await supabase
         .from('appointments')
         .select('*, services(name, price, duration_minutes)')
-        .eq('profile_id', userId)
+        .eq('customer_id', userId)
         .in('status', ['waiting', 'assigned_pending', 'serving'])
         .order('check_in_time', { ascending: false });
       setAppointments(appointmentsData || []);
@@ -111,7 +111,7 @@ export default function ClientPortal() {
   }, [navigate]);
 
   const startEditProfile = () => {
-    setEditForm({ full_name: profile.full_name || '', email: profile.email || '', phone_number: profile.phone_number || '', nail_goal: profile.nail_goal || '', refreshment_pref: profile.refreshment_pref || '' });
+    setEditForm({ full_name: profile.full_name || '', email: profile.email || '', phone: profile.phone || '', nail_goal: profile.nail_goal || '', refreshment_pref: profile.refreshment_pref || '' });
     setEditingProfile(true);
   };
 
@@ -120,7 +120,7 @@ export default function ClientPortal() {
     const { data } = await supabase.from('profiles').update({
       full_name: editForm.full_name,
       email: editForm.email,
-      phone_number: editForm.phone_number.replace(/\D/g, ''),
+      phone: editForm.phone.replace(/\D/g, ''),
       nail_goal: editForm.nail_goal || null,
       refreshment_pref: editForm.refreshment_pref || null,
     }).eq('id', profile.id).select();
@@ -289,7 +289,7 @@ export default function ClientPortal() {
                 </div>
                 <div>
                   <div className="text-offwhite/40 text-xs mb-2">Phone</div>
-                  <input type="tel" value={editForm.phone_number} onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })} className="w-full p-3 text-offwhite border border-offwhite/10 rounded-lg focus:border-gold focus:outline-none bg-transparent" />
+                  <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="w-full p-3 text-offwhite border border-offwhite/10 rounded-lg focus:border-gold focus:outline-none bg-transparent" />
                 </div>
                 <div>
                   <div className="text-offwhite/40 text-xs mb-2">Refreshment Preference</div>
@@ -321,7 +321,7 @@ export default function ClientPortal() {
                 </div>
                 <div>
                   <div className="text-offwhite/40 text-xs mb-2">Phone</div>
-                  <div className="text-offwhite font-heading text-lg">{profile.phone_number || 'Not set'}</div>
+                  <div className="text-offwhite font-heading text-lg">{profile.phone || 'Not set'}</div>
                 </div>
               </div>
             )}

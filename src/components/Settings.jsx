@@ -159,7 +159,7 @@ export default function Settings() {
             <div>
               <label className="text-offwhite/40 text-xs uppercase tracking-wider block mb-2">Access Level</label>
               <p className="text-offwhite">
-                {profile?.is_staff ? 'Staff Member' : 'Client'}
+                {profile?.role && ['admin', 'super_admin', 'owner', 'partner', 'cashier', 'technician'].includes(profile.role) ? 'Staff Member' : 'Client'}
               </p>
             </div>
 

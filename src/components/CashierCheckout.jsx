@@ -5,11 +5,12 @@ import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
 
 const statusColors = {
+  confirmed: 'bg-blue-100 text-blue-800 border-blue-300',
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  assigned_pending: 'bg-blue-100 text-blue-800 border-blue-300',
   serving: 'bg-green-100 text-green-800 border-green-300',
   completed: 'bg-green-100 text-green-800 border-green-300',
   cancelled: 'bg-red-100 text-red-800 border-red-300',
+  missed: 'bg-gray-100 text-gray-800 border-gray-300',
 };
 
 const formatTime = (timestamp) => {
@@ -150,11 +151,11 @@ export default function CashierCheckout() {
   const [notification, setNotification] = useState(null);
 
   const fetchServingAppointments = async () => {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('*, customer:profiles!appointments_profile_id_fkey(full_name), services(name, price)')
-      .eq('status', 'serving')
-      .order('start_time', { ascending: true });
+const { data, error } = await supabase
+  .from('appointments')
+  .select('*, customer:profiles!appointments_customer_id_fkey(full_name), services(name, price)')
+  .eq('status', 'serving')
+  .order('start_time_new', { ascending: true });
 
     if (error) {
       console.error('Error fetching serving:', error);
@@ -176,31 +177,38 @@ export default function CashierCheckout() {
     return () => supabase.removeChannel(channel);
   }, []);
 
-  const handleCheckout = async (appointmentId, { final_price, extras_amount, notes, payment_method }) => {
-    const { error } = await supabase
-      .from('appointments')
-      .update({
-        status: 'completed',
-        final_price,
-        extras_amount,
-        notes,
-        payment_method,
-        cashier_id: user.id,
-        completed_at: new Date().toISOString(),
-        end_time: new Date().toISOString()
-      })
-      .eq('id', appointmentId);
+  const handleCheckout = async (appointmentId, { final_price, notes, payment_method }) => {
+    const appt = servingAppointments.find(a => a.id === appointmentId);
+    const cashierId = user?.id;
+    const amount = parseFloat(final_price) || 0;
 
-    if (!error) {
-      const appt = servingAppointments.find(a => a.id === appointmentId);
-      setNotification({
-        message: 'Payment Complete!',
-        name: appt?.customer?.full_name,
-        amount: final_price
-      });
-      setTimeout(() => setNotification(null), 3000);
-      fetchServingAppointments();
-    }
+    await Promise.all([
+      supabase.from('payment_transactions').insert({
+        appointment_id: appointmentId,
+        customer_id: appt?.customer_id,
+        technician_id: appt?.technician_id,
+        cashier_id: cashierId,
+        service_id: appt?.service_id,
+        amount,
+        final_amount: amount,
+        payment_method: payment_method === 'Card' ? 'card' : payment_method === 'Cash' ? 'cash' : 'other',
+        status: 'completed',
+        notes,
+      }),
+      supabase.from('appointments').update({
+        status: 'completed',
+        final_price: amount,
+        start_time_new: new Date().toISOString(),
+      }).eq('id', appointmentId),
+    ]);
+
+    setNotification({
+      message: 'Payment Complete!',
+      name: appt?.customer?.full_name,
+      amount,
+    });
+    setTimeout(() => setNotification(null), 3000);
+    fetchServingAppointments();
     setCheckingOut(null);
   };
 

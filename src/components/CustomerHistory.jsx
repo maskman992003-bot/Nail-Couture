@@ -37,9 +37,9 @@ export default function CustomerHistory() {
     if (!userId) { setLoading(false); navigate('/login'); return; }
     try {
       const [onlineRes, kioskRes, notifRes] = await Promise.all([
-        supabase.from('appointments').select('*').eq('profile_id', userId).eq('source', 'online').order('scheduled_time', { ascending: false }),
-        supabase.from('appointments').select('*').eq('profile_id', userId).eq('source', 'walk_in').order('check_in_time', { ascending: false }),
-        supabase.from('notifications').select('*').eq('profile_id', userId).order('created_at', { ascending: false }).limit(10),
+        supabase.from('appointments').select('*').eq('profile_id', userId).eq('booking_type', 'online').order('scheduled_at', { ascending: false }),
+        supabase.from('appointments').select('*').eq('customer_id', userId).eq('booking_type', 'walk_in').order('checked_in_at', { ascending: false }),
+        supabase.from('notifications').select('*').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(10),
       ]);
       const onlineList = onlineRes.data || [];
       const kioskList = kioskRes.data || [];
@@ -70,8 +70,8 @@ export default function CustomerHistory() {
         };
       });
       const combined = [...enrichedOnline, ...enrichedKiosk].sort((a, b) => {
-        const dateA = new Date(a.scheduled_time || a.check_in_time);
-        const dateB = new Date(b.scheduled_time || b.check_in_time);
+        const dateA = new Date(a.scheduled_at || a.checked_in_at);
+        const dateB = new Date(b.scheduled_at || b.checked_in_at);
         return dateB - dateA;
       });
       setBookings(combined);
@@ -93,7 +93,7 @@ export default function CustomerHistory() {
   const cancelBooking = useCallback(async (booking) => {
     setUpdatingId(booking.id);
     try {
-      const { error } = await supabase.from('appointments').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', booking.id);
+      const { error } = await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', booking.id);
       if (error) throw error;
       setBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, status: 'cancelled' } : b));
     } catch (err) {
@@ -104,7 +104,7 @@ export default function CustomerHistory() {
   }, []);
 
   const generateReceipt = (booking) => {
-    const appointmentDate = booking.scheduled_time || booking.check_in_time;
+    const appointmentDate = booking.scheduled_at || booking.checked_in_at;
     const dateStr = appointmentDate ? new Date(appointmentDate).toLocaleDateString() : 'Walk-in';
     const timeStr = appointmentDate ? new Date(appointmentDate).toLocaleTimeString() : '';
     const basePrice = booking.service?.price || booking.final_price || booking.price || 0;
@@ -318,7 +318,7 @@ export default function CustomerHistory() {
                   <p className="text-offwhite/50 text-sm">
                     Are you sure you want to cancel your <span className="text-offwhite font-medium">{confirmCancel.service?.name}</span> appointment on{' '}
                     <span className="text-offwhite">
-                      {new Date(confirmCancel.scheduled_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {new Date(confirmCancel.scheduled_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     </span>?
                   </p>
                 </div>

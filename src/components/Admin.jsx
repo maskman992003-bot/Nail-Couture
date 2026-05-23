@@ -37,7 +37,7 @@ export default function Admin() {
       const { data: appointments } = await supabase
         .from('appointments')
         .select('*')
-        .gte('check_in_time', `${today}T00:00:00`);
+        .gte('checked_in_at', `${today}T00:00:00`);
 
       if (appointments) {
         setStats({

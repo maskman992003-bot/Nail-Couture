@@ -29,7 +29,7 @@ export default function StaffManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ full_name: '', email: '', phone_number: '', role: 'technician' });
+  const [addForm, setAddForm] = useState({ full_name: '', email: '', phone: '', role: 'technician' });
   const [addError, setAddError] = useState('');
   const [addLoading, setAddLoading] = useState(false);
 
@@ -70,19 +70,18 @@ export default function StaffManagement() {
     setAddError('');
 
     try {
-      const cleanPhone = addForm.phone_number.replace(/\D/g, '');
+      const cleanPhone = addForm.phone.replace(/\D/g, '');
       const { error } = await supabase.from('profiles').insert({
         full_name: addForm.full_name,
         email: addForm.email || null,
-        phone_number: cleanPhone,
+        phone: cleanPhone,
         role: addForm.role,
-        is_staff: true,
       });
 
       if (error) throw error;
 
       setShowAddModal(false);
-      setAddForm({ full_name: '', email: '', phone_number: '', role: 'technician' });
+      setAddForm({ full_name: '', email: '', phone: '', role: 'technician' });
       fetchStaff();
     } catch (err) {
       setAddError(err.message || 'Failed to add staff member');
@@ -96,7 +95,7 @@ export default function StaffManagement() {
     return (
       (member.full_name || '').toLowerCase().includes(search) ||
       (member.email || '').toLowerCase().includes(search) ||
-      (member.phone_number || '').includes(search)
+      (member.phone || '').includes(search)
     );
   });
 
@@ -195,7 +194,7 @@ export default function StaffManagement() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-offwhite/80">{member.email || 'No email'}</div>
-                          <div className="text-xs text-offwhite/40">{member.phone_number || 'No phone'}</div>
+                          <div className="text-xs text-offwhite/40">{member.phone || 'No phone'}</div>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 text-xs border rounded-full ${roleColors[member.role] || 'bg-gray-700 text-gray-300 border-gray-600'}`}>
@@ -257,8 +256,8 @@ export default function StaffManagement() {
                 <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Phone Number *</label>
                 <input
                   type="tel"
-                  value={addForm.phone_number}
-                  onChange={(e) => setAddForm({ ...addForm, phone_number: e.target.value })}
+                  value={addForm.phone}
+                  onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
                   placeholder="Enter phone number"
                   className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg"
                 />
