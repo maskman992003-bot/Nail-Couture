@@ -11,26 +11,26 @@ export default function Lobby() {
     fetchLobby()
   }, [])
 
-  const fetchLobby = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          profiles!appointments_profile_id_fkey(full_name, nail_goal, refreshment_pref),
-          services(name, price, duration_minutes)
-        `)
-        .in('status', ['waiting', 'serving'])
-        .order('check_in_time', { ascending: true })
+   const fetchLobby = async () => {
+     try {
+       const { data, error } = await supabase
+         .from('appointments')
+         .select(`
+           *,
+           profiles!appointments_customer_id_fkey(full_name, nail_goal, refreshment_pref),
+           services(name, price, duration_minutes)
+         `)
+         .in('status', ['waiting', 'serving'])
+         .order('checked_in_at', { ascending: true })
 
-      if (error) throw error
-      setAppointments(data || [])
-    } catch (err) {
-      console.error('Error fetching lobby:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
+       if (error) throw error
+       setAppointments(data || [])
+     } catch (err) {
+       console.error('Error fetching lobby:', err)
+     } finally {
+       setLoading(false)
+     }
+   }
 
   const handleStartService = async (appointment) => {
     console.log('Starting service for:', appointment.id, appointment.status)
@@ -59,8 +59,8 @@ export default function Lobby() {
     }
   }
 
-  const lobbyAppointments = appointments.filter(a => a.status === 'Checked-In')
-  const servingAppointments = appointments.filter(a => a.status === 'In-Progress')
+  const lobbyAppointments = appointments.filter(a => a.status === 'waiting')
+  const servingAppointments = appointments.filter(a => a.status === 'serving')
 
   const formatTime = (timestamp) => {
     if (!timestamp) return ''

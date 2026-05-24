@@ -233,7 +233,7 @@ export default function SuperAdmin() {
                             {member.role}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-offwhite/60">{member.phone_number}</td>
+                        <td className="py-3 px-4 text-offwhite/60">{member.phone}</td>
                         <td className="py-3 px-4 text-offwhite/60">{member.email || 'N/A'}</td>
                         <td className="py-3 px-4">
                           <span className="px-2 py-1 text-xs rounded bg-green-500/20 text-green-400">Active</span>

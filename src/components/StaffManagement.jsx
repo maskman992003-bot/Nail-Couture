@@ -61,7 +61,7 @@ export default function StaffManagement() {
 
   const handleAddStaff = async (e) => {
     e.preventDefault();
-    if (!addForm.full_name || !addForm.phone_number) {
+    if (!addForm.full_name || !addForm.phone) {
       setAddError('Name and phone number are required');
       return;
     }

@@ -26,7 +26,7 @@ export default function ClientRegister() {
 
   const [formData, setFormData] = useState({
     full_name: '',
-    phone_number: '',
+    phone: '',
     email: '',
     referral_code: urlReferralCode
   });
@@ -50,12 +50,12 @@ export default function ClientRegister() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.full_name || !formData.phone_number || !formData.email) {
+    if (!formData.full_name || !formData.phone || !formData.email) {
       setError('Please fill in all fields');
       return;
     }
 
-    if (formData.phone_number.replace(/\D/g, '').length < 10) {
+    if (formData.phone.replace(/\D/g, '').length < 10) {
       setError('Please enter a valid phone number');
       return;
     }
@@ -64,12 +64,12 @@ export default function ClientRegister() {
     setError('');
 
     try {
-      const cleanPhone = formData.phone_number.replace(/\D/g, '');
+      const cleanPhone = formData.phone.replace(/\D/g, '');
 
       const { data: existing, error: checkError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('phone_number', cleanPhone)
+        .eq('phone', cleanPhone)
         .single();
 
       if (existing) {
@@ -103,7 +103,7 @@ export default function ClientRegister() {
         .from('profiles')
         .insert({
           full_name: formData.full_name,
-          phone_number: cleanPhone,
+          phone: cleanPhone,
           email: formData.email,
           is_staff: false,
           role: 'customer',
@@ -188,8 +188,8 @@ export default function ClientRegister() {
               </label>
               <input
                 type="tel"
-                name="phone_number"
-                value={formData.phone_number}
+                 name="phone"
+                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="Enter your phone number"
                 className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"

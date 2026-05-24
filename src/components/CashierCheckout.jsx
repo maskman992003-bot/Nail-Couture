@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase'
+import { logInventoryUsageByRefreshmentName } from '../services/kioskService';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
 
@@ -200,6 +201,15 @@ const { data, error } = await supabase
         final_price: amount,
         start_time_new: new Date().toISOString(),
       }).eq('id', appointmentId),
+      // Log refreshment consumption if applicable
+      appt?.customer?.refreshment_pref && 
+        logInventoryUsageByRefreshmentName(
+          appt.customer.refreshment_pref, 
+          -1, // Consumed 1 unit
+          appointmentId,
+          appt.customer_id,
+          'Consumed during service'
+        ),
     ]);
 
     setNotification({

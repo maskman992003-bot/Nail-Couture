@@ -148,7 +148,7 @@ export default function CustomerHistory() {
     const isUpdating = updatingId === booking.id;
     const isWaiting = booking.status === 'waiting';
     const canCancel = booking.source === 'online' && ['waiting', 'assigned_pending'].includes(booking.status);
-    const appointmentDate = booking.scheduled_time || booking.check_in_time;
+    const appointmentDate = booking.scheduled_at || booking.checked_in_at;
     const basePrice = booking.service?.price || booking.final_price || booking.price || 0;
     const addOnTotal = (booking.addonDetails || []).reduce((sum, a) => sum + (a.price || 0), 0);
     const totalPrice = basePrice + addOnTotal;

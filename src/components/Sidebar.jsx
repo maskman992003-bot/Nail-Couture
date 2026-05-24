@@ -84,7 +84,7 @@ export default function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const userPhone = user?.phone_number;
+  const userPhone = user?.phone;
 
   const fetchNotifications = useCallback(async () => {
     if (!userPhone) return;
@@ -114,17 +114,17 @@ export default function Sidebar() {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const markAllRead = async () => {
-    if (unreadCount === 0 || !user?.phone_number) return;
+    if (unreadCount === 0 || !user?.phone) return;
     try {
-      await supabase.rpc('mark_my_notifications_read', { p_phone: user.phone_number });
+      await supabase.rpc('mark_my_notifications_read', { p_phone: user.phone });
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch { }
   };
 
   const markOneRead = async (id) => {
-    if (!user?.phone_number) return;
+    if (!user?.phone) return;
     try {
-      await supabase.rpc('mark_notification_read', { p_phone: user.phone_number, p_notif_id: id });
+      await supabase.rpc('mark_notification_read', { p_phone: user.phone, p_notif_id: id });
       setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true } : n));
     } catch { }
   };

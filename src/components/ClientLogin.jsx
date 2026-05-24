@@ -87,11 +87,11 @@ export default function ClientLogin() {
 
     try {
       const cleanPhone = phone.replace(/\D/g, '');
-      const { data, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('phone', cleanPhone)
-        .single();
+       const { data, error: profileError } = await supabase
+         .from('profiles')
+         .select('*')
+         .eq('phone', cleanPhone)
+         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
         throw profileError;

@@ -326,17 +326,17 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
       if (existingProfile) {
         profileId = existingProfile.id
       } else {
-        const { data: profile, error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            full_name: fullName,
-            email: email,
-            phone_number: cleanPhone,
-            nail_goal: nailGoal,
-            refreshment_pref: refreshmentPref || null
-          })
-          .select()
-          .single()
+         const { data: profile, error: insertError } = await supabase
+           .from('profiles')
+           .insert({
+             full_name: fullName,
+             email: email,
+             phone: cleanPhone,
+             nail_goal: nailGoal,
+             refreshment_pref: refreshmentPref || null
+           })
+           .select()
+           .single()
 
         if (insertError) {
           console.error('Profile insert error:', insertError)

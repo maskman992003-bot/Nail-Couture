@@ -13,6 +13,18 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Ensure inventory table exists even if stock didn't exist
+CREATE TABLE IF NOT EXISTS inventory (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  item_name TEXT NOT NULL,
+  category TEXT NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 0,
+  unit TEXT,
+  reorder_threshold INTEGER DEFAULT 5,
+  supplier TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 DO $$ BEGIN
   IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'inventory' AND column_name = 'name')
      AND NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'inventory' AND column_name = 'item_name') THEN
@@ -122,6 +134,7 @@ END $$;
 -- 4C: Add new columns
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS checked_in_by UUID REFERENCES profiles(id) ON DELETE SET NULL;
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS start_time_new TIMESTAMPTZ;
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS refreshment_pref TEXT;
 
 -- 4D: Normalize booking_type
 UPDATE appointments SET booking_type = 'walk_in' WHERE booking_type IS NULL;
@@ -322,6 +335,19 @@ DROP POLICY IF EXISTS "Allow anon read time_off_requests" ON time_off_requests;
 DROP POLICY IF EXISTS "Allow authenticated manage time_off_requests" ON time_off_requests;
 CREATE POLICY "Allow anon read time_off_requests" ON time_off_requests FOR SELECT TO anon USING (true);
 CREATE POLICY "Allow authenticated manage time_off_requests" ON time_off_requests FOR ALL TO authenticated USING (true);
+
+-- ============================================================
+-- STEP 10: Seed inventory with refreshment items (if empty)
+-- ============================================================
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM inventory WHERE category = 'refreshment' LIMIT 1) THEN
+    INSERT INTO inventory (item_name, category, quantity, unit)
+    VALUES 
+      ('Water', 'refreshment', 100, 'bottle'),
+      ('Green Tea', 'refreshment', 50, 'cup'),
+      ('Coffee', 'refreshment', 30, 'cup');
+  END IF;
+END $$;
 
 -- ============================================================
 -- DONE
