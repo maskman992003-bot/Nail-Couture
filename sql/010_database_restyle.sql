@@ -83,15 +83,29 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
 -- STEP 3: Clean profiles table
 -- ============================================================
 DO $$ BEGIN
-  IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'phone_number')
-     AND NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'phone') THEN
-    ALTER TABLE profiles RENAME COLUMN phone_number TO phone;
-  END IF;
+   IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'phone_number')
+      AND NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'phone') THEN
+     ALTER TABLE profiles RENAME COLUMN phone_number TO phone;
+   END IF;
 END $$;
 
 -- Drop the view first, then the column
 DROP VIEW IF EXISTS staff_profiles CASCADE;
 ALTER TABLE profiles DROP COLUMN IF EXISTS is_staff;
+
+-- ============================================================
+-- STEP 3.5: Drop all unwanted triggers on appointments
+-- ============================================================
+DO $$
+DECLARE
+   r RECORD;
+BEGIN
+   FOR r IN (SELECT trigger_name FROM information_schema.triggers WHERE event_object_table = 'appointments') LOOP
+      IF r.trigger_name NOT IN ('trg_log_appointment_status', 'trg_update_shift_appointment_count') THEN
+         EXECUTE 'DROP TRIGGER IF EXISTS ' || quote_ident(r.trigger_name) || ' ON appointments;';
+      END IF;
+   END LOOP;
+END $$;
 
 -- ============================================================
 -- STEP 4: Clean appointments table
