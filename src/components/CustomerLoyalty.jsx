@@ -34,7 +34,7 @@ export default function CustomerLoyalty() {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    if (user.is_staff) { navigate(`/${user.role}`); return; }
+    if (user && ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(user.role)) { navigate(`/${user.role}`); return; }
     fetchProfile();
   }, [user, navigate]);
 

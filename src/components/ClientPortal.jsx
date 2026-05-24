@@ -56,7 +56,7 @@ export default function ClientPortal() {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    if (user.is_staff) {
+    if (user && ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(user.role)) {
       const route = (user.role === 'super_admin' || user.role === 'owner' || user.role === 'partner') ? '/superadmin' : `/${user.role}`;
       navigate(route);
       return;

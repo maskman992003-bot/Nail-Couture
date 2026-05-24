@@ -29,21 +29,20 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-   const login = (profile) => {
-     const userData = {
-       id: profile.id,
-       full_name: profile.full_name,
-       email: profile.email || '',
-       nail_goal: profile.nail_goal || '',
-       refreshment_pref: profile.refreshment_pref || '',
-       phone: profile.phone || '',
-       role: profile.role || 'customer',
-       is_staff: ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(profile.role),
-       pin: profile.pin || '',
-     };
-     localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-     setUser(userData);
-   };
+    const login = (profile) => {
+      const userData = {
+        id: profile.id,
+        full_name: profile.full_name,
+        email: profile.email || '',
+        nail_goal: profile.nail_goal || '',
+        refreshment_pref: profile.refreshment_pref || '',
+        phone: profile.phone || '',
+        role: profile.role || 'customer',
+        pin: profile.pin || '',
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+      setUser(userData);
+    };
 
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);

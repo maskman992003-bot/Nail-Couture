@@ -105,7 +105,7 @@ export default function ClientRegister() {
           full_name: formData.full_name,
           phone: cleanPhone,
           email: formData.email,
-          is_staff: false,
+
           role: 'customer',
           referral_code: generateReferralCode(formData.full_name),
           referral_by: referredById,

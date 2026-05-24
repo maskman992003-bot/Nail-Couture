@@ -305,7 +305,7 @@ export default function AdminLobby() {
   const [cancelReason, setCancelReason] = useState('')
   const [wiggleTechId, setWiggleTechId] = useState(null)
   const { user } = useAuth()
-  const isStaff = user?.is_staff || false
+  const isStaff = user && ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(user.role) || false
   const navigate = useNavigate()
 
   const busyTechnicians = servingAppointments

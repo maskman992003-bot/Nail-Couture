@@ -1,8 +1,0 @@
--- Add all missing columns to appointments table
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ;
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS cancel_reason TEXT;
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS missed_at TIMESTAMPTZ;
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS pending_at TIMESTAMPTZ;
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'online';
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();

@@ -43,21 +43,21 @@ END $$;
 -- STEP 2: Create new tables
 -- ============================================================
 CREATE TABLE IF NOT EXISTS payment_transactions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  appointment_id UUID REFERENCES appointments(id) ON DELETE SET NULL,
-  customer_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  technician_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  cashier_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  service_id BIGINT REFERENCES services(id) ON DELETE SET NULL,
-  amount NUMERIC(10,2) NOT NULL DEFAULT 0,
-  discount_amount NUMERIC(10,2) DEFAULT 0,
-  discount_type TEXT CHECK (discount_type IN ('percentage','fixed','loyalty','coupon')),
-  final_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
-  payment_method TEXT CHECK (payment_method IN ('cash','card','other')),
-  status TEXT NOT NULL DEFAULT 'completed' CHECK (status IN ('pending','completed','refunded')),
-  notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+   appointment_id UUID REFERENCES appointments(id) ON DELETE SET NULL,
+   customer_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+   technician_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+   cashier_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+   service_id UUID REFERENCES services(id) ON DELETE SET NULL,
+   amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+   discount_amount NUMERIC(10,2) DEFAULT 0,
+   discount_type TEXT CHECK (discount_type IN ('percentage','fixed','loyalty','coupon')),
+   final_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+   payment_method TEXT CHECK (payment_method IN ('cash','card','other')),
+   status TEXT NOT NULL DEFAULT 'completed' CHECK (status IN ('pending','completed','refunded')),
+   notes TEXT,
+   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+ );
 
 CREATE TABLE IF NOT EXISTS appointment_status_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
