@@ -348,6 +348,9 @@ export default function AdminLobby() {
       console.error('Error fetching waiting:', error, 'Status:', status)
     } else {
       console.log('Waiting appointments:', data)
+      if (data && data.length > 0) {
+        console.log('First appointment customer data:', data[0].customer)
+      }
     }
     setLobbyAppointments(data || [])
   }, [])
