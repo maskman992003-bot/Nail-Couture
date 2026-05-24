@@ -65,7 +65,7 @@ export default function CustomerBooking() {
     const { error } = await supabase.from('appointments').insert({
       customer_id: userId,
       service_id: selectedService.id,
-      technician_id: selectedTech?.id || null,
+      technician_id: selectedTech?.staff_id || null,
       scheduled_at: checkInTime.toISOString(),
       status: 'confirmed',
       booking_type: 'online',
