@@ -372,7 +372,7 @@ export default function AdminLobby() {
     console.log('Fetching pending appointments...')
     const { data, error } = await supabase
       .from('appointments')
-      .select('*, customer:profiles!appointments_profile_id_fkey(full_name), services(name)')
+      .select('*, customer:profiles!appointments_customer_id_fkey(full_name), services(name)')
       .eq('status', 'assigned_pending')
       .order('checked_in_at', { ascending: true })
 
