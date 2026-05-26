@@ -86,7 +86,7 @@ const getHomeRoute = (role) => {
 
   const markComplete = async (appointment) => {
     try {
-      const price = appointment.services?.price || appointment.final_price || 0;
+      const price = appointment.final_price ?? appointment.services?.price || 0;
       await supabase.from('appointments').update({ status: 'completed', start_time: new Date().toISOString(), final_price: price }).eq('id', appointment.id);
       const earnedPoints = Math.floor(price);
       if (earnedPoints > 0 && appointment.customer_id) {

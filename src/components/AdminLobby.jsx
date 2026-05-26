@@ -459,8 +459,9 @@ export default function AdminLobby() {
     if (status === 'serving') updates.start_time = new Date().toISOString()
     if (status === 'completed') {
       const appt = servingAppointments.find(a => a.id === appointmentId)
-      if (appt?.services?.price) updates.final_price = appt.services.price
-      setNotification({ message: 'Service Complete!', name: appt?.customer?.full_name })
+      if (appt) {
+        if (appt.final_price == null && appt.services?.price) updates.final_price = appt.services.price
+        setNotification({ message: 'Service Complete!', name: appt?.customer?.full_name })
       setTimeout(() => setNotification(null), 3000)
     }
 
