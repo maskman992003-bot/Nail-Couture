@@ -16,6 +16,9 @@ INSERT INTO service_categories (name, sort_order) VALUES
   ('Other', 999)
 ON CONFLICT (name) DO NOTHING;
 
+-- Allow reads (app uses custom auth, not Supabase Auth sessions)
+ALTER TABLE service_categories DISABLE ROW LEVEL SECURITY;
+
 -- Security definer RPC for managing categories
 CREATE OR REPLACE FUNCTION manage_service_category(
   admin_phone TEXT,
