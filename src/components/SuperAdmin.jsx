@@ -162,7 +162,7 @@ export default function SuperAdmin() {
                     {recentAppointments.length > 0 ? recentAppointments.map((appt) => (
                       <div key={appt.id} className="flex items-center justify-between p-3 bg-offwhite/5 rounded-lg">
                         <div>
-                          <div className="text-offwhite font-medium">{appt.profiles?.full_name || 'Guest'}</div>
+                          <div className="text-offwhite font-medium">{appt.customer?.full_name || 'Guest'}</div>
                           <div className="text-offwhite/50 text-sm">{appt.services?.name}</div>
                         </div>
                         <div className="text-right">
