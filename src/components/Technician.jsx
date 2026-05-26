@@ -90,9 +90,7 @@ const getHomeRoute = (role) => {
       await supabase.from('appointments').update({ status: 'completed', start_time: new Date().toISOString(), final_price: price }).eq('id', appointment.id);
       const earnedPoints = Math.floor(price);
       if (earnedPoints > 0 && appointment.customer_id) {
-        await supabase.rpc('award_loyalty_points', { p_profile_id: appointment.customer_id, p_points: earnedPoints }).catch(() => {
-          supabase.from('profiles').update({ loyalty_points: supabase.sql`coalesce(loyalty_points, 0) + ${earnedPoints}` }).eq('id', appointment.customer_id).catch(() => {});
-        });
+        await supabase.rpc('award_loyalty_points', { p_profile_id: appointment.customer_id, p_points: earnedPoints }).catch(() => {});
       }
       fetchMyAppointments();
     } catch { }
