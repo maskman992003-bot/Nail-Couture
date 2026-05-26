@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import Sidebar from './Sidebar';
+import { CATEGORY_ORDER } from '../data/servicesData';
 
 export default function AdminServices() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: 'Nails', is_addon: false });
+  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: CATEGORY_ORDER[0], is_addon: false });
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
 
@@ -22,7 +23,7 @@ export default function AdminServices() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: '', price: '', duration_minutes: '', category: 'Nails', is_addon: false });
+    setForm({ name: '', price: '', duration_minutes: '', category: CATEGORY_ORDER[0], is_addon: false });
     setShowForm(true);
   };
 
@@ -32,7 +33,7 @@ export default function AdminServices() {
       name: svc.name,
       price: String(svc.price || ''),
       duration_minutes: String(svc.duration_minutes || ''),
-      category: svc.category || 'Nails',
+      category: svc.category || CATEGORY_ORDER[0],
       is_addon: svc.is_addon || false,
     });
     setShowForm(true);
@@ -133,13 +134,9 @@ export default function AdminServices() {
                   <div>
                     <label className="block text-offwhite/60 text-xs mb-1">Category</label>
                     <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm">
-                      <option value="Nails">Nails</option>
-                      <option value="Pedicure">Pedicure</option>
-                      <option value="Waxing">Waxing</option>
-                      <option value="Lashes">Lashes</option>
-                      <option value="Brows">Brows</option>
-                      <option value="Packages">Packages</option>
-                      <option value="Other">Other</option>
+                      {[...CATEGORY_ORDER, 'Other'].map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="flex items-end pb-2">
