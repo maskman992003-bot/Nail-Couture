@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { DndContext, DragOverlay, useDraggable, useDroppable, rectIntersection, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, DragOverlay, useDraggable, useDroppable, rectIntersection } from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
 import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '../services/services'
 import { useAuth } from '../contexts/AuthContext'
@@ -74,13 +75,19 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel }) => {
   })
 
   const style = {
-    opacity: isDragging ? 0 : 1
+    transform: isDragging ? undefined : CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.3 : 1,
+    maxWidth: '100%',
+    overflow: 'hidden'
   }
+
+  const stopProp = (e) => { e.stopPropagation() }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
+      {...listeners}
       {...attributes}
       className={`bg-offwhite/5 border rounded-xl p-4 sm:p-5 cursor-grab active:cursor-grabbing transition-all border-offwhite/10`}
     >
@@ -104,8 +111,8 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel }) => {
         <div className="flex items-start gap-2 shrink-0">
           <span className="text-offwhite/50 text-xs whitespace-nowrap">{formatTime(appointment.checked_in_at)}</span>
           <div className="flex items-center gap-1">
-            <button onClick={(e) => { e.stopPropagation(); onEdit(appointment) }} className="text-offwhite/40 hover:text-offwhite text-sm">✎</button>
-            <button onClick={(e) => { e.stopPropagation(); onCancel(appointment) }} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
+            <button onPointerDown={stopProp} onClick={(e) => { e.stopPropagation(); onEdit(appointment) }} className="text-offwhite/40 hover:text-offwhite text-sm">✎</button>
+            <button onPointerDown={stopProp} onClick={(e) => { e.stopPropagation(); onCancel(appointment) }} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
           </div>
         </div>
       </div>
@@ -511,12 +518,8 @@ export default function AdminLobby() {
     );
   }
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  )
-
 return (
-      <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
+      <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
         <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
           <Sidebar />
           <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
@@ -628,20 +631,11 @@ return (
         </div>
 
         <DragOverlay>
-          {activeId && (() => {
-            const dragged = lobbyAppointments.find(a => a.id === activeId)
-            if (!dragged) return null
-            return (
-              <div className="bg-gold/10 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none w-80">
-                <div className="font-heading text-lg text-offwhite truncate">{dragged.customer?.full_name || 'Guest'}</div>
-                <div className="flex flex-wrap items-center gap-2 mt-1 text-sm">
-                  {dragged.services && <span className="text-gold">{dragged.services.name}</span>}
-                  {dragged.services?.price > 0 && <span className="text-green-400">${dragged.services.price}</span>}
-                </div>
-                <div className="text-xs text-offwhite/40 mt-1">{formatTime(dragged.checked_in_at)}</div>
-              </div>
-            )
-          })()}
+          {activeId && lobbyAppointments.find(a => a.id === activeId) && (
+            <div className="bg-gold/10 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none w-72">
+              <p className="font-heading text-offwhite truncate">Drop to assign</p>
+            </div>
+          )}
         </DragOverlay>
 
         {editingAppointment && (
