@@ -425,7 +425,6 @@ export default function AdminLobby() {
     if (techId) updates.technician_id = techId
     if (status === 'serving') updates.start_time = new Date().toISOString()
     if (status === 'completed') {
-      updates.end_time = new Date().toISOString()
       const appt = servingAppointments.find(a => a.id === appointmentId)
       setNotification({ message: 'Service Complete!', name: appt?.customer?.full_name })
       setTimeout(() => setNotification(null), 3000)
