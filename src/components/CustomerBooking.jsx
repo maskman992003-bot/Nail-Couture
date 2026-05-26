@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
-import { CATEGORIES, CATEGORY_ORDER } from '../data/servicesData';
 
 export default function CustomerBooking() {
   const navigate = useNavigate();
@@ -21,6 +20,7 @@ export default function CustomerBooking() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
   const [expandedCategory, setExpandedCategory] = useState(null);
+  const [dbCategories, setDbCategories] = useState([]);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupSize, setGroupSize] = useState('');
 
@@ -34,6 +34,13 @@ export default function CustomerBooking() {
       setServices(servicesData || []);
     } catch { }
     setLoading(false);
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data } = await supabase.from('service_categories').select('*').order('sort_order');
+      setDbCategories(data || []);
+    } catch { }
   };
 
   const fetchAvailableTechnicians = async () => {
@@ -93,6 +100,7 @@ export default function CustomerBooking() {
       return;
     }
     fetchServices();
+    fetchCategories();
   }, [user, navigate]);
 
   useEffect(() => {
@@ -104,6 +112,9 @@ export default function CustomerBooking() {
     }
   }, [selectedDate, selectedTime]);
 
+  const categoryOrder = dbCategories.map((c) => c.name);
+  const categories = ['All', ...categoryOrder];
+
   const groupedServices = services.reduce((acc, service) => {
     const cat = service.category || 'Other';
     if (!acc[cat]) acc[cat] = [];
@@ -112,8 +123,8 @@ export default function CustomerBooking() {
   }, {});
 
   const sortedCategories = Object.keys(groupedServices).sort((a, b) => {
-    const aIdx = CATEGORY_ORDER.indexOf(a);
-    const bIdx = CATEGORY_ORDER.indexOf(b);
+    const aIdx = categoryOrder.indexOf(a);
+    const bIdx = categoryOrder.indexOf(b);
     return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
   });
 
@@ -121,7 +132,7 @@ export default function CustomerBooking() {
     ? sortedCategories
     : sortedCategories.filter((c) => c === activeCategory);
 
-  const addOns = services.filter((s) => s.is_addon);
+  const addOns = services.filter((s) => s.category === 'Add-on');
   const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id));
 
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0);
@@ -194,7 +205,7 @@ export default function CustomerBooking() {
           </div>
 
           <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none snap-x w-full px-4 gap-2 pb-2">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => { setActiveCategory(cat); setExpandedCategory(null); setSelectedServices([]); setSelectedAddOns([]); }}
