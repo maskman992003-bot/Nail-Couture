@@ -25,7 +25,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose }) => {
   const [paymentMethod, setPaymentMethod] = useState('Card');
   const [saving, setSaving] = useState(false);
 
-  const estimatedPrice = appointment?.services?.price || 0;
+  const estimatedPrice = appointment?.final_price || appointment?.services?.price || 0;
   const extras = parseFloat(extrasAmount) || 0;
   const finalPrice = (estimatedPrice + extras).toFixed(2);
 
@@ -57,7 +57,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose }) => {
           </div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-offwhite/60">Service</span>
-            <span className="text-gold font-heading">{appointment.services?.name}</span>
+            <span className="text-gold font-heading">{appointment.add_ons || appointment.services?.name || 'Service'}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-offwhite/60">Estimated Price</span>
@@ -276,7 +276,7 @@ const { data, error } = await supabase
                   <div className="space-y-2 mb-6">
                     <div className="flex justify-between text-sm">
                       <span className="text-offwhite/50">Service</span>
-                      <span className="text-offwhite font-medium">{appointment.services?.name}</span>
+                      <span className="text-offwhite font-medium">{appointment.add_ons || appointment.services?.name || 'Service'}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-offwhite/50">Started</span>
@@ -284,7 +284,7 @@ const { data, error } = await supabase
                     </div>
                     <div className="flex justify-between text-lg pt-2 border-t border-offwhite/10">
                       <span className="text-offwhite font-medium">Est. Total</span>
-                      <span className="text-gold font-heading">${appointment.services?.price?.toFixed(2)}</span>
+                      <span className="text-gold font-heading">${(appointment.final_price || appointment.services?.price || 0).toFixed(2)}</span>
                     </div>
                   </div>
 

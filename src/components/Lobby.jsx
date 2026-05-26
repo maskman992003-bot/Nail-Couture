@@ -120,6 +120,9 @@ export default function Lobby() {
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-4 text-sm">
+                          {appointment.services?.name && (
+                            <span className="text-offwhite/60">{appointment.add_ons || appointment.services.name}</span>
+                          )}
                           {appointment.profiles?.nail_goal && (
                             <span className="text-gold">{appointment.profiles.nail_goal}</span>
                           )}
@@ -171,6 +174,9 @@ export default function Lobby() {
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-4 text-sm">
+                          {appointment.services?.name && (
+                            <span className="text-offwhite/60">{appointment.add_ons || appointment.services.name}</span>
+                          )}
                           {appointment.profiles?.nail_goal && (
                             <span className="text-gold">{appointment.profiles.nail_goal}</span>
                           )}

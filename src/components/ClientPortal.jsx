@@ -245,14 +245,14 @@ export default function ClientPortal() {
               {appointments.map((booking) => (
                 <div key={booking.id} className="flex items-start justify-between py-4 border-b last:border-0" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                   <div>
-                    <h3 className="font-heading text-2xl text-offwhite mb-1">{booking.services?.name || 'Service'}</h3>
+                    <h3 className="font-heading text-2xl text-offwhite mb-1">{booking.add_ons || booking.services?.name || 'Service'}</h3>
                     <div className="text-offwhite/50 text-sm">
                       {new Date(booking.check_in_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {new Date(booking.check_in_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                     </div>
                   </div>
                   <div className="text-right">
                     <span className={`px-3 py-1 text-xs border rounded-full ${statusColors[booking.status]}`}>{statusLabels[booking.status]}</span>
-                    {booking.services?.price && <div className="text-gold font-heading text-lg mt-2">${booking.services.price}</div>}
+                    {booking.final_price || booking.services?.price ? <div className="text-gold font-heading text-lg mt-2">${(booking.final_price || booking.services?.price || 0).toFixed(2)}</div> : null}
                   </div>
                 </div>
               ))}

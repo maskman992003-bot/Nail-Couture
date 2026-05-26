@@ -11,7 +11,7 @@ export default function EditBooking({ bookingId }) {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(null);
   const [services, setServices] = useState([]);
-  const [selectedService, setSelectedService] = useState(null);
+  const [selectedServices, setSelectedServices] = useState([]);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
@@ -51,12 +51,21 @@ export default function EditBooking({ bookingId }) {
     setSelectedTime(data.scheduled_at ? new Date(data.scheduled_at).toTimeString().slice(0, 5) : '');
     setNotes(data.notes || '');
 
-    const { data: svcData } = await supabase
-      .from('services')
-      .select('*')
-      .eq('id', data.service_id)
-      .single();
-    if (svcData) setSelectedService(svcData);
+    const svcNames = (data.add_ons || '').split(',').map((n) => n.trim()).filter(Boolean)
+    if (svcNames.length > 0) {
+      const { data: svcData } = await supabase
+        .from('services')
+        .select('*')
+        .in('name', svcNames);
+      if (svcData) setSelectedServices(svcData);
+    } else if (data.service_id) {
+      const { data: svcData } = await supabase
+        .from('services')
+        .select('*')
+        .eq('id', data.service_id)
+        .single();
+      if (svcData) setSelectedServices([svcData]);
+    }
 
     setSelectedAddOns([]);
 
@@ -121,8 +130,16 @@ export default function EditBooking({ bookingId }) {
   const addOns = services.filter((s) => s.is_addon);
   const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id));
 
-  const totalPrice = (selectedService?.price || 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0);
-  const totalMinutes = (selectedService?.duration_minutes || 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.duration_minutes || 0), 0);
+  const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0);
+  const totalMinutes = selectedServices.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.duration_minutes || 0), 0);
+
+  const toggleService = (service) => {
+    setSelectedServices((prev) =>
+      prev.some((s) => s.id === service.id)
+        ? prev.filter((s) => s.id !== service.id)
+        : [...prev, service]
+    );
+  };
 
   const toggleAddOn = (addOnId) => {
     setSelectedAddOns((prev) =>
@@ -131,19 +148,24 @@ export default function EditBooking({ bookingId }) {
   };
 
   const handleSave = async () => {
-    if (!selectedService || !selectedDate || !selectedTime) {
+    if (selectedServices.length === 0 || !selectedDate || !selectedTime) {
       setError('Please fill in service, date, and time.');
       return;
     }
     setSaving(true);
     setError('');
     const newScheduled = new Date(`${selectedDate}T${selectedTime}:00`);
+    const allNames = [...selectedServices.map((s) => s.name), ...selectedAddOns.map((id) => {
+      const addOn = services.find((s) => s.id === id);
+      return addOn?.name;
+    }).filter(Boolean)].join(', ');
     try {
       const { error } = await supabase.from('appointments').update({
-        service_id: selectedService.id,
+        service_id: selectedServices[0]?.id || null,
+        add_ons: allNames || null,
+        final_price: totalPrice,
         technician_id: selectedTech?.staff_id || null,
         scheduled_at: newScheduled.toISOString(),
-        final_price: totalPrice,
         notes: notes || null,
       }).eq('id', bookingId);
       if (error) throw error;
@@ -155,7 +177,7 @@ export default function EditBooking({ bookingId }) {
         recipient_id: userId,
         reference_id: bookingId,
         title: 'Appointment Updated',
-        body: `Hi ${userName?.split(' ')[0] || 'there'}, your appointment for ${selectedService.name} has been updated to ${newScheduled.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at ${selectedTime}.`,
+        body: `Hi ${userName?.split(' ')[0] || 'there'}, your appointment for ${selectedServices.map((s) => s.name).join(', ')} has been updated to ${newScheduled.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at ${selectedTime}.`,
         is_read: false,
       }).catch(() => {});
 
@@ -224,30 +246,28 @@ export default function EditBooking({ bookingId }) {
                   <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       {catServices.map((service) => {
-                        const isMain = service.is_addon;
+                        const isSelected = selectedServices.some((s) => s.id === service.id);
                         return (
                           <button
                             key={service.id}
-                            onClick={() => { if (!isMain) { setSelectedService(service); setSelectedAddOns([]); } }}
+                            onClick={() => toggleService(service)}
                             className={`rounded-xl p-4 text-left border transition-all flex items-center gap-3 ${
-                              selectedService?.id === service.id ? 'border-2' : 'border-offwhite/5'
-                            } ${isMain ? 'opacity-60' : ''}`}
+                              isSelected ? 'border-2' : 'border-offwhite/5'
+                            }`}
                             style={{
                               backgroundColor: 'rgba(255,255,255,0.02)',
-                              borderColor: selectedService?.id === service.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)',
+                              borderColor: isSelected ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)',
                             }}
                           >
-                            {!isMain && (
-                              <div className={`w-5 h-5 rounded-full border flex-shrink-0 flex items-center justify-center ${
-                                selectedService?.id === service.id ? 'border-gold bg-gold' : 'border-offwhite/30'
-                              }`}>
-                                {selectedService?.id === service.id && (
-                                  <svg className="w-3 h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </div>
-                            )}
+                            <div className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center ${
+                              isSelected ? 'border-gold bg-gold' : 'border-offwhite/30'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
                             <div className="flex-1">
                               <div className="font-heading text-base text-offwhite mb-0.5">{service.name}</div>
                               <div className="text-offwhite/40 text-xs">{service.duration_minutes || service.duration || 0} min</div>
@@ -264,7 +284,7 @@ export default function EditBooking({ bookingId }) {
           </div>
         </div>
 
-        {selectedService && addOns.length > 0 && (
+        {selectedServices.length > 0 && addOns.length > 0 && (
           <div className="rounded-2xl p-6 border mb-6" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
             <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Add-Ons (Optional)</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -296,7 +316,7 @@ export default function EditBooking({ bookingId }) {
           </div>
         )}
 
-        {selectedService && (
+        {selectedServices.length > 0 && (
           <>
             <div className="rounded-2xl p-8 border mb-6" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Date & Time</div>
@@ -375,7 +395,9 @@ export default function EditBooking({ bookingId }) {
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Updated Summary</div>
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <div className="font-heading text-2xl text-offwhite mb-1">{selectedService?.name}</div>
+                  {selectedServices.map((s) => (
+                    <div key={s.id} className="font-heading text-xl text-offwhite mb-1">{s.name} — ${s.price}</div>
+                  ))}
                   {selectedAddOnDetails.length > 0 && (
                     <div className="text-offwhite/50 text-sm mb-2">+ {selectedAddOnDetails.map((a) => a.name).join(', ')}</div>
                   )}

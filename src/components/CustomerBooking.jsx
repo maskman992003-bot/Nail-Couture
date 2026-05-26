@@ -10,7 +10,7 @@ export default function CustomerBooking() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [services, setServices] = useState([]);
-  const [selectedService, setSelectedService] = useState(null);
+  const [selectedServices, setSelectedServices] = useState([]);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
@@ -56,15 +56,26 @@ export default function CustomerBooking() {
   };
 
   const handleBooking = async () => {
-    if (!selectedService || !selectedDate || !selectedTime) return;
+    if (selectedServices.length === 0 || !selectedDate || !selectedTime) return;
     setBookLoading(true);
     const currentUser = localStorage.getItem('salon_user_data');
     const userId = currentUser ? JSON.parse(currentUser).id : null;
     if (!userId) { setBookLoading(false); navigate('/login'); return; }
     const checkInTime = new Date(`${selectedDate}T${selectedTime}:00`);
+    const allNames = [...selectedServices.map((s) => s.name), ...selectedAddOns.map((id) => {
+      const addOn = services.find((s) => s.id === id);
+      return addOn?.name;
+    }).filter(Boolean)].join(', ');
+    const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) +
+      selectedAddOns.reduce((sum, id) => {
+        const addOn = services.find((s) => s.id === id);
+        return sum + (addOn?.price || 0);
+      }, 0);
     const { error } = await supabase.from('appointments').insert({
       customer_id: userId,
-      service_id: selectedService.id,
+      service_id: selectedServices[0]?.id || null,
+      add_ons: allNames || null,
+      final_price: totalPrice,
       technician_id: selectedTech?.staff_id || null,
       scheduled_at: checkInTime.toISOString(),
       status: 'confirmed',
@@ -113,8 +124,16 @@ export default function CustomerBooking() {
   const addOns = services.filter((s) => s.is_addon);
   const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id));
 
-  const totalPrice = (selectedService?.price || 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0);
-  const totalMinutes = (selectedService?.duration_minutes || 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.duration_minutes || 0), 0);
+  const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0);
+  const totalMinutes = selectedServices.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.duration_minutes || 0), 0);
+
+  const toggleService = (service) => {
+    setSelectedServices((prev) =>
+      prev.some((s) => s.id === service.id)
+        ? prev.filter((s) => s.id !== service.id)
+        : [...prev, service]
+    );
+  };
 
   const toggleAddOn = (addOnId) => {
     setSelectedAddOns((prev) =>
@@ -178,7 +197,7 @@ export default function CustomerBooking() {
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
-                onClick={() => { setActiveCategory(cat); setExpandedCategory(null); setSelectedService(null); setSelectedAddOns([]); }}
+                onClick={() => { setActiveCategory(cat); setExpandedCategory(null); setSelectedServices([]); setSelectedAddOns([]); }}
                 className={`inline-flex px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 snap-start ${
                   activeCategory === cat ? 'bg-gold text-charcoal' : 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
                 }`}
@@ -211,33 +230,31 @@ export default function CustomerBooking() {
                     <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
                       <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {catServices.map((service) => {
-                          const isMain = service.is_addon;
+                          const isSelected = selectedServices.some((s) => s.id === service.id);
                           return (
                             <button
                               key={service.id}
                               onClick={() => {
                                 if (service.id === 'bridal-party') { setShowGroupModal(true); return; }
-                                if (!isMain) { setSelectedService(service); setSelectedAddOns([]); }
+                                toggleService(service);
                               }}
                               className={`rounded-xl p-4 text-left border transition-all flex items-center gap-3 ${
-                                selectedService?.id === service.id ? 'border-2' : 'border-offwhite/5'
-                              } ${isMain ? 'opacity-60' : ''}`}
+                                isSelected ? 'border-2' : 'border-offwhite/5'
+                              }`}
                               style={{
                                 backgroundColor: 'rgba(255,255,255,0.02)',
-                                borderColor: selectedService?.id === service.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)',
+                                borderColor: isSelected ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)',
                               }}
                             >
-                              {!isMain && (
-                                <div className={`w-5 h-5 rounded-full border flex-shrink-0 flex items-center justify-center ${
-                                  selectedService?.id === service.id ? 'border-gold bg-gold' : 'border-offwhite/30'
-                                }`}>
-                                  {selectedService?.id === service.id && (
-                                    <svg className="w-3 h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  )}
-                                </div>
-                              )}
+                              <div className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center ${
+                                isSelected ? 'border-gold bg-gold' : 'border-offwhite/30'
+                              }`}>
+                                {isSelected && (
+                                  <svg className="w-3 h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
                               <div className="flex-1">
                                 <div className="font-heading text-base text-offwhite mb-0.5">{service.name}</div>
                                 <div className="text-offwhite/40 text-xs">{service.duration_minutes || service.duration || 0} min</div>
@@ -272,7 +289,7 @@ export default function CustomerBooking() {
             </div>
           </div>
 
-          {selectedService && addOns.length > 0 && (
+          {selectedServices.length > 0 && addOns.length > 0 && (
             <div className="rounded-2xl p-6 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Add-Ons (Optional)</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -309,7 +326,7 @@ export default function CustomerBooking() {
             </div>
           )}
 
-          {selectedService && (
+          {selectedServices.length > 0 && (
             <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Select Date & Time</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -342,7 +359,7 @@ export default function CustomerBooking() {
             </div>
           )}
 
-          {selectedService && selectedDate && selectedTime && (
+          {selectedServices.length > 0 && selectedDate && selectedTime && (
             <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Choose Technician</div>
 
@@ -393,12 +410,14 @@ export default function CustomerBooking() {
             </div>
           )}
 
-          {selectedService && selectedDate && selectedTime && (
+          {selectedServices.length > 0 && selectedDate && selectedTime && (
             <div className="rounded-2xl p-8 border-2" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.05) 0%, #111 100%)' }}>
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Booking Summary</div>
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <div className="font-heading text-2xl text-offwhite mb-1">{selectedService.name}</div>
+                  {selectedServices.map((s) => (
+                    <div key={s.id} className="font-heading text-xl text-offwhite mb-1">{s.name} — ${s.price}</div>
+                  ))}
                   {selectedAddOnDetails.length > 0 && (
                     <div className="text-offwhite/50 text-sm mb-2">
                       + {selectedAddOnDetails.map((a) => a.name).join(', ')}
@@ -410,10 +429,10 @@ export default function CustomerBooking() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-gold font-heading text-3xl">${totalPrice}</div>
-                  {selectedAddOnDetails.length > 0 && (
+                  <div className="text-gold font-heading text-3xl">${totalPrice.toFixed(2)}</div>
+                  {selectedServices.length > 0 && (
                     <div className="text-offwhite/40 text-xs mt-1">
-                      ({selectedService.price} + {selectedAddOnDetails.length} add-on{selectedAddOnDetails.length > 1 ? 's' : ''})
+                      ({selectedServices.length} service{selectedServices.length > 1 ? 's' : ''})
                     </div>
                   )}
                 </div>

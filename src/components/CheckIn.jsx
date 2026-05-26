@@ -22,7 +22,7 @@ const Sparkle = () => (
   </div>
 )
 
-const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) => {
+const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) => {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -30,9 +30,8 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
   const [refreshmentPref, setRefreshmentPref] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [expandedCategory, setExpandedCategory] = useState(null)
-  const [selectedService, setSelectedService] = useState(initialService || null)
+  const [selectedServices, setSelectedServices] = useState(initialServices || [])
   const [selectedAddOns, setSelectedAddOns] = useState(initialAddOns || [])
-  const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -66,7 +65,7 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
 
   const addOns = services.filter((s) => s.is_addon)
   const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id))
-  const totalPrice = (selectedService?.price || 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
+  const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
 
   const groupedServices = services.reduce((acc, service) => {
     if (service.is_addon) return acc
@@ -80,6 +79,14 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
   const displayCategories = activeCategory === 'All'
     ? allCategories
     : allCategories.filter((c) => c === activeCategory)
+
+  const toggleService = (service) => {
+    setSelectedServices((prev) =>
+      prev.some((s) => s.id === service.id)
+        ? prev.filter((s) => s.id !== service.id)
+        : [...prev, service]
+    )
+  }
 
   const toggleAddOn = (id) => {
     setSelectedAddOns((prev) =>
@@ -100,8 +107,8 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
         </button>
 
         <div className="text-center mb-4">
-          <h2 className="font-heading text-3xl text-gold mb-2">Select Your Service</h2>
-          <p className="text-offwhite/60">Choose your treatment</p>
+          <h2 className="font-heading text-3xl text-gold mb-2">Select Your Services</h2>
+          <p className="text-offwhite/60">Choose one or more treatments</p>
         </div>
 
         <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x w-full px-1 pb-1">
@@ -144,31 +151,34 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
                   </button>
                   <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {groupedServices[category].map((service) => (
-                        <button
-                          key={service.id}
-                          onClick={() => { setSelectedService(service); setSelectedAddOns([]); setShowConfirm(true); }}
-                          className={`rounded-xl p-4 text-left border transition-all flex items-center gap-3 ${
-                            selectedService?.id === service.id ? 'border-2' : 'border-offwhite/10'
-                          }`}
-                          style={{ borderColor: selectedService?.id === service.id ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}
-                        >
-                          <div className={`w-5 h-5 rounded-full border flex-shrink-0 flex items-center justify-center ${
-                            selectedService?.id === service.id ? 'border-gold bg-gold' : 'border-offwhite/30'
-                          }`}>
-                            {selectedService?.id === service.id && (
-                              <svg className="w-3 h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-heading text-base text-offwhite">{service.name}</div>
-                            <div className="text-offwhite/40 text-xs">{service.duration_minutes} min</div>
-                          </div>
-                          <div className="text-gold font-heading text-lg">${service.price}</div>
-                        </button>
-                      ))}
+                      {groupedServices[category].map((service) => {
+                        const isSelected = selectedServices.some((s) => s.id === service.id)
+                        return (
+                          <button
+                            key={service.id}
+                            onClick={() => toggleService(service)}
+                            className={`rounded-xl p-4 text-left border transition-all flex items-center gap-3 ${
+                              isSelected ? 'border-2' : 'border-offwhite/10'
+                            }`}
+                            style={{ borderColor: isSelected ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}
+                          >
+                            <div className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center ${
+                              isSelected ? 'border-gold bg-gold' : 'border-offwhite/30'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-heading text-base text-offwhite">{service.name}</div>
+                              <div className="text-offwhite/40 text-xs">{service.duration_minutes} min</div>
+                            </div>
+                            <div className="text-gold font-heading text-lg">${service.price}</div>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
@@ -177,11 +187,23 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
           </div>
         )}
 
-        {showConfirm && selectedService && (
-          <>
+        {selectedServices.length > 0 && (
+          <div className="mt-4 rounded-xl border p-4" style={{ borderColor: 'rgba(197,160,89,0.4)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="text-offwhite font-heading">
+                  {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} selected
+                </div>
+                <div className="text-offwhite/50 text-xs">
+                  {selectedServices.map((s) => s.name).join(', ')}
+                </div>
+              </div>
+              <div className="text-gold font-heading text-xl">${totalPrice.toFixed(2)}</div>
+            </div>
+
             {addOns.length > 0 && (
-              <div className="mt-4 rounded-xl border p-4" style={{ borderColor: 'rgba(197,160,89,0.3)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
-                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-3">Add-Ons (Optional)</div>
+              <div className="mb-3">
+                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Add-Ons (Optional)</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {addOns.map((addOn) => (
                     <label
@@ -216,52 +238,31 @@ const ServiceSelection = ({ onSelect, onBack, initialService, initialAddOns }) =
               </div>
             )}
 
-            <div className="mt-4 rounded-xl border p-4" style={{ borderColor: 'rgba(197,160,89,0.4)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <div className="text-offwhite font-heading">{selectedService.name}</div>
-                  {selectedAddOnDetails.length > 0 && (
-                    <div className="text-offwhite/50 text-xs">+ {selectedAddOnDetails.map((a) => a.name).join(', ')}</div>
-                  )}
-                </div>
-                <div className="text-gold font-heading text-xl">${totalPrice}</div>
-              </div>
-
-              {refreshmentList.length > 0 && (
-                <div className="mb-3">
-                  <label className="block text-offwhite/50 text-xs uppercase tracking-wider mb-2">Refreshment</label>
-                  <select
-                    value={refreshmentPref}
-                    onChange={(e) => setRefreshmentPref(e.target.value)}
-                    className="w-full px-3 py-2 bg-offwhite/5 border border-offwhite/20 text-offwhite rounded-lg focus:outline-none focus:border-gold text-sm"
-                  >
-                    <option value="" className="bg-charcoal">No refreshment</option>
-                    {refreshmentList.map((item) => (
-                      <option key={item.name} value={item.name} className="bg-charcoal">{item.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowConfirm(false)}
-                  className="flex-1 py-3 border border-offwhite/20 text-offwhite/60 hover:text-offwhite rounded-lg transition-colors"
+            {refreshmentList.length > 0 && (
+              <div className="mb-3">
+                <label className="block text-offwhite/50 text-xs uppercase tracking-wider mb-2">Refreshment</label>
+                <select
+                  value={refreshmentPref}
+                  onChange={(e) => setRefreshmentPref(e.target.value)}
+                  className="w-full px-3 py-2 bg-offwhite/5 border border-offwhite/20 text-offwhite rounded-lg focus:outline-none focus:border-gold text-sm"
                 >
-                  Back
-                </button>
-                <button
-                  onClick={() => {
-                    onSelect({ service: selectedService, addOns: selectedAddOnDetails, refreshmentPref })
-                    setShowConfirm(false)
-                  }}
-                  className="flex-1 py-3 bg-gold text-charcoal font-heading rounded-lg hover:bg-gold/90 transition-colors"
-                >
-                  Confirm
-                </button>
+                  <option value="" className="bg-charcoal">No refreshment</option>
+                  {refreshmentList.map((item) => (
+                    <option key={item.name} value={item.name} className="bg-charcoal">{item.name}</option>
+                  ))}
+                </select>
               </div>
-            </div>
-          </>
+            )}
+
+            <button
+              onClick={() => {
+                onSelect({ services: selectedServices, addOns: selectedAddOnDetails, refreshmentPref })
+              }}
+              className="w-full py-3 bg-gold text-charcoal font-heading rounded-lg hover:bg-gold/90 transition-colors"
+            >
+              Confirm
+            </button>
+          </div>
         )}
 
         <p className="text-center text-offwhite/30 text-sm mt-6">Times are approximate to ensure couture quality.</p>
@@ -277,7 +278,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
   const [nailGoal, setNailGoal] = useState('')
   const [refreshmentList, setRefreshmentList] = useState([])
   const [refreshmentPref, setRefreshmentPref] = useState('')
-  const [selectedService, setSelectedService] = useState(null)
+  const [selectedServices, setSelectedServices] = useState([])
   const [showServiceSelection, setShowServiceSelection] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -304,7 +305,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!fullName || !email || !nailGoal || !selectedService) return
+    if (!fullName || !email || !nailGoal || selectedServices.length === 0) return
     
     setLoading(true)
     setError(null)
@@ -345,11 +346,15 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
         profileId = profile.id
       }
 
+      const allNames = selectedServices.map((s) => s.name).join(', ')
+      const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0)
       const { error: appointmentError } = await supabase
         .from('appointments')
         .insert({
           customer_id: profileId,
-          service_id: selectedService.id,
+          service_id: selectedServices[0]?.id || null,
+          add_ons: allNames || null,
+          final_price: totalPrice,
           status: 'waiting',
           checked_in_at: new Date().toISOString(),
           refreshment_pref: refreshmentPref || null,
@@ -395,8 +400,8 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
   if (showServiceSelection) {
     return (
       <ServiceSelection 
-        onSelect={(service) => {
-          setSelectedService(service)
+        onSelect={(payload) => {
+          setSelectedServices(payload.services || [])
           setShowServiceSelection(false)
         }}
         onBack={() => setShowServiceSelection(false)}
@@ -483,17 +488,24 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
           <div className="bg-offwhite/5 border border-gold/30 rounded-xl p-4">
-            <label className="block text-offwhite/80 text-sm mb-2">Selected Service</label>
-            {selectedService ? (
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-offwhite font-heading">{selectedService.name}</div>
-                  <div className="text-gold text-sm">${selectedService.price}</div>
+            <label className="block text-offwhite/80 text-sm mb-2">Selected Services</label>
+            {selectedServices.length > 0 ? (
+              <div>
+                {selectedServices.map((s) => (
+                  <div key={s.id} className="flex items-center justify-between">
+                    <div>
+                      <div className="text-offwhite font-heading">{s.name}</div>
+                      <div className="text-gold text-sm">${s.price}</div>
+                    </div>
+                  </div>
+                ))}
+                <div className="text-gold font-heading text-lg mt-1">
+                  Total: ${selectedServices.reduce((sum, s) => sum + (s.price || 0), 0).toFixed(2)}
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowServiceSelection(true)}
-                  className="text-gold text-sm hover:underline"
+                  className="text-gold text-sm hover:underline mt-2"
                 >
                   Change
                 </button>
@@ -504,14 +516,14 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
                 onClick={() => setShowServiceSelection(true)}
                 className="w-full py-3 border border-gold/50 text-gold hover:bg-gold/10 rounded-lg transition-all"
               >
-                Select a Service
+                Select Services
               </button>
             )}
           </div>
 
           <button
             type="submit"
-            disabled={loading || !fullName || !email || !nailGoal || !selectedService}
+            disabled={loading || !fullName || !email || !nailGoal || selectedServices.length === 0}
             className="w-full py-4 bg-gold text-charcoal font-heading text-lg tracking-wider hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating Profile...' : 'Join the Club'}
@@ -536,7 +548,7 @@ export default function CheckIn({ onNavigate }) {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const [showServiceSelection, setShowServiceSelection] = useState(false)
-  const [selectedService, setSelectedService] = useState(null)
+  const [selectedServices, setSelectedServices] = useState([])
   const [selectedAddOns, setSelectedAddOns] = useState([])
   const [services, setServices] = useState([])
 
@@ -570,13 +582,19 @@ export default function CheckIn({ onNavigate }) {
   }
 
   const handleExistingUserServiceSelect = async (payload) => {
-    const { service, addOns, refreshmentPref } = payload
+    const { services, addOns, refreshmentPref } = payload
     if (!result?.appointment?.id) return
     setLoading(true)
     try {
-      const addOnNames = addOns.map((a) => a.name).join(', ')
-      await supabase.from('appointments').update({ service_id: service.id, add_ons: addOnNames || null, refreshment_pref: refreshmentPref || null }).eq('id', result.appointment.id)
-      setSelectedService(service)
+      const allNames = [...addOns.map((a) => a.name), ...services.map((s) => s.name)].join(', ')
+      const totalPrice = services.reduce((sum, s) => sum + (s.price || 0), 0) + addOns.reduce((sum, a) => sum + (a.price || 0), 0)
+      await supabase.from('appointments').update({
+        service_id: services[0]?.id || null,
+        add_ons: allNames || null,
+        final_price: totalPrice,
+        refreshment_pref: refreshmentPref || null
+      }).eq('id', result.appointment.id)
+      setSelectedServices(services)
       setSelectedAddOns(addOns)
       setShowServiceSelection(false)
     } catch { }
@@ -584,8 +602,8 @@ export default function CheckIn({ onNavigate }) {
   }
 
   const handleNewUserServiceSelect = (payload) => {
-    const { service, addOns } = payload
-    setSelectedService(service)
+    const { services, addOns } = payload
+    setSelectedServices(services)
     setSelectedAddOns(addOns)
     setShowServiceSelection(false)
   }
@@ -608,7 +626,7 @@ export default function CheckIn({ onNavigate }) {
           }
         }}
         onBack={() => setShowServiceSelection(false)}
-        initialService={selectedService}
+        initialServices={selectedServices}
         initialAddOns={selectedAddOns.map((a) => a.id)}
       />
     )
@@ -617,7 +635,7 @@ export default function CheckIn({ onNavigate }) {
   if (result && !result.isNew && result.appointment) {
     const addOns = services.filter((s) => s.is_addon)
     const selectedAddOnDetails = selectedAddOns
-    const totalPrice = (selectedService?.price || 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
+    const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
 
     return (
       <div className="min-h-screen bg-charcoal flex flex-col items-center justify-center p-4 sm:p-8">
@@ -634,21 +652,23 @@ export default function CheckIn({ onNavigate }) {
             onClick={() => setShowServiceSelection(true)}
             className="w-full py-3 border border-gold/50 text-gold hover:bg-gold/10 rounded-xl transition-all mb-6"
           >
-            {selectedService ? 'Change Service' : 'Select a Service'}
+            {selectedServices.length > 0 ? 'Change Services' : 'Select Services'}
           </button>
 
-          {selectedService && (
+          {selectedServices.length > 0 && (
             <div className="bg-gold/20 border border-gold/50 rounded-xl p-4 mb-6">
               <p className="text-offwhite/60 text-sm mb-2">Selected:</p>
-              <p className="text-offwhite font-heading text-lg">{selectedService.name}</p>
+              {selectedServices.map((s) => (
+                <p key={s.id} className="text-offwhite font-heading text-base">{s.name} — ${s.price}</p>
+              ))}
               {selectedAddOnDetails.length > 0 && (
-                <p className="text-offwhite/50 text-sm">+ {selectedAddOnDetails.map((a) => a.name).join(', ')}</p>
+                <p className="text-offwhite/50 text-sm mt-1">Add-ons: + {selectedAddOnDetails.map((a) => a.name).join(', ')}</p>
               )}
-              <div className="text-gold font-heading text-2xl mt-2">${totalPrice}</div>
+              <div className="text-gold font-heading text-2xl mt-2">${totalPrice.toFixed(2)}</div>
             </div>
           )}
 
-          {addOns.length > 0 && selectedService && (
+          {addOns.length > 0 && selectedServices.length > 0 && (
             <div className="mb-6">
               <p className="text-offwhite/60 text-sm mb-3">Add-Ons (Optional)</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -689,13 +709,13 @@ export default function CheckIn({ onNavigate }) {
             </div>
           )}
 
-          {addOns.length === 0 && selectedService && (
+          {addOns.length === 0 && selectedServices.length > 0 && (
             <div className="mb-6 text-offwhite/40 text-sm">No add-ons available</div>
           )}
 
           <button
               onClick={() => {
-                setPhone(''); setResult(null); setSelectedService(null); setSelectedAddOns([]); setShowServiceSelection(false)
+                setPhone(''); setResult(null); setSelectedServices([]); setSelectedAddOns([]); setShowServiceSelection(false)
               }}
               className="px-8 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 transition-all w-full max-w-xs"
             >

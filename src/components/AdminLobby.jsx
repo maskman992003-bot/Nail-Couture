@@ -37,7 +37,7 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
       {isBusy ? (
         <div className="text-sm text-gray-400">
           <div className="mb-2">{activeCustomer.customer?.full_name || 'Customer'}</div>
-          <div className="text-xs text-gray-600">{activeCustomer.services?.name}</div>
+          <div className="text-xs text-gray-600">{activeCustomer.add_ons || activeCustomer.services?.name}</div>
           <button
             onClick={() => onComplete(activeCustomer.id)}
             disabled={updating === activeCustomer.id}
@@ -49,7 +49,7 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
       ) : showAcceptButton ? (
         <div className="text-sm text-offwhite/70">
           <div className="mb-2">{pendingCustomer.customer?.full_name || 'Customer'}</div>
-          <div className="text-xs text-offwhite/50">{pendingCustomer.services?.name}</div>
+          <div className="text-xs text-offwhite/50">{pendingCustomer.add_ons || pendingCustomer.services?.name}</div>
           <button
             onClick={() => onAccept(pendingCustomer.id, tech.id)}
             disabled={updating === pendingCustomer.id}
@@ -152,21 +152,26 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
   const addOnServices = services.filter(s => s.is_addon)
   const currentAddOns = appointment.add_ons ? appointment.add_ons.split(',').map(n => n.trim()).filter(Boolean) : []
 
+  const initialMainId = appointment.service_id
+  const initialMainServices = initialMainId ? mainServices.filter(s => s.id === Number(initialMainId)) : []
+  const initialAddOnServiceNames = currentAddOns.filter(name => addOnServices.some(s => s.name === name))
+  const initialMainServiceNames = currentAddOns.filter(name => mainServices.some(s => s.name === name))
+
   const [formData, setFormData] = useState({
-    service_id: appointment.service_id,
+    selected_services: initialMainServices.length > 0 ? initialMainServices : (initialMainServiceNames.map(name => mainServices.find(s => s.name === name)).filter(Boolean)),
+    selected_addons: initialAddOnServiceNames,
     nail_goal: appointment.customer?.nail_goal || '',
-    selected_addons: currentAddOns,
-    discount_amount: appointment.discount_amount || '',
-    discount_type: appointment.discount_type || 'amount',
+    discount_amount: '',
+    discount_type: 'amount',
   })
   const [saving, setSaving] = useState(false)
 
-  const selectedService = mainServices.find(s => s.id === Number(formData.service_id))
   const addOnPrice = formData.selected_addons.reduce((sum, name) => {
     const svc = addOnServices.find(s => s.name === name)
     return sum + (svc?.price || 0)
   }, 0)
-  const basePrice = (selectedService?.price || 0) + addOnPrice
+  const mainPrice = formData.selected_services.reduce((sum, s) => sum + (s.price || 0), 0)
+  const basePrice = mainPrice + addOnPrice
   const totalAfterDiscount = formData.discount_amount > 0
     ? (formData.discount_type === 'percent'
         ? basePrice * (1 - formData.discount_amount / 100)
@@ -174,6 +179,15 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
       )
     : basePrice
   const finalDisplayPrice = Math.max(0, totalAfterDiscount).toFixed(2)
+
+  const toggleMainService = (service) => {
+    setFormData(prev => ({
+      ...prev,
+      selected_services: prev.selected_services.some(s => s.id === service.id)
+        ? prev.selected_services.filter(s => s.id !== service.id)
+        : [...prev.selected_services, service]
+    }))
+  }
 
   const toggleAddOn = (name) => {
     setFormData(prev => ({
@@ -186,9 +200,10 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
 
   const handleSave = async () => {
     setSaving(true)
+    const allNames = [...formData.selected_services.map(s => s.name), ...formData.selected_addons].join(', ')
     const updates = {
-      service_id: Number(formData.service_id),
-      add_ons: formData.selected_addons.length > 0 ? formData.selected_addons.join(', ') : null,
+      service_id: formData.selected_services[0]?.id || null,
+      add_ons: allNames || null,
       final_price: parseFloat(finalDisplayPrice),
       nail_goal: formData.nail_goal || null,
     }
@@ -208,17 +223,24 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
 
         <div className="space-y-5">
           <div>
-            <label className="block text-offwhite/80 text-sm mb-2">Service</label>
-            <select
-              value={formData.service_id || ''}
-              onChange={(e) => setFormData({...formData, service_id: e.target.value})}
-              className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
-            >
-              <option value="">Select service</option>
-              {mainServices.map(s => (
-                <option key={s.id} value={s.id}>{s.name} - ${s.price}</option>
-              ))}
-            </select>
+            <label className="block text-offwhite/80 text-sm mb-2">Services</label>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {mainServices.map(s => {
+                const isSelected = formData.selected_services.some(sv => sv.id === s.id)
+                return (
+                  <label key={s.id} className="flex items-center gap-3 p-2 bg-offwhite/5 rounded-lg cursor-pointer hover:bg-offwhite/10">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleMainService(s)}
+                      className="accent-gold"
+                    />
+                    <span className="text-offwhite text-sm">{s.name}</span>
+                    <span className="text-green-400 text-sm ml-auto">${s.price}</span>
+                  </label>
+                )
+              })}
+            </div>
           </div>
 
           {addOnServices.length > 0 && (
@@ -282,15 +304,15 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
             </div>
           </div>
 
-          {Number(formData.service_id) > 0 && (
+          {formData.selected_services.length > 0 && (
             <div className="bg-gold/10 border border-gold/30 rounded-lg p-4">
               <div className="space-y-1">
-                {selectedService && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-offwhite/60">{selectedService.name}</span>
-                    <span className="text-offwhite">${selectedService.price.toFixed(2)}</span>
+                {formData.selected_services.map(s => (
+                  <div key={s.id} className="flex justify-between text-sm">
+                    <span className="text-offwhite/60">{s.name}</span>
+                    <span className="text-offwhite">${s.price.toFixed(2)}</span>
                   </div>
-                )}
+                ))}
                 {formData.selected_addons.map(name => {
                   const svc = addOnServices.find(s => s.name === name)
                   return svc ? (
@@ -317,7 +339,7 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
 
         <div className="flex gap-3 mt-6">
           <button onClick={onClose} className="flex-1 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg">Cancel</button>
-          <button onClick={handleSave} disabled={saving || !formData.service_id} className="flex-1 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg disabled:opacity-50">
+          <button onClick={handleSave} disabled={saving || formData.selected_services.length === 0} className="flex-1 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg disabled:opacity-50">
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
