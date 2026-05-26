@@ -9,6 +9,7 @@ export default function AdminServices() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: 'Nails', is_addon: false });
   const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   useEffect(() => { fetchServices(); }, []);
 
@@ -40,6 +41,7 @@ export default function AdminServices() {
   const handleSave = async () => {
     if (!form.name || !form.price) return;
     setSaving(true);
+    setApiError('');
     const payload = {
       name: form.name,
       price: parseFloat(form.price),
@@ -47,19 +49,26 @@ export default function AdminServices() {
       category: form.category,
       is_addon: form.is_addon,
     };
+    let result;
     if (editing) {
-      await supabase.from('services').update(payload).eq('id', editing);
+      result = await supabase.from('services').update(payload).eq('id', editing);
     } else {
-      await supabase.from('services').insert(payload);
+      result = await supabase.from('services').insert(payload);
     }
     setSaving(false);
+    if (result.error) {
+      setApiError(result.error.message);
+      return;
+    }
     setShowForm(false);
     fetchServices();
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this service? This cannot be undone.')) return;
-    await supabase.from('services').delete().eq('id', id);
+    setApiError('');
+    const { error } = await supabase.from('services').delete().eq('id', id);
+    if (error) { setApiError(error.message); return; }
     fetchServices();
   };
 
@@ -88,6 +97,9 @@ export default function AdminServices() {
             {showForm && (
               <div className="mb-6 p-4 bg-offwhite/10 rounded-xl border border-gold/30">
                 <h3 className="text-gold font-heading mb-4">{editing ? 'Edit Service' : 'Add Service'}</h3>
+                {apiError && (
+                  <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-300 text-sm">{apiError}</div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                   <div>
                     <label className="block text-offwhite/60 text-xs mb-1">Name</label>
@@ -129,6 +141,10 @@ export default function AdminServices() {
                   </button>
                 </div>
               </div>
+            )}
+
+            {apiError && !showForm && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-300 text-sm">{apiError}</div>
             )}
 
             {loading ? (
