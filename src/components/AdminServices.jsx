@@ -42,6 +42,7 @@ export default function AdminServices() {
     if (!form.name || !form.price) return;
     setSaving(true);
     setApiError('');
+    const currentUser = JSON.parse(localStorage.getItem('salon_user_data') || '{}');
     const payload = {
       name: form.name,
       price: parseFloat(form.price),
@@ -51,9 +52,19 @@ export default function AdminServices() {
     };
     let result;
     if (editing) {
-      result = await supabase.from('services').update(payload).eq('id', editing);
+      result = await supabase.rpc('manage_service', {
+        admin_phone: currentUser.phone,
+        action: 'update',
+        service_data: payload,
+        service_id: editing,
+      });
     } else {
-      result = await supabase.from('services').insert(payload);
+      result = await supabase.rpc('manage_service', {
+        admin_phone: currentUser.phone,
+        action: 'insert',
+        service_data: payload,
+        service_id: null,
+      });
     }
     setSaving(false);
     if (result.error) {
@@ -67,7 +78,13 @@ export default function AdminServices() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this service? This cannot be undone.')) return;
     setApiError('');
-    const { error } = await supabase.from('services').delete().eq('id', id);
+    const currentUser = JSON.parse(localStorage.getItem('salon_user_data') || '{}');
+    const { error } = await supabase.rpc('manage_service', {
+      admin_phone: currentUser.phone,
+      action: 'delete',
+      service_data: {},
+      service_id: id,
+    });
     if (error) { setApiError(error.message); return; }
     fetchServices();
   };
