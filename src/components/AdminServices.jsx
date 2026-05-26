@@ -9,7 +9,7 @@ export default function AdminServices() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', is_addon: false });
+  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', });
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
 
@@ -39,7 +39,7 @@ export default function AdminServices() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '', is_addon: false });
+    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '' });
     setShowForm(true);
   };
 
@@ -50,7 +50,6 @@ export default function AdminServices() {
       price: String(svc.price || ''),
       duration_minutes: String(svc.duration_minutes || ''),
       category: svc.category || categories[0]?.name || '',
-      is_addon: svc.is_addon || false,
     });
     setShowForm(true);
   };
@@ -65,7 +64,6 @@ export default function AdminServices() {
       price: parseFloat(form.price),
       duration_minutes: parseInt(form.duration_minutes) || 0,
       category: form.category,
-      is_addon: form.is_addon,
     };
     let result;
     if (editing) {
@@ -181,7 +179,7 @@ export default function AdminServices() {
                 <div className="mb-6 p-4 bg-offwhite/10 rounded-xl border border-gold/30">
                   <h3 className="text-gold font-heading mb-4">{editing ? 'Edit Service' : 'Add Service'}</h3>
                   {apiError && <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-300 text-sm">{apiError}</div>}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div>
                       <label className="block text-offwhite/60 text-xs mb-1">Name</label>
                       <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm" placeholder="Service name" />
@@ -202,12 +200,6 @@ export default function AdminServices() {
                         ))}
                       </select>
                     </div>
-                    <div className="flex items-end pb-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={form.is_addon} onChange={e => setForm({...form, is_addon: e.target.checked})} className="accent-gold" />
-                        <span className="text-offwhite/60 text-sm">Add-on</span>
-                      </label>
-                    </div>
                   </div>
                   <div className="flex gap-3">
                     <button onClick={handleSave} disabled={saving || !form.name || !form.price} className="px-6 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 disabled:opacity-50 transition-colors">{saving ? 'Saving...' : 'Save'}</button>
@@ -227,10 +219,9 @@ export default function AdminServices() {
                       <tr className="text-offwhite/50 text-sm border-b border-offwhite/10">
                         <th className="text-left py-3 px-4">Name</th>
                         <th className="text-left py-3 px-4">Category</th>
-                        <th className="text-left py-3 px-4">Price</th>
-                        <th className="text-left py-3 px-4">Duration</th>
-                        <th className="text-left py-3 px-4">Type</th>
-                        <th className="text-left py-3 px-4">Actions</th>
+                      <th className="text-left py-3 px-4">Price</th>
+                      <th className="text-left py-3 px-4">Duration</th>
+                      <th className="text-left py-3 px-4">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -239,13 +230,8 @@ export default function AdminServices() {
                           <td className="py-3 px-4 text-offwhite font-medium">{svc.name}</td>
                           <td className="py-3 px-4 text-offwhite/60">{svc.category || '—'}</td>
                           <td className="py-3 px-4 text-gold">${parseFloat(svc.price).toFixed(2)}</td>
-                          <td className="py-3 px-4 text-offwhite/60">{svc.duration_minutes || 0} min</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-1 text-xs rounded ${svc.is_addon ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                              {svc.is_addon ? 'Add-on' : 'Main'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
+                        <td className="py-3 px-4 text-offwhite/60">{svc.duration_minutes || 0} min</td>
+                        <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
                               <button onClick={() => openEdit(svc)} className="text-gold hover:underline text-sm">Edit</button>
                               <button onClick={() => handleDelete(svc.id)} className="text-red-400 hover:underline text-sm">Delete</button>
@@ -253,7 +239,7 @@ export default function AdminServices() {
                           </td>
                         </tr>
                       ))}
-                      {services.length === 0 && <tr><td colSpan="6" className="py-8 text-center text-offwhite/40">No services found</td></tr>}
+                      {services.length === 0 && <tr><td colSpan="5" className="py-8 text-center text-offwhite/40">No services found</td></tr>}
                     </tbody>
                   </table>
                 </div>

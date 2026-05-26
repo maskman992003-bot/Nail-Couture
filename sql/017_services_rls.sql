@@ -41,7 +41,7 @@ BEGIN
       (service_data->>'price')::numeric,
       (service_data->>'duration_minutes')::int,
       service_data->>'category',
-      (service_data->>'is_addon')::boolean
+      COALESCE((service_data->>'is_addon')::boolean, false)
     )
     RETURNING id INTO new_id;
     RETURN jsonb_build_object('id', new_id);

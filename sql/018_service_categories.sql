@@ -12,7 +12,8 @@ INSERT INTO service_categories (name, sort_order) VALUES
   ('Extensions', 2),
   ('Standard', 3),
   ('Luxury', 4),
-  ('Packages', 5),
+  ('Add-on', 5),
+  ('Packages', 6),
   ('Other', 999)
 ON CONFLICT (name) DO NOTHING;
 
