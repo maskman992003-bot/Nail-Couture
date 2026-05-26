@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import Sidebar from './Sidebar';
 
+const FALLBACK_CATEGORIES = ['Nail Art', 'Extensions', 'Standard', 'Luxury', 'Packages', 'Other'];
+
 export default function AdminServices() {
   const [activeSubTab, setActiveSubTab] = useState('services');
   const [services, setServices] = useState([]);
@@ -28,8 +30,12 @@ export default function AdminServices() {
   };
 
   const fetchCategories = async () => {
-    const { data } = await supabase.from('service_categories').select('*').order('sort_order');
-    if (data) setCategories(data);
+    const { data, error } = await supabase.from('service_categories').select('*').order('sort_order');
+    if (error || !data || data.length === 0) {
+      setCategories(FALLBACK_CATEGORIES.map((name, i) => ({ id: i, name, sort_order: i + 1 })));
+    } else {
+      setCategories(data);
+    }
   };
 
   const openAdd = () => {
