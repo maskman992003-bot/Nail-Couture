@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { DndContext, DragOverlay, useDraggable, useDroppable, pointerWithin, rectIntersection } from '@dnd-kit/core'
+import { DndContext, DragOverlay, useDraggable, useDroppable, rectIntersection, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '../services/services'
 import { useAuth } from '../contexts/AuthContext'
@@ -70,23 +70,17 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
 const DraggableAppointmentCard = ({ appointment, onEdit, onCancel }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: appointment.id,
-    data: { type: 'appointment', appointment },
-    activationConstraint: { distance: 8 }
+    data: { type: 'appointment', appointment }
   })
 
   const style = {
-    transform: CSS.Translate.toString(transform),
-    zIndex: isDragging ? 1000 : undefined,
-    opacity: isDragging ? 0.5 : 1,
-    maxWidth: '100%',
-    overflow: 'hidden'
+    opacity: isDragging ? 0 : 1
   }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
       {...attributes}
       className={`bg-offwhite/5 border rounded-xl p-4 sm:p-5 cursor-grab active:cursor-grabbing transition-all border-offwhite/10`}
     >
@@ -517,8 +511,12 @@ export default function AdminLobby() {
     );
   }
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  )
+
 return (
-      <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
         <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
           <Sidebar />
           <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
@@ -630,11 +628,20 @@ return (
         </div>
 
         <DragOverlay>
-          {activeId && (
-            <div className="bg-gold/20 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none">
-              <p className="text-offwhite font-heading text-sm sm:text-base">Moving...</p>
-            </div>
-          )}
+          {activeId && (() => {
+            const dragged = lobbyAppointments.find(a => a.id === activeId)
+            if (!dragged) return null
+            return (
+              <div className="bg-gold/10 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none w-80">
+                <div className="font-heading text-lg text-offwhite truncate">{dragged.customer?.full_name || 'Guest'}</div>
+                <div className="flex flex-wrap items-center gap-2 mt-1 text-sm">
+                  {dragged.services && <span className="text-gold">{dragged.services.name}</span>}
+                  {dragged.services?.price > 0 && <span className="text-green-400">${dragged.services.price}</span>}
+                </div>
+                <div className="text-xs text-offwhite/40 mt-1">{formatTime(dragged.checked_in_at)}</div>
+              </div>
+            )
+          })()}
         </DragOverlay>
 
         {editingAppointment && (
