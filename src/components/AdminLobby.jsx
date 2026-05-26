@@ -149,7 +149,7 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
   })
   const [saving, setSaving] = useState(false)
 
-  const selectedService = services.find(s => s.id === formData.service_id)
+  const selectedService = services.find(s => s.id === Number(formData.service_id))
   const discountedPrice = selectedService 
     ? (formData.discount_type === 'percent' 
         ? selectedService.price * (1 - formData.discount_amount / 100)
@@ -159,19 +159,19 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
 
   const handleSave = async () => {
     setSaving(true)
-    await onSave(appointment.id, {
-      service_id: formData.service_id,
-      discount_amount: formData.discount_amount || null,
-      discount_type: formData.discount_type || null,
-      discount_reason: formData.discount_reason || null
-    })
+    const updates = { service_id: formData.service_id }
+    if (formData.discount_amount > 0) {
+      updates.final_price = parseFloat(discountedPrice)
+    }
+    await onSave(appointment.id, updates)
     setSaving(false)
     onClose()
   }
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
-      <div className="bg-charcoal border border-gold/30 rounded-xl p-6 w-full max-w-lg">
+      <div className="bg-charcoal border border-gold/30 rounded-xl p-6 w-full max-w-lg edit-modal">
+        <style>{`.edit-modal select, .edit-modal option { background: #1a1a1a; color: #fff; }`}</style>
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-heading text-2xl text-gold">Edit Appointment</h3>
           <button onClick={onClose} className="text-offwhite/50 hover:text-offwhite">✕</button>
