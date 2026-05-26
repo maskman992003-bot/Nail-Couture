@@ -17,7 +17,7 @@ export default function Lobby() {
          .from('appointments')
          .select(`
            *,
-           profiles!customer_id(full_name, nail_goal, refreshment_pref),
+           profiles!appointments_client_id_fkey(full_name, nail_goal, refreshment_pref),
            services(name, price, duration_minutes)
          `)
          .in('status', ['waiting', 'serving'])

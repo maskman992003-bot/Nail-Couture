@@ -37,7 +37,7 @@ export default function CustomerHistory() {
     if (!userId) { setLoading(false); navigate('/login'); return; }
     try {
       const [onlineRes, kioskRes, notifRes] = await Promise.all([
-        supabase.from('appointments').select('*').eq('profile_id', userId).eq('booking_type', 'online').order('scheduled_at', { ascending: false }),
+        supabase.from('appointments').select('*').eq('customer_id', userId).eq('booking_type', 'online').order('scheduled_at', { ascending: false }),
         supabase.from('appointments').select('*').eq('customer_id', userId).eq('booking_type', 'walk_in').order('checked_in_at', { ascending: false }),
         supabase.from('notifications').select('*').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(10),
       ]);

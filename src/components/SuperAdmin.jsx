@@ -63,7 +63,7 @@ export default function SuperAdmin() {
       
       const { data: appointments } = await supabase
         .from('appointments')
-        .select('*, services(name, price), profiles(full_name)')
+        .select('*, services(name, price), customer:profiles!appointments_client_id_fkey(full_name)')
         .gte('checked_in_at', `${today}T00:00:00`)
         .order('checked_in_at', { ascending: false });
 

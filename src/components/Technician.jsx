@@ -59,7 +59,7 @@ const getHomeRoute = (role) => {
       
       const { data: appointments } = await supabase
         .from('appointments')
-        .select('*, services(name, price, duration_minutes), profiles(full_name, phone, nail_goal)')
+        .select('*, services(name, price, duration_minutes), customer:profiles!appointments_client_id_fkey(full_name, phone, nail_goal)')
         .gte('checked_in_at', `${today}T00:00:00`)
         .order('checked_in_at', { ascending: true });
 
@@ -146,7 +146,7 @@ const getHomeRoute = (role) => {
                 <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl text-center">
                   <div className="text-offwhite/50 text-sm mb-2">Your Next Client</div>
                   <div className="text-xl font-heading text-yellow-400 truncate">
-                    {stats.nextClient?.profiles?.full_name || 'None'}
+                    {stats.nextClient?.customer?.full_name || 'None'}
                   </div>
                 </div>
                 <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl text-center">
@@ -161,9 +161,9 @@ const getHomeRoute = (role) => {
                     <h2 className="font-heading text-xl text-offwhite">Current Customer</h2>
                     <span className="px-3 py-1 text-sm border bg-green-100 text-green-800 border-green-300 rounded">In Chair</span>
                   </div>
-                  <div className="text-offwhite font-medium text-2xl">{currentAppointment.profiles?.full_name || 'Customer'}</div>
+                  <div className="text-offwhite font-medium text-2xl">{currentAppointment.customer?.full_name || 'Customer'}</div>
                   <div className="text-offwhite/60 text-lg mt-1">{currentAppointment.services?.name} (~{currentAppointment.services?.duration_minutes} min)</div>
-                  {currentAppointment.profiles?.nail_goal && (
+                  {currentAppointment.customer?.nail_goal && (
                     <div className="text-gold/70 text-sm mt-2 flex items-center gap-2">
                       <span>🎯</span> {currentAppointment.profiles.nail_goal}
                     </div>
@@ -196,9 +196,9 @@ const getHomeRoute = (role) => {
                             {index + 1}
                           </div>
                           <div>
-                            <div className="text-offwhite font-medium text-lg">{appt.profiles?.full_name || 'Guest'}</div>
+                            <div className="text-offwhite font-medium text-lg">{appt.customer?.full_name || 'Guest'}</div>
                             <div className="text-offwhite/50 text-sm">{appt.services?.name}</div>
-                            {appt.profiles?.nail_goal && (
+                            {appt.customer?.nail_goal && (
                               <div className="text-gold/70 text-xs mt-1">Goal: {appt.profiles.nail_goal}</div>
                             )}
                           </div>
@@ -226,11 +226,11 @@ const getHomeRoute = (role) => {
                 {myAppointments.length > 0 ? myAppointments.map((appt) => (
                   <div key={appt.id} className="flex items-center justify-between p-4 bg-offwhite/5 rounded-lg">
                     <div>
-                      <div className="text-offwhite font-medium text-lg">{appt.profiles?.full_name || 'Guest'}</div>
+                      <div className="text-offwhite font-medium text-lg">{appt.customer?.full_name || 'Guest'}</div>
                       <div className="text-offwhite/50 text-sm">{appt.services?.name}</div>
                       <div className="text-offwhite/40 text-xs mt-1">
                         {new Date(appt.checked_in_at).toLocaleTimeString()}
-                        {appt.profiles?.nail_goal && ` • ${appt.profiles.nail_goal}`}
+                        {appt.customer?.nail_goal && ` • ${appt.profiles.nail_goal}`}
                       </div>
                     </div>
                     <span className={`px-3 py-1 text-xs border rounded ${

@@ -65,7 +65,7 @@ export default function StaffProfile() {
   const fetchCashierActivity = async () => {
     const { data } = await supabase
       .from('payment_transactions')
-      .select('*, appointments(*, services(name), customer:profiles!customer_id(full_name))')
+      .select('*, appointments(*, services(name), customer:profiles!appointments_client_id_fkey(full_name))')
       .eq('cashier_id', id)
       .order('created_at', { ascending: false })
       .limit(10);

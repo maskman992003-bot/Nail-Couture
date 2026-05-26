@@ -36,7 +36,7 @@ export default function Cashier() {
       
       const { data: appointments } = await supabase
         .from('appointments')
-        .select('*, services(name, price), profiles(full_name)')
+        .select('*, services(name, price), customer:profiles!appointments_client_id_fkey(full_name)')
         .in('status', ['serving', 'completed'])
         .gte('checked_in_at', `${today}T00:00:00`)
         .order('checked_in_at', { ascending: false });
@@ -91,7 +91,7 @@ export default function Cashier() {
               {recentCheckouts.length > 0 ? recentCheckouts.map((appt) => (
                 <div key={appt.id} className="flex items-center justify-between p-3 bg-offwhite/5 rounded-lg">
                   <div>
-                    <div className="text-offwhite font-medium">{appt.profiles?.full_name || 'Guest'}</div>
+                    <div className="text-offwhite font-medium">{appt.customer?.full_name || 'Guest'}</div>
                     <div className="text-offwhite/50 text-sm">{appt.services?.name}</div>
                   </div>
                   <div className="text-right">
