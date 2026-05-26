@@ -23,3 +23,7 @@ DELETE FROM inventory;
 DELETE FROM services;
 
 SET session_replication_role = 'origin';
+
+-- Create super admin profile
+INSERT INTO profiles (id, full_name, phone, role, created_at)
+VALUES (gen_random_uuid(), 'Vman', '1234567890', 'super_admin', now());
