@@ -49,6 +49,8 @@ export default function ClientPortal() {
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [confirmationCode, setConfirmationCode] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
   const [showEarningModal, setShowEarningModal] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [refreshments, setRefreshments] = useState([]);
@@ -243,7 +245,7 @@ export default function ClientPortal() {
             <div className="rounded-2xl p-8 border-2" style={{ borderColor: 'rgba(197, 160, 89, 0.5)', background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #1a1a1a 100%)' }}>
               <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Your Active Appointment{appointments.length > 1 ? 's' : ''}</div>
               {appointments.map((booking) => (
-                <div key={booking.id} className="flex items-start justify-between py-4 border-b last:border-0" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                <div key={booking.id} onClick={() => { setSelectedBooking(booking); setShowDetailModal(true); }} className="flex items-start justify-between py-4 border-b last:border-0 cursor-pointer hover:bg-offwhite/5 transition-colors rounded-lg px-2 -mx-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                   <div>
                     <h3 className="font-heading text-2xl text-offwhite mb-1">{booking.add_ons || booking.services?.name || 'Service'}</h3>
                     <div className="text-offwhite/50 text-sm">
@@ -403,6 +405,51 @@ export default function ClientPortal() {
           </div>
         </div>
       )}
+
+      {showDetailModal && selectedBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowDetailModal(false)} style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-8 border-2" style={{ borderColor: 'rgba(197, 160, 89, 0.5)', background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #1a1a1a 100%)' }}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-heading text-2xl text-gold">Appointment Details</h2>
+              <button onClick={() => setShowDetailModal(false)} className="text-offwhite/40 hover:text-gold text-xl leading-none">&times;</button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Services</div>
+                <div className="text-offwhite font-heading text-lg">{selectedBooking.add_ons || selectedBooking.services?.name || 'N/A'}</div>
+              </div>
+              {selectedBooking.final_price || selectedBooking.services?.price ? (
+                <div>
+                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Total Price</div>
+                  <div className="text-gold font-heading text-xl">${(selectedBooking.final_price || selectedBooking.services?.price || 0).toFixed(2)}</div>
+                </div>
+              ) : null}
+              <div>
+                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Date & Time</div>
+                <div className="text-offwhite">{new Date(selectedBooking.check_in_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {new Date(selectedBooking.check_in_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
+              </div>
+              <div>
+                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Status</div>
+                <span className={`px-3 py-1 text-xs border rounded-full ${statusColors[selectedBooking.status]}`}>{statusLabels[selectedBooking.status]}</span>
+              </div>
+              {selectedBooking.technician?.name && (
+                <div>
+                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Technician</div>
+                  <div className="text-offwhite">{selectedBooking.technician.name}</div>
+                </div>
+              )}
+              {selectedBooking.cancellation_reason && (
+                <div>
+                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Cancellation Reason</div>
+                  <div className="text-offwhite/70">{selectedBooking.cancellation_reason}</div>
+                </div>
+              )}
+            </div>
+            <button onClick={() => setShowDetailModal(false)} className="mt-8 w-full py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90 transition-colors">Close</button>
+          </div>
+        </div>
+      )}
+
       </div>
     </div>
   );
