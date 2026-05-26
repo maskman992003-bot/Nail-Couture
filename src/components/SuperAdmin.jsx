@@ -61,17 +61,26 @@ export default function SuperAdmin() {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      const { data: appointments } = await supabase
-        .from('appointments')
-        .select('*, services(name, price), customer:profiles!appointments_client_id_fkey(full_name)')
-        .gte('checked_in_at', `${today}T00:00:00`)
-        .order('checked_in_at', { ascending: false });
-
-      const { data: staffData } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('role', ['admin', 'cashier', 'technician'])
-        .order('full_name');
+      const [apptsRes, waitingRes, staffRes] = await Promise.all([
+        supabase
+          .from('appointments')
+          .select('*, services(name, price), customer:profiles!appointments_client_id_fkey(full_name)')
+          .gte('checked_in_at', `${today}T00:00:00`)
+          .order('checked_in_at', { ascending: false }),
+        supabase
+          .from('appointments')
+          .select('id, status', { count: 'exact', head: true })
+          .eq('status', 'waiting'),
+        supabase
+          .from('profiles')
+          .select('*')
+          .in('role', ['admin', 'cashier', 'technician'])
+          .order('full_name'),
+      ]);
+      
+      const appointments = apptsRes.data;
+      const staffData = staffRes.data;
+      const waitingCount = waitingRes.count || 0;
 
       if (appointments) {
         const completed = appointments.filter(a => a.status === 'completed');
@@ -80,7 +89,7 @@ export default function SuperAdmin() {
         setStats({
           todayRevenue: revenue,
           activeTechnicians: staffData?.filter(s => s.role === 'technician').length || 5,
-          waitingCustomers: appointments.filter(a => a.status === 'waiting').length,
+          waitingCustomers: waitingCount,
           completedToday: completed.length,
         });
         setRecentAppointments(appointments.slice(0, 10));
