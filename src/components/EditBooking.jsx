@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
-import { CATEGORIES, CATEGORY_ORDER, SERVICES } from '../data/servicesData';
+import { CATEGORIES, CATEGORY_ORDER } from '../data/servicesData';
 
 export default function EditBooking({ bookingId }) {
   const navigate = useNavigate();
@@ -101,7 +101,7 @@ export default function EditBooking({ bookingId }) {
     setLoadingTechs(false);
   };
 
-  const groupedServices = [...services, ...SERVICES].reduce((acc, service) => {
+  const groupedServices = services.reduce((acc, service) => {
     const cat = service.category || 'Other';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(service);
