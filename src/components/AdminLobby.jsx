@@ -120,14 +120,22 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel }) => {
         {appointment.services && (
           <span className="text-gold font-heading">{appointment.services.name}</span>
         )}
-        {appointment.services?.price > 0 && (
+        {appointment.final_price != null && appointment.final_price < (appointment.services?.price || 0) ? (
+          <>
+            <span className="text-green-400 font-medium">${appointment.final_price.toFixed(2)}</span>
+            <span className="text-offwhite/40 line-through text-xs">${appointment.services?.price}</span>
+          </>
+        ) : appointment.services?.price > 0 ? (
           <span className="text-green-400 font-medium">${appointment.services.price}</span>
-        )}
+        ) : null}
         {appointment.services?.duration_minutes && (
           <span className="text-offwhite/50">{appointment.services.duration_minutes}min</span>
         )}
         {appointment.customer?.nail_goal && (
           <span className="text-offwhite/60 text-xs">{appointment.customer.nail_goal}</span>
+        )}
+        {appointment.add_ons && (
+          <span className="text-offwhite/40 text-xs">+{appointment.add_ons}</span>
         )}
       </div>
     </div>
@@ -140,28 +148,49 @@ const formatTime = (timestamp) => {
 }
 
 const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
+  const mainServices = services.filter(s => !s.is_addon)
+  const addOnServices = services.filter(s => s.is_addon)
+  const currentAddOns = appointment.add_ons ? appointment.add_ons.split(',').map(n => n.trim()).filter(Boolean) : []
+
   const [formData, setFormData] = useState({
     service_id: appointment.service_id,
     nail_goal: appointment.customer?.nail_goal || '',
+    selected_addons: currentAddOns,
     discount_amount: appointment.discount_amount || '',
     discount_type: appointment.discount_type || 'amount',
-    discount_reason: appointment.discount_reason || ''
   })
   const [saving, setSaving] = useState(false)
 
-  const selectedService = services.find(s => s.id === Number(formData.service_id))
-  const discountedPrice = selectedService 
-    ? (formData.discount_type === 'percent' 
-        ? selectedService.price * (1 - formData.discount_amount / 100)
-        : selectedService.price - (formData.discount_amount || 0)
-      ).toFixed(2)
-    : selectedService?.price
+  const selectedService = mainServices.find(s => s.id === Number(formData.service_id))
+  const addOnPrice = formData.selected_addons.reduce((sum, name) => {
+    const svc = addOnServices.find(s => s.name === name)
+    return sum + (svc?.price || 0)
+  }, 0)
+  const basePrice = (selectedService?.price || 0) + addOnPrice
+  const totalAfterDiscount = formData.discount_amount > 0
+    ? (formData.discount_type === 'percent'
+        ? basePrice * (1 - formData.discount_amount / 100)
+        : basePrice - (formData.discount_amount || 0)
+      )
+    : basePrice
+  const finalDisplayPrice = Math.max(0, totalAfterDiscount).toFixed(2)
+
+  const toggleAddOn = (name) => {
+    setFormData(prev => ({
+      ...prev,
+      selected_addons: prev.selected_addons.includes(name)
+        ? prev.selected_addons.filter(n => n !== name)
+        : [...prev.selected_addons, name]
+    }))
+  }
 
   const handleSave = async () => {
     setSaving(true)
-    const updates = { service_id: formData.service_id }
-    if (formData.discount_amount > 0) {
-      updates.final_price = parseFloat(discountedPrice)
+    const updates = {
+      service_id: Number(formData.service_id),
+      add_ons: formData.selected_addons.length > 0 ? formData.selected_addons.join(', ') : null,
+      final_price: parseFloat(finalDisplayPrice),
+      nail_goal: formData.nail_goal || null,
     }
     await onSave(appointment.id, updates)
     setSaving(false)
@@ -185,11 +214,32 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
               onChange={(e) => setFormData({...formData, service_id: e.target.value})}
               className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
             >
-              {services.map(s => (
+              <option value="">Select service</option>
+              {mainServices.map(s => (
                 <option key={s.id} value={s.id}>{s.name} - ${s.price}</option>
               ))}
             </select>
           </div>
+
+          {addOnServices.length > 0 && (
+            <div>
+              <label className="block text-offwhite/80 text-sm mb-2">Add-on Services</label>
+              <div className="space-y-2">
+                {addOnServices.map(s => (
+                  <label key={s.id} className="flex items-center gap-3 p-2 bg-offwhite/5 rounded-lg cursor-pointer hover:bg-offwhite/10">
+                    <input
+                      type="checkbox"
+                      checked={formData.selected_addons.includes(s.name)}
+                      onChange={() => toggleAddOn(s.name)}
+                      className="accent-gold"
+                    />
+                    <span className="text-offwhite text-sm">{s.name}</span>
+                    <span className="text-green-400 text-sm ml-auto">+${s.price}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-offwhite/80 text-sm mb-2">Nail Goal</label>
@@ -230,45 +280,44 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
                 </select>
               </div>
             </div>
-            <div className="mt-3">
-              <label className="block text-offwhite/60 text-sm mb-1">Reason</label>
-              <input
-                type="text"
-                value={formData.discount_reason}
-                onChange={(e) => setFormData({...formData, discount_reason: e.target.value})}
-                className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
-                placeholder="Birthday discount, etc."
-              />
-            </div>
           </div>
 
-          {selectedService && (
+          {Number(formData.service_id) > 0 && (
             <div className="bg-gold/10 border border-gold/30 rounded-lg p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-offwhite/60">Total Price</span>
-                <span className="font-heading text-2xl text-gold">${discountedPrice}</span>
+              <div className="space-y-1">
+                {selectedService && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-offwhite/60">{selectedService.name}</span>
+                    <span className="text-offwhite">${selectedService.price.toFixed(2)}</span>
+                  </div>
+                )}
+                {formData.selected_addons.map(name => {
+                  const svc = addOnServices.find(s => s.name === name)
+                  return svc ? (
+                    <div key={name} className="flex justify-between text-sm">
+                      <span className="text-offwhite/60">{svc.name} (add-on)</span>
+                      <span className="text-offwhite">+${svc.price.toFixed(2)}</span>
+                    </div>
+                  ) : null
+                })}
+                {formData.discount_amount > 0 && (
+                  <div className="flex justify-between text-sm text-green-400">
+                    <span>Discount</span>
+                    <span>-${(basePrice - parseFloat(finalDisplayPrice)).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
-              {formData.discount_amount > 0 && (
-                <div className="text-sm text-green-400 mt-1">
-                  Original: ${selectedService.price}
-                </div>
-              )}
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-gold/20">
+                <span className="text-offwhite/60">Total</span>
+                <span className="font-heading text-2xl text-gold">${finalDisplayPrice}</span>
+              </div>
             </div>
           )}
         </div>
 
         <div className="flex gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg disabled:opacity-50"
-          >
+          <button onClick={onClose} className="flex-1 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg">Cancel</button>
+          <button onClick={handleSave} disabled={saving || !formData.service_id} className="flex-1 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg disabled:opacity-50">
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
@@ -423,19 +472,21 @@ export default function AdminLobby() {
   }
 
   const handleEditSave = async (appointmentId, updates) => {
+    const { nail_goal, ...apptUpdates } = updates
     const { error } = await supabase
       .from('appointments')
-      .update(updates)
+      .update(apptUpdates)
       .eq('id', appointmentId)
     
-    if (!error && updates.nail_goal) {
-      const { error: profileError } = await supabase
+    if (nail_goal && editingAppointment?.customer_id) {
+      await supabase
         .from('profiles')
-        .update({ nail_goal: updates.nail_goal })
-        .eq('id', editingAppointment?.customer_id)
+        .update({ nail_goal })
+        .eq('id', editingAppointment.customer_id)
     }
     
     fetchAppointments()
+    fetchServingAppointments()
     setEditingAppointment(null)
   }
 
@@ -560,31 +611,37 @@ return (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {servingAppointments.map(appointment => (
                       <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-start justify-between mb-2">
                           <div>
                             <h3 className="font-heading text-lg text-offwhite">{appointment.customer?.full_name || 'Guest'}</h3>
                             {appointment.customer?.phone && (
                               <span className="text-xs text-offwhite/40">📞 {appointment.customer.phone}</span>
                             )}
                           </div>
-                          <button
-                            onClick={() => setCancelConfirm(appointment)}
-                            className="text-red-400/50 hover:text-red-400 text-sm"
-                          >
-                            ✕
-                          </button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button onClick={(e) => { e.stopPropagation(); setEditingAppointment(appointment) }} className="text-offwhite/40 hover:text-offwhite text-sm">✎</button>
+                            <button onClick={() => setCancelConfirm(appointment)} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
+                          </div>
                         </div>
                         <div className="flex flex-wrap gap-2 text-sm items-center">
                           {appointment.services && <span className="text-gold">{appointment.services.name}</span>}
-                          {appointment.services?.price > 0 && (
+                          {appointment.final_price != null && appointment.final_price < (appointment.services?.price || 0) ? (
+                            <>
+                              <span className="text-green-400 font-medium">${appointment.final_price.toFixed(2)}</span>
+                              <span className="text-offwhite/40 line-through text-xs">${appointment.services?.price}</span>
+                            </>
+                          ) : appointment.services?.price > 0 ? (
                             <span className="text-green-400 font-medium">${appointment.services.price}</span>
-                          )}
+                          ) : null}
                           {appointment.technician && (
                             <span className="text-xs text-gold/70 ml-auto">with {appointment.technician.full_name}</span>
                           )}
                         </div>
+                        {appointment.add_ons && (
+                          <div className="text-xs text-offwhite/40 mt-1">+ {appointment.add_ons}</div>
+                        )}
                         {appointment.start_time && (
-                          <div className="text-xs text-offwhite/40 mt-2">
+                          <div className="text-xs text-offwhite/40 mt-1">
                             Started: {formatTime(appointment.start_time)}
                           </div>
                         )}
