@@ -1,6 +1,11 @@
 -- Enable RLS on services table
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 
+-- Anyone can read services (needed for booking/kiosk flows)
+DROP POLICY IF EXISTS "Anyone can read services" ON services;
+CREATE POLICY "Anyone can read services" ON services
+  FOR SELECT USING (true);
+
 -- Revoke direct write access for anon and authenticated roles
 REVOKE INSERT, UPDATE, DELETE ON services FROM anon, authenticated;
 

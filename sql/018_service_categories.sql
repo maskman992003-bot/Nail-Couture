@@ -16,10 +16,15 @@ INSERT INTO service_categories (name, sort_order) VALUES
   ('Other', 999)
 ON CONFLICT (name) DO NOTHING;
 
--- Allow reads (app uses custom auth, not Supabase Auth sessions)
-ALTER TABLE service_categories DISABLE ROW LEVEL SECURITY;
+-- RLS: anyone can read (needed for service forms), only RPC can write
+ALTER TABLE service_categories ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can read service_categories" ON service_categories;
+CREATE POLICY "Anyone can read service_categories" ON service_categories
+  FOR SELECT USING (true);
 
--- Security definer RPC for managing categories
+REVOKE INSERT, UPDATE, DELETE ON service_categories FROM anon, authenticated;
+
+-- Security definer RPC for managing categories (bypasses RLS, checks role by phone)
 CREATE OR REPLACE FUNCTION manage_service_category(
   admin_phone TEXT,
   action TEXT,
