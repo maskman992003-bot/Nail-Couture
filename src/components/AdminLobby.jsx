@@ -340,7 +340,7 @@ export default function AdminLobby() {
     console.log('Fetching waiting appointments...')
     const { data, error, status } = await supabase
       .from('appointments')
-      .select('*, customer:profiles!appointments_customer_id_fkey(full_name, refreshment_pref, nail_goal), services(name, price, duration_minutes)')
+      .select('*, customer:profiles!customer_id(full_name, refreshment_pref, nail_goal), services(name, price, duration_minutes)')
       .eq('status', 'waiting')
       .order('checked_in_at', { ascending: true })
 
@@ -359,7 +359,7 @@ export default function AdminLobby() {
     console.log('Fetching serving appointments...')
     const { data, error } = await supabase
       .from('appointments')
-      .select('*, customer:profiles!appointments_customer_id_fkey(full_name), technician:profiles!appointments_technician_id_fkey(full_name), services(name)')
+      .select('*, customer:profiles!customer_id(full_name), technician:profiles!technician_id(full_name), services(name)')
       .eq('status', 'serving')
       .order('start_time', { ascending: true })
 
@@ -375,7 +375,7 @@ export default function AdminLobby() {
     console.log('Fetching pending appointments...')
     const { data, error } = await supabase
       .from('appointments')
-      .select('*, customer:profiles!appointments_customer_id_fkey(full_name), services(name)')
+      .select('*, customer:profiles!customer_id(full_name), services(name)')
       .eq('status', 'assigned_pending')
       .order('checked_in_at', { ascending: true })
 

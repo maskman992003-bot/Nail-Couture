@@ -154,7 +154,7 @@ export default function CashierCheckout() {
   const fetchServingAppointments = async () => {
 const { data, error } = await supabase
   .from('appointments')
-  .select('*, customer:profiles!appointments_customer_id_fkey(full_name), services(name, price)')
+  .select('*, customer:profiles!customer_id(full_name), services(name, price)')
   .eq('status', 'serving')
   .order('start_time_new', { ascending: true });
 
