@@ -151,9 +151,8 @@ export default function CustomerHistory() {
     const isWaiting = booking.status === 'waiting';
     const canCancel = booking.source === 'online' && ['waiting', 'assigned_pending'].includes(booking.status);
     const appointmentDate = booking.scheduled_at || booking.checked_in_at;
-    const basePrice = booking.service?.price || booking.final_price || booking.price || 0;
     const addOnTotal = (booking.addonDetails || []).reduce((sum, a) => sum + (a.price || 0), 0);
-    const totalPrice = basePrice + addOnTotal;
+    const totalPrice = booking.final_price || (booking.service?.price || 0) + addOnTotal;
 
     const openDetail = () => { setSelectedDetailBooking(booking); setShowDetailModal(true); };
 
@@ -367,7 +366,7 @@ export default function CustomerHistory() {
                   </div>
                   <div>
                     <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Total Price</div>
-                    <div className="text-gold font-heading text-xl">${(selectedDetailBooking.service?.price || selectedDetailBooking.final_price || selectedDetailBooking.price || 0) + (selectedDetailBooking.addonDetails || []).reduce((s, a) => s + (a.price || 0), 0)}</div>
+                    <div className="text-gold font-heading text-xl">${(selectedDetailBooking.final_price || (selectedDetailBooking.service?.price || 0) + (selectedDetailBooking.addonDetails || []).reduce((s, a) => s + (a.price || 0), 0))}</div>
                   </div>
                   <div>
                     <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Date & Time</div>
