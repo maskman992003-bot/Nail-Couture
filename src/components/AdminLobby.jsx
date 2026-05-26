@@ -91,57 +91,50 @@ const DraggableAppointmentCard = ({ appointment, isPriority, onTogglePriority, o
         isPriority ? 'border-gold shadow-lg shadow-gold/20' : 'border-offwhite/10'
       }`}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             {isPriority && (
-              <span className="w-2 h-2 bg-gold rounded-full animate-pulse"></span>
+              <span className="w-2 h-2 bg-gold rounded-full animate-pulse shrink-0"></span>
             )}
-            <h3 className="font-heading text-lg text-offwhite">
+            <h3 className="font-heading text-lg text-offwhite truncate">
               {appointment.customer?.full_name || 'Guest'}
             </h3>
+            {appointment.booking_type === 'walk_in' ? (
+              <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded shrink-0">Walk-in</span>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded shrink-0">Online</span>
+            )}
           </div>
-          <div className="flex items-center gap-2 mt-1">
-            <button
-              onClick={(e) => { e.stopPropagation(); onTogglePriority(appointment.id) }}
-              className={`text-lg ${isPriority ? 'text-gold' : 'text-offwhite/30 hover:text-gold'}`}
-            >
-              ★
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onEdit(appointment) }}
-              className="text-offwhite/40 hover:text-offwhite text-sm"
-            >
-              ✎
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onCancel(appointment) }}
-              className="text-red-400/50 hover:text-red-400 text-sm"
-            >
-              ✕
-            </button>
+          <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-offwhite/50 mt-0.5">
+            {appointment.customer?.phone && <span>📞 {appointment.customer.phone}</span>}
+            {appointment.customer?.refreshment_pref && <span>☕ {appointment.customer.refreshment_pref}</span>}
           </div>
         </div>
-        <span className="text-offwhite/50 text-sm">{formatTime(appointment.checked_in_at)}</span>
+        <div className="flex items-start gap-2 shrink-0">
+          <span className="text-offwhite/50 text-xs whitespace-nowrap">{formatTime(appointment.checked_in_at)}</span>
+          <div className="flex items-center gap-1">
+            <button onClick={(e) => { e.stopPropagation(); onTogglePriority(appointment.id) }} className={`text-sm ${isPriority ? 'text-gold' : 'text-offwhite/30 hover:text-gold'}`}>★</button>
+            <button onClick={(e) => { e.stopPropagation(); onEdit(appointment) }} className="text-offwhite/40 hover:text-offwhite text-sm">✎</button>
+            <button onClick={(e) => { e.stopPropagation(); onCancel(appointment) }} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 text-sm">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         {appointment.services && (
           <span className="text-gold font-heading">{appointment.services.name}</span>
         )}
+        {appointment.services?.price > 0 && (
+          <span className="text-green-400 font-medium">${appointment.services.price}</span>
+        )}
         {appointment.services?.duration_minutes && (
-          <span className="text-offwhite/50">~{appointment.services.duration_minutes} min</span>
+          <span className="text-offwhite/50">{appointment.services.duration_minutes}min</span>
         )}
         {appointment.customer?.nail_goal && (
-          <span className="text-offwhite/60">{appointment.customer.nail_goal}</span>
+          <span className="text-offwhite/60 text-xs">{appointment.customer.nail_goal}</span>
         )}
       </div>
-
-      {appointment.discount_amount > 0 && (
-        <div className="mt-2 text-sm text-green-400">
-          -{appointment.discount_type === 'percent' ? `${appointment.discount_amount}%` : `$${appointment.discount_amount}`} discount
-        </div>
-      )}
     </div>
   )
 }
@@ -340,7 +333,7 @@ export default function AdminLobby() {
     console.log('Fetching waiting appointments...')
     const { data, error, status } = await supabase
       .from('appointments')
-      .select('*, customer:profiles!appointments_client_id_fkey(full_name, refreshment_pref, nail_goal), services(name, price, duration_minutes)')
+      .select('*, customer:profiles!appointments_client_id_fkey(full_name, phone, refreshment_pref, nail_goal), services(name, price, duration_minutes)')
       .eq('status', 'waiting')
       .order('checked_in_at', { ascending: true })
 
@@ -359,7 +352,7 @@ export default function AdminLobby() {
     console.log('Fetching serving appointments...')
     const { data, error } = await supabase
       .from('appointments')
-      .select('*, customer:profiles!appointments_client_id_fkey(full_name), technician:profiles!technician_id(full_name), services(name, price)')
+      .select('*, customer:profiles!appointments_client_id_fkey(full_name, phone), technician:profiles!technician_id(full_name), services(name, price)')
       .eq('status', 'serving')
       .order('start_time', { ascending: true })
 
@@ -579,7 +572,12 @@ return (
                     {servingAppointments.map(appointment => (
                       <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-heading text-lg text-offwhite">{appointment.customer?.full_name || 'Guest'}</h3>
+                          <div>
+                            <h3 className="font-heading text-lg text-offwhite">{appointment.customer?.full_name || 'Guest'}</h3>
+                            {appointment.customer?.phone && (
+                              <span className="text-xs text-offwhite/40">📞 {appointment.customer.phone}</span>
+                            )}
+                          </div>
                           <button
                             onClick={() => setCancelConfirm(appointment)}
                             className="text-red-400/50 hover:text-red-400 text-sm"
@@ -589,6 +587,9 @@ return (
                         </div>
                         <div className="flex flex-wrap gap-2 text-sm items-center">
                           {appointment.services && <span className="text-gold">{appointment.services.name}</span>}
+                          {appointment.services?.price > 0 && (
+                            <span className="text-green-400 font-medium">${appointment.services.price}</span>
+                          )}
                           {appointment.technician && (
                             <span className="text-xs text-gold/70 ml-auto">with {appointment.technician.full_name}</span>
                           )}
