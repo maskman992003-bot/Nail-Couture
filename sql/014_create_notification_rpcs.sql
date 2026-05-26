@@ -1,6 +1,8 @@
 -- RPC functions for notification management
 -- Used by Sidebar.jsx polling (line 92, 119, 127)
 
+DROP FUNCTION IF EXISTS get_my_notifications(text) CASCADE;
+
 CREATE OR REPLACE FUNCTION get_my_notifications(p_phone text)
 RETURNS TABLE(
   id uuid,
@@ -22,6 +24,8 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS mark_my_notifications_read(text) CASCADE;
+
 CREATE OR REPLACE FUNCTION mark_my_notifications_read(p_phone text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
@@ -31,6 +35,8 @@ BEGIN
   WHERE p.id = n.recipient_id AND p.phone = p_phone;
 END;
 $$;
+
+DROP FUNCTION IF EXISTS mark_notification_read(text, uuid) CASCADE;
 
 CREATE OR REPLACE FUNCTION mark_notification_read(p_phone text, p_notif_id uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$

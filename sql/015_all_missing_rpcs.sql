@@ -3,6 +3,7 @@
 -- ============================================================
 
 -- 1. Loyalty
+DROP FUNCTION IF EXISTS award_loyalty_points(uuid, integer) CASCADE;
 CREATE OR REPLACE FUNCTION award_loyalty_points(p_profile_id uuid, p_points integer)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
@@ -11,6 +12,7 @@ END;
 $$;
 
 -- 2. Available technicians (CustomerBooking, EditBooking)
+DROP FUNCTION IF EXISTS get_available_technicians(date, time) CASCADE;
 CREATE OR REPLACE FUNCTION get_available_technicians(p_date date, p_time time)
 RETURNS TABLE(id uuid, full_name text) LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
@@ -27,6 +29,7 @@ END;
 $$;
 
 -- 3. Staff schedule (accepts p_employee_id OR p_staff_id for backward compat)
+DROP FUNCTION IF EXISTS get_staff_schedule(date, date, uuid, uuid) CASCADE;
 CREATE OR REPLACE FUNCTION get_staff_schedule(
   p_start_date date,
   p_end_date date,
@@ -52,6 +55,7 @@ END;
 $$;
 
 -- 4. Get time-off requests
+DROP FUNCTION IF EXISTS get_time_off_requests(text) CASCADE;
 CREATE OR REPLACE FUNCTION get_time_off_requests(p_status text DEFAULT NULL)
 RETURNS TABLE(
   id uuid, staff_id uuid, start_date date, end_date date,
@@ -68,6 +72,7 @@ END;
 $$;
 
 -- 5. Create shift
+DROP FUNCTION IF EXISTS create_shift(uuid, date, text, time, time) CASCADE;
 CREATE OR REPLACE FUNCTION create_shift(
   p_employee_id uuid,
   p_shift_date date,
@@ -83,6 +88,7 @@ END;
 $$;
 
 -- 6. Delete shift
+DROP FUNCTION IF EXISTS delete_shift(uuid) CASCADE;
 CREATE OR REPLACE FUNCTION delete_shift(p_shift_id uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
@@ -91,6 +97,7 @@ END;
 $$;
 
 -- 7. Review time-off request
+DROP FUNCTION IF EXISTS review_time_off_request(uuid, text, uuid) CASCADE;
 CREATE OR REPLACE FUNCTION review_time_off_request(
   p_request_id uuid,
   p_status text,
@@ -105,6 +112,7 @@ END;
 $$;
 
 -- 8. Get technician appointments (accepts p_employee_id OR p_staff_id)
+DROP FUNCTION IF EXISTS get_technician_appointments(uuid, uuid, date, date) CASCADE;
 CREATE OR REPLACE FUNCTION get_technician_appointments(
   p_employee_id uuid DEFAULT NULL,
   p_staff_id uuid DEFAULT NULL,
@@ -138,6 +146,7 @@ END;
 $$;
 
 -- 9. Create time-off request
+DROP FUNCTION IF EXISTS create_time_off_request(uuid, date, date, text) CASCADE;
 CREATE OR REPLACE FUNCTION create_time_off_request(
   p_staff_id uuid,
   p_start_date date,
