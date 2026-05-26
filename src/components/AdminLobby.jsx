@@ -462,14 +462,15 @@ export default function AdminLobby() {
       if (appt) {
         if (appt.final_price == null && appt.services?.price) updates.final_price = appt.services.price
         setNotification({ message: 'Service Complete!', name: appt?.customer?.full_name })
-      setTimeout(() => setNotification(null), 3000)
-    }
+        setTimeout(() => setNotification(null), 3000)
+      }
 
-    await supabase.from('appointments').update(updates).eq('id', appointmentId)
-    
-    fetchAppointments()
-    fetchServingAppointments()
-    setUpdating(null)
+      await supabase.from('appointments').update(updates).eq('id', appointmentId)
+
+      fetchAppointments()
+      fetchServingAppointments()
+      setUpdating(null)
+    }
   }
 
   const handleEditSave = async (appointmentId, updates) => {
