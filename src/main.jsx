@@ -25,6 +25,7 @@ import TechnicianSchedule from './components/TechnicianSchedule.jsx'
 import Settings from './components/Settings.jsx'
 import Services from './components/Services.jsx'
 import AdminStock from './components/AdminStock.jsx'
+import AdminServices from './components/AdminServices.jsx'
 import AdminBookings from './components/AdminBookings.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
@@ -72,7 +73,7 @@ createRoot(document.getElementById('root')).render(
           } />
           <Route path="/superadmin/services" element={
             <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <Services />
+              <AdminServices />
             </ProtectedRoute>
           } />
           <Route path="/superadmin/staff" element={
@@ -108,7 +109,7 @@ createRoot(document.getElementById('root')).render(
           } />
           <Route path="/admin/services" element={
             <ProtectedRoute allowedRoles={['admin']}>
-              <Services />
+              <AdminServices />
             </ProtectedRoute>
           } />
           <Route path="/admin/staff" element={
