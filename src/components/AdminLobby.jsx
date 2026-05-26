@@ -67,10 +67,11 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
   )
 }
 
-const DraggableAppointmentCard = ({ appointment, isPriority, onTogglePriority, onEdit, onCancel }) => {
+const DraggableAppointmentCard = ({ appointment, onEdit, onCancel }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: appointment.id,
-    data: { type: 'appointment', appointment }
+    data: { type: 'appointment', appointment },
+    activationConstraint: { distance: 8 }
   })
 
   const style = {
@@ -87,16 +88,11 @@ const DraggableAppointmentCard = ({ appointment, isPriority, onTogglePriority, o
       style={style}
       {...listeners}
       {...attributes}
-      className={`bg-offwhite/5 border rounded-xl p-4 sm:p-5 cursor-grab active:cursor-grabbing transition-all ${
-        isPriority ? 'border-gold shadow-lg shadow-gold/20' : 'border-offwhite/10'
-      }`}
+      className={`bg-offwhite/5 border rounded-xl p-4 sm:p-5 cursor-grab active:cursor-grabbing transition-all border-offwhite/10`}
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            {isPriority && (
-              <span className="w-2 h-2 bg-gold rounded-full animate-pulse shrink-0"></span>
-            )}
             <h3 className="font-heading text-lg text-offwhite truncate">
               {appointment.customer?.full_name || 'Guest'}
             </h3>
@@ -114,7 +110,6 @@ const DraggableAppointmentCard = ({ appointment, isPriority, onTogglePriority, o
         <div className="flex items-start gap-2 shrink-0">
           <span className="text-offwhite/50 text-xs whitespace-nowrap">{formatTime(appointment.checked_in_at)}</span>
           <div className="flex items-center gap-1">
-            <button onClick={(e) => { e.stopPropagation(); onTogglePriority(appointment.id) }} className={`text-sm ${isPriority ? 'text-gold' : 'text-offwhite/30 hover:text-gold'}`}>★</button>
             <button onClick={(e) => { e.stopPropagation(); onEdit(appointment) }} className="text-offwhite/40 hover:text-offwhite text-sm">✎</button>
             <button onClick={(e) => { e.stopPropagation(); onCancel(appointment) }} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
           </div>
@@ -408,10 +403,6 @@ export default function AdminLobby() {
     setTodayTotal(count || 0)
   }, [])
 
-  const togglePriority = async (appointmentId) => {
-    // is_priority column was removed - no-op
-  }
-
   const updateStatus = async (appointmentId, status, techId = null) => {
     setUpdating(appointmentId)
     const updates = { status }
@@ -554,8 +545,6 @@ return (
                       <DraggableAppointmentCard
                         key={appointment.id}
                         appointment={appointment}
-                        isPriority={appointment.is_priority}
-                        onTogglePriority={togglePriority}
                         onEdit={setEditingAppointment}
                         onCancel={setCancelConfirm}
                       />
