@@ -30,6 +30,8 @@ export default function CustomerHistory() {
   const [activeTab, setActiveTab] = useState('all');
   const [updatingId, setUpdatingId] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedDetailBooking, setSelectedDetailBooking] = useState(null);
 
   const fetchData = useCallback(async () => {
     const currentUser = localStorage.getItem('salon_user_data');
@@ -153,10 +155,13 @@ export default function CustomerHistory() {
     const addOnTotal = (booking.addonDetails || []).reduce((sum, a) => sum + (a.price || 0), 0);
     const totalPrice = basePrice + addOnTotal;
 
+    const openDetail = () => { setSelectedDetailBooking(booking); setShowDetailModal(true); };
+
     return (
       <div
         key={booking.id}
-        className="rounded-xl p-5 border transition-all"
+        onClick={openDetail}
+        className="rounded-xl p-5 border transition-all cursor-pointer hover:border-gold/30"
         style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(197,160,89,0.15)' }}
       >
         <div className="flex items-start justify-between mb-2">
@@ -184,6 +189,7 @@ export default function CustomerHistory() {
           {isWaiting && (
             <Link
               to={`/customer/edit/${booking.id}`}
+              onClick={(e) => e.stopPropagation()}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border text-offwhite/60 hover:text-gold hover:border-gold/50 transition-all inline-block"
               style={{ borderColor: 'rgba(255,255,255,0.1)' }}
             >
@@ -192,7 +198,7 @@ export default function CustomerHistory() {
           )}
           {canCancel && (
             <button
-              onClick={() => setConfirmCancel(booking)}
+              onClick={(e) => { e.stopPropagation(); setConfirmCancel(booking); }}
               disabled={isUpdating}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border text-red-400 hover:bg-red-900/20 hover:border-red-500/50 transition-all disabled:opacity-30"
               style={{ borderColor: 'rgba(255,255,255,0.1)' }}
@@ -202,7 +208,7 @@ export default function CustomerHistory() {
           )}
           {booking.status === 'completed' && (
             <button
-              onClick={() => generateReceipt(booking)}
+              onClick={(e) => { e.stopPropagation(); generateReceipt(booking); }}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors hover:border-gold/50"
               style={{ borderColor: 'rgba(197,160,89,0.3)', color: '#c5a059' }}
             >
@@ -343,6 +349,56 @@ export default function CustomerHistory() {
               </div>
             </div>
           )}
+
+          {showDetailModal && selectedDetailBooking && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowDetailModal(false)} style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+              <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-8 border-2" style={{ borderColor: 'rgba(197, 160, 89, 0.5)', background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #1a1a1a 100%)' }}>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-heading text-2xl text-gold">Appointment Details</h2>
+                  <button onClick={() => setShowDetailModal(false)} className="text-offwhite/40 hover:text-gold text-xl leading-none">&times;</button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Services</div>
+                    <div className="text-offwhite font-heading text-lg">{selectedDetailBooking.add_ons || selectedDetailBooking.service?.name || 'N/A'}</div>
+                    {(selectedDetailBooking.addonDetails || []).map((a) => (
+                      <div key={a.id} className="text-offwhite/40 text-xs ml-2">+ {a.name} (${a.price})</div>
+                    ))}
+                  </div>
+                  <div>
+                    <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Total Price</div>
+                    <div className="text-gold font-heading text-xl">${(selectedDetailBooking.service?.price || selectedDetailBooking.final_price || selectedDetailBooking.price || 0) + (selectedDetailBooking.addonDetails || []).reduce((s, a) => s + (a.price || 0), 0)}</div>
+                  </div>
+                  <div>
+                    <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Date & Time</div>
+                    <div className="text-offwhite">{selectedDetailBooking.scheduled_at || selectedDetailBooking.checked_in_at ? new Date(selectedDetailBooking.scheduled_at || selectedDetailBooking.checked_in_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' at ' + new Date(selectedDetailBooking.scheduled_at || selectedDetailBooking.checked_in_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'Walk-in'}</div>
+                  </div>
+                  <div>
+                    <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Duration</div>
+                    <div className="text-offwhite">{selectedDetailBooking.service?.duration_minutes || '—'} min</div>
+                  </div>
+                  {selectedDetailBooking.tech?.full_name && (
+                    <div>
+                      <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Technician</div>
+                      <div className="text-offwhite">{selectedDetailBooking.tech.full_name}</div>
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Status</div>
+                    <span className={`px-3 py-1 text-xs border rounded-full ${statusConfig[selectedDetailBooking.status]?.color || ''}`}>{statusConfig[selectedDetailBooking.status]?.label || selectedDetailBooking.status}</span>
+                  </div>
+                  {selectedDetailBooking.cancelled_at && (
+                    <div>
+                      <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Cancelled On</div>
+                      <div className="text-offwhite/70">{new Date(selectedDetailBooking.cancelled_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => setShowDetailModal(false)} className="mt-8 w-full py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90 transition-colors">Close</button>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     );
