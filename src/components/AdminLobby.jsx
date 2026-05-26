@@ -359,7 +359,7 @@ export default function AdminLobby() {
     console.log('Fetching serving appointments...')
     const { data, error } = await supabase
       .from('appointments')
-      .select('*, customer:profiles!appointments_client_id_fkey(full_name), technician:profiles!technician_id(full_name), services(name)')
+      .select('*, customer:profiles!appointments_client_id_fkey(full_name), technician:profiles!technician_id(full_name), services(name, price)')
       .eq('status', 'serving')
       .order('start_time', { ascending: true })
 
@@ -426,6 +426,7 @@ export default function AdminLobby() {
     if (status === 'serving') updates.start_time = new Date().toISOString()
     if (status === 'completed') {
       const appt = servingAppointments.find(a => a.id === appointmentId)
+      if (appt?.services?.price) updates.final_price = appt.services.price
       setNotification({ message: 'Service Complete!', name: appt?.customer?.full_name })
       setTimeout(() => setNotification(null), 3000)
     }
