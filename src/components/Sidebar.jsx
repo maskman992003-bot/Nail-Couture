@@ -140,9 +140,8 @@ export default function Sidebar() {
     let navItems = navItemsByRole[sessionRole] || navItemsByRole.customer;
     
     // Filter out booking item when online booking is disabled, 
-    // but allow super_admin and owner to always see it for testing
-    if (!CUSTOMER_ONLINE_BOOKING && 
-        !(sessionRole === 'super_admin' || sessionRole === 'owner')) {
+    // but allow ONLY super_admin to always see it for testing/system management
+    if (!CUSTOMER_ONLINE_BOOKING && sessionRole !== 'super_admin') {
       navItems = navItems.filter(item => item.id !== 'book');
     }
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
