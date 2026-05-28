@@ -136,25 +136,16 @@ export default function Sidebar() {
 
    if (!user) return null;
 
-   const sessionRole = user.role || 'customer';
-   let navItems = navItemsByRole[sessionRole] || navItemsByRole.customer;
+   // ALWAYS use the actual user role from the database, never the URL-derived session role
+   const actualUserRole = user.role || 'customer';
+   let navItems = navItemsByRole[actualUserRole] || navItemsByRole.customer;
    
-   // Filter out booking item when online booking is disabled, 
+   // Filter out bookings item when online booking is disabled, 
    // but allow ONLY super_admin to always see it for testing/system management
-   // EXCEPTION: Even if viewing superadmin route, if actual user role is owner, hide bookings tab
-   const isActualOwner = user.role === 'owner';
-   const shouldHideBooking = !CUSTOMER_ONLINE_BOOKING && sessionRole !== 'super_admin' && !isActualOwner;
-   
-   // DEBUG: Log the decision making process
-   console.log('Sidebar DEBUG: user.role=', user.role, 'sessionRoute-based role=', sessionRole, 
-               'isActualOwner=', isActualOwner, 'CUSTOMER_ONLINE_BOOKING=', CUSTOMER_ONLINE_BOOKING);
-   console.log('Sidebar DEBUG: Should hide booking?', shouldHideBooking);
+   const shouldHideBooking = !CUSTOMER_ONLINE_BOOKING && actualUserRole !== 'super_admin';
    
    if (shouldHideBooking) {
-     navItems = navItems.filter(item => item.id !== 'book');
-     console.log('Sidebar DEBUG: Filtering out book item. Remaining items:', navItems.map(i => i.id));
-   } else {
-     console.log('Sidebar DEBUG: NOT filtering out book items');
+     navItems = navItems.filter(item => item.id !== 'bookings');
    }
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
   const initials = (user?.full_name || user?.email || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
