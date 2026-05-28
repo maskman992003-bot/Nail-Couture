@@ -120,10 +120,12 @@ export default function SuperAdmin() {
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-heading text-3xl text-gold">Super Admin</h1>
-              <p className="text-offwhite/60 text-sm mt-1">Welcome back, {user?.full_name}</p>
-            </div>
+             <div>
+               <h1 className="font-heading text-3xl text-gold">
+                 {user?.role === 'owner' ? 'Owner Dashboard' : user?.role === 'partner' ? 'Partner Dashboard' : 'Super Admin'}
+               </h1>
+               <p className="text-offwhite/60 text-sm mt-1">Welcome back, {user?.full_name}</p>
+             </div>
             <div className="text-offwhite/50 text-sm">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </div>

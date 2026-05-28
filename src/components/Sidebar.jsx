@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
-import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
+import { featureFlags } from '../constants/featureFlags';
 
 const navItemsByRole = {
   super_admin: [
@@ -134,19 +134,40 @@ export default function Sidebar() {
     } catch { }
   };
 
-   if (!user) return null;
+    if (!user) return null;
 
-   // ALWAYS use the actual user role from the database, never the URL-derived session role
-   const actualUserRole = user.role || 'customer';
-   let navItems = navItemsByRole[actualUserRole] || navItemsByRole.customer;
-   
-   // Filter out bookings item when online booking is disabled, 
-   // but allow ONLY super_admin to always see it for testing/system management
-   const shouldHideBooking = !CUSTOMER_ONLINE_BOOKING && actualUserRole !== 'super_admin';
-   
-   if (shouldHideBooking) {
-     navItems = navItems.filter(item => item.id !== 'bookings');
-   }
+    // ALWAYS use the actual user role from the database, never the URL-derived session role
+    const actualUserRole = user.role || 'customer';
+    let navItems = navItemsByRole[actualUserRole] || navItemsByRole.customer;
+    
+    // Feature flag mappings for navigation items
+    const navItemFeatureMappings = {
+      bookings: 'customer.onlineBooking',
+      book: 'customer.onlineBooking'
+    };
+    
+    // Filter navigation items based on feature flags
+    // Only super_admin sees all features regardless of flags (for system management)
+    if (actualUserRole !== 'super_admin') {
+      navItems = navItems.filter(item => {
+        // If no feature mapping exists for this item, show it by default
+        if (!navItemFeatureMappings[item.id]) {
+          return true;
+        }
+        
+        // Get the feature flag value using the mapping
+        const [featureArea, featureName] = navItemFeatureMappings[item.id].split('.');
+        const featureFlag = featureFlags[featureArea]?.[featureName];
+        
+        // If feature flag is undefined, show the item by default (safe fallback)
+        if (featureFlag === undefined) {
+          return true;
+        }
+        
+        // Only show the item if its feature flag is true
+        return featureFlag;
+      });
+    }
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
   const initials = (user?.full_name || user?.email || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
