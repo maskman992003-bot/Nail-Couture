@@ -92,6 +92,9 @@ export default function Navbar({ currentPage, onNavigate }) {
                     <a href="/login" className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium">
                       Login
                     </a>
+                    {/* DEBUG: Navbar booking logic */}
+                    {console.log('Navbar DEBUG: sessionRole=', (user?.role || 'customer'), 'CUSTOMER_ONLINE_BOOKING=', CUSTOMER_ONLINE_BOOKING)}
+                    {console.log('Navbar DEBUG: Will show BOOK button?', CUSTOMER_ONLINE_BOOKING)}
                     {CUSTOMER_ONLINE_BOOKING ? (
                       <button
                         onClick={() => scrollToSection('book')}

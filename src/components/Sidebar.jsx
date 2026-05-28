@@ -134,16 +134,16 @@ export default function Sidebar() {
     } catch { }
   };
 
-  if (!user) return null;
+   if (!user) return null;
 
-    const sessionRole = user.role || 'customer';
-    let navItems = navItemsByRole[sessionRole] || navItemsByRole.customer;
-    
-    // Filter out booking item when online booking is disabled, 
-    // but allow ONLY super_admin to always see it for testing/system management
-    if (!CUSTOMER_ONLINE_BOOKING && sessionRole !== 'super_admin') {
-      navItems = navItems.filter(item => item.id !== 'book');
-    }
+   const sessionRole = user.role || 'customer';
+   let navItems = navItemsByRole[sessionRole] || navItemsByRole.customer;
+   
+   // Filter out booking item when online booking is disabled, 
+   // but allow ONLY super_admin to always see it for testing/system management
+   if (!CUSTOMER_ONLINE_BOOKING && sessionRole !== 'super_admin') {
+     navItems = navItems.filter(item => item.id !== 'book');
+   }
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
   const initials = (user?.full_name || user?.email || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
