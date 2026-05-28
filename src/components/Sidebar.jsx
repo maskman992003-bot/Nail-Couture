@@ -141,8 +141,20 @@ export default function Sidebar() {
    
    // Filter out booking item when online booking is disabled, 
    // but allow ONLY super_admin to always see it for testing/system management
-   if (!CUSTOMER_ONLINE_BOOKING && sessionRole !== 'super_admin') {
+   // EXCEPTION: Even if viewing superadmin route, if actual user role is owner, hide bookings tab
+   const isActualOwner = user.role === 'owner';
+   const shouldHideBooking = !CUSTOMER_ONLINE_BOOKING && sessionRole !== 'super_admin' && !isActualOwner;
+   
+   // DEBUG: Log the decision making process
+   console.log('Sidebar DEBUG: user.role=', user.role, 'sessionRoute-based role=', sessionRole, 
+               'isActualOwner=', isActualOwner, 'CUSTOMER_ONLINE_BOOKING=', CUSTOMER_ONLINE_BOOKING);
+   console.log('Sidebar DEBUG: Should hide booking?', shouldHideBooking);
+   
+   if (shouldHideBooking) {
      navItems = navItems.filter(item => item.id !== 'book');
+     console.log('Sidebar DEBUG: Filtering out book item. Remaining items:', navItems.map(i => i.id));
+   } else {
+     console.log('Sidebar DEBUG: NOT filtering out book items');
    }
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
   const initials = (user?.full_name || user?.email || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
