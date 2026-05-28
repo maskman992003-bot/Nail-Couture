@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
+import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 
 const navItemsByRole = {
   super_admin: [
@@ -135,8 +136,13 @@ export default function Sidebar() {
 
   if (!user) return null;
 
-  const sessionRole = user.role || 'customer';
-  const navItems = navItemsByRole[sessionRole] || navItemsByRole.customer;
+    const sessionRole = user.role || 'customer';
+    let navItems = navItemsByRole[sessionRole] || navItemsByRole.customer;
+    
+    // Filter out booking item when online booking is disabled for ALL roles
+    if (!CUSTOMER_ONLINE_BOOKING) {
+      navItems = navItems.filter(item => item.id !== 'book');
+    }
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
   const initials = (user?.full_name || user?.email || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 

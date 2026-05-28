@@ -19,7 +19,7 @@ export default function AboutContact() {
         </div>
       </section>
 
-      <section className="py-16 sm:py-24 px-4 sm:px-6 bg-offwhite">
+       <section id="contact" className="py-16 sm:py-24 px-4 sm:px-6 bg-offwhite">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h3 className="font-heading text-charcoal text-2xl sm:text-3xl mb-4">Visit Our Studio</h3>

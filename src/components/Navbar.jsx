@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 
 export default function Navbar({ currentPage, onNavigate }) {
   const { user, logout } = useAuth();
@@ -86,19 +87,28 @@ export default function Navbar({ currentPage, onNavigate }) {
                     Logout
                   </button>
                 </>
-              ) : (
-                <>
-                  <a href="/login" className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium">
-                    Login
-                  </a>
-                  <button
-                    onClick={() => scrollToSection('book')}
-                    className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
-                  >
-                    BOOK
-                  </button>
-                </>
-              )}
+                ) : (
+                  <>
+                    <a href="/login" className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium">
+                      Login
+                    </a>
+                    {CUSTOMER_ONLINE_BOOKING ? (
+                      <button
+                        onClick={() => scrollToSection('book')}
+                        className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                      >
+                        BOOK
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => scrollToSection('contact')}
+                        className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                      >
+                        CONTACT US
+                      </button>
+                    )}
+                  </>
+                )}
             </div>
           </div>
 
