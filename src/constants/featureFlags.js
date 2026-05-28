@@ -63,6 +63,12 @@ export const featureFlags = {
     // Phase 2
     mobileApp: false,               // Native mobile app (Phase 2+)
     apiAccess: false,               // Third-party integrations (Phase 3)
+  },
+  
+  // Management Features
+  management: {
+    // Phase 1 (Currently Active)
+    customerHistory: true,          // View customer profiles and visit histories
   }
 };
 
@@ -73,3 +79,4 @@ export const TIME_OFF_REQUESTS = featureFlags.staff.timeOffRequests;
 export const INVENTORY_AUTOMATION = featureFlags.operations.autoReorder;
 export const LIVE_FLOOR_TRACKER = featureFlags.customer.liveFloorTracker;
 export const ADVANCED_REPORTING = featureFlags.staff.advancedReporting;
+export const MANAGEMENT_CUSTOMER_HISTORY = featureFlags.management.customerHistory;

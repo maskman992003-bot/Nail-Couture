@@ -10,6 +10,7 @@ import CustomerBooking from './components/CustomerBooking.jsx'
 import CustomerHistory from './components/CustomerHistory.jsx'
 import CustomerLoyalty from './components/CustomerLoyalty.jsx'
 import CustomerProfile from './components/CustomerProfile.jsx'
+import CustomerManagementHistory from './components/CustomerManagementHistory.jsx'
 import EditBooking from './components/EditBooking.jsx'
 import SuperAdmin from './components/SuperAdmin.jsx'
 import Admin from './components/Admin.jsx'
@@ -101,13 +102,18 @@ createRoot(document.getElementById('root')).render(
                <StaffSchedule />
              </ProtectedRoute>
            } />
-           <Route path="/superadmin/bookings" element={
-             <ProtectedRoute allowedRoles={['super_admin']}>
-               <AdminBookings />
-             </ProtectedRoute>
-           } />
-           
-           {/* Owner Routes */}
+            <Route path="/superadmin/bookings" element={
+              <ProtectedRoute allowedRoles={['super_admin']}>
+                <AdminBookings />
+              </ProtectedRoute>
+            } />
+            <Route path="/superadmin/customers" element={
+              <ProtectedRoute allowedRoles={['super_admin']}>
+                <CustomerManagementHistory />
+              </ProtectedRoute>
+            } />
+            
+            {/* Owner Routes */}
            <Route path="/owner" element={
              <ProtectedRoute allowedRoles={['owner']}>
                <SuperAdmin />
@@ -153,13 +159,18 @@ createRoot(document.getElementById('root')).render(
                <StaffSchedule />
              </ProtectedRoute>
            } />
-           <Route path="/owner/bookings" element={
-             <ProtectedRoute allowedRoles={['owner']}>
-               <AdminBookings />
-             </ProtectedRoute>
-           } />
-           
-           {/* Partner Routes */}
+            <Route path="/owner/bookings" element={
+              <ProtectedRoute allowedRoles={['owner']}>
+                <AdminBookings />
+              </ProtectedRoute>
+            } />
+            <Route path="/owner/customers" element={
+              <ProtectedRoute allowedRoles={['owner']}>
+                <CustomerManagementHistory />
+              </ProtectedRoute>
+            } />
+            
+            {/* Partner Routes */}
            <Route path="/partner" element={
              <ProtectedRoute allowedRoles={['partner']}>
                <SuperAdmin />
@@ -175,16 +186,21 @@ createRoot(document.getElementById('root')).render(
                <AdminReports />
              </ProtectedRoute>
            } />
-           <Route path="/partner/services" element={
-             <ProtectedRoute allowedRoles={['partner']}>
-               <AdminServices />
-             </ProtectedRoute>
-           } />
-           <Route path="/partner/staff" element={
-             <ProtectedRoute allowedRoles={['partner']}>
-               <StaffManagement />
-             </ProtectedRoute>
-           } />
+            <Route path="/partner/services" element={
+              <ProtectedRoute allowedRoles={['partner']}>
+                <AdminServices />
+              </ProtectedRoute>
+            } />
+            <Route path="/partner/customers" element={
+              <ProtectedRoute allowedRoles={['partner']}>
+                <CustomerManagementHistory />
+              </ProtectedRoute>
+            } />
+            <Route path="/partner/staff" element={
+              <ProtectedRoute allowedRoles={['partner']}>
+                <StaffManagement />
+              </ProtectedRoute>
+            } />
            <Route path="/partner/staff/:id" element={
              <ProtectedRoute allowedRoles={['partner']}>
                <StaffProfile />
