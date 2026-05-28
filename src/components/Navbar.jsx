@@ -10,18 +10,20 @@ export default function Navbar({ currentPage, onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const getHomeHref = () => {
-    if (!user) return '/';
-    if (user.is_staff) {
-      const role = user.role;
-      if (role === 'super_admin' || role === 'owner' || role === 'partner') return '/superadmin';
-      if (role === 'admin') return '/admin';
-      if (role === 'cashier') return '/cashier';
-      if (role === 'technician') return '/technician';
-      return '/admin';
-    }
-    return '/portal';
-  };
+   const getHomeHref = () => {
+     if (!user) return '/';
+     if (user.is_staff) {
+       const role = user.role;
+       if (role === 'super_admin') return '/superadmin';
+       if (role === 'owner') return '/owner';
+       if (role === 'partner') return '/partner';
+       if (role === 'admin') return '/admin';
+       if (role === 'cashier') return '/cashier';
+       if (role === 'technician') return '/technician';
+       return '/admin';
+     }
+     return '/portal';
+   };
 
   const handleLogoClick = () => {
     navigate(getHomeHref());

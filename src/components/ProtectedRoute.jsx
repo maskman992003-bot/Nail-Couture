@@ -3,9 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 
 const getHomePath = (role) => {
   switch (role) {
-    case 'super_admin':
-    case 'owner':
-    case 'partner': return '/superadmin';
+    case 'super_admin': return '/superadmin';
+    case 'owner': return '/owner';
+    case 'partner': return '/partner';
     case 'admin': return '/admin';
     case 'cashier': return '/cashier';
     case 'technician': return '/technician';

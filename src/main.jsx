@@ -32,9 +32,9 @@ import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 
 const getHomePath = (role) => {
   switch (role) {
-    case 'super_admin':
-    case 'owner':
-    case 'partner': return '/superadmin';
+    case 'super_admin': return '/superadmin';
+    case 'owner': return '/owner';
+    case 'partner': return '/partner';
     case 'admin': return '/admin';
     case 'cashier': return '/cashier';
     case 'technician': return '/technician';
@@ -56,11 +56,160 @@ createRoot(document.getElementById('root')).render(
           <Route path="/login" element={<ClientLogin />} />
           <Route path="/register" element={<ClientRegister />} />
 
-          <Route path="/superadmin" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <SuperAdmin />
-            </ProtectedRoute>
-          } />
+           <Route path="/superadmin" element={
+             <ProtectedRoute allowedRoles={['super_admin']}>
+               <SuperAdmin />
+             </ProtectedRoute>
+           } />
+           <Route path="/superadmin/lobby" element={
+             <ProtectedRoute allowedRoles={['super_admin']}>
+               <AdminLobby />
+             </ProtectedRoute>
+           } />
+           <Route path="/superadmin/reports" element={
+             <ProtectedRoute allowedRoles={['super_admin']}>
+               <AdminReports />
+             </ProtectedRoute>
+           } />
+           <Route path="/superadmin/services" element={
+             <ProtectedRoute allowedRoles={['super_admin']}>
+               <AdminServices />
+             </ProtectedRoute>
+           } />
+           <Route path="/superadmin/staff" element={
+             <ProtectedRoute allowedRoles={['super_admin']}>
+               <StaffManagement />
+             </ProtectedRoute>
+           } />
+           <Route path="/superadmin/staff/:id" element={
+             <ProtectedRoute allowedRoles={['super_admin']}>
+               <StaffProfile />
+             </ProtectedRoute>
+           } />
+           <Route path="/superadmin/settings" element={
+             <ProtectedRoute allowedRoles={['super_admin', 'admin', 'cashier', 'technician']}>
+               <Settings />
+             </ProtectedRoute>
+           } />
+           <Route path="/superadmin/stock" element={
+             <ProtectedRoute allowedRoles={['super_admin']}>
+               <AdminStock />
+             </ProtectedRoute>
+           } />
+           <Route path="/superadmin/schedule" element={
+             <ProtectedRoute allowedRoles={['super_admin']}>
+               <StaffSchedule />
+             </ProtectedRoute>
+           } />
+           <Route path="/superadmin/bookings" element={
+             <ProtectedRoute allowedRoles={['super_admin']}>
+               <AdminBookings />
+             </ProtectedRoute>
+           } />
+           
+           {/* Owner Routes */}
+           <Route path="/owner" element={
+             <ProtectedRoute allowedRoles={['owner']}>
+               <SuperAdmin />
+             </ProtectedRoute>
+           } />
+           <Route path="/owner/lobby" element={
+             <ProtectedRoute allowedRoles={['owner']}>
+               <AdminLobby />
+             </ProtectedRoute>
+           } />
+           <Route path="/owner/reports" element={
+             <ProtectedRoute allowedRoles={['owner']}>
+               <AdminReports />
+             </ProtectedRoute>
+           } />
+           <Route path="/owner/services" element={
+             <ProtectedRoute allowedRoles={['owner']}>
+               <AdminServices />
+             </ProtectedRoute>
+           } />
+           <Route path="/owner/staff" element={
+             <ProtectedRoute allowedRoles={['owner']}>
+               <StaffManagement />
+             </ProtectedRoute>
+           } />
+           <Route path="/owner/staff/:id" element={
+             <ProtectedRoute allowedRoles={['owner']}>
+               <StaffProfile />
+             </ProtectedRoute>
+           } />
+           <Route path="/owner/settings" element={
+             <ProtectedRoute allowedRoles={['owner', 'admin', 'cashier', 'technician']}>
+               <Settings />
+             </ProtectedRoute>
+           } />
+           <Route path="/owner/stock" element={
+             <ProtectedRoute allowedRoles={['owner']}>
+               <AdminStock />
+             </ProtectedRoute>
+           } />
+           <Route path="/owner/schedule" element={
+             <ProtectedRoute allowedRoles={['owner']}>
+               <StaffSchedule />
+             </ProtectedRoute>
+           } />
+           <Route path="/owner/bookings" element={
+             <ProtectedRoute allowedRoles={['owner']}>
+               <AdminBookings />
+             </ProtectedRoute>
+           } />
+           
+           {/* Partner Routes */}
+           <Route path="/partner" element={
+             <ProtectedRoute allowedRoles={['partner']}>
+               <SuperAdmin />
+             </ProtectedRoute>
+           } />
+           <Route path="/partner/lobby" element={
+             <ProtectedRoute allowedRoles={['partner']}>
+               <AdminLobby />
+             </ProtectedRoute>
+           } />
+           <Route path="/partner/reports" element={
+             <ProtectedRoute allowedRoles={['partner']}>
+               <AdminReports />
+             </ProtectedRoute>
+           } />
+           <Route path="/partner/services" element={
+             <ProtectedRoute allowedRoles={['partner']}>
+               <AdminServices />
+             </ProtectedRoute>
+           } />
+           <Route path="/partner/staff" element={
+             <ProtectedRoute allowedRoles={['partner']}>
+               <StaffManagement />
+             </ProtectedRoute>
+           } />
+           <Route path="/partner/staff/:id" element={
+             <ProtectedRoute allowedRoles={['partner']}>
+               <StaffProfile />
+             </ProtectedRoute>
+           } />
+           <Route path="/partner/settings" element={
+             <ProtectedRoute allowedRoles={['partner', 'admin', 'cashier', 'technician']}>
+               <Settings />
+             </ProtectedRoute>
+           } />
+           <Route path="/partner/stock" element={
+             <ProtectedRoute allowedRoles={['partner']}>
+               <AdminStock />
+             </ProtectedRoute>
+           } />
+           <Route path="/partner/schedule" element={
+             <ProtectedRoute allowedRoles={['partner']}>
+               <StaffSchedule />
+             </ProtectedRoute>
+           } />
+           <Route path="/partner/bookings" element={
+             <ProtectedRoute allowedRoles={['partner']}>
+               <AdminBookings />
+             </ProtectedRoute>
+           } />
           <Route path="/superadmin/lobby" element={
             <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
               <AdminLobby />
