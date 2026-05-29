@@ -52,7 +52,7 @@ export const featureFlags = {
     vendorManagement: false,        // Manage supplier relationships (Phase 3)
   },
   
-  // Global Application Features
+// Global Application Features
   global: {
     // Always On
     authentication: true,           // Login/logout/user management

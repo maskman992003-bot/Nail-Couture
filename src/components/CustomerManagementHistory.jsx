@@ -21,107 +21,123 @@ export default function CustomerManagementHistory() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerVisits, setCustomerVisits] = useState({});
 
-  const fetchCustomers = useCallback(async () => {
-    if (!user?.is_staff) { 
-      setLoading(false); 
-      navigate('/portal'); 
-      return; 
-    }
+    const fetchCustomers = useCallback(async () => {
+      // Only allow management roles to access customer history
+      if (!user?.role) { 
+        setLoading(false); 
+        navigate('/portal'); 
+        return; 
+      }
+      
+      // Normalize role for comparison (trim and lowercase)
+      const normalizedRole = user.role.toString().trim().toLowerCase();
+      const managementRoles = ['super_admin', 'owner', 'partner'];
+      if (!managementRoles.includes(normalizedRole)) { 
+        setLoading(false); 
+        navigate('/portal'); 
+        return; 
+      }
     
     try {
-      // Fetch all customer profiles
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, phone, role, created_at')
-        .eq('role', 'customer')
-        .order('full_name');
+       // Fetch all profiles (we'll filter for customers in JavaScript to handle role variations)
+       const { data: profilesData, error: profilesError } = await supabase
+         .from('profiles')
+         .select('id, full_name, email, phone, role, created_at')
+         .order('full_name');
 
       if (profilesError) throw profilesError;
 
-      // Fetch all appointments with related data
-      const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          customer_id,
-          technician_id,
-          service_id,
-          scheduled_at,
-          checked_in_at,
-          completed_at,
-          cancelled_at,
-          status,
-          final_price,
-          services!inner(id, name, price, duration_minutes),
-          technicians:profiles!appointments_technician_id_fkey(id, full_name, role),
-          discounts!appointments_id_fkey(id, amount, reason, authorized_by)
-        `)
-        .order('scheduled_at', { ascending: false });
+       // Fetch all appointments with related data using explicit foreign key paths to avoid ambiguous relationship loops
+       const { data: appointmentsData, error: appointmentsError } = await supabase
+         .from('appointments')
+         .select(`
+           *,
+           services:appointments_service_id_fkey!left(*),
+           technicians:profiles!appointments_technician_id_fkey!left(*)
+         `)
+         .order('created_at', { ascending: false });
+       console.log("Appointments Raw Data:", appointmentsData, appointmentsError);
 
-      if (appointmentsError) throw appointmentsError;
+       if (appointmentsError) {
+         console.error('Appointments query error:', appointmentsError);
+         throw appointmentsError;
+       }
+       
+       // Log if we got no appointments data (could indicate RLS issue)
+       if (!appointmentsData || appointmentsData.length === 0) {
+         console.warn('No appointments data returned from query - possible RLS restriction or empty table');
+       }
 
       // Process data: group appointments by customer
       const customerMap = new Map();
       
-      // Initialize customer data from profiles
-      profilesData.forEach(profile => {
-        customerMap.set(profile.id, {
-          ...profile,
-          visits: [],
-          totalVisits: 0,
-          totalSpent: 0,
-          lastVisit: null
-        });
-      });
+       // Initialize customer data from profiles (only include actual customers)
+       profilesData.forEach(profile => {
+         // Normalize role for customer check (handle case variations and whitespace)
+         const normalizedRole = profile.role?.toString().trim().toLowerCase() || '';
+         if (normalizedRole === 'customer') {
+           customerMap.set(profile.id, {
+             ...profile,
+             visits: [],
+             totalVisits: 0,
+             totalSpent: 0,
+             lastVisit: null
+           });
+         }
+       });
 
-      // Add appointments to respective customers
-      appointmentsData.forEach(appointment => {
-        const customerId = appointment.customer_id;
-        if (customerMap.has(customerId)) {
-          const customer = customerMap.get(customerId);
-          
-          // Format appointment data
-          const visit = {
-            id: appointment.id,
-            date: appointment.scheduled_at || appointment.checked_in_at,
-            service: appointment.services ? {
-              name: appointment.services.name,
-              price: appointment.services.price,
-              duration: appointment.services.duration_minutes
-            } : null,
-            technician: appointment.technicians ? {
-              id: appointment.technicians.id,
-              name: appointment.technicians.full_name,
-              role: appointment.technicians.role
-            } : null,
-            status: appointment.status,
-            finalPrice: appointment.final_price,
-            discount: appointment.discounts ? {
-              amount: appointment.discounts.amount,
-              reason: appointment.discounts.reason,
-              authorizedBy: appointment.discounts.authorized_by
-            } : null
-          };
-          
-          customer.visits.push(visit);
-          
-          // Update totals
-          if (appointment.status === 'completed') {
-            customer.totalVisits += 1;
-            customer.totalSpent += (appointment.final_price || 0);
-            
-            const visitDate = new Date(appointment.scheduled_at || appointment.checked_in_at);
-            if (!customer.lastVisit || visitDate > new Date(customer.lastVisit)) {
-              customer.lastVisit = appointment.scheduled_at || appointment.checked_in_at;
-            }
-          }
-        }
-      });
+       // Add appointments to respective customers
+       appointmentsData.forEach(appointment => {
+         const customerId = appointment.customer_id;
+         if (customerMap.has(customerId)) {
+           const customer = customerMap.get(customerId);
+           
+           // Format appointment data with proper null handling for LEFT JOINS
+           // Extract discount info directly from appointment table (flat columns)
+           const visit = {
+             id: appointment.id,
+             date: appointment.scheduled_at || appointment.checked_in_at,
+             service: appointment.services ? {
+               name: appointment.services.name,
+               price: appointment.services.price,
+               duration: appointment.services.duration_minutes
+             } : { name: 'Unknown Service', price: 0, duration: 0 },
+             technician: appointment.technicians ? {
+               id: appointment.technicians.id,
+               name: appointment.technicians.full_name,
+               role: appointment.technicians.role
+             } : { id: null, name: 'Unassigned', role: null },
+             status: appointment.status,
+             finalPrice: appointment.final_price,
+             discount: {
+               amount: appointment.discount_amount || 0,
+               reason: appointment.discount_reason || '',
+               authorizedBy: appointment.discount_authorized_by || 'System'
+             }
+           };
+           
+           customer.visits.push(visit);
+           
+           // Update totals
+           if (appointment.status === 'completed') {
+             customer.totalVisits += 1;
+             customer.totalSpent += (appointment.final_price || 0);
+             
+             const visitDate = new Date(appointment.scheduled_at || appointment.checked_in_at);
+             if (!customer.lastVisit || visitDate > new Date(customer.lastVisit)) {
+               customer.lastVisit = appointment.scheduled_at || appointment.checked_in_at;
+             }
+           }
+         } else {
+           // Log warning for appointments with customer_id not found in profiles
+           console.warn('Appointment has customer_id not found in profiles:', appointment.customer_id, appointment.id);
+         }
+       });
 
-      // Convert map to array and sort by name
-      const customersArray = Array.from(customerMap.values())
-        .filter(customer => customer.totalVisits > 0) // Only show customers with visits
-        .sort((a, b) => a.full_name.localeCompare(b.full_name));
+       // Convert map to array and sort by name
+       const customersArray = Array.from(customerMap.values())
+         .filter(customer => customer.visits.length > 0) // Only show customers with visits
+         .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
       setCustomers(customersArray);
     } catch (error) {
@@ -247,35 +263,32 @@ export default function CustomerManagementHistory() {
                       <p className="text-offwhite/40 text-center py-4">No visit history available</p>
                     ) : (
                       <div className="space-y-2">
-                        {customer.visits
-                          .filter(visit => visit.status === 'completed')
-                          .sort((a, b) => new Date(b.date) - new Date(a.date))
-                          .map((visit) => (
-                            <div key={visit.id} className="p-3 bg-offwhite/3 rounded-lg border border-gold/5 mb-2">
-                              <div className="flex items-start justify-between mb-1">
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-offwhite font-heading">{visit.service?.name || 'Service'}</div>
-                                  {visit.technician && (
-                                    <div className="text-offwhite/50 text-sm">Technician: {visit.technician.name}</div>
-                                  )}
-                                  <div className="text-offwhite/50 text-sm">
-                                    {new Date(visit.date).toLocaleDateString('en-US', { 
-                                      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
-                                    })}
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-gold font-heading">${(visit.finalPrice || 0).toFixed(2)}</div>
-                                  {visit.discount && (
-                                    <div className="text-offwhite/40 text-xs mt-1">
-                                      Discount: -${visit.discount.amount} ({visit.discount.reason})<br/>
-                                      Authorized by: Staff ID {visit.discount.authorizedBy}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                       {customer.visits
+                             .sort((a, b) => new Date(b.date) - new Date(a.date))
+                             .map((visit) => (
+                             <div key={visit.id} className="p-3 bg-offwhite/3 rounded-lg border border-gold/5 mb-2">
+                               <div className="flex items-start justify-between mb-1">
+                                 <div className="flex-1 min-w-0">
+                                   <div className="text-offwhite font-heading">{visit.service.name}</div>
+                                   <div className="text-offwhite/50 text-sm">Technician: {visit.technician.name}</div>
+                                   <div className="text-offwhite/50 text-sm">
+                                     {new Date(visit.date).toLocaleDateString('en-US', { 
+                                       weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
+                                     })}
+                                   </div>
+                                 </div>
+                                 <div className="text-right">
+                                   <div className="text-gold font-heading">${visit.finalPrice.toFixed(2)}</div>
+                                   {visit.discount.amount !== 0 && (
+                                     <div className="text-offwhite/40 text-xs mt-1">
+                                       Discount: -${visit.discount.amount} ({visit.discount.reason})<br/>
+                                       Authorized by: Staff ID {visit.discount.authorizedBy || 'Unknown'}
+                                     </div>
+                                   )}
+                                 </div>
+                               </div>
+                             </div>
+                           ))}
                       </div>
                     )}
                   </div>
