@@ -203,38 +203,40 @@ export default function AdminServices() {
                  </div>
                </div>
 
-              {showForm && (
-                <div className="mb-6 p-4 bg-offwhite/10 rounded-xl border border-gold/30">
-                  <h3 className="text-gold font-heading mb-4">{editing ? 'Edit Service' : 'Add Service'}</h3>
-                  {apiError && <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-300 text-sm">{apiError}</div>}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <div>
-                      <label className="block text-offwhite/60 text-xs mb-1">Name</label>
-                      <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm" placeholder="Service name" />
-                    </div>
-                    <div>
-                      <label className="block text-offwhite/60 text-xs mb-1">Price</label>
-                      <input type="number" step="0.01" value={form.price} onChange={e => setForm({...form, price: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm" placeholder="0.00" />
-                    </div>
-                    <div>
-                      <label className="block text-offwhite/60 text-xs mb-1">Duration (min)</label>
-                      <input type="number" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm" placeholder="60" />
-                    </div>
-                    <div>
-                      <label className="block text-offwhite/60 text-xs mb-1">Category</label>
-                      <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm">
-                        {categories.map(cat => (
-                          <option key={cat.id} value={cat.name}>{cat.name}</option>
-                        ))}
-                      </select>
+                {showForm && (
+                  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
+                    <div className="w-full max-w-md rounded-xl p-6" style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(197, 160, 89, 0.2)' }}>
+                      <h3 className="text-gold font-heading mb-4">{editing ? 'Edit Service' : 'Add Service'}</h3>
+                      {apiError && <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-300 text-sm">{apiError}</div>}
+                      <div className="grid grid-cols-1 gap-4 mb-6">
+                        <div>
+                          <label className="block text-offwhite/60 text-xs mb-1">Name</label>
+                          <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm" placeholder="Service name" />
+                        </div>
+                        <div>
+                          <label className="block text-offwhite/60 text-xs mb-1">Price</label>
+                          <input type="number" step="0.01" value={form.price} onChange={e => setForm({...form, price: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm" placeholder="0.00" />
+                        </div>
+                        <div>
+                          <label className="block text-offwhite/60 text-xs mb-1">Duration (min)</label>
+                          <input type="number" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm" placeholder="60" />
+                        </div>
+                        <div>
+                          <label className="block text-offwhite/60 text-xs mb-1">Category</label>
+                          <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm">
+                            {categories.map(cat => (
+                              <option key={cat.id} value={cat.name}>{cat.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={handleSave} disabled={saving || !form.name || !form.price} className="px-6 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 disabled:opacity-50 transition-colors">{saving ? 'Saving...' : 'Save'}</button>
+                        <button onClick={() => { setShowForm(false); setEditing(null); }} className="px-6 py-2 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg transition-colors">Cancel</button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <button onClick={handleSave} disabled={saving || !form.name || !form.price} className="px-6 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 disabled:opacity-50 transition-colors">{saving ? 'Saving...' : 'Save'}</button>
-                    <button onClick={() => setShowForm(false)} className="px-6 py-2 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg transition-colors">Cancel</button>
-                  </div>
-                </div>
-              )}
+                )}
 
               {apiError && !showForm && <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-300 text-sm">{apiError}</div>}
 

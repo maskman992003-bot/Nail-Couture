@@ -82,8 +82,8 @@ const analyzePeriod = async (period) => {
     const { count } = await supabase
       .from('appointments')
       .select('*', { count: 'exact', head: true })
-      .eq('customer_id', profileId)
-      .lt('check_in_time', range.end)
+     .eq('customer_id', profileId)
+       .lt('checked_in_at', range.end)
     
     if (count <= 1) {
       newCount++
@@ -108,12 +108,12 @@ const analyzePeriod = async (period) => {
     }
   }
   
-  const { count: cancelledToday } = await supabase
-    .from('appointments')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'cancelled')
-    .gte('check_in_time', range.start)
-    .lt('check_in_time', range.end)
+       const { count: cancelledToday } = await supabase
+         .from('appointments')
+         .select('*', { count: 'exact', head: true })
+         .eq('status', 'cancelled')
+         .gte('checked_in_at', range.start)
+         .lt('checked_in_at', range.end)
   
   cancelledCount = cancelledToday || 0
   
@@ -412,8 +412,8 @@ export default function AdminReports() {
         const { count } = await supabase
           .from('appointments')
           .select('*', { count: 'exact', head: true })
-          .eq('customer_id', profileId)
-          .lt('check_in_time', range.end)
+     .eq('customer_id', profileId)
+       .lt('checked_in_at', range.end)
         
         if (count <= 1) {
           newCount++
@@ -442,8 +442,8 @@ export default function AdminReports() {
         .from('appointments')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'cancelled')
-        .gte('check_in_time', range.start)
-        .lt('check_in_time', range.end)
+        .gte('checked_in_at', range.start)
+        .lt('checked_in_at', range.end)
       
       cancelledCount = cancelledToday || 0
       const avgServiceTime = completedCount > 0 ? Math.round(totalDuration / completedCount) : 0
