@@ -31,86 +31,110 @@ export default function CustomerProfile() {
   const fetchProfile = async () => {
     const userId = user?.id;
     if (!userId) { navigate('/login'); return; }
-    try {
-      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-      if (data) {
-        setProfile(data);
-        setForm({
-          full_name: data.full_name || '',
-          email: data.email || '',
-          phone: data.phone || '',
-          nail_goal: data.nail_goal || '',
-          refreshment_pref: data.refreshment_pref || '',
-        });
-      }
-    } catch { }
+    
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+    } else if (data) {
+      setProfile(data);
+      setForm({
+        full_name: data.full_name || '',
+        refreshment_pref: data.refreshment_pref || '',
+        nail_goal: data.nail_goal || '',
+      });
+      setPinMode(data.pin_code ? 'change' : 'set');
+    }
     setLoading(false);
   };
 
   const fetchRefreshments = async () => {
-    try {
-      const { data } = await supabase.from('inventory').select('item_name').eq('category', 'refreshment').gt('quantity', 0).order('item_name');
-      setRefreshments(data || []);
-    } catch { }
+    const { data } = await supabase
+      .from('inventory')
+      .select('item_name')
+      .eq('category', 'refreshment')
+      .gt('quantity', 0)
+      .order('item_name');
+    if (data) setRefreshments(data);
   };
 
-  const handleSave = async () => {
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    if (!profile) return;
     setSaving(true);
-    const { data } = await supabase.from('profiles').update({
-      full_name: form.full_name,
-      email: form.email,
-      phone: form.phone.replace(/\D/g, ''),
-      nail_goal: form.nail_goal || null,
-      refreshment_pref: form.refreshment_pref || null,
-    }).eq('id', profile.id).select();
-    if (data && data[0]) {
-      setProfile(data[0]);
-      login(data[0]);
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: form.full_name,
+        refreshment_pref: form.refreshment_pref || null,
+        nail_goal: form.nail_goal || null,
+      })
+      .eq('id', profile.id)
+      .select()
+      .single();
+
+    if (!error && data) {
+      setProfile(data);
+      if (user) {
+        login({ ...user, ...data });
+      }
+      setEditing(false);
     }
-    setEditing(false);
     setSaving(false);
   };
 
-  const openPinForm = (isChange) => {
-    setPinMode(isChange ? 'change' : 'set');
-    setPinForm({ current_pin: '', new_pin: '', confirm_pin: '' });
-    setPinError('');
-    setPinSuccess('');
-    setShowPinForm(true);
-  };
-
-  const handleSavePin = async (e) => {
+  const handlePinSubmit = async (e) => {
     e.preventDefault();
     setPinError('');
     setPinSuccess('');
 
-    if (pinForm.new_pin.length !== 4 || !/^\d{4}$/.test(pinForm.new_pin)) {
-      setPinError('PIN must be exactly 4 digits');
+    if (pinMode === 'change' && !pinForm.current_pin) {
+      setPinError('Please enter your current PIN');
+      return;
+    }
+    if (!pinForm.new_pin || pinForm.new_pin.length !== 4) {
+      setPinError('New PIN must be exactly 4 digits');
       return;
     }
     if (pinForm.new_pin !== pinForm.confirm_pin) {
-      setPinError('New PIN and confirm PIN do not match');
+      setPinError('New PIN and confirmation do not match');
       return;
-    }
-
-    if (pinMode === 'change') {
-      if (pinForm.current_pin !== profile.pin) {
-        setPinError('Current PIN is incorrect');
-        return;
-      }
     }
 
     setPinLoading(true);
     try {
-      const { data } = await supabase.from('profiles').update({ pin: pinForm.new_pin }).eq('id', profile.id).select();
-      if (data && data[0]) {
-        setProfile(data[0]);
-        login(data[0]);
-        setPinSuccess(pinMode === 'change' ? 'PIN changed successfully!' : 'PIN set successfully!');
-        setShowPinForm(false);
+      if (pinMode === 'change') {
+        const { data: verify, error: verifyErr } = await supabase
+          .from('profiles')
+          .select('pin_code')
+          .eq('id', profile.id)
+          .single();
+        if (verifyErr || verify?.pin_code !== pinForm.current_pin) {
+          setPinError('Incorrect current PIN code');
+          setPinLoading(false);
+          return;
+        }
       }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ pin_code: pinForm.new_pin })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      setPinSuccess('PIN updated successfully!');
+      setPinForm({ current_pin: '', new_pin: '', confirm_pin: '' });
+      setPinMode('change');
+      setTimeout(() => setShowPinForm(false), 1500);
     } catch (err) {
-      setPinError('Failed to save PIN');
+      setPinError('Failed to save PIN code');
     } finally {
       setPinLoading(false);
     }
@@ -121,21 +145,7 @@ export default function CustomerProfile() {
       <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
         <div className="flex items-center justify-center py-20">
-          <div className="text-gold animate-pulse">Loading...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-        <Sidebar />
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <p className="text-offwhite/60 mb-4">Unable to load profile</p>
-            <Link to="/login" className="px-4 py-2 bg-gold text-charcoal rounded-lg">Return to Login</Link>
-          </div>
+          <div className="text-gold animate-pulse tracking-widest text-sm">LOADING ACCOUNT PROFILE...</div>
         </div>
       </div>
     );
@@ -144,212 +154,206 @@ export default function CustomerProfile() {
   return (
     <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-10">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Link to="/portal" className="text-offwhite/40 hover:text-gold text-sm">Home</Link>
-            <span className="text-offwhite/30">/</span>
-            <span className="text-gold font-heading text-sm">My Profile</span>
-          </div>
-          <h1 className="font-heading text-4xl text-gold">My Profile</h1>
-          <p className="text-offwhite/50 text-sm mt-1">Manage your personal account information</p>
+      <style>{`.profile-section select, .profile-section option { background: #1a1a1a; color: #fff; }`}</style>
+      
+      <div className="profile-section p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-3xl mx-auto">
+        <div className="border-b border-gold/10 pb-6 mb-8">
+          <h1 className="font-heading text-3xl text-gold tracking-wide">My Profile</h1>
+          <p className="text-xs text-offwhite/40 mt-1">Manage personal luxury configurations and verification PIN codes</p>
         </div>
 
-        <div className="rounded-2xl p-8 border-2" style={{ background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.05) 0%, rgba(26, 26, 26, 1) 100%)', borderColor: 'rgba(197, 160, 89, 0.3)' }}>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pb-6 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-            <div className="flex items-center gap-5">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)' }}>
-                <span className="text-charcoal font-heading text-xl font-bold">{profile.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
-              </div>
-              <div>
-                <h2 className="font-heading text-2xl text-offwhite">{profile.full_name}</h2>
-                <p className="text-offwhite/50 text-sm">{profile.email}</p>
-              </div>
-            </div>
-            {!editing && (
-              <button onClick={() => setEditing(true)} className="px-5 py-2 border rounded-lg text-sm transition-colors hover:border-gold/50 whitespace-nowrap" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', color: '#c5a059' }}>
-                Edit Profile
-              </button>
-            )}
-          </div>
-
-          {editing ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Full Name</div>
-                  <input
-                    type="text"
-                    value={form.full_name}
-                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                    className="w-full p-4 text-offwhite border rounded-xl focus:border-gold focus:outline-none bg-transparent"
-                    style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                  />
+        {profile && (
+          <div className="space-y-6">
+            <div className="bg-offwhite/5 border border-white/5 rounded-2xl p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-white/5">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gold/10 border border-gold/20 flex items-center justify-center font-heading text-gold text-xl uppercase">
+                    {(profile.full_name || '??').split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  </div>
+                  <div>
+                    <h2 className="text-offwhite font-medium text-lg">{profile.full_name}</h2>
+                    <p className="text-offwhite/40 text-xs mt-0.5">{profile.phone}</p>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Email</div>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full p-4 text-offwhite border rounded-xl focus:border-gold focus:outline-none bg-transparent"
-                    style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                  />
-                </div>
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Phone Number</div>
-                  <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full p-4 text-offwhite border rounded-xl focus:border-gold focus:outline-none bg-transparent"
-                    style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Nail Goal</div>
-                <input
-                  type="text"
-                  value={form.nail_goal}
-                  onChange={(e) => setForm({ ...form, nail_goal: e.target.value })}
-                  placeholder="e.g. Long stiletto, natural gel, nail art"
-                  className="w-full p-4 text-offwhite border rounded-xl focus:border-gold focus:outline-none bg-transparent"
-                  style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-                />
-              </div>
-              <div>
-                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Refreshment Preference</div>
-                {refreshments.length > 0 ? (
-                  <select
-                    value={form.refreshment_pref}
-                    onChange={(e) => setForm({ ...form, refreshment_pref: e.target.value })}
-                    className="w-full p-3 text-offwhite border rounded-lg focus:border-gold focus:outline-none appearance-none cursor-pointer"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' }}
+                {!editing && (
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="px-4 py-2 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-xs font-medium"
                   >
-                    <option value="">None</option>
-                    {refreshments.map((item) => (
-                      <option key={item.name} value={item.name} style={{ backgroundColor: '#111' }}>{item.name}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="py-4 text-offwhite/30 text-sm italic">No refreshments available at this time</div>
+                    Edit Profile Details
+                  </button>
                 )}
               </div>
-              <div className="flex gap-3">
-                <button onClick={handleSave} disabled={saving} className="px-6 py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90 disabled:opacity-50">
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-                <button onClick={() => {
-                  setEditing(false);
-                  setForm({
-                    full_name: profile.full_name,
-                    email: profile.email,
-                    phone: profile.phone,
-                    nail_goal: profile.nail_goal,
-                    refreshment_pref: profile.refreshment_pref,
-                  });
-                }} className="px-6 py-3 border text-offwhite/60 text-sm rounded-xl hover:border-gold/30" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Full Name</div>
-                  <div className="text-offwhite font-heading text-lg">{profile.full_name || 'Not set'}</div>
-                </div>
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Email</div>
-                  <div className="text-offwhite font-heading text-lg">{profile.email || 'Not set'}</div>
-                </div>
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Phone Number</div>
-                  <div className="text-offwhite font-heading text-lg">{profile.phone || 'Not set'}</div>
-                </div>
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Loyalty Points</div>
-                  <div className="text-gold font-heading text-2xl">{profile.loyalty_points || 0}</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Nail Goal</div>
-                  <div className="text-offwhite font-heading text-base">{profile.nail_goal || 'Not set'}</div>
-                </div>
-                <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Refreshment Preference</div>
-                  <div className="text-offwhite font-heading text-base">{profile.refreshment_pref || 'Not set'}</div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
 
-        {showPinForm && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4" onClick={() => setShowPinForm(false)}>
-            <div className="w-full max-w-sm rounded-xl p-6" style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(197,160,89,0.2)' }} onClick={e => e.stopPropagation()}>
-              <h2 className="font-heading text-2xl text-gold mb-1">{pinMode === 'change' ? 'Change PIN' : 'Set PIN'}</h2>
-              <p className="text-offwhite/50 text-sm mb-6">
-                {pinMode === 'change' ? 'Enter your current PIN and choose a new 4-digit PIN.' : 'Choose a 4-digit PIN to secure your account.'}
-              </p>
-              <form onSubmit={handleSavePin} className="space-y-4">
-                {pinMode === 'change' && (
+              {editing ? (
+                <form onSubmit={handleUpdateProfile} className="space-y-5">
                   <div>
-                    <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Current PIN</label>
+                    <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Full Name</label>
                     <input
-                      type="password"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength={4}
-                      value={pinForm.current_pin}
-                      onChange={e => setPinForm({ ...pinForm, current_pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                      placeholder="Enter current PIN"
-                      className="w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl"
+                      type="text"
+                      value={form.full_name}
+                      onChange={e => setForm({ ...form, full_name: e.target.value })}
+                      className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm"
+                      required
                     />
                   </div>
-                )}
-                <div>
-                  <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">New PIN (4 digits)</label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={4}
-                    value={pinForm.new_pin}
-                    onChange={e => setPinForm({ ...pinForm, new_pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                    placeholder="Enter new PIN"
-                    className="w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl"
-                  />
+
+                  <div>
+                    <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Complementary Drink</label>
+                    <select
+                      value={form.refreshment_pref}
+                      onChange={e => setForm({ ...form, refreshment_pref: e.target.value })}
+                      className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm"
+                    >
+                      <option value="">None / No Preference</option>
+                      {refreshments.map((r, i) => (
+                        <option key={i} value={r.item_name}>{r.item_name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Nail Philosophy Goal</label>
+                    <select
+                      value={form.nail_goal}
+                      onChange={e => setForm({ ...form, nail_goal: e.target.value })}
+                      className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm"
+                    >
+                      <option value="">Unset</option>
+                      <option value="Healthy Natural Nails">Healthy Natural Nails</option>
+                      <option value="Long Extensions">Long Extensions</option>
+                      <option value="Intricate Art">Intricate Art</option>
+                    </select>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => { setEditing(false); setForm({ full_name: profile.full_name, refreshment_pref: profile.refreshment_pref || '', nail_goal: profile.nail_goal || '' }); }}
+                      className="flex-1 py-3 bg-charcoal border border-white/10 text-offwhite text-sm rounded-xl hover:bg-white/5 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="flex-1 py-3 bg-gold text-charcoal text-sm rounded-xl hover:bg-gold/90 transition-colors font-medium shadow-lg shadow-gold/10"
+                    >
+                      {saving ? 'Saving...' : 'Save Preferences'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Refreshment preference</span>
+                      <span className="text-sm text-offwhite font-medium">{profile.refreshment_pref || 'None'}</span>
+                    </div>
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Nail profile journey</span>
+                      <span className="text-sm text-gold font-heading">{profile.nail_goal || 'Not specified'}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Confirm PIN</label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={4}
-                    value={pinForm.confirm_pin}
-                    onChange={e => setPinForm({ ...pinForm, confirm_pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                    placeholder="Confirm new PIN"
-                    className="w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl"
-                  />
-                </div>
-                {pinError && <p className="text-red-400 text-sm text-center">{pinError}</p>}
-                {pinSuccess && <p className="text-green-400 text-sm text-center">{pinSuccess}</p>}
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setShowPinForm(false)} className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 transition-colors">Cancel</button>
-                  <button type="submit" disabled={pinLoading} className="flex-1 py-3 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors font-medium disabled:opacity-50">
-                    {pinLoading ? 'Saving...' : 'Save PIN'}
-                  </button>
-                </div>
-              </form>
+              )}
+            </div>
+
+            <div className="bg-offwhite/5 border border-white/5 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-offwhite font-medium text-base flex items-center gap-2">
+                  <span>🔒</span> Kiosk Self-Service PIN
+                </h3>
+                <p className="text-xs text-offwhite/40 mt-1 max-w-md">
+                  Secure your self-service interactions at salon kiosks. Use a 4-digit numeric code to check in without hassle.
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowPinForm(true); setPinError(''); setPinSuccess(''); }}
+                className="px-5 py-2.5 bg-white/5 border border-white/10 text-offwhite rounded-xl hover:bg-white/10 transition-colors text-xs font-medium shrink-0"
+              >
+                {profile.pin_code ? 'Update Security PIN' : 'Setup Kiosk PIN'}
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      {showPinForm && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowPinForm(false)}>
+          <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10 shrink-0">
+              <div>
+                <h2 className="font-heading text-xl text-gold mb-0">{pinMode === 'change' ? 'Change Kiosk PIN' : 'Set Kiosk PIN'}</h2>
+                <p className="text-offwhite/40 text-xs mt-1">Provide a numeric 4-digit passcode for quick logins</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPinForm(false)}
+                className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handlePinSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {pinMode === 'change' && (
+                <div>
+                  <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Current PIN Code</label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={4}
+                    value={pinForm.current_pin}
+                    onChange={e => setPinForm({ ...pinForm, current_pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                    placeholder="••••"
+                    className="w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">New 4-Digit PIN</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  value={pinForm.new_pin}
+                  onChange={e => setPinForm({ ...pinForm, new_pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                  placeholder="Enter new PIN"
+                  className="w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl"
+                />
+              </div>
+
+              <div>
+                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Confirm PIN</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  value={pinForm.confirm_pin}
+                  onChange={e => setPinForm({ ...pinForm, confirm_pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                  placeholder="Confirm new PIN"
+                  className="w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl"
+                />
+              </div>
+
+              {pinError && <p className="text-red-400 text-sm text-center">{pinError}</p>}
+              {pinSuccess && <p className="text-green-400 text-sm text-center">{pinSuccess}</p>}
+
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowPinForm(false)} className="flex-1 py-3 bg-[#0B0B0C] text-offwhite text-sm rounded-xl hover:bg-white/10 transition-colors">Cancel</button>
+                <button type="submit" disabled={pinLoading} className="flex-1 py-3 bg-gold text-charcoal rounded-xl hover:bg-gold/90 transition-colors font-medium text-sm disabled:opacity-50">
+                  {pinLoading ? 'Saving...' : 'Save PIN'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

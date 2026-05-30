@@ -30,6 +30,8 @@ export default function SuperAdmin() {
   const [recentAppointments, setRecentAppointments] = useState([]);
   const [staff, setStaff] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -75,6 +77,61 @@ export default function SuperAdmin() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getAppointmentActivityLabel = (appt) => {
+    if (appt.booking_type) return appt.booking_type;
+    if (appt.type) return appt.type;
+    const dateValue = appt.checked_in_at || appt.created_at;
+    if (dateValue) {
+      const date = new Date(dateValue);
+      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+    return 'Walk-In';
+  };
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
+
+  const getAppointmentBookingType = (appt) => {
+    if (appt.booking_type) return appt.booking_type;
+    if (appt.type) return appt.type;
+    return 'Walk-In';
+  };
+
+  const getAppointmentCheckInLabel = (appt) => {
+    const bookingType = getAppointmentBookingType(appt);
+    return `${bookingType} • ${formatTime(appt.checked_in_at)}`;
+  };
+
+  const getAppointmentTechnicianName = (appt) => {
+    return appt.technician?.full_name || appt.technician_name || 'Unassigned';
+  };
+
+  const getAppointmentFinalPrice = (appt) => {
+    if (appt.final_price != null) return appt.final_price;
+    if (Array.isArray(appt.services)) {
+      return appt.services.reduce((sum, item) => sum + (item?.price || 0), 0);
+    }
+    return appt.services?.price || 0;
+  };
+
+  const getAppointmentServices = (appt) => {
+    const serviceNames = [];
+    if (appt.add_ons) {
+      serviceNames.push(...appt.add_ons.split(',').map((name) => name.trim()).filter(Boolean));
+    }
+    if (appt.services) {
+      if (Array.isArray(appt.services)) {
+        serviceNames.push(...appt.services.map((service) => service?.name).filter(Boolean));
+      } else if (appt.services?.name) {
+        serviceNames.push(appt.services.name);
+      }
+    }
+    return [...new Set(serviceNames)];
   };
 
   useEffect(() => {
@@ -125,7 +182,7 @@ export default function SuperAdmin() {
          </div>
 
          {user?.role !== 'owner' && (
-           <div className="px-4 sm:px-6 lg:px-8 py-4 flex gap-2 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+           <div className="px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row gap-2 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
              <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-gold text-charcoal' : 'bg-offwhite/10 text-offwhite/60 hover:bg-offwhite/20'}`}>
                Dashboard
              </button>
@@ -138,7 +195,7 @@ export default function SuperAdmin() {
         <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
           {activeTab === 'dashboard' && (
             <>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl">
                   <div className="text-offwhite/50 text-sm mb-1">Today's Revenue</div>
                   <div className="text-3xl font-heading text-gold">${stats.todayRevenue.toFixed(0)}</div>
@@ -164,24 +221,114 @@ export default function SuperAdmin() {
   <Link to={user?.role === 'owner' ? '/owner/lobby' : user?.role === 'partner' ? '/partner/lobby' : '/superadmin/lobby'} className="text-gold text-sm hover:underline">View Lobby</Link>
 </div>
                <div className="space-y-3">
-                     {recentAppointments.length > 0 ? recentAppointments.map((appt) => (
-                        <Link to={`/${user.role}/customers?customerId=${appt.customer_id}`} key={appt.id} className="flex items-center justify-between p-3 bg-offwhite/5 rounded-lg block mb-0">
-                          <div>
-                            <div className="text-offwhite font-medium">{appt.customer?.full_name || 'Guest'}</div>
-                            <div className="text-offwhite/50 text-sm">{appt.add_ons || appt.services?.name || 'Service'}</div>
-                          </div>
-                          <div className="text-right">
-                            <span className={`px-2 py-1 text-xs border rounded ${statusColors[appt.status]}`}>
-                              {statusLabels[appt.status]}
-                            </span>
-                            <div className="text-gold text-sm mt-1">${appt.final_price || appt.services?.price}</div>
-                          </div>
-                        </Link>
-                     )) : (
+                     {recentAppointments.length > 0 ? recentAppointments.map((appt) => {
+                        const services = getAppointmentServices(appt);
+                        const primaryService = services[0] || 'Service';
+                        const extraServiceCount = services.length > 1 ? services.length - 1 : 0;
+                        return (
+                          <button
+                            type="button"
+                            key={appt.id}
+                            onClick={() => {
+                              setSelectedAppointment(appt);
+                              setIsDetailsModalOpen(true);
+                            }}
+                            className="grid grid-cols-1 gap-3 md:grid-cols-[1.5fr_2fr_1fr] items-center p-3 bg-offwhite/5 rounded-lg w-full text-left"
+                          >
+                            <div className="min-w-0">
+                              <div className="text-offwhite font-medium truncate">{appt.customer?.full_name || appt.customer?.phone || 'Guest'}</div>
+                              <div className="text-xs text-offwhite/40 mt-1">{getAppointmentCheckInLabel(appt)}</div>
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <div className="truncate text-offwhite/60 text-sm">{primaryService}</div>
+                                {extraServiceCount > 0 && (
+                                  <span className="flex-shrink-0 rounded-full border border-gold/30 bg-gold/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">
+                                    +{extraServiceCount} more
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="min-w-0 text-right">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${statusColors[appt.status]}`}>
+                                {statusLabels[appt.status]}
+                              </span>
+                              <div className="text-gold text-sm font-heading mt-2">${getAppointmentFinalPrice(appt)}</div>
+                            </div>
+                          </button>
+                        );
+                     }) : (
                        <p className="text-offwhite/40 text-center py-8">No appointments today</p>
                      )}
                    </div>
                 </div>
+                {isDetailsModalOpen && selectedAppointment && (
+                  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+                    <div className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-xl border-t sm:border border-gold/10 bg-[#1a1a1a] overflow-hidden">
+                      <div className="relative border-b border-gold/10 p-4 sm:p-6">
+                        <button
+                          type="button"
+                          onClick={() => setIsDetailsModalOpen(false)}
+                          className="absolute right-4 top-4 text-offwhite/60 hover:text-offwhite"
+                          aria-label="Close details"
+                        >
+                          <span className="text-3xl leading-none">×</span>
+                        </button>
+                        <div className="flex flex-col gap-3">
+                          <div>
+                            <h3 className="text-2xl font-heading text-gold">{selectedAppointment.customer?.full_name || 'Guest'}</h3>
+                            <div className="text-offwhite/50 text-sm mt-1">{formatTime(selectedAppointment.checked_in_at)}</div>
+                          </div>
+                          <span className={`inline-flex w-fit px-3 py-1 text-xs font-semibold rounded-full border ${statusColors[selectedAppointment.status]}`}>
+                            {statusLabels[selectedAppointment.status]}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 sm:p-6 pb-0">
+                        <div className="rounded-2xl border border-gold/10 bg-white/5 p-4">
+                          <div className="text-offwhite/50 text-xs uppercase tracking-[0.2em] mb-2">Booking Type</div>
+                          <div className="text-offwhite">{getAppointmentBookingType(selectedAppointment)}</div>
+                        </div>
+                        <div className="rounded-2xl border border-gold/10 bg-white/5 p-4">
+                          <div className="text-offwhite/50 text-xs uppercase tracking-[0.2em] mb-2">Assigned Technician</div>
+                          <div className="text-offwhite">{getAppointmentTechnicianName(selectedAppointment)}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-sm">
+                        <div className="rounded-2xl border border-gold/10 bg-white/5 p-4">
+                          <div className="flex items-center justify-between mb-3 gap-3">
+                            <div className="text-offwhite/50 text-xs uppercase tracking-[0.2em]">Services & Add-ons</div>
+                            <div className="text-offwhite/40 text-xs">{getAppointmentServices(selectedAppointment).length} item(s)</div>
+                          </div>
+                          <ul className="list-disc list-inside space-y-2 text-offwhite/80">
+                            {getAppointmentServices(selectedAppointment).map((service, idx) => (
+                              <li key={`${service}-${idx}`} className="truncate">{service}</li>
+                            ))}
+                            {getAppointmentServices(selectedAppointment).length === 0 && (
+                              <li className="text-offwhite/50">No services listed</li>
+                            )}
+                          </ul>
+                        </div>
+
+                        <div className="rounded-2xl border border-gold/10 bg-white/5 p-4">
+                          <div className="text-offwhite/50 text-xs uppercase tracking-[0.2em] mb-2">Notes</div>
+                          <div className="text-offwhite/80 min-h-[52px]">{selectedAppointment.notes || 'No notes provided'}</div>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-gold/10 p-4 sm:p-6">
+                        <div className="rounded-3xl border border-gold/30 bg-gold/10 p-5 text-right">
+                          <div className="text-offwhite/50 text-xs uppercase tracking-[0.2em] mb-2">Total Final Price</div>
+                          <div className="text-3xl font-heading text-gold">${getAppointmentFinalPrice(selectedAppointment).toFixed(2)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-6">
                   <h2 className="font-heading text-xl text-offwhite mb-4">Quick Actions</h2>

@@ -132,7 +132,7 @@ const analyzePeriod = async (period) => {
 
 const exportPeriodData = async (period) => {
   let range, fileName, appointments
-  
+
   if (period === 'custom') {
     // For custom period, we need the dates to be provided by caller
     // This is handled in the component state
@@ -148,33 +148,56 @@ const exportPeriodData = async (period) => {
   }
 
   appointments = await getAppointmentsData(range.start, range.end)
-  
+
   const customerData = []
   const profileIds = [...new Set(appointments.map(a => a.customer_id))]
-  
+
+  const csvEscape = (value) => {
+    const stringValue = String(value || '')
+    return stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')
+      ? `"${stringValue.replace(/"/g, '""')}"`
+      : stringValue
+  }
+
   for (const profileId of profileIds) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name, email, phone')
       .eq('id', profileId)
       .single()
-    
+
     const profileAppointments = appointments.filter(a => a.customer_id === profileId)
-    
+    const serviceNames = profileAppointments.flatMap((appt) => {
+      const names = []
+      if (Array.isArray(appt.services)) {
+        names.push(...appt.services.map((service) => service?.name).filter(Boolean))
+      } else if (appt.services?.name) {
+        names.push(appt.services.name)
+      }
+      if (appt.add_ons) {
+        names.push(...appt.add_ons.split(',').map((name) => name.trim()).filter(Boolean))
+      }
+      return names
+    })
+
+    const uniqueServiceNames = [...new Set(serviceNames)]
+    const servicesLabel = uniqueServiceNames.join(', ')
+
     if (profile) {
       customerData.push({
         Name: profile.full_name || '',
         Email: profile.email || '',
         Phone: profile.phone || '',
         'Total Visits': profileAppointments.length,
+        'Services': servicesLabel,
         'Total Spent': `$${profileAppointments.reduce((sum, a) => sum + (a.final_price || a.services?.price || 0), 0)}`
       })
     }
   }
 
   const csvContent = [
-    Object.keys(customerData[0] || {}).join(','),
-    ...customerData.map(row => Object.values(row).join(','))
+    Object.keys(customerData[0] || {}).map(csvEscape).join(','),
+    ...customerData.map((row) => Object.values(row).map(csvEscape).join(','))
   ].join('\n')
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -189,35 +212,58 @@ const exportCustomRangeData = async (fromDate, toDate) => {
     start: new Date(fromDate).toISOString(),
     end: new Date(new Date(toDate).getTime() + 86400000).toISOString()
   }
-  
+
   const appointments = await getAppointmentsData(range.start, range.end)
-  
+
   const customerData = []
   const profileIds = [...new Set(appointments.map(a => a.customer_id))]
-  
+
+  const csvEscape = (value) => {
+    const stringValue = String(value || '')
+    return stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')
+      ? `"${stringValue.replace(/"/g, '""')}"`
+      : stringValue
+  }
+
   for (const profileId of profileIds) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name, email, phone')
       .eq('id', profileId)
       .single()
-    
+
     const profileAppointments = appointments.filter(a => a.customer_id === profileId)
-    
+    const serviceNames = profileAppointments.flatMap((appt) => {
+      const names = []
+      if (Array.isArray(appt.services)) {
+        names.push(...appt.services.map((service) => service?.name).filter(Boolean))
+      } else if (appt.services?.name) {
+        names.push(appt.services.name)
+      }
+      if (appt.add_ons) {
+        names.push(...appt.add_ons.split(',').map((name) => name.trim()).filter(Boolean))
+      }
+      return names
+    })
+
+    const uniqueServiceNames = [...new Set(serviceNames)]
+    const servicesLabel = uniqueServiceNames.join(', ')
+
     if (profile) {
       customerData.push({
         Name: profile.full_name || '',
         Email: profile.email || '',
         Phone: profile.phone || '',
         'Total Visits': profileAppointments.length,
+        'Services': servicesLabel,
         'Total Spent': `$${profileAppointments.reduce((sum, a) => sum + (a.final_price || a.services?.price || 0), 0)}`
       })
     }
   }
 
   const csvContent = [
-    Object.keys(customerData[0] || {}).join(','),
-    ...customerData.map(row => Object.values(row).join(','))
+    Object.keys(customerData[0] || {}).map(csvEscape).join(','),
+    ...customerData.map((row) => Object.values(row).map(csvEscape).join(','))
   ].join('\n')
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -309,7 +355,6 @@ const MetricColumn = ({ label, data, isCurrent, showRevenue }) => {
       <div className="py-2">
         <DonutChart data={data} size={150} />
       </div>
-      <div className="mt-2 text-offwhite/50 text-xs">Tap the chart to explore categories in detail</div>
     </div>
   )
 }
@@ -544,9 +589,6 @@ export default function AdminReports() {
             >
               {exporting ? 'Exporting...' : getExportLabel()}
             </button>
-            <div className="rounded-2xl border border-gold/20 bg-[#111] px-4 py-3 text-sm text-offwhite/50">
-              Data refreshed live from recent appointments
-            </div>
           </div>
         </div>
 

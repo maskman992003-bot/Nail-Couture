@@ -317,15 +317,21 @@ export default function CustomerHistory() {
           )}
 
           {confirmCancel && (
-            <div className="fixed inset-0 flex items-center justify-center z-[100] p-4" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
-              <div className="w-full max-w-sm rounded-2xl p-6 border-2" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.4)' }}>
-                <div className="text-center mb-6">
-                  <div className="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+            <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
+              <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197,160,89,0.4)' }}>
+                <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
+                  <div>
+                    <div className="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-heading text-2xl text-offwhite mb-2">Cancel Booking?</h3>
+                    <p className="text-offwhite/50 text-sm">Are you sure you want to cancel this booking?</p>
                   </div>
-                  <h3 className="font-heading text-xl text-offwhite mb-2">Cancel Booking?</h3>
+                  <button onClick={() => setConfirmCancel(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                   <p className="text-offwhite/50 text-sm">
                     Are you sure you want to cancel your <span className="text-offwhite font-medium">{confirmCancel.service?.name}</span> appointment on{' '}
                     <span className="text-offwhite">
@@ -356,13 +362,13 @@ export default function CustomerHistory() {
           )}
 
           {showDetailModal && selectedDetailBooking && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowDetailModal(false)} style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-              <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl p-8 border-2" style={{ borderColor: 'rgba(197, 160, 89, 0.5)', background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #1a1a1a 100%)' }}>
-                <div className="flex items-center justify-between mb-6">
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowDetailModal(false)}>
+              <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
+                <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
                   <h2 className="font-heading text-2xl text-gold">Appointment Details</h2>
                   <button onClick={() => setShowDetailModal(false)} className="text-offwhite/40 hover:text-gold text-xl leading-none">&times;</button>
                 </div>
-                <div className="space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                   <div>
                     <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Services</div>
                     <div className="text-offwhite font-heading text-lg">{selectedDetailBooking.add_ons || selectedDetailBooking.service?.name || 'N/A'}</div>

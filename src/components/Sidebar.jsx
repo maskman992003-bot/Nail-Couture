@@ -446,9 +446,9 @@ export default function Sidebar() {
       ) : null}
 
       {showLogoutConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-[200]" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
-          <div className="w-full max-w-sm rounded-2xl p-8 border" style={{ backgroundColor: '#141414', borderColor: 'rgba(197,160,89,0.3)' }}>
-            <div className="text-center mb-6">
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#141414] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/20 shadow-2xl" style={{ borderColor: 'rgba(197,160,89,0.3)' }}>
+            <div className="text-center mb-6 p-6">
               <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
                 <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

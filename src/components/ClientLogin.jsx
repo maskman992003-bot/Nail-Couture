@@ -172,13 +172,15 @@ export default function ClientLogin() {
       </div>
 
       {step === 'pin' && (
-        <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-          <div className="w-full max-w-sm px-4">
-            <div className="text-center mb-12">
-              <h3 className="font-heading text-2xl text-white mb-2">
-                {profile?.full_name ? `Hello, ${profile.full_name.split(' ')[0]}` : 'Enter PIN'}
-              </h3>
-              <p className="text-white/50 text-sm">Enter your 4-digit PIN</p>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
+            <div className="p-4 sm:p-6 border-b border-gold/10">
+              <div className="text-center mb-2">
+                <h3 className="font-heading text-2xl text-white mb-2">
+                  {profile?.full_name ? `Hello, ${profile.full_name.split(' ')[0]}` : 'Enter PIN'}
+                </h3>
+                <p className="text-white/50 text-sm">Enter your 4-digit PIN</p>
+              </div>
             </div>
 
             <div className="flex justify-center gap-5 mb-8">

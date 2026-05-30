@@ -29,59 +29,59 @@ export default function StaffManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ full_name: '', email: '', phone: '', role: 'technician' });
-  const [addError, setAddError] = useState('');
+  const [addForm, setAddForm] = useState({ phone: '', full_name: '', role: 'technician' });
   const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState('');
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
     if (!['admin', 'super_admin', 'owner', 'partner'].includes(user.role)) {
-      navigate(user.role === 'technician' ? '/technician' : '/portal');
+      navigate('/portal');
       return;
     }
     fetchStaff();
   }, [user, navigate]);
 
   const fetchStaff = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('role', ['admin', 'cashier', 'technician'])
-        .order('full_name', { ascending: true });
-
-      if (error) throw error;
-      setStaff(data || []);
-    } catch (err) {
-      console.error('Staff Fetch Error:', err);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('role', ['admin', 'cashier', 'technician', 'owner', 'partner'])
+      .order('full_name');
+    if (data) setStaff(data);
+    setLoading(false);
   };
 
   const handleAddStaff = async (e) => {
     e.preventDefault();
-    if (!addForm.full_name || !addForm.phone) {
-      setAddError('Name and phone number are required');
+    setAddError('');
+    if (!addForm.phone || !addForm.full_name) {
+      setAddError('Please fill out all fields');
       return;
     }
 
-    setAddLoading(true);
-    setAddError('');
+    let cleanPhone = addForm.phone.replace(/\D/g, '');
+    if (cleanPhone.length === 10) cleanPhone = '1' + cleanPhone;
+    if (cleanPhone.length !== 11) {
+      setAddError('Please enter a valid 10 or 11 digit US phone number');
+      return;
+    }
+    const formattedPhone = `+${cleanPhone}`;
 
+    setAddLoading(true);
     try {
-      const cleanPhone = addForm.phone.replace(/\D/g, '');
-      const { error } = await supabase.from('profiles').insert({
-        full_name: addForm.full_name,
-        email: addForm.email || null,
-        phone: cleanPhone,
-        role: addForm.role,
+      const { error } = await supabase.rpc('add_staff_member', {
+        p_phone: formattedPhone,
+        p_full_name: addForm.full_name,
+        p_role: addForm.role,
+        p_admin_phone: user.phone
       });
 
       if (error) throw error;
 
       setShowAddModal(false);
-      setAddForm({ full_name: '', email: '', phone: '', role: 'technician' });
+      setAddForm({ phone: '', full_name: '', role: 'technician' });
       fetchStaff();
     } catch (err) {
       setAddError(err.message || 'Failed to add staff member');
@@ -90,214 +90,176 @@ export default function StaffManagement() {
     }
   };
 
-  const filteredStaff = staff.filter((member) => {
-    const search = searchTerm.toLowerCase();
+  const filteredStaff = staff.filter(member => {
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return true;
     return (
-      (member.full_name || '').toLowerCase().includes(search) ||
-      (member.email || '').toLowerCase().includes(search) ||
-      (member.phone || '').includes(search)
+      (member.full_name || '').toLowerCase().includes(term) ||
+      (member.phone || '').toLowerCase().includes(term) ||
+      (roleLabels[member.role] || '').toLowerCase().includes(term)
     );
   });
-
-const getStaffPath = (role) => {
-  switch (role) {
-    case 'super_admin': return '/superadmin/staff';
-    case 'owner': return '/owner/staff';
-    case 'partner': return '/partner/staff';
-    case 'admin': return '/admin/staff';
-    default: return '/admin/staff';
-  }
-};
-
-  if (loading) {
-    return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-        <Sidebar />
-        <div className="flex items-center justify-center py-20">
-          <div className="text-gold animate-pulse">Loading staff...</div>
-        </div>
-      </div>
-    );
-  }
-
-  const staffPath = getStaffPath(user?.role);
 
   return (
     <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
-        <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-heading text-3xl text-gold">Staff Management</h1>
-              <p className="text-offwhite/60 text-sm mt-1">Manage your team members and roles</p>
-            </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors font-medium"
-            >
-              + Add Staff
-            </button>
+      <style>{`.staff-mgmt select, .staff-mgmt option { background: #1a1a1a; color: #fff; }`}</style>
+
+      <div className="staff-mgmt p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/10 pb-6 mb-6">
+          <div>
+            <h1 className="font-heading text-3xl text-gold tracking-wide">Staff Management</h1>
+            <p className="text-xs text-offwhite/40 mt-1">Register salon team members and view access tier permissions</p>
           </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-5 py-2.5 bg-gold text-charcoal rounded-xl hover:bg-gold/90 transition-all font-medium text-sm shadow-lg shadow-gold/10 self-start sm:self-auto"
+          >
+            + Add Staff Member
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-          <div className="rounded-xl p-6 mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(197, 160, 89, 0.1)' }}>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by name, email, or phone..."
-                  className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg"
-                />
-              </div>
-              <div className="flex items-center px-6 py-3 rounded-lg" style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <div className="font-heading text-2xl text-gold mr-3">{staff.length}</div>
-                <div className="text-xs text-offwhite/60">Total Staff</div>
-              </div>
-            </div>
-          </div>
-
-          {filteredStaff.length === 0 ? (
-            <div className="rounded-xl p-12 text-center" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div className="text-offwhite/40 text-4xl mb-4">&#128100;</div>
-              <h2 className="font-heading text-2xl text-offwhite mb-2">No Staff Found</h2>
-              <p className="text-offwhite/50">
-                {searchTerm ? 'No staff match your search criteria.' : 'No staff members found in the system.'}
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[600px]">
-                  <thead className="text-offwhite/50 text-sm border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-                    <tr>
-                      <th className="px-6 py-4 text-left font-medium">Name</th>
-                      <th className="px-6 py-4 text-left font-medium">Contact</th>
-                      <th className="px-6 py-4 text-left font-medium">Role</th>
-                      <th className="px-6 py-4 text-center font-medium">Status</th>
-                      <th className="px-6 py-4 text-center font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredStaff.map((member) => (
-                      <tr key={member.id} className="border-b hover:bg-white/5 transition-colors" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
-                              <span className="text-gold font-heading">
-                                {(member.full_name || '??').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="text-offwhite font-medium">{member.full_name || 'Unknown'}</div>
-                              {member.email && <div className="text-xs text-offwhite/40">{member.email}</div>}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-offwhite/80">{member.email || 'No email'}</div>
-                          <div className="text-xs text-offwhite/40">{member.phone || 'No phone'}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 text-xs border rounded-full ${roleColors[member.role] || 'bg-gray-700 text-gray-300 border-gray-600'}`}>
-                            {roleLabels[member.role] || member.role}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center gap-1 text-sm text-green-400">
-                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                            Active
-                          </span>
-                        </td>
-                          <td className="px-6 py-4 text-center">
-                              <div className="flex items-center justify-center gap-3">
-                                <Link to={`${staffPath}/${member.id}/schedule`} className="text-blue-400 hover:underline text-sm">
-                                  Schedule
-                                </Link>
-                                <Link to={`${staffPath}/${member.id}`} className="text-gold hover:underline text-sm">
-                                  Edit
-                                </Link>
-                              </div>
-                            </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="Search staff by name, phone, or role..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full max-w-md px-4 py-2.5 bg-offwhite/5 border border-white/10 text-offwhite rounded-xl focus:border-gold focus:outline-none text-sm placeholder-offwhite/30"
+          />
         </div>
+
+        {loading ? (
+          <div className="text-center py-12 text-gold animate-pulse tracking-widest text-sm">LOADING TEAM DIRECTORY...</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredStaff.map((member) => (
+              <div
+                key={member.id}
+                className="bg-offwhite/5 border border-white/5 rounded-2xl p-5 flex flex-col justify-between hover:border-gold/20 transition-all group"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center font-heading text-gold text-sm uppercase shrink-0">
+                        {(member.full_name || '??').split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-offwhite font-medium text-base truncate group-hover:text-gold transition-colors">{member.full_name}</h3>
+                        <p className="text-offwhite/40 text-xs mt-0.5">{member.phone}</p>
+                      </div>
+                    </div>
+                    <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md border shrink-0 ${roleColors[member.role] || 'bg-gray-900 text-gray-400 border-gray-700'}`}>
+                      {roleLabels[member.role] || member.role}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-2">
+                  <span className="text-[11px] text-offwhite/30">
+                    Registered {member.created_at ? new Date(member.created_at).toLocaleDateString() : '—'}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    {member.role !== 'owner' && (
+                      <Link
+                        to={`/${user.role}/staff/schedule?staff=${member.id}`}
+                        className="text-gold text-xs font-medium hover:underline flex items-center gap-1"
+                      >
+                        Schedule →
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {filteredStaff.length === 0 && (
+              <div className="col-span-full text-center py-12 bg-offwhite/5 border border-white/5 rounded-2xl">
+                <p className="text-offwhite/40 text-sm">No matching team members found</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
-          <div className="w-full max-w-md rounded-xl p-6" style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(197, 160, 89, 0.2)' }}>
-            <h2 className="font-heading text-2xl text-gold mb-6">Add New Staff</h2>
-            <form onSubmit={handleAddStaff} className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" onClick={() => { setShowAddModal(false); setAddError(''); }}>
+          <form
+            className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl"
+            style={{ border: '1px solid rgba(197, 160, 89, 0.2)' }}
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleAddStaff}
+          >
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10 shrink-0">
               <div>
-                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Full Name *</label>
+                <h2 className="font-heading text-xl text-gold mb-0">Add Staff Member</h2>
+                <p className="text-offwhite/40 text-xs mt-1">Create authorization for a team role</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowAddModal(false); setAddError(''); }}
+                className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              <div>
+                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Full Name</label>
                 <input
                   type="text"
+                  placeholder="e.g. Jane Doe"
                   value={addForm.full_name}
                   onChange={(e) => setAddForm({ ...addForm, full_name: e.target.value })}
-                  placeholder="Enter full name"
-                  className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg"
+                  className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm"
                 />
               </div>
+
               <div>
-                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Email</label>
-                <input
-                  type="email"
-                  value={addForm.email}
-                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                  placeholder="Enter email (optional)"
-                  className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Phone Number *</label>
+                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Mobile Phone Number</label>
                 <input
                   type="tel"
+                  placeholder="(555) 000-0000"
                   value={addForm.phone}
                   onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
-                  placeholder="Enter phone number"
-                  className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg"
+                  className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm"
                 />
               </div>
+
               <div>
                 <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Role</label>
                 <select
                   value={addForm.role}
                   onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
-                  className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg"
+                  className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm"
                 >
                   <option value="technician">Technician</option>
                   <option value="cashier">Cashier</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
-              {addError && <p className="text-red-400 text-sm">{addError}</p>}
+
+              {addError && <p className="text-red-400 text-xs text-center">{addError}</p>}
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => { setShowAddModal(false); setAddError(''); }}
-                  className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 transition-colors"
+                  className="flex-1 py-3 bg-[#0B0B0C] text-offwhite text-sm rounded-xl hover:bg-white/10 transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addLoading}
-                  className="flex-1 py-3 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors font-medium disabled:opacity-50"
+                  className="flex-1 py-3 bg-gold text-charcoal text-sm rounded-xl hover:bg-gold/90 transition-colors font-medium shadow-lg shadow-gold/20 disabled:opacity-50"
                 >
                   {addLoading ? 'Adding...' : 'Add Staff'}
                 </button>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       )}
     </div>

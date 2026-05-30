@@ -147,6 +147,24 @@ const formatTime = (timestamp) => {
   return new Date(timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
+const getAppointmentTotalPrice = (appointment, availableServices = []) => {
+  if (appointment.total_price != null) {
+    return Number(appointment.total_price) || 0
+  }
+
+  const basePrice = appointment.services?.price || 0
+  const addOnNames = appointment.add_ons
+    ? appointment.add_ons.split(',').map(n => n.trim()).filter(Boolean)
+    : []
+
+  const addonTotal = addOnNames.reduce((sum, name) => {
+    const addon = availableServices.find(s => s.name === name && s.is_addon)
+    return sum + (addon?.price || 0)
+  }, 0)
+
+  return basePrice + addonTotal
+}
+
 const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
   const mainServices = services.filter(s => !s.is_addon)
   const addOnServices = services.filter(s => s.is_addon)
@@ -213,15 +231,17 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
-      <div className="bg-charcoal border border-gold/30 rounded-xl p-6 w-full max-w-lg edit-modal">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden border border-gold/30 mx-0 sm:mx-4">
         <style>{`.edit-modal select, .edit-modal option { background: #1a1a1a; color: #fff; }`}</style>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-heading text-2xl text-gold">Edit Appointment</h3>
-          <button onClick={onClose} className="text-offwhite/50 hover:text-offwhite">✕</button>
+        <div className="p-4 sm:p-6 border-b border-offwhite/10">
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="font-heading text-2xl text-gold">Edit Appointment</h3>
+            <button onClick={onClose} className="text-offwhite/50 hover:text-offwhite">✕</button>
+          </div>
         </div>
 
-        <div className="space-y-5">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 min-h-0">
           <div>
             <label className="block text-offwhite/80 text-sm mb-2">Services</label>
             <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -279,7 +299,7 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
 
           <div className="border-t border-offwhite/10 pt-5">
             <h4 className="text-gold font-heading mb-3">Apply Discount</h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-offwhite/60 text-sm mb-1">Amount</label>
                 <input
@@ -337,7 +357,7 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
           )}
         </div>
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 p-4 sm:p-6 border-t border-offwhite/10">
           <button onClick={onClose} className="flex-1 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg">Cancel</button>
           <button onClick={handleSave} disabled={saving || formData.selected_services.length === 0} className="flex-1 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg disabled:opacity-50">
             {saving ? 'Saving...' : 'Save Changes'}
@@ -364,7 +384,6 @@ export default function AdminLobby() {
   const [cancelReason, setCancelReason] = useState('')
   const [wiggleTechId, setWiggleTechId] = useState(null)
   const { user } = useAuth()
-  const isStaff = user && ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(user.role) || false
   const navigate = useNavigate()
 
   const busyTechnicians = servingAppointments
@@ -406,62 +425,38 @@ export default function AdminLobby() {
     if (error) {
       if (process.env.NODE_ENV === 'development') console.error('Error fetching waiting:', error, 'Status:', status)
     } else {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Waiting appointments:', data)
-        if (data && data.length > 0) {
-          console.log('First appointment customer data:', data[0].customer)
-        }
-      }
+      setLobbyAppointments(data || [])
     }
-    setLobbyAppointments(data || [])
   }, [])
 
   const fetchServingAppointments = useCallback(async () => {
-    if (process.env.NODE_ENV === 'development') console.log('Fetching serving appointments...')
     const { data, error } = await supabase
       .from('appointments')
       .select('*, customer:profiles!appointments_client_id_fkey(full_name, phone), technician:profiles!technician_id(full_name), services(name, price)')
       .eq('status', 'serving')
       .order('start_time', { ascending: true })
 
-    if (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error fetching serving:', error)
-    } else {
-      if (process.env.NODE_ENV === 'development') console.log('Serving appointments:', data)
-    }
-    setServingAppointments(data || [])
+    if (!error) setServingAppointments(data || [])
   }, [])
 
   const fetchPendingAppointments = useCallback(async () => {
-    if (process.env.NODE_ENV === 'development') console.log('Fetching pending appointments...')
     const { data, error } = await supabase
       .from('appointments')
       .select('*, customer:profiles!appointments_client_id_fkey(full_name), services(name)')
       .eq('status', 'assigned_pending')
       .order('checked_in_at', { ascending: true })
 
-    if (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error fetching pending:', error)
-    } else {
-      if (process.env.NODE_ENV === 'development') console.log('Pending appointments:', data)
-    }
-    setPendingAppointments(data || [])
+    if (!error) setPendingAppointments(data || [])
   }, [])
 
   const fetchTechnicians = useCallback(async () => {
-    if (process.env.NODE_ENV === 'development') console.log('Fetching technicians...')
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('role', 'technician')
       .order('full_name')
     
-    if (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error fetching technicians:', error)
-      return
-    }
-    if (process.env.NODE_ENV === 'development') console.log('Technicians data:', data)
-    setTechnicians(data || [])
+    if (!error) setTechnicians(data || [])
   }, [])
 
   const fetchTodayTotal = useCallback(async () => {
@@ -475,71 +470,60 @@ export default function AdminLobby() {
     setTodayTotal(count || 0)
   }, [])
 
-  // Helper function to decrement refreshment inventory when a customer is served
-const decrementRefreshmentInventory = async (refreshmentName) => {
-  try {
-    // Find the inventory item by name and category 'refreshment'
-    const { data: inventoryItems, error: fetchError } = await supabase
-      .from('inventory')
-      .select('id, quantity')
-      .eq('item_name', refreshmentName)
-      .eq('category', 'refreshment')
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows returned
-      if (process.env.NODE_ENV === 'development') console.error('Error fetching refreshment inventory:', fetchError);
-      return;
-    }
-
-    if (inventoryItems && inventoryItems.quantity > 0) {
-      const newQuantity = inventoryItems.quantity - 1;
-      const { error: updateError } = await supabase
+  const decrementRefreshmentInventory = async (refreshmentName) => {
+    try {
+      const { data: inventoryItems, error: fetchError } = await supabase
         .from('inventory')
-        .update({ quantity: newQuantity })
-        .eq('id', inventoryItems.id);
+        .select('id, quantity')
+        .eq('item_name', refreshmentName)
+        .eq('category', 'refreshment')
+        .single();
 
-      if (updateError) {
-        if (process.env.NODE_ENV === 'development') console.error('Error updating refreshment inventory:', updateError);
+      if (fetchError && fetchError.code !== 'PGRST116') return;
+
+      if (inventoryItems && inventoryItems.quantity > 0) {
+        const newQuantity = inventoryItems.quantity - 1;
+        await supabase
+          .from('inventory')
+          .update({ quantity: newQuantity })
+          .eq('id', inventoryItems.id);
+
+        if (newQuantity <= 0) {
+          setNotification({ message: `Low stock: ${refreshmentName}`, name: 'Inventory Alert' });
+          setTimeout(() => setNotification(null), 3000);
+        }
       }
-      // Optional: Show notification if stock gets low
-      else if (newQuantity <= 0) {
-        setNotification({ message: `Low stock: ${refreshmentName}`, name: 'Inventory Alert' });
-        setTimeout(() => setNotification(null), 3000);
-      }
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') console.error(err);
     }
-  } catch (err) {
-    if (process.env.NODE_ENV === 'development') console.error('Error in decrementRefreshmentInventory:', err);
-  }
-};
+  };
 
-const updateStatus = async (appointmentId, status, techId = null) => {
+  const updateStatus = async (appointmentId, status, techId = null) => {
     setUpdating(appointmentId)
     const updates = { status }
     if (techId) updates.technician_id = techId
     if (status === 'serving') updates.start_time = new Date().toISOString()
-if (status === 'completed') {
-    const appt = servingAppointments.find(a => a.id === appointmentId)
-    if (appt) {
-      if (appt.final_price == null && appt.services?.price) updates.final_price = appt.services.price
-      setNotification({ message: 'Service Complete!', name: appt?.customer?.full_name })
-      // Decrement inventory for refreshment if offered
-      if (appt.customer?.refreshment_pref) {
-        await decrementRefreshmentInventory(appt.customer.refreshment_pref);
+    
+    if (status === 'completed') {
+      const appt = servingAppointments.find(a => a.id === appointmentId)
+      if (appt) {
+        if (appt.final_price == null && appt.services?.price) updates.final_price = appt.services.price
+        setNotification({ message: 'Service Complete!', name: appt?.customer?.full_name })
+        if (appt.customer?.refreshment_pref) {
+          await decrementRefreshmentInventory(appt.customer.refreshment_pref);
+        }
+        setTimeout(() => setNotification(null), 3000)
       }
-      setTimeout(() => setNotification(null), 3000)
     }
 
-      await supabase.from('appointments').update(updates).eq('id', appointmentId)
-
-      fetchAppointments()
-      fetchServingAppointments()
-      setUpdating(null)
-    }
+    await supabase.from('appointments').update(updates).eq('id', appointmentId)
+    await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchTodayTotal()])
+    setUpdating(null)
   }
 
   const handleEditSave = async (appointmentId, updates) => {
     const { nail_goal, ...apptUpdates } = updates
-    const { error } = await supabase
+    await supabase
       .from('appointments')
       .update(apptUpdates)
       .eq('id', appointmentId)
@@ -551,8 +535,7 @@ if (status === 'completed') {
         .eq('id', editingAppointment.customer_id)
     }
     
-    fetchAppointments()
-    fetchServingAppointments()
+    await Promise.all([fetchAppointments(), fetchServingAppointments()])
     setEditingAppointment(null)
   }
 
@@ -614,7 +597,6 @@ if (status === 'completed') {
       .eq('id', appointmentId)
     
     if (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error accepting assignment:', error)
       setUpdating(null)
       return
     }
@@ -634,183 +616,185 @@ if (status === 'completed') {
     );
   }
 
-return (
-      <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
-        <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-          <Sidebar />
-          <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
-              <div className="mb-6">
-                <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
-                <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>
+  return (
+    <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+        <Sidebar />
+        <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+            <div className="mb-6">
+              <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
+              <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>
+            </div>
+
+            {notification && (
+              <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gold text-charcoal px-4 sm:px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw]">
+                <p className="font-heading text-base sm:text-lg">{notification.message}</p>
+                <p className="text-sm opacity-80">{notification.name}</p>
               </div>
+            )}
 
-              {notification && (
-                <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gold text-charcoal px-4 sm:px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw]">
-                  <p className="font-heading text-base sm:text-lg">{notification.message}</p>
-                  <p className="text-sm opacity-80">{notification.name}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <h2 className="font-heading text-xl text-gold mb-4 flex items-center gap-2">
+                  <span className="w-3 h-3 bg-gold rounded-full animate-pulse"></span>
+                  Waiting ({lobbyAppointments.length})
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {lobbyAppointments.map(appointment => (
+                    <DraggableAppointmentCard
+                      key={appointment.id}
+                      appointment={appointment}
+                      onEdit={setEditingAppointment}
+                      onCancel={setCancelConfirm}
+                    />
+                  ))}
+                  {lobbyAppointments.length === 0 && (
+                    <div className="col-span-1 sm:col-span-2 text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
+                      <p className="text-offwhite/40">No guests waiting</p>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <h2 className="font-heading text-xl text-gold mb-4 flex items-center gap-2">
-                    <span className="w-3 h-3 bg-gold rounded-full animate-pulse"></span>
-                    Waiting ({lobbyAppointments.length})
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {lobbyAppointments.map(appointment => (
-                      <DraggableAppointmentCard
-                        key={appointment.id}
-                        appointment={appointment}
-                        onEdit={setEditingAppointment}
-                        onCancel={setCancelConfirm}
-                      />
-                    ))}
-                    {lobbyAppointments.length === 0 && (
-                      <div className="col-span-1 sm:col-span-2 text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
-                        <p className="text-offwhite/40">No guests waiting</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <h2 className="font-heading text-xl text-gold mt-8 mb-4">Currently Serving ({servingAppointments.length})</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {servingAppointments.map(appointment => (
-                      <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-heading text-lg text-offwhite">{appointment.customer?.full_name || 'Guest'}</h3>
-                            {appointment.customer?.phone && (
-                              <span className="text-xs text-offwhite/40">📞 {appointment.customer.phone}</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <button onClick={(e) => { e.stopPropagation(); setEditingAppointment(appointment) }} className="text-offwhite/40 hover:text-offwhite text-sm">✎</button>
-                            <button onClick={() => setCancelConfirm(appointment)} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-sm items-center">
-                          {appointment.services && <span className="text-gold">{appointment.services.name}</span>}
-                          {appointment.final_price != null && appointment.final_price < (appointment.services?.price || 0) ? (
-                            <>
-                              <span className="text-green-400 font-medium">${appointment.final_price.toFixed(2)}</span>
-                              <span className="text-offwhite/40 line-through text-xs">${appointment.services?.price}</span>
-                            </>
-                          ) : appointment.services?.price > 0 ? (
-                            <span className="text-green-400 font-medium">${appointment.services.price}</span>
-                          ) : null}
-                          {appointment.technician && (
-                            <span className="text-xs text-gold/70 ml-auto">with {appointment.technician.full_name}</span>
+                <h2 className="font-heading text-xl text-gold mt-8 mb-4">Currently Serving ({servingAppointments.length})</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {servingAppointments.map(appointment => (
+                    <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="font-heading text-lg text-offwhite">{appointment.customer?.full_name || 'Guest'}</h3>
+                          {appointment.customer?.phone && (
+                            <span className="text-xs text-offwhite/40">📞 {appointment.customer.phone}</span>
                           )}
                         </div>
-                        {appointment.add_ons && (
-                          <div className="text-xs text-offwhite/40 mt-1">+ {appointment.add_ons}</div>
-                        )}
-                        {appointment.start_time && (
-                          <div className="text-xs text-offwhite/40 mt-1">
-                            Started: {formatTime(appointment.start_time)}
-                          </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button onClick={(e) => { e.stopPropagation(); setEditingAppointment(appointment) }} className="text-offwhite/40 hover:text-offwhite text-sm">✎</button>
+                          <button onClick={() => setCancelConfirm(appointment)} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-sm items-center">
+                        {appointment.services && <span className="text-gold font-heading">{appointment.services.name}</span>}
+                        <span className="text-green-400 font-medium">
+                          ${getAppointmentTotalPrice(appointment, services).toFixed(2)}
+                        </span>
+                        {appointment.technician && (
+                          <span className="text-xs text-gold/70 ml-auto">with {appointment.technician.full_name}</span>
                         )}
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h2 className="font-heading text-xl text-gold mb-4">Technician Grid</h2>
-                  <p className="text-offwhite/40 text-sm mb-4">Drop a customer on a technician to assign</p>
-                  <div className="space-y-4">
-                    {technicians.map(tech => {
-                      const activeCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')
-                      const pendingCustomer = pendingAppointments.find(a => a.technician_id === tech.id && a.status === 'assigned_pending')
-                      const isBusy = !!activeCustomer
-                      const isPending = !!pendingCustomer
-                      
-                      return (
-                        <TechnicianGridItem
-                          key={tech.id}
-                          tech={tech}
-                          activeCustomer={activeCustomer || {}}
-                          pendingCustomer={pendingCustomer}
-                          isBusy={isBusy}
-                          isPending={isPending}
-                          wiggle={wiggleTechId === tech.id}
-                          updating={updating}
-                          onAccept={acceptAssignment}
-                          onComplete={(id) => updateStatus(id, 'completed')}
-                        />
-                      )
-                    })}
-                    {technicians.length === 0 && (
-                      <div className="text-center py-8 text-offwhite/40">
-                        No technicians found (add role='technician' to profiles)
-                      </div>
-                    )}
-                  </div>
+                      {appointment.add_ons && (
+                        <div className="text-xs text-offwhite/40 mt-1">+ {appointment.add_ons}</div>
+                      )}
+                      {appointment.start_time && (
+                        <div className="text-xs text-offwhite/40 mt-1">
+                          Started: {formatTime(appointment.start_time)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
-          </div>
-        </div>
 
-        <DragOverlay>
-          {activeId && lobbyAppointments.find(a => a.id === activeId) && (
-            <div className="bg-gold/10 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none w-72">
-              <p className="font-heading text-offwhite truncate">Drop to assign</p>
+              <div>
+                <h2 className="font-heading text-xl text-gold mb-4">Technician Grid</h2>
+                <p className="text-offwhite/40 text-sm mb-4">Drop a customer on a technician to assign</p>
+                <div className="space-y-4">
+                  {technicians.map(tech => {
+                    const activeCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')
+                    const pendingCustomer = pendingAppointments.find(a => a.technician_id === tech.id && a.status === 'assigned_pending')
+                    const isBusy = !!activeCustomer
+                    const isPending = !!pendingCustomer
+                    
+                    return (
+                      <TechnicianGridItem
+                        key={tech.id}
+                        tech={tech}
+                        activeCustomer={activeCustomer || {}}
+                        pendingCustomer={pendingCustomer}
+                        isBusy={isBusy}
+                        isPending={isPending}
+                        wiggle={wiggleTechId === tech.id}
+                        updating={updating}
+                        onAccept={acceptAssignment}
+                        onComplete={(id) => updateStatus(id, 'completed')}
+                      />
+                    )
+                  })}
+                  {technicians.length === 0 && (
+                    <div className="text-center py-8 text-offwhite/40">
+                      No technicians found (add role='technician' to profiles)
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
-        </DragOverlay>
+        </div>
+      </div>
 
-        {editingAppointment && (
-          <EditAppointmentModal
-            appointment={editingAppointment}
-            services={services}
-            onSave={handleEditSave}
-            onClose={() => setEditingAppointment(null)}
-          />
+      <DragOverlay>
+        {activeId && lobbyAppointments.find(a => a.id === activeId) && (
+          <div className="bg-gold/10 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none w-72">
+            <p className="font-heading text-offwhite truncate">Drop to assign</p>
+          </div>
         )}
+      </DragOverlay>
 
-        {cancelConfirm && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
-            <div className="bg-charcoal border border-red-500/30 rounded-xl p-6 w-full max-w-md">
+      {editingAppointment && (
+        <EditAppointmentModal
+          appointment={editingAppointment}
+          services={services}
+          onSave={handleEditSave}
+          onClose={() => setEditingAppointment(null)}
+        />
+      )}
+
+      {cancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-red-500/20">
+              <div>
+                <div className="text-4xl">⚠️</div>
+              </div>
+              <button onClick={() => setCancelConfirm(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               <div className="text-center">
-                <div className="text-4xl mb-4">⚠️</div>
                 <h3 className="font-heading text-2xl text-offwhite mb-2">Cancel Appointment?</h3>
                 <p className="text-offwhite/60 mb-4">
                   Are you sure you want to cancel the appointment for <span className="text-gold">{cancelConfirm.customer?.full_name}</span>?
                 </p>
-                <div className="mb-6 text-left">
-                  <label className="block text-offwhite/60 text-sm mb-2">Reason for cancellation</label>
-                  <select
-                    value={cancelReason}
-                    onChange={(e) => setCancelReason(e.target.value)}
-                    style={{ backgroundColor: '#1a1a1a', color: '#ffffff', border: '1px solid #333' }}
-                    className="w-full px-4 py-3 border rounded-lg"
-                  >
-                    <option value="">Select a reason...</option>
-                    <option value="Wait time too long">Wait time too long</option>
-                    <option value="Customer left">Customer left</option>
-                    <option value="Mistake check-in">Mistake check-in</option>
-                  </select>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { setCancelConfirm(null); setCancelReason('') }}
-                    className="flex-1 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg"
-                  >
-                    Keep Appointment
-                  </button>
-                  <button
-                    onClick={() => cancelAppointment(cancelConfirm)}
-                    disabled={!cancelReason || updating === cancelConfirm.id}
-                    className="flex-1 py-3 bg-red-500 text-white font-heading hover:bg-red-600 rounded-lg disabled:opacity-50"
-                  >
-                    {updating === cancelConfirm.id ? 'Cancelling...' : 'Confirm Cancellation'}
-                  </button>
-                </div>
+               <div className="mb-6 text-left">
+                 <label className="block text-offwhite/60 text-sm mb-2">Reason for cancellation</label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  style={{ backgroundColor: '#1a1a1a', color: '#ffffff', border: '1px solid #333' }}
+                  className="w-full px-4 py-3 border rounded-lg"
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="Wait time too long">Wait time too long</option>
+                  <option value="Customer left">Customer left</option>
+                  <option value="Mistake check-in">Mistake check-in</option>
+                </select>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setCancelConfirm(null); setCancelReason('') }}
+                  className="flex-1 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg"
+                >
+                  Keep Appointment
+                </button>
+                <button
+                  onClick={() => cancelAppointment(cancelConfirm)}
+                  disabled={!cancelReason || updating === cancelConfirm.id}
+                  className="flex-1 py-3 bg-red-500 text-white font-heading hover:bg-red-600 rounded-lg disabled:opacity-50"
+                >
+                  {updating === cancelConfirm.id ? 'Cancelling...' : 'Confirm Cancellation'}
+                </button>
               </div>
             </div>
           </div>
-        )}
-      </DndContext>
-    );
-  }
+        </div>
+      </div>
+     )}
+    </DndContext>
+  )
+}

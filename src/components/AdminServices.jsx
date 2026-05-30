@@ -101,17 +101,17 @@ export default function AdminServices() {
     fetchServices();
   };
 
-    const handleDelete = async (id) => {
-      if (!window.confirm('Delete this service? Services using it will keep the text value.')) return;
-      setApiError('');
-      const currentUser = user || {};
-      const { error } = await supabase.rpc('manage_service', {
-        admin_phone: currentUser.phone,
-        action: 'delete', service_data: {}, service_id: id,
-      });
-      if (error) { setApiError(error.message); return; }
-      fetchServices();
-    };
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this service? Services using it will keep the text value.')) return;
+    setApiError('');
+    const currentUser = user || {};
+    const { error } = await supabase.rpc('manage_service', {
+      admin_phone: currentUser.phone,
+      action: 'delete', service_data: {}, service_id: id,
+    });
+    if (error) { setApiError(error.message); return; }
+    fetchServices();
+  };
 
   const catOpenAdd = () => {
     setCatEditing(null);
@@ -172,6 +172,7 @@ export default function AdminServices() {
     <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
       <style>{`.admin-services select, .admin-services option { background: #1a1a1a; color: #fff; }`}</style>
+      
       <div className="admin-services p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
           <h1 className="font-heading text-3xl text-gold">Services Management</h1>
@@ -182,98 +183,102 @@ export default function AdminServices() {
           <button onClick={() => setActiveSubTab('categories')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeSubTab === 'categories' ? 'bg-gold text-charcoal' : 'bg-offwhite/10 text-offwhite/60 hover:bg-offwhite/20'}`}>Categories</button>
         </div>
 
-            <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
-           {activeSubTab === 'services' && (
-             <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-6">
-               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-                 <div>
-                   <h2 className="font-heading text-xl text-offwhite">All Services</h2>
-                 </div>
-                 <div>
-                   <input
-                     type="text"
-                     placeholder="Search services..."
-                     value={searchTerm}
-                     onChange={(e) => setSearchTerm(e.target.value)}
-                     className="w-full sm:w-auto px-4 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:border-gold focus:outline-none"
-                   />
-                 </div>
-                 <div>
-                   <button onClick={openAdd} className="px-4 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors">+ Add Service</button>
-                 </div>
-               </div>
+        <div className="p-4 sm:p-6 lg:p-8">
+          {activeSubTab === 'services' && (
+            <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-6">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
+                <div>
+                  <h2 className="font-heading text-xl text-offwhite">All Services</h2>
+                </div>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                  <input
+                    type="text"
+                    placeholder="Search services..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="px-4 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:border-gold focus:outline-none text-sm"
+                  />
+                  <button onClick={openAdd} className="px-4 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors text-sm font-medium whitespace-nowrap">+ Add Service</button>
+                </div>
+              </div>
 
-                {showForm && (
-                  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
-                    <div className="w-full max-w-md rounded-xl p-6" style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(197, 160, 89, 0.2)' }}>
-                      <h3 className="text-gold font-heading mb-4">{editing ? 'Edit Service' : 'Add Service'}</h3>
-                      {apiError && <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-300 text-sm">{apiError}</div>}
-                      <div className="grid grid-cols-1 gap-4 mb-6">
-                        <div>
-                          <label className="block text-offwhite/60 text-xs mb-1">Name</label>
-                          <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm" placeholder="Service name" />
-                        </div>
-                        <div>
-                          <label className="block text-offwhite/60 text-xs mb-1">Price</label>
-                          <input type="number" step="0.01" value={form.price} onChange={e => setForm({...form, price: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm" placeholder="0.00" />
-                        </div>
-                        <div>
-                          <label className="block text-offwhite/60 text-xs mb-1">Duration (min)</label>
-                          <input type="number" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm" placeholder="60" />
-                        </div>
-                        <div>
-                          <label className="block text-offwhite/60 text-xs mb-1">Category</label>
-                          <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm">
-                            {categories.map(cat => (
-                              <option key={cat.id} value={cat.name}>{cat.name}</option>
-                            ))}
-                          </select>
-                        </div>
+              {showForm && (
+                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+                  <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
+                    <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
+                      <h3 className="text-gold font-heading mb-0 text-xl">{editing ? 'Edit Service' : 'Add Service'}</h3>
+                      <button onClick={() => setShowForm(false)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                      {apiError && <div className="p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-300 text-sm">{apiError}</div>}
+                      
+                      <div>
+                        <label className="block text-offwhite/60 text-xs mb-1">Name</label>
+                        <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm focus:border-gold focus:outline-none" placeholder="Service name" />
                       </div>
-                      <div className="flex gap-3">
-                        <button onClick={handleSave} disabled={saving || !form.name || !form.price} className="px-6 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 disabled:opacity-50 transition-colors">{saving ? 'Saving...' : 'Save'}</button>
-                        <button onClick={() => { setShowForm(false); setEditing(null); }} className="px-6 py-2 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg transition-colors">Cancel</button>
+                      <div>
+                        <label className="block text-offwhite/60 text-xs mb-1">Price</label>
+                        <input type="number" step="0.01" value={form.price} onChange={e => setForm({...form, price: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm focus:border-gold focus:outline-none" placeholder="0.00" />
+                      </div>
+                      <div>
+                        <label className="block text-offwhite/60 text-xs mb-1">Duration (min)</label>
+                        <input type="number" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm focus:border-gold focus:outline-none" placeholder="60" />
+                      </div>
+                      <div>
+                        <label className="block text-offwhite/60 text-xs mb-1">Category</label>
+                        <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm focus:border-gold focus:outline-none">
+                          {categories.map(cat => (
+                            <option key={cat.id} value={cat.name}>{cat.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex gap-3 pt-2">
+                        <button onClick={handleSave} disabled={saving || !form.name || !form.price} className="px-6 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 disabled:opacity-50 transition-colors text-sm font-medium">{saving ? 'Saving...' : 'Save'}</button>
+                        <button onClick={() => { setShowForm(false); setEditing(null); }} className="px-6 py-2 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg transition-colors text-sm">Cancel</button>
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
               {apiError && !showForm && <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-300 text-sm">{apiError}</div>}
 
-               {loading ? (
-                 <div className="text-offwhite/40 text-center py-12">Loading services...</div>
-               ) : (
-                 <div className="overflow-x-auto">
-                   <table className="w-full">
-                     <thead>
-                       <tr className="text-offwhite/50 text-sm border-b border-offwhite/10">
-                         <th className="text-left py-3 px-4">Name</th>
-                         <th className="text-left py-3 px-4">Category</th>
-                       <th className="text-left py-3 px-4">Price</th>
-                       <th className="text-left py-3 px-4">Duration</th>
-                       <th className="text-left py-3 px-4">Actions</th>
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {filteredServices.map(svc => (
-                         <tr key={svc.id} className="border-b border-offwhite/5 hover:bg-offwhite/5">
-                           <td className="py-3 px-4 text-offwhite font-medium">{svc.name}</td>
-                           <td className="py-3 px-4 text-offwhite/60">{svc.category || '—'}</td>
-                           <td className="py-3 px-4 text-gold">${parseFloat(svc.price).toFixed(2)}</td>
-                         <td className="py-3 px-4 text-offwhite/60">{svc.duration_minutes || 0} min</td>
-                         <td className="py-3 px-4">
-                             <div className="flex items-center gap-3">
-                               <button onClick={() => openEdit(svc)} className="text-gold hover:underline text-sm">Edit</button>
-                               <button onClick={() => handleDelete(svc.id)} className="text-red-400 hover:underline text-sm">Delete</button>
-                             </div>
-                           </td>
-                         </tr>
-                       ))}
-                       {filteredServices.length === 0 && <tr><td colSpan="5" className="py-8 text-center text-offwhite/40">No services found</td></tr>}
-                     </tbody>
-                   </table>
-                 </div>
-               )}
+              {loading ? (
+                <div className="text-offwhite/40 text-center py-12">Loading services...</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-offwhite/50 text-sm border-b border-offwhite/10">
+                        <th className="text-left py-3 px-4">Name</th>
+                        <th className="text-left py-3 px-4">Category</th>
+                        <th className="text-left py-3 px-4">Price</th>
+                        <th className="text-left py-3 px-4">Duration</th>
+                        <th className="text-left py-3 px-4">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredServices.map(svc => (
+                        <tr key={svc.id} className="border-b border-offwhite/5 hover:bg-offwhite/5">
+                          <td className="py-3 px-4 text-offwhite font-medium">{svc.name}</td>
+                          <td className="py-3 px-4 text-offwhite/60">{svc.category || '—'}</td>
+                          <td className="py-3 px-4 text-gold">${parseFloat(svc.price).toFixed(2)}</td>
+                          <td className="py-3 px-4 text-offwhite/60">{svc.duration_minutes || 0} min</td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <button onClick={() => openEdit(svc)} className="text-gold hover:underline text-sm">Edit</button>
+                              <button onClick={() => handleDelete(svc.id)} className="text-red-400 hover:underline text-sm">Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredServices.length === 0 && <tr><td colSpan="5" className="py-8 text-center text-offwhite/40">No services found</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 

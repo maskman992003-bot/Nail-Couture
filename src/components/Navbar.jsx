@@ -81,28 +81,28 @@ export default function Navbar({ currentPage, onNavigate }) {
                     Logout
                   </button>
                 </>
-                ) : (
-                  <>
-                    <a href="/login" className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium">
-                      Login
-                    </a>
-                    {CUSTOMER_ONLINE_BOOKING ? (
-                      <button
-                        onClick={() => scrollToSection('book')}
-                        className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
-                      >
-                        BOOK
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => scrollToSection('contact')}
-                        className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
-                      >
-                        CONTACT US
-                      </button>
-                    )}
-                  </>
-                )}
+              ) : (
+                <>
+                  <a href="/login" className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium">
+                    Login
+                  </a>
+                  {CUSTOMER_ONLINE_BOOKING ? (
+                    <button
+                      onClick={() => scrollToSection('book')}
+                      className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                    >
+                      BOOK
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => scrollToSection('contact')}
+                      className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                    >
+                      CONTACT US
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
@@ -133,9 +133,10 @@ export default function Navbar({ currentPage, onNavigate }) {
                   <button onClick={() => { setMobileMenuOpen(false); navigate('/'); }} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider w-full">SERVICES</button>
                   <Link to="/" onClick={() => setMobileMenuOpen(false)} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">LOOKBOOK</Link>
                 </>
-              ) : user && user.is_staff ? (
-                <button onClick={() => { setMobileMenuOpen(false); navigate(getHomeHref()); }} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">STAFF HOME</button>
               ) : (
+                user && user.is_staff ? (
+                  <button onClick={() => { setMobileMenuOpen(false); navigate(getHomeHref()); }} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">STAFF HOME</button>
+                ) : (
                   <>
                     <button onClick={() => scrollToSection('services')} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">SERVICES</button>
                     <button onClick={() => scrollToSection('gallery')} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">LOOKBOOK</button>
@@ -146,6 +147,7 @@ export default function Navbar({ currentPage, onNavigate }) {
                       <button onClick={() => scrollToSection('contact')} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider border-t border-gold/10 mt-2 pt-2">CONTACT US</button>
                     )}
                   </>
+                )
               )}
 
               <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-gold/10">
@@ -166,30 +168,32 @@ export default function Navbar({ currentPage, onNavigate }) {
       </div>
 
       {showLogoutConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-[200]" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
-          <div className="w-full max-w-sm rounded-2xl p-8 border mx-4" style={{ backgroundColor: '#141414', borderColor: 'rgba(197,160,89,0.3)' }}>
-            <div className="text-center mb-6">
-              <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
+          <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#141414] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197,160,89,0.3)' }}>
+            <div className="p-4 sm:p-6 border-b border-gold/10 flex-1 overflow-y-auto">
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 013-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </div>
+                <h3 className="font-heading text-xl text-offwhite mb-2">Log Out?</h3>
+                <p className="text-offwhite/50 text-sm">Are you sure you want to log out of your account?</p>
               </div>
-              <h3 className="font-heading text-xl text-offwhite mb-2">Log Out?</h3>
-              <p className="text-offwhite/50 text-sm">Are you sure you want to log out of your account?</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-xl hover:bg-offwhite/20 transition-colors text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => { setShowLogoutConfirm(false); logout(); navigate('/login'); }}
-                className="flex-1 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors text-sm font-medium"
-              >
-                Log Out
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-xl hover:bg-offwhite/20 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { setShowLogoutConfirm(false); logout(); navigate('/login'); }}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors text-sm font-medium"
+                >
+                  Log Out
+                </button>
+              </div>
             </div>
           </div>
         </div>

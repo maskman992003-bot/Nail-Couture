@@ -351,47 +351,47 @@ export default function AdminInventory() {
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-[100] p-4" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
-          <div className="w-full max-w-md rounded-2xl p-8 border-2" style={{ backgroundColor: '#111', borderColor: 'rgba(197, 160, 89, 0.4)' }}>
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
+          <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197, 160, 89, 0.4)' }}>
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
               <h2 className="font-heading text-2xl text-gold">Add New Item</h2>
               <button onClick={() => setShowAddModal(false)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors">&times;</button>
             </div>
-            <form onSubmit={handleAddItem} className="space-y-4">
-              <div>
-                <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Item Name *</label>
-                <input type="text" value={addForm.item_name} onChange={(e) => setAddForm({ ...addForm, item_name: e.target.value })} placeholder="e.g. OPI Nail Polish" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/20 rounded-lg focus:border-gold focus:outline-none" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleAddItem} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                 <div>
-                  <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Category</label>
-                  <select value={addForm.category} onChange={(e) => setAddForm({ ...addForm, category: e.target.value })} className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none appearance-none cursor-pointer" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23c5a059' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}>
-                    <option value="material" style={{ backgroundColor: '#111', color: '#c5a059' }}>Material</option>
-                    <option value="refreshment" style={{ backgroundColor: '#111', color: '#c5a059' }}>Refreshment</option>
-                  </select>
+                    <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Item Name *</label>
+                    <input type="text" value={addForm.item_name} onChange={(e) => setAddForm({ ...addForm, item_name: e.target.value })} placeholder="e.g. OPI Nail Polish" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/20 rounded-lg focus:border-gold focus:outline-none" />
                 </div>
-                <div>
-                  <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Unit *</label>
-                  <input type="text" value={addForm.unit} onChange={(e) => setAddForm({ ...addForm, unit: e.target.value })} placeholder="e.g. bottle" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/20 rounded-lg focus:border-gold focus:outline-none" />
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Category</label>
+                        <select value={addForm.category} onChange={(e) => setAddForm({ ...addForm, category: e.target.value })} className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none appearance-none cursor-pointer" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23c5a059' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}>
+                            <option value="material" style={{ backgroundColor: '#111', color: '#c5a059' }}>Material</option>
+                            <option value="refreshment" style={{ backgroundColor: '#111', color: '#c5a059' }}>Refreshment</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Unit *</label>
+                        <input type="text" value={addForm.unit} onChange={(e) => setAddForm({ ...addForm, unit: e.target.value })} placeholder="e.g. bottle" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/20 rounded-lg focus:border-gold focus:outline-none" />
+                    </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Initial Quantity *</label>
-                  <input type="number" min={0} value={addForm.quantity} onChange={(e) => setAddForm({ ...addForm, quantity: e.target.value })} placeholder="0" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none" />
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Initial Quantity *</label>
+                        <input type="number" min={0} value={addForm.quantity} onChange={(e) => setAddForm({ ...addForm, quantity: e.target.value })} placeholder="0" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none" />
+                    </div>
+                    <div>
+                        <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Low Stock Alert</label>
+                        <input type="number" min={0} value={addForm.reorder_threshold} onChange={(e) => setAddForm({ ...addForm, reorder_threshold: e.target.value })} placeholder="5" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none" />
+                    </div>
                 </div>
-                <div>
-                  <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Low Stock Alert</label>
-                  <input type="number" min={0} value={addForm.reorder_threshold} onChange={(e) => setAddForm({ ...addForm, reorder_threshold: e.target.value })} placeholder="5" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none" />
+                {addError && <p className="text-red-400 text-sm">{addError}</p>}
+                <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 transition-colors">Cancel</button>
+                    <button type="submit" disabled={addLoading} className="flex-1 py-3 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors font-medium disabled:opacity-50">
+                        {addLoading ? 'Adding...' : 'Add Item'}
+                    </button>
                 </div>
-              </div>
-              {addError && <p className="text-red-400 text-sm">{addError}</p>}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 transition-colors">Cancel</button>
-                <button type="submit" disabled={addLoading} className="flex-1 py-3 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors font-medium disabled:opacity-50">
-                  {addLoading ? 'Adding...' : 'Add Item'}
-                </button>
-              </div>
             </form>
           </div>
         </div>

@@ -99,7 +99,7 @@ export default function StaffSchedule() {
         supabase.from('profiles').select('*').in('role', ['admin', 'cashier', 'technician']).order('full_name'),
         supabase.rpc('get_staff_schedule', { p_start_date: startDate, p_end_date: endDate, p_employee_id: selectedStaffId }),
         supabase.rpc('get_time_off_requests', { p_status: null }),
-]);
+      ]);
       if (staffRes.data) setStaff(staffRes.data);
       if (shiftsRes.data) setShifts(shiftsRes.data);
       if (torRes.data) setTimeOffRequests(torRes.data);
@@ -115,7 +115,7 @@ export default function StaffSchedule() {
   };
 
   const handleAddShift = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setAddingShiftError('');
     if (!addShiftForm.employee_id || !addShiftForm.shift_date) {
       setAddingShiftError('Please select a staff member and date');
@@ -198,7 +198,6 @@ export default function StaffSchedule() {
   };
 
   const toggleDaySelection = (staffId, dateStr) => {
-    const key = `${staffId}-${dateStr}`;
     setSelectedDays(prev => {
       if (prev.some(d => d.staffId === staffId && d.dateStr === dateStr)) {
         return prev.filter(d => !(d.staffId === staffId && d.dateStr === dateStr));
@@ -392,7 +391,6 @@ export default function StaffSchedule() {
                   <div className="grid grid-cols-7 divide-x" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                     {memberShifts.map(({ dateStr, shifts: dayShifts }, dayIdx) => {
                       const isToday = dayIdx === new Date().getDay();
-                      const dayKey = `${member.id}-${dateStr}`;
                       const isSelected = selectedDays.some(d => d.staffId === member.id && d.dateStr === dateStr);
                       const hasShifts = dayShifts.length > 0;
                       return (
@@ -559,17 +557,27 @@ export default function StaffSchedule() {
       </div>
 
       {showAddShiftModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4" onClick={() => setShowAddShiftModal(false)}>
-          <div className="w-full max-w-sm rounded-2xl p-6" style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(197,160,89,0.2)' }} onClick={e => e.stopPropagation()}>
-            <h2 className="font-heading text-xl text-gold text-center mb-1">Add Shift</h2>
-            <p className="text-offwhite/40 text-xs text-center mb-6">Select shift details below</p>
-            <form onSubmit={handleAddShift} className="space-y-5">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowAddShiftModal(false)}>
+          <form 
+            className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" 
+            style={{ border: '1px solid rgba(197,160,89,0.2)' }} 
+            onClick={e => e.stopPropagation()}
+            onSubmit={handleAddShift}
+          >
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
               <div>
-                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-3">Staff Member</label>
+                <h2 className="font-heading text-xl text-gold mb-0">Add Shift</h2>
+                <p className="text-offwhite/40 text-xs mt-1">Select shift details below</p>
+              </div>
+              <button type="button" onClick={() => setShowAddShiftModal(false)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              <div>
+                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Staff Member</label>
                 <select
                   value={addShiftForm.employee_id}
                   onChange={e => setAddShiftForm({ ...addShiftForm, employee_id: e.target.value })}
-                  className="w-full p-4 bg-[#0B0B0C] border border-white/10 text-offwhite rounded-xl focus:border-gold focus:outline-none"
+                  className="w-full p-3 bg-[#0B0B0C] border border-white/10 text-offwhite text-sm rounded-xl focus:border-gold focus:outline-none"
                 >
                   <option value="">Select staff member...</option>
                   {staff.map(m => (
@@ -578,14 +586,14 @@ export default function StaffSchedule() {
                 </select>
               </div>
               <div>
-                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-3">Shift Type</label>
+                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Shift Type</label>
                 <div className="grid grid-cols-2 gap-2">
                   {SHIFT_TYPES.map(t => (
                     <button
                       key={t.value}
                       type="button"
                       onClick={() => setAddShiftForm({ ...addShiftForm, shift_type: t.value, start_time: t.defaultStart, end_time: t.defaultEnd })}
-                      className={`p-3.5 rounded-xl border text-sm font-medium transition-all ${
+                      className={`p-2.5 rounded-xl border text-xs font-medium transition-all ${
                         addShiftForm.shift_type === t.value
                           ? 'border-gold bg-gold/10 text-gold'
                           : 'border-white/10 text-offwhite/60 hover:border-gold/30'
@@ -598,36 +606,36 @@ export default function StaffSchedule() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-3">Start</label>
+                  <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Start</label>
                   <input type="time" value={addShiftForm.start_time}
                     onChange={e => setAddShiftForm({ ...addShiftForm, start_time: e.target.value })}
-                    className="w-full p-4 bg-[#0B0B0C] border border-white/10 text-offwhite rounded-xl focus:border-gold focus:outline-none" />
+                    className="w-full p-3 bg-[#0B0B0C] border border-white/10 text-offwhite text-sm rounded-xl focus:border-gold focus:outline-none" />
                 </div>
                 <div>
-                  <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-3">End</label>
+                  <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">End</label>
                   <input type="time" value={addShiftForm.end_time}
                     onChange={e => setAddShiftForm({ ...addShiftForm, end_time: e.target.value })}
-                    className="w-full p-4 bg-[#0B0B0C] border border-white/10 text-offwhite rounded-xl focus:border-gold focus:outline-none" />
+                    className="w-full p-3 bg-[#0B0B0C] border border-white/10 text-offwhite text-sm rounded-xl focus:border-gold focus:outline-none" />
                 </div>
               </div>
-              {addingShiftError && <p className="text-red-400 text-sm text-center">{addingShiftError}</p>}
+              {addingShiftError && <p className="text-red-400 text-xs text-center">{addingShiftError}</p>}
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowAddShiftModal(false)} className="flex-1 py-4 bg-[#0B0B0C] text-offwhite rounded-xl hover:bg-white/10 transition-colors font-medium">
+                <button type="button" onClick={() => setShowAddShiftModal(false)} className="flex-1 py-3 bg-[#0B0B0C] text-offwhite text-sm rounded-xl hover:bg-white/10 transition-colors font-medium">
                   Cancel
                 </button>
-                <button type="submit" disabled={addingShift} className="flex-1 py-4 bg-gold text-charcoal rounded-xl hover:bg-gold/90 transition-colors font-medium shadow-lg shadow-gold/20 disabled:opacity-50">
+                <button type="submit" disabled={addingShift} className="flex-1 py-3 bg-gold text-charcoal text-sm rounded-xl hover:bg-gold/90 transition-colors font-medium shadow-lg shadow-gold/20 disabled:opacity-50">
                   {addingShift ? 'Adding...' : 'Add'}
                 </button>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       )}
 
       {detailModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4" onClick={() => setDetailModal({ open: false, staffMember: null, date: null, dayAppts: [] })}>
-          <div className="w-full max-w-md rounded-2xl p-6 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(197,160,89,0.3)' }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" onClick={() => setDetailModal({ open: false, staffMember: null, date: null, dayAppts: [] })}>
+          <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ border: '1px solid rgba(197,160,89,0.3)' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
               <div>
                 <h3 className="font-heading text-xl text-gold">{detailModal.staffMember?.full_name}</h3>
                 <p className="text-offwhite/50 text-sm">
@@ -640,57 +648,59 @@ export default function StaffSchedule() {
                 ×
               </button>
             </div>
-            {detailModal.dayAppts.length === 0 ? (
-              <div className="text-center py-10">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
-                  <span className="text-2xl">📅</span>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              {detailModal.dayAppts.length === 0 ? (
+                <div className="text-center py-10">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
+                    <span className="text-2xl">📅</span>
+                  </div>
+                  <p className="text-offwhite/50">No appointments for this day</p>
                 </div>
-                <p className="text-offwhite/50">No appointments for this day</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {detailModal.dayAppts.map((a) => (
-                  <div
-                    key={a.appointment_id}
-                    className="rounded-xl p-4 transition-all"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center">
-                          <span className="text-gold text-xs font-heading">{(a.customer_name || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
+              ) : (
+                <div className="space-y-3">
+                  {detailModal.dayAppts.map((a) => (
+                    <div
+                      key={a.appointment_id}
+                      className="rounded-xl p-4 transition-all"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center">
+                            <span className="text-gold text-xs font-heading">{(a.customer_name || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
+                          </div>
+                          <div>
+                            <div className="text-offwhite font-medium">{a.customer_name}</div>
+                            <div className="text-offwhite/40 text-xs">{a.service_name}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-offwhite font-medium">{a.customer_name}</div>
-                          <div className="text-offwhite/40 text-xs">{a.service_name}</div>
-                        </div>
-                      </div>
-                      <span className={`px-3 py-1.5 rounded-full text-[10px] font-medium ${
-                        a.status === 'waiting' ? 'bg-yellow-400/20 text-yellow-400' :
-                        a.status === 'assigned_pending' ? 'bg-blue-400/20 text-blue-400' :
-                        a.status === 'serving' ? 'bg-green-400/20 text-green-400' :
-                        a.status === 'completed' ? 'bg-white/10 text-offwhite/60' :
-                        'bg-red-400/20 text-red-400'
-                      }`}>
-                        {a.status === 'waiting' ? 'Waiting' : a.status === 'assigned_pending' ? 'Confirmed' : a.status === 'serving' ? 'In Service' : a.status === 'completed' ? 'Completed' : a.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5 text-offwhite/50 text-xs">
-                          <span>🕐</span>
-                          {new Date(a.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                        </div>
-                        <span className={`text-[10px] px-2 py-1 rounded-full ${a.source === 'online' ? 'bg-gold/20 text-gold' : 'bg-yellow-400/20 text-yellow-400'}`}>
-                          {a.source === 'online' ? 'Online' : 'Walk-in'}
+                        <span className={`px-3 py-1.5 rounded-full text-[10px] font-medium ${
+                          a.status === 'waiting' ? 'bg-yellow-400/20 text-yellow-400' :
+                          a.status === 'assigned_pending' ? 'bg-blue-400/20 text-blue-400' :
+                          a.status === 'serving' ? 'bg-green-400/20 text-green-400' :
+                          a.status === 'completed' ? 'bg-white/10 text-offwhite/60' :
+                          'bg-red-400/20 text-red-400'
+                        }`}>
+                          {a.status === 'waiting' ? 'Waiting' : a.status === 'assigned_pending' ? 'Confirmed' : a.status === 'serving' ? 'In Service' : a.status === 'completed' ? 'Completed' : a.status}
                         </span>
                       </div>
-                      <div className="text-gold font-heading text-lg">${a.final_price}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-1.5 text-offwhite/50 text-xs">
+                            <span>🕐</span>
+                            {new Date(a.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                          </div>
+                          <span className={`text-[10px] px-2 py-1 rounded-full ${a.source === 'online' ? 'bg-gold/20 text-gold' : 'bg-yellow-400/20 text-yellow-400'}`}>
+                            {a.source === 'online' ? 'Online' : 'Walk-in'}
+                          </span>
+                        </div>
+                        <div className="text-gold font-heading text-lg">${a.final_price}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

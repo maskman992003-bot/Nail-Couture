@@ -476,14 +476,17 @@ export default function CustomerBooking() {
           )}
 
           {showGroupModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-2xl border-2 p-6" style={{ backgroundColor: '#111', borderColor: 'rgba(197, 160, 89, 0.5)' }}>
-            <div className="text-center mb-6">
-              <span className="px-3 py-1 text-[10px] rounded-full bg-gold/30 border border-gold/50 text-gold font-heading uppercase tracking-widest">Group Special</span>
-              <h3 className="font-heading text-2xl text-offwhite mt-3">Bridal Party Bundle</h3>
-              <p className="text-offwhite/50 text-sm mt-2">Booking for 4+ people — enjoy a 25% discount at checkout!</p>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197, 160, 89, 0.5)' }}>
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
+              <div>
+                <span className="px-3 py-1 text-[10px] rounded-full bg-gold/30 border border-gold/50 text-gold font-heading uppercase tracking-widest">Group Special</span>
+                <h3 className="font-heading text-2xl text-offwhite mt-3">Bridal Party Bundle</h3>
+                <p className="text-offwhite/50 text-sm mt-2">Booking for 4+ people — enjoy a 25% discount at checkout!</p>
+              </div>
+              <button onClick={() => setShowGroupModal(false)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
             </div>
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               <div>
                 <label className="block text-offwhite/60 text-sm mb-2">Number of Guests</label>
                 <input

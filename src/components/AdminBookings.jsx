@@ -713,13 +713,13 @@ const { error } = await supabase.from('appointments').insert({
       </div>
 
       {editingBooking && (
-        <div className="fixed inset-0 flex items-center justify-center z-[100] p-4" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
-          <div className="w-full max-w-lg rounded-2xl p-8 border-2 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.4)' }}>
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
               <h2 className="font-heading text-2xl text-gold">Edit Booking</h2>
               <button onClick={() => setEditingBooking(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
             </div>
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               <div className="p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className="text-offwhite font-heading mb-1">{editingBooking.customer?.full_name}</div>
                 <div className="text-offwhite/50 text-xs">{editingBooking.service?.name} &middot; ${editingBooking.service?.price || 0}</div>
@@ -777,16 +777,16 @@ const { error } = await supabase.from('appointments').insert({
       )}
 
       {historyBooking && (
-        <div className="fixed inset-0 flex items-center justify-center z-[100] p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
-          <div className="w-full max-w-lg rounded-2xl border-2 overflow-hidden max-h-[90vh] flex flex-col" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.4)' }}>
-            <div className="flex items-center justify-between p-6 border-b flex-shrink-0" style={{ borderColor: 'rgba(197,160,89,0.15)' }}>
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
               <div>
                 <h2 className="font-heading text-xl text-gold">Booking History</h2>
                 <p className="text-offwhite/50 text-xs mt-1">{historyBooking.customer?.full_name} — {historyBooking.service?.name || 'Service'}</p>
               </div>
               <button onClick={() => setHistoryBooking(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               <div className="mb-6 p-4 rounded-xl space-y-3" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(197,160,89,0.15)' }}>
                 {[
                   { label: 'Source', value: <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] border bg-gold/20 text-gold border-gold/40"><span className="w-1 h-1 rounded-full bg-gold mr-1" />Online</span> },
@@ -835,9 +835,9 @@ const { error } = await supabase.from('appointments').insert({
       )}
 
       {cancelTarget && (
-        <div className="fixed inset-0 flex items-center justify-center z-[110] p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
-          <div className="w-full max-w-md rounded-2xl p-8 border-2" style={{ backgroundColor: '#111', borderColor: 'rgba(239,68,68,0.4)' }}>
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
               <h2 className="font-heading text-xl text-offwhite">Cancel Booking</h2>
               <button onClick={() => setCancelTarget(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
             </div>
@@ -859,18 +859,28 @@ const { error } = await supabase.from('appointments').insert({
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 flex items-center justify-center z-[110] p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
-          <div className="w-full max-w-sm rounded-2xl p-8 border-2 text-center" style={{ backgroundColor: '#111', borderColor: 'rgba(239,68,68,0.4)' }}>
-            <div className="w-14 h-14 rounded-full bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#111] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-red-500/30 shadow-2xl" style={{ borderColor: 'rgba(239,68,68,0.4)' }}>
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-red-500/20">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-red-900/30 flex items-center justify-center">
+                  <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </div>
+                <div>
+                  <h2 className="font-heading text-xl text-offwhite mb-0">Delete Booking?</h2>
+                </div>
+              </div>
+              <button onClick={() => setDeleteTarget(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 text-left">
+              <p className="text-offwhite/50 text-sm mb-3">{deleteTarget.customer?.full_name || 'Guest'} — {deleteTarget.service?.name || 'Service'}</p>
+              <p className="text-red-400/60 text-xs mb-4">This action cannot be undone.</p>
+              <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-3 mb-4">
+                <p className="text-yellow-300 text-xs"><strong>Tip:</strong> Export your bookings before deleting.</p>
+              </div>
               <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </div>
-            <h2 className="font-heading text-xl text-offwhite mb-2">Delete Booking?</h2>
-            <p className="text-offwhite/50 text-sm mb-1">{deleteTarget.customer?.full_name || 'Guest'} — {deleteTarget.service?.name || 'Service'}</p>
-            <p className="text-red-400/60 text-xs mb-4">This action cannot be undone.</p>
-            <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-3 mb-4">
-              <p className="text-yellow-300 text-xs"><strong>Tip:</strong> Export your bookings before deleting.</p>
-            </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 p-4 sm:p-6 border-t border-red-500/10 bg-[#0d0d0d]">
               <button onClick={() => setDeleteTarget(null)} className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 text-sm">Cancel</button>
               <button onClick={executeDelete} disabled={deleting} className="flex-1 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-medium disabled:opacity-50">
                 {deleting ? 'Deleting...' : 'Yes, Delete'}
@@ -881,13 +891,13 @@ const { error } = await supabase.from('appointments').insert({
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-[100] p-4" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
-          <div className="w-full max-w-lg rounded-2xl p-8 border-2 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.4)' }}>
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
+          <div className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197,160,89,0.4)' }}>
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
               <h2 className="font-heading text-2xl text-gold">New Booking</h2>
               <button onClick={() => setShowCreateModal(false)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
             </div>
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               <div>
                 <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Customer Phone *</label>
                 <input type="tel" value={createForm.phone} onChange={(e) => handlePhoneChange(e.target.value)} className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none" placeholder="10-digit phone" maxLength={10} />

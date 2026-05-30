@@ -184,81 +184,98 @@ export default function Settings() {
       </div>
 
       {showPinModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4" onClick={() => setShowPinModal(false)}>
-          <div className="bg-[#1a1a1a] rounded-2xl p-6 w-full max-w-sm relative" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-heading text-xl text-gold mb-1">
-              {pinMode === 'set' ? 'Set PIN' : 'Change PIN'}
-            </h3>
-            <p className="text-offwhite/50 text-sm mb-6">
-              {pinStep === 1 && 'Enter your current PIN'}
-              {pinStep === 2 && 'Enter a new 4-digit PIN'}
-              {pinStep === 3 && 'Confirm your new PIN'}
-            </p>
-
-            <div className="flex justify-center gap-4 mb-4">
-              {[1, 2, 3, 4].map((i) => {
-                const val = pinStep === 1 ? oldPin : pinStep === 2 ? newPin : confirmPin;
-                return (
-                  <div
-                    key={i}
-                    className="w-14 h-14 rounded-xl bg-[#0B0B0C] border border-offwhite/20 flex items-center justify-center text-2xl font-heading"
-                  >
-                    {val[i - 1] ? '\u25CF' : ''}
-                  </div>
-                );
-              })}
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowPinModal(false)}>
+          <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
+              <div>
+                <h3 className="font-heading text-xl text-gold mb-0">
+                  {pinMode === 'set' ? 'Set PIN' : 'Change PIN'}
+                </h3>
+                <p className="text-offwhite/50 text-sm mt-1">
+                  {pinStep === 1 && 'Enter your current PIN'}
+                  {pinStep === 2 && 'Enter a new 4-digit PIN'}
+                  {pinStep === 3 && 'Confirm your new PIN'}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowPinModal(false)}
+                className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5"
+              >
+                ×
+              </button>
             </div>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="flex justify-center gap-4 mb-4">
+                {[1, 2, 3, 4].map((i) => {
+                  const val = pinStep === 1 ? oldPin : pinStep === 2 ? newPin : confirmPin;
+                  return (
+                    <div
+                      key={i}
+                      className="w-14 h-14 rounded-xl bg-[#0B0B0C] border border-offwhite/20 flex items-center justify-center text-2xl font-heading"
+                    >
+                      {val[i - 1] ? '●' : ''}
+                    </div>
+                  );
+                })}
+              </div>
 
-            {pinError && <p className="text-red-400 text-sm text-center mb-4">{pinError}</p>}
+              {pinError && <p className="text-red-400 text-sm text-center mb-4">{pinError}</p>}
 
-            <div className="grid grid-cols-3 gap-3">
-              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((key, idx) => {
-                if (key === '') {
-                  return <div key={idx} className="h-12" />;
-                }
-                if (key === '⌫') {
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((key, idx) => {
+                  if (key === '') {
+                    return <div key={idx} className="h-12" />;
+                  }
+                  if (key === '⌫') {
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          if (pinStep === 1) handlePinBackspace(setOldPin, oldPin);
+                          else if (pinStep === 2) handlePinBackspace(setNewPin, newPin);
+                          else handlePinBackspace(setConfirmPin, confirmPin);
+                        }}
+                        className="h-12 bg-[#0B0B0C] rounded-xl text-offwhite hover:bg-white/10 transition-colors text-lg"
+                      >
+                        {key}
+                      </button>
+                    );
+                  }
                   return (
                     <button
                       key={idx}
                       onClick={() => {
-                        if (pinStep === 1) handlePinBackspace(setOldPin, oldPin);
-                        else if (pinStep === 2) handlePinBackspace(setNewPin, newPin);
-                        else handlePinBackspace(setConfirmPin, confirmPin);
+                        if (pinStep === 1) handlePinDigit(setOldPin, oldPin, key);
+                        else if (pinStep === 2) handlePinDigit(setNewPin, newPin, key);
+                        else handlePinDigit(setConfirmPin, confirmPin, key);
                       }}
-                      className="h-12 bg-[#0B0B0C] rounded-xl text-offwhite hover:bg-white/10 transition-colors text-lg"
-                    >{key}</button>
+                      className="h-12 bg-[#0B0B0C] rounded-xl text-offwhite hover:bg-white/10 transition-colors text-xl font-heading"
+                    >
+                      {key}
+                    </button>
                   );
-                }
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      if (pinStep === 1) handlePinDigit(setOldPin, oldPin, key);
-                      else if (pinStep === 2) handlePinDigit(setNewPin, newPin, key);
-                      else handlePinDigit(setConfirmPin, confirmPin, key);
-                    }}
-                    className="h-12 bg-[#0B0B0C] rounded-xl text-offwhite hover:bg-white/10 transition-colors text-xl font-heading"
-                  >{key}</button>
-                );
-              })}
-            </div>
+                })}
+              </div>
 
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => { setShowPinModal(false); setPinStep(1); }}
-                className="flex-1 py-3 rounded-xl border border-offwhite/20 text-offwhite hover:bg-white/5 transition-colors text-sm"
-              >Cancel</button>
-              <button
-                onClick={() => {
-                  if (pinStep === 1) handlePinStep1();
-                  else if (pinStep === 2) handlePinStep2();
-                  else handlePinStep3();
-                }}
-                disabled={pinSaving}
-                className="flex-1 py-3 rounded-xl bg-gold text-[#0B0B0C] font-heading text-sm hover:bg-gold/90 transition-colors disabled:opacity-50"
-              >
-                {pinSaving ? 'Saving...' : pinStep === 3 ? 'Confirm' : 'Next'}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowPinModal(false); setPinStep(1); }}
+                  className="flex-1 py-3 rounded-xl border border-offwhite/20 text-offwhite hover:bg-white/5 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (pinStep === 1) handlePinStep1();
+                    else if (pinStep === 2) handlePinStep2();
+                    else handlePinStep3();
+                  }}
+                  disabled={pinSaving}
+                  className="flex-1 py-3 rounded-xl bg-gold text-[#0B0B0C] font-heading text-sm hover:bg-gold/90 transition-colors disabled:opacity-50"
+                >
+                  {pinSaving ? 'Saving...' : pinStep === 3 ? 'Confirm' : 'Next'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
