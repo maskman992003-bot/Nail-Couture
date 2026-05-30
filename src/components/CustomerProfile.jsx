@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { getHomePath } from '../utils/routes';
 import Sidebar from './Sidebar';
 
 export default function CustomerProfile() {
@@ -22,7 +23,7 @@ export default function CustomerProfile() {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    if (user.is_staff) { navigate(`/${user.role}`); return; }
+    if (user.is_staff) { navigate(getHomePath(user.role)); return; }
     fetchProfile();
     fetchRefreshments();
   }, [user, navigate]);

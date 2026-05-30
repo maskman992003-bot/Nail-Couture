@@ -2,19 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-
-const getHomePath = (role) => {
-  switch (role) {
-    case 'super_admin':
-    case 'owner':
-    case 'partner': return '/superadmin';
-    case 'admin': return '/admin';
-    case 'cashier': return '/cashier';
-    case 'technician': return '/technician';
-    case 'customer': return '/portal';
-    default: return '/portal';
-  }
-};
+import { getHomePath, isStaffRole } from '../utils/routes';
 
 export default function ClientLogin() {
   const [phone, setPhone] = useState('');
@@ -71,7 +59,7 @@ export default function ClientLogin() {
 
   const doLogin = (profileData) => {
     login(profileData);
-    const isStaff = profileData.role && ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(profileData.role);
+    const isStaff = profileData.role && isStaffRole(profileData.role);
     navigate(isStaff ? getHomePath(profileData.role) : '/portal');
   };
 

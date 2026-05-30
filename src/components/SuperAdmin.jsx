@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { getHomePath } from '../utils/routes';
 import Sidebar from './Sidebar';
 
 const statusColors = {
@@ -29,33 +30,6 @@ export default function SuperAdmin() {
   const [recentAppointments, setRecentAppointments] = useState([]);
   const [staff, setStaff] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
-
-  useEffect(() => {
-    if (!user) { navigate('/login'); return; }
-    if (!['super_admin', 'owner', 'partner'].includes(user.role)) { 
-      navigate(getHomeRoute(user.role)); 
-      return; 
-    }
-    fetchData();
-  }, [user, navigate]);
-
-  useEffect(() => {
-    const path = location.pathname;
-    if (path.includes('/staff') || path.endsWith('/staff')) {
-      setActiveTab('staff');
-    } else {
-      setActiveTab('dashboard');
-    }
-  }, [location.pathname]);
-
-  const getHomeRoute = (role) => {
-    switch (role) {
-      case 'admin': return '/admin';
-      case 'cashier': return '/cashier';
-      case 'technician': return '/technician';
-      default: return '/portal';
-    }
-  };
 
   const fetchData = async () => {
     try {
@@ -102,6 +76,24 @@ export default function SuperAdmin() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!user) { navigate('/login'); return; }
+    if (!['super_admin', 'owner', 'partner'].includes(user.role)) {
+      navigate(getHomePath(user.role));
+      return;
+    }
+    fetchData();
+  }, [user, navigate]);
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/staff') || path.endsWith('/staff')) {
+      setActiveTab('staff');
+    } else {
+      setActiveTab('dashboard');
+    }
+  }, [location.pathname]);
 
   if (loading) {
     return (

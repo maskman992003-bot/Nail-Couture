@@ -1,15 +1,30 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { isStaffRole } from '../utils/routes';
 
 const AuthContext = createContext(null);
 
 const STORAGE_KEY = 'salon_user_data';
 
+function normalizeUser(profile) {
+  const role = profile.role || 'customer';
+  return {
+    id: profile.id,
+    full_name: profile.full_name,
+    email: profile.email || '',
+    nail_goal: profile.nail_goal || '',
+    refreshment_pref: profile.refreshment_pref || '',
+    phone: profile.phone || '',
+    role,
+    is_staff: isStaffRole(role),
+  };
+}
+
 function getStoredUser() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      const user = JSON.parse(stored);
-      return user;
+      const parsed = JSON.parse(stored);
+      return normalizeUser(parsed);
     }
   } catch (err) {
     console.error('Error parsing stored user:', err);
@@ -29,20 +44,11 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-    const login = (profile) => {
-      const userData = {
-        id: profile.id,
-        full_name: profile.full_name,
-        email: profile.email || '',
-        nail_goal: profile.nail_goal || '',
-        refreshment_pref: profile.refreshment_pref || '',
-        phone: profile.phone || '',
-        role: profile.role || 'customer',
-        pin: profile.pin || '',
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-      setUser(userData);
-    };
+  const login = (profile) => {
+    const userData = normalizeUser(profile);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+    setUser(userData);
+  };
 
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);

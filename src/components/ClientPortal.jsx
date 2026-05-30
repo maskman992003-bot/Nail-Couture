@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
+import { getHomePath } from '../utils/routes';
 import Sidebar from './Sidebar';
 
 const statusColors = {
@@ -59,9 +60,8 @@ export default function ClientPortal() {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    if (user && ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(user.role)) {
-      const route = (user.role === 'super_admin' || user.role === 'owner' || user.role === 'partner') ? '/superadmin' : `/${user.role}`;
-      navigate(route);
+    if (user.is_staff) {
+      navigate(getHomePath(user.role));
       return;
     }
     fetchUserData();

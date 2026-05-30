@@ -31,18 +31,6 @@ import AdminBookings from './components/AdminBookings.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 
-const getHomePath = (role) => {
-  switch (role) {
-    case 'super_admin': return '/superadmin';
-    case 'owner': return '/owner';
-    case 'partner': return '/partner';
-    case 'admin': return '/admin';
-    case 'cashier': return '/cashier';
-    case 'technician': return '/technician';
-    default: return '/portal';
-  }
-};
-
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
@@ -227,10 +215,46 @@ createRoot(document.getElementById('root')).render(
              </ProtectedRoute>
            } />
 
+            {/* Admin Routes */}
+           <Route path="/admin" element={
+             <ProtectedRoute allowedRoles={['admin']}>
+               <Admin />
+             </ProtectedRoute>
+           } />
+           <Route path="/admin/lobby" element={
+             <ProtectedRoute allowedRoles={['admin']}>
+               <AdminLobby />
+             </ProtectedRoute>
+           } />
+           <Route path="/admin/schedule" element={
+             <ProtectedRoute allowedRoles={['admin']}>
+               <StaffSchedule />
+             </ProtectedRoute>
+           } />
+           <Route path="/admin/bookings" element={
+             <ProtectedRoute allowedRoles={['admin']}>
+               <AdminBookings />
+             </ProtectedRoute>
+           } />
+           <Route path="/admin/services" element={
+             <ProtectedRoute allowedRoles={['admin']}>
+               <AdminServices />
+             </ProtectedRoute>
+           } />
+           <Route path="/admin/settings" element={
+             <ProtectedRoute allowedRoles={['admin', 'cashier', 'technician']}>
+               <Settings />
+             </ProtectedRoute>
+           } />
 
           <Route path="/cashier" element={
             <ProtectedRoute allowedRoles={['cashier']}>
               <Cashier />
+            </ProtectedRoute>
+          } />
+          <Route path="/cashier/lobby" element={
+            <ProtectedRoute allowedRoles={['cashier']}>
+              <AdminLobby />
             </ProtectedRoute>
           } />
           <Route path="/cashier/checkout" element={

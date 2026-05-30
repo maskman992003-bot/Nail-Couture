@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { getHomePath } from '../utils/routes';
 import Sidebar from './Sidebar';
 
 export default function Admin() {
@@ -9,26 +10,6 @@ export default function Admin() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ activeTechnicians: 0, waitingCustomers: 0, completedToday: 0 });
-
-  useEffect(() => {
-    if (!user) { navigate('/login'); return; }
-    if (user.role !== 'admin') { 
-      navigate(getHomeRoute(user.role)); 
-      return; 
-    }
-    fetchDashboardData();
-  }, [user, navigate]);
-
-  const getHomeRoute = (role) => {
-    switch (role) {
-      case 'super_admin':
-      case 'owner':
-      case 'partner': return '/superadmin';
-      case 'cashier': return '/cashier';
-      case 'technician': return '/technician';
-      default: return '/portal';
-    }
-  };
 
   const fetchDashboardData = async () => {
     try {
@@ -52,6 +33,15 @@ export default function Admin() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!user) { navigate('/login'); return; }
+    if (user.role !== 'admin') {
+      navigate(getHomePath(user.role));
+      return;
+    }
+    fetchDashboardData();
+  }, [user, navigate]);
 
   if (loading) {
     return (

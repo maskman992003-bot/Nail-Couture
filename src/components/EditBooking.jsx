@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getHomePath } from '../utils/routes';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
 import { CATEGORIES, CATEGORY_ORDER } from '../data/servicesData';
 
-export default function EditBooking({ bookingId }) {
+export default function EditBooking() {
+  const { bookingId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -26,10 +28,11 @@ export default function EditBooking({ bookingId }) {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    if (user.is_staff) { navigate('/portal'); return; }
+    if (user.is_staff) { navigate(getHomePath(user.role)); return; }
+    if (!bookingId) { navigate('/customer/history'); return; }
     fetchServices();
     loadBooking();
-  }, [user, navigate]);
+  }, [user, navigate, bookingId]);
 
   const loadBooking = async () => {
     const userId = user?.id;

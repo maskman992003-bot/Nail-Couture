@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
 import { featureFlags } from '../constants/featureFlags';
+import { getSettingsPath } from '../utils/routes';
 
 const navItemsByRole = {
   super_admin: [
@@ -178,24 +179,13 @@ export default function Sidebar() {
 
         const flagsToCheck = Array.isArray(mapping) ? mapping : [mapping];
         return flagsToCheck.some((flag) => {
-          const [featureArea, featureName] = flag.split('.')
-          const featureFlag = featureFlags[featureArea]?.[featureName]
-          return featureFlag === true
-        })
-        
-        // Get the feature flag value using the mapping
-        const [featureArea, featureName] = navItemFeatureMappings[item.id].split('.');
-        const featureFlag = featureFlags[featureArea]?.[featureName];
-        
-        // If feature flag is undefined, show the item by default (safe fallback)
-        if (featureFlag === undefined) {
-          return true;
-        }
-        
-        // Only show the item if its feature flag is true
-        return featureFlag;
+          const [featureArea, featureName] = flag.split('.');
+          const featureFlag = featureFlags[featureArea]?.[featureName];
+          return featureFlag === true;
+        });
       });
     }
+  const settingsPath = getSettingsPath(user?.role);
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
   const initials = (user?.full_name || user?.email || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
@@ -265,7 +255,7 @@ export default function Sidebar() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
-                  onClick={() => { navigate(user?.is_staff ? '/superadmin/settings' : '/customer/profile'); setShowUserMenu(false); }}
+                  onClick={() => { navigate(settingsPath); setShowUserMenu(false); }}
                   className="w-full px-4 py-3 text-left text-offwhite/80 hover:text-gold hover:bg-gold/10 transition-colors text-sm flex items-center gap-2 border-b"
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
                 >
@@ -339,7 +329,7 @@ export default function Sidebar() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
-                  onClick={() => { navigate(user?.is_staff ? '/superadmin/settings' : '/customer/profile'); setShowUserMenu(false); }}
+                  onClick={() => { navigate(settingsPath); setShowUserMenu(false); }}
                   className="w-full px-4 py-3 text-left text-offwhite/80 hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b"
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
                 >

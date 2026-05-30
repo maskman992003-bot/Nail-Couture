@@ -15,8 +15,6 @@ function App() {
   const navigate = useNavigate()
   const [currentPage, setCurrentPage] = useState('home')
 
-  console.log('[App] rendering, path:', location.pathname, 'currentPage:', currentPage)
-
   useEffect(() => {
     const path = location.pathname.replace('/', '')
     if (path === 'check-in') {
@@ -27,15 +25,6 @@ function App() {
       setCurrentPage('home')
     }
   }, [location])
-
-  const navigateTo = (page) => {
-    if (page === 'check-in') {
-      navigate('/check-in')
-    } else {
-      navigate('/')
-      setCurrentPage(page)
-    }
-  }
 
   const bookingEnabled = featureFlags.customer.onlineBooking || featureFlags.customer.onlineCalendarBooking;
 

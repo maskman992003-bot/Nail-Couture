@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
+import { getHomePath } from '../utils/routes';
 
 export default function Navbar({ currentPage, onNavigate }) {
   const { user, logout } = useAuth();
@@ -10,20 +11,11 @@ export default function Navbar({ currentPage, onNavigate }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-   const getHomeHref = () => {
-     if (!user) return '/';
-     if (user.is_staff) {
-       const role = user.role;
-       if (role === 'super_admin') return '/superadmin';
-       if (role === 'owner') return '/owner';
-       if (role === 'partner') return '/partner';
-       if (role === 'admin') return '/admin';
-       if (role === 'cashier') return '/cashier';
-       if (role === 'technician') return '/technician';
-       return '/admin';
-     }
-     return '/portal';
-   };
+  const getHomeHref = () => {
+    if (!user) return '/';
+    if (user.is_staff) return getHomePath(user.role);
+    return '/portal';
+  };
 
   const handleLogoClick = () => {
     navigate(getHomeHref());
@@ -138,7 +130,7 @@ export default function Navbar({ currentPage, onNavigate }) {
               {currentPage === 'portal' ? (
                 <>
                   <button onClick={handleHomeClick} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">HOME</button>
-                  <Link to="/admin/services" onClick={() => setMobileMenuOpen(false)} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">SERVICES</Link>
+                  <button onClick={() => { setMobileMenuOpen(false); navigate('/'); }} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider w-full">SERVICES</button>
                   <Link to="/" onClick={() => setMobileMenuOpen(false)} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">LOOKBOOK</Link>
                 </>
               ) : user && user.is_staff ? (

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
+import { getHomePath } from '../utils/routes';
 import Sidebar from './Sidebar';
 
 export default function CustomerBooking() {
@@ -92,14 +93,23 @@ export default function CustomerBooking() {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    if (user && ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(user.role)) {
-      const route = (user.role === 'super_admin' || user.role === 'owner' || user.role === 'partner') ? '/superadmin' : `/${user.role}`;
-      navigate(route);
+    if (user.is_staff) {
+      navigate(getHomePath(user.role));
       return;
     }
     fetchServices();
     fetchCategories();
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (!CUSTOMER_ONLINE_BOOKING) return;
+    if (selectedDate && selectedTime) {
+      fetchAvailableTechnicians();
+    } else {
+      setAvailableTechnicians([]);
+      setSelectedTech(null);
+    }
+  }, [selectedDate, selectedTime]);
 
   if (!CUSTOMER_ONLINE_BOOKING) {
     return (
@@ -118,15 +128,6 @@ export default function CustomerBooking() {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (selectedDate && selectedTime) {
-      fetchAvailableTechnicians();
-    } else {
-      setAvailableTechnicians([]);
-      setSelectedTech(null);
-    }
-  }, [selectedDate, selectedTime]);
 
   const categoryOrder = dbCategories.map((c) => c.name);
   const categories = ['All', ...categoryOrder];
