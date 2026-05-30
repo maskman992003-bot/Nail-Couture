@@ -73,7 +73,7 @@ export const featureFlags = {
 };
 
 // Convenience flags for direct access
-export const CUSTOMER_ONLINE_BOOKING = featureFlags.customer.onlineBooking;
+export const CUSTOMER_ONLINE_BOOKING = featureFlags.customer.onlineBooking || featureFlags.customer.onlineCalendarBooking;
 export const STAFF_SHIFTS = featureFlags.staff.staffShifts;
 export const TIME_OFF_REQUESTS = featureFlags.staff.timeOffRequests;
 export const INVENTORY_AUTOMATION = featureFlags.operations.autoReorder;

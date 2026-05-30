@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { featureFlags } from './constants/featureFlags'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Services from './components/Services'
@@ -36,14 +37,28 @@ function App() {
     }
   }
 
+  const bookingEnabled = featureFlags.customer.onlineBooking || featureFlags.customer.onlineCalendarBooking;
+
   const scrollToBooking = () => {
-    setCurrentPage('home')
+    if (bookingEnabled) {
+      setCurrentPage('home')
+      setTimeout(() => {
+        const element = document.getElementById('book')
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 100)
+      return
+    }
+
+    navigate('/about')
+    setCurrentPage('about')
     setTimeout(() => {
-      const element = document.getElementById('book')
+      const element = document.getElementById('contact')
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' })
       }
-    }, 100)
+    }, 200)
   }
 
   const scrollToLookbook = () => {
@@ -96,14 +111,14 @@ function App() {
                     onClick={scrollToBooking}
                     className="px-6 sm:px-8 py-3 border-2 border-offwhite/30 text-offwhite hover:border-offwhite hover:text-offwhite transition-all tracking-wider text-sm sm:text-base"
                   >
-                    REQUEST APPOINTMENT
+                    {bookingEnabled ? 'REQUEST APPOINTMENT' : 'CONTACT US'}
                   </button>
                 </div>
               </div>
             </section>
             <Lookbook />
             <Services />
-            <BookingWizard />
+            {bookingEnabled && <BookingWizard />}
           </>
         )}
 

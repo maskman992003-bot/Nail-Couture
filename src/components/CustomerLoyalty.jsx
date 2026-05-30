@@ -39,8 +39,7 @@ export default function CustomerLoyalty() {
   }, [user, navigate]);
 
   const fetchProfile = async () => {
-    const currentUser = localStorage.getItem('salon_user_data');
-    const userId = currentUser ? JSON.parse(currentUser).id : null;
+    const userId = user?.id;
     if (!userId) { navigate('/login'); return; }
 
     try {

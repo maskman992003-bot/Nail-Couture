@@ -383,7 +383,7 @@ export default function AdminLobby() {
       setLoading(false)
     }
     init()
-    getServices().then(setServices).catch(console.error)
+    getServices().then(setServices).catch(err => { if (process.env.NODE_ENV === 'development') console.error(err); })
     
     const channel = supabase
       .channel('floor-manager')
@@ -396,7 +396,7 @@ export default function AdminLobby() {
   }, [])
 
   const fetchAppointments = useCallback(async () => {
-    console.log('Fetching waiting appointments...')
+    if (process.env.NODE_ENV === 'development') console.log('Fetching waiting appointments...')
     const { data, error, status } = await supabase
       .from('appointments')
       .select('*, customer:profiles!appointments_client_id_fkey(full_name, phone, refreshment_pref, nail_goal), services(name, price, duration_minutes)')
@@ -404,18 +404,20 @@ export default function AdminLobby() {
       .order('checked_in_at', { ascending: true })
 
     if (error) {
-      console.error('Error fetching waiting:', error, 'Status:', status)
+      if (process.env.NODE_ENV === 'development') console.error('Error fetching waiting:', error, 'Status:', status)
     } else {
-      console.log('Waiting appointments:', data)
-      if (data && data.length > 0) {
-        console.log('First appointment customer data:', data[0].customer)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Waiting appointments:', data)
+        if (data && data.length > 0) {
+          console.log('First appointment customer data:', data[0].customer)
+        }
       }
     }
     setLobbyAppointments(data || [])
   }, [])
 
   const fetchServingAppointments = useCallback(async () => {
-    console.log('Fetching serving appointments...')
+    if (process.env.NODE_ENV === 'development') console.log('Fetching serving appointments...')
     const { data, error } = await supabase
       .from('appointments')
       .select('*, customer:profiles!appointments_client_id_fkey(full_name, phone), technician:profiles!technician_id(full_name), services(name, price)')
@@ -423,15 +425,15 @@ export default function AdminLobby() {
       .order('start_time', { ascending: true })
 
     if (error) {
-      console.error('Error fetching serving:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error fetching serving:', error)
     } else {
-      console.log('Serving appointments:', data)
+      if (process.env.NODE_ENV === 'development') console.log('Serving appointments:', data)
     }
     setServingAppointments(data || [])
   }, [])
 
   const fetchPendingAppointments = useCallback(async () => {
-    console.log('Fetching pending appointments...')
+    if (process.env.NODE_ENV === 'development') console.log('Fetching pending appointments...')
     const { data, error } = await supabase
       .from('appointments')
       .select('*, customer:profiles!appointments_client_id_fkey(full_name), services(name)')
@@ -439,15 +441,15 @@ export default function AdminLobby() {
       .order('checked_in_at', { ascending: true })
 
     if (error) {
-      console.error('Error fetching pending:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error fetching pending:', error)
     } else {
-      console.log('Pending appointments:', data)
+      if (process.env.NODE_ENV === 'development') console.log('Pending appointments:', data)
     }
     setPendingAppointments(data || [])
   }, [])
 
   const fetchTechnicians = useCallback(async () => {
-    console.log('Fetching technicians...')
+    if (process.env.NODE_ENV === 'development') console.log('Fetching technicians...')
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -455,11 +457,10 @@ export default function AdminLobby() {
       .order('full_name')
     
     if (error) {
-      console.error('Error fetching technicians:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error fetching technicians:', error)
       return
     }
-    
-    console.log('Technicians data:', data)
+    if (process.env.NODE_ENV === 'development') console.log('Technicians data:', data)
     setTechnicians(data || [])
   }, [])
 
@@ -486,7 +487,7 @@ const decrementRefreshmentInventory = async (refreshmentName) => {
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows returned
-      console.error('Error fetching refreshment inventory:', fetchError);
+      if (process.env.NODE_ENV === 'development') console.error('Error fetching refreshment inventory:', fetchError);
       return;
     }
 
@@ -498,7 +499,7 @@ const decrementRefreshmentInventory = async (refreshmentName) => {
         .eq('id', inventoryItems.id);
 
       if (updateError) {
-        console.error('Error updating refreshment inventory:', updateError);
+        if (process.env.NODE_ENV === 'development') console.error('Error updating refreshment inventory:', updateError);
       }
       // Optional: Show notification if stock gets low
       else if (newQuantity <= 0) {
@@ -507,7 +508,7 @@ const decrementRefreshmentInventory = async (refreshmentName) => {
       }
     }
   } catch (err) {
-    console.error('Error in decrementRefreshmentInventory:', err);
+    if (process.env.NODE_ENV === 'development') console.error('Error in decrementRefreshmentInventory:', err);
   }
 };
 
@@ -613,7 +614,7 @@ if (status === 'completed') {
       .eq('id', appointmentId)
     
     if (error) {
-      console.error('Error accepting assignment:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error accepting assignment:', error)
       setUpdating(null)
       return
     }

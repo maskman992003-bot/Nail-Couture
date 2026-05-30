@@ -32,8 +32,7 @@ export default function EditBooking({ bookingId }) {
   }, [user, navigate]);
 
   const loadBooking = async () => {
-    const currentUser = localStorage.getItem('salon_user_data');
-    const userId = currentUser ? JSON.parse(currentUser).id : null;
+    const userId = user?.id;
     if (!userId) { navigate('/login'); return; }
 
     const { data, error } = await supabase
@@ -170,9 +169,8 @@ export default function EditBooking({ bookingId }) {
       }).eq('id', bookingId);
       if (error) throw error;
 
-      const currentUser = localStorage.getItem('salon_user_data');
-      const userId = currentUser ? JSON.parse(currentUser).id : null;
-      const userName = currentUser ? JSON.parse(currentUser).full_name : 'Customer';
+      const userId = user?.id;
+      const userName = user?.full_name || 'Customer';
       await supabase.from('notifications').insert({
         recipient_id: userId,
         reference_id: bookingId,

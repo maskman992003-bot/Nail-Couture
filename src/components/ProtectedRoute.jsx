@@ -15,7 +15,7 @@ const getHomePath = (role) => {
 };
 
 export function ProtectedRoute({ allowedRoles, children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -32,6 +32,11 @@ export function ProtectedRoute({ allowedRoles, children }) {
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     const redirectPath = getHomePath(user.role);
+    // If the user's role is unknown, log them out and send to login
+    if (redirectPath === '/login') {
+      try { logout(); } catch (e) { /* ignore */ }
+      return <Navigate to="/login" replace />;
+    }
     if (location.pathname !== redirectPath) {
       return <Navigate to={redirectPath} replace />;
     }

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 import Sidebar from './Sidebar';
 
 const statusConfig = {
@@ -34,8 +35,7 @@ export default function CustomerHistory() {
   const [selectedDetailBooking, setSelectedDetailBooking] = useState(null);
 
   const fetchData = useCallback(async () => {
-    const currentUser = localStorage.getItem('salon_user_data');
-    const userId = currentUser ? JSON.parse(currentUser).id : null;
+    const userId = user?.id;
     if (!userId) { setLoading(false); navigate('/login'); return; }
     try {
       const [onlineRes, kioskRes, notifRes] = await Promise.all([
@@ -280,9 +280,15 @@ export default function CustomerHistory() {
               <div className="text-offwhite/30 text-5xl mb-4">&#128340;</div>
               <h3 className="font-heading text-2xl text-offwhite mb-3">No Bookings Found</h3>
               <p className="text-offwhite/50 mb-8 max-w-sm mx-auto">No bookings match your current filter.</p>
-              <Link to="/customer/book" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
-                Book Now
-              </Link>
+              {CUSTOMER_ONLINE_BOOKING ? (
+                <Link to="/customer/book" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
+                  Book Now
+                </Link>
+              ) : (
+                <a href="/about#contact" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
+                  Contact Support
+                </a>
+              )}
             </div>
           ) : (
             <>

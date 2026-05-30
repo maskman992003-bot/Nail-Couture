@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 const servicesData = [
   {
@@ -336,9 +337,51 @@ function BookingWizard() {
 
   const handleSubmit = () => {
     if (!validateStep3()) return;
-    const id = `NC-${Date.now().toString(36).toUpperCase()}`;
-    setBookingId(id);
-    handleNextStep(4);
+    const submitBooking = async () => {
+      try {
+        const phone = formData.phone.replace(/\D/g, '').slice(-10);
+        // Try to find existing profile by email or phone
+        let userId = null;
+        try {
+          const orQuery = [];
+          if (formData.email) orQuery.push(`email.eq.${formData.email}`);
+          if (phone) orQuery.push(`phone.eq.${phone}`);
+          if (orQuery.length > 0) {
+            const { data: found } = await supabase.from('profiles').select('id').or(orQuery.join(',')).limit(1);
+            if (found && found.length > 0) userId = found[0].id;
+          }
+        } catch (err) {
+          // lookup failed quietly
+        }
+
+        // If we cannot resolve or create a profile here (RLS), store guest contact fields on the appointment
+        const allNames = [...(selectedService ? [selectedService.name] : []), ...selectedAddOns.map(a => a.name)].join(', ');
+        const scheduledAt = selectedDate ? new Date(selectedDate).toISOString() : null;
+        const payload = {
+          customer_id: userId || null,
+          guest_name: formData.name || null,
+          guest_email: formData.email || null,
+          guest_phone: phone || null,
+          service_id: selectedService?.id || null,
+          add_ons: allNames || null,
+          final_price: totalPrice || 0,
+          technician_id: null,
+          scheduled_at: scheduledAt,
+          status: 'confirmed',
+          booking_type: 'online'
+        };
+
+        const { data: apptData, error: apptErr } = await supabase.from('appointments').insert(payload).select('id').limit(1).single();
+        if (apptErr) throw apptErr;
+        const id = apptData?.id || `NC-${Date.now().toString(36).toUpperCase()}`;
+        setBookingId(id);
+        handleNextStep(4);
+      } catch (err) {
+        setErrors({ general: 'Failed to save booking. Please try again or contact support.' });
+      }
+    };
+
+    submitBooking();
   };
 
   const resetBooking = () => {

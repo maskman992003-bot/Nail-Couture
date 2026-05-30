@@ -28,8 +28,7 @@ export default function CustomerProfile() {
   }, [user, navigate]);
 
   const fetchProfile = async () => {
-    const currentUser = localStorage.getItem('salon_user_data');
-    const userId = currentUser ? JSON.parse(currentUser).id : null;
+    const userId = user?.id;
     if (!userId) { navigate('/login'); return; }
     try {
       const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();

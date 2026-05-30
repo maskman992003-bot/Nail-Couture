@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import Sidebar from './Sidebar';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminServices() {
+  const { user } = useAuth();
   const [activeSubTab, setActiveSubTab] = useState('services');
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -70,7 +72,7 @@ export default function AdminServices() {
     if (!form.name || !form.price) return;
     setSaving(true);
     setApiError('');
-    const currentUser = JSON.parse(localStorage.getItem('salon_user_data') || '{}');
+    const currentUser = user || {};
     const payload = {
       name: form.name,
       price: parseFloat(form.price),
@@ -102,7 +104,7 @@ export default function AdminServices() {
     const handleDelete = async (id) => {
       if (!window.confirm('Delete this service? Services using it will keep the text value.')) return;
       setApiError('');
-      const currentUser = JSON.parse(localStorage.getItem('salon_user_data') || '{}');
+      const currentUser = user || {};
       const { error } = await supabase.rpc('manage_service', {
         admin_phone: currentUser.phone,
         action: 'delete', service_data: {}, service_id: id,
@@ -127,7 +129,7 @@ export default function AdminServices() {
     if (!catForm.name) return;
     setCatSaving(true);
     setApiError('');
-    const currentUser = JSON.parse(localStorage.getItem('salon_user_data') || '{}');
+    const currentUser = user || {};
     let result;
     if (catEditing) {
       result = await supabase.rpc('manage_service_category', {
@@ -157,7 +159,7 @@ export default function AdminServices() {
   const catHandleDelete = async (id) => {
     if (!confirm('Delete this category? Services using it will keep the text value.')) return;
     setApiError('');
-    const currentUser = JSON.parse(localStorage.getItem('salon_user_data') || '{}');
+    const currentUser = user || {};
     const { error } = await supabase.rpc('manage_service_category', {
       admin_phone: currentUser.phone,
       action: 'delete', category_id: id,

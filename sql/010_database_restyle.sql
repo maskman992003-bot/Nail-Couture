@@ -272,74 +272,72 @@ DROP FUNCTION IF EXISTS update_shift_appointment_count();
 -- STEP 9: RLS policies
 -- ============================================================
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+-- Remove overly permissive anonymous access. Allow anonymous INSERTs only for online booking submissions (public booking form).
 DROP POLICY IF EXISTS "Allow anon read appointments" ON appointments;
 DROP POLICY IF EXISTS "Allow anon insert appointments" ON appointments;
 DROP POLICY IF EXISTS "Allow authenticated update appointments" ON appointments;
 DROP POLICY IF EXISTS "Allow authenticated delete appointments" ON appointments;
-CREATE POLICY "Allow anon read appointments" ON appointments FOR SELECT TO anon USING (true);
-CREATE POLICY "Allow anon insert appointments" ON appointments FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "Allow authenticated update appointments" ON appointments FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated delete appointments" ON appointments FOR DELETE TO authenticated USING (true);
+CREATE POLICY "Anon insert online appointments" ON appointments FOR INSERT TO anon WITH CHECK (booking_type = 'online');
+CREATE POLICY "Authenticated manage appointments" ON appointments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 ALTER TABLE payment_transactions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow anon read payment_transactions" ON payment_transactions;
 DROP POLICY IF EXISTS "Allow anon insert payment_transactions" ON payment_transactions;
 DROP POLICY IF EXISTS "Allow authenticated manage payment_transactions" ON payment_transactions;
-CREATE POLICY "Allow anon read payment_transactions" ON payment_transactions FOR SELECT TO anon USING (true);
-CREATE POLICY "Allow anon insert payment_transactions" ON payment_transactions FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "Allow authenticated manage payment_transactions" ON payment_transactions FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Payments must be handled by authenticated backends only
+CREATE POLICY "Authenticated manage payment_transactions" ON payment_transactions FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 ALTER TABLE appointment_status_history ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow anon read appointment_status_history" ON appointment_status_history;
 DROP POLICY IF EXISTS "Allow authenticated insert appointment_status_history" ON appointment_status_history;
-CREATE POLICY "Allow anon read appointment_status_history" ON appointment_status_history FOR SELECT TO anon USING (true);
-CREATE POLICY "Allow authenticated insert appointment_status_history" ON appointment_status_history FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated read appointment_status_history" ON appointment_status_history FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated insert appointment_status_history" ON appointment_status_history FOR INSERT TO authenticated WITH CHECK (true);
 
 ALTER TABLE inventory_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow anon read inventory_logs" ON inventory_logs;
 DROP POLICY IF EXISTS "Allow authenticated manage inventory_logs" ON inventory_logs;
-CREATE POLICY "Allow anon read inventory_logs" ON inventory_logs FOR SELECT TO anon USING (true);
-CREATE POLICY "Allow authenticated manage inventory_logs" ON inventory_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated manage inventory_logs" ON inventory_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 ALTER TABLE inventory ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow anon read inventory" ON inventory;
-CREATE POLICY "Allow anon read inventory" ON inventory FOR SELECT TO anon USING (true);
 DROP POLICY IF EXISTS "Allow authenticated manage inventory" ON inventory;
-CREATE POLICY "Allow authenticated manage inventory" ON inventory FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Inventory (stock/refreshments) can be read publicly
+CREATE POLICY "Anon read inventory" ON inventory FOR SELECT TO anon USING (true);
+CREATE POLICY "Authenticated manage inventory" ON inventory FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow anon read profiles" ON profiles;
-CREATE POLICY "Allow anon read profiles" ON profiles FOR SELECT TO anon USING (true);
 DROP POLICY IF EXISTS "Allow anon insert profiles" ON profiles;
-CREATE POLICY "Allow anon insert profiles" ON profiles FOR INSERT TO anon WITH CHECK (true);
 DROP POLICY IF EXISTS "Allow authenticated update profiles" ON profiles;
-CREATE POLICY "Allow authenticated update profiles" ON profiles FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+-- Profiles are sensitive; require authenticated access for reads and writes
+CREATE POLICY "Authenticated manage profiles" ON profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow anon read services" ON services;
-CREATE POLICY "Allow anon read services" ON services FOR SELECT TO anon USING (true);
+-- Services remain public for anonymous site browsing
+CREATE POLICY "Anon read services" ON services FOR SELECT TO anon USING (true);
 
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow anon read notifications" ON notifications;
-CREATE POLICY "Allow anon read notifications" ON notifications FOR SELECT TO anon USING (true);
 DROP POLICY IF EXISTS "Allow anon insert notifications" ON notifications;
-CREATE POLICY "Allow anon insert notifications" ON notifications FOR INSERT TO anon WITH CHECK (true);
+-- Notifications require authenticated access
+CREATE POLICY "Authenticated manage notifications" ON notifications FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 ALTER TABLE shifts ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Staff manage own shifts" ON shifts;
 DROP POLICY IF EXISTS "Admins manage staff shifts" ON shifts;
 DROP POLICY IF EXISTS "Allow anon read shifts" ON shifts;
 DROP POLICY IF EXISTS "Allow authenticated manage shifts" ON shifts;
-CREATE POLICY "Allow anon read shifts" ON shifts FOR SELECT TO anon USING (true);
-CREATE POLICY "Allow authenticated manage shifts" ON shifts FOR ALL TO authenticated USING (true);
+CREATE POLICY "Auth read shifts" ON shifts FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Auth manage shifts" ON shifts FOR ALL TO authenticated USING (true);
 
 ALTER TABLE staff_schedules ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Staff manage own schedules" ON staff_schedules;
 DROP POLICY IF EXISTS "Admins manage staff schedules" ON staff_schedules;
 DROP POLICY IF EXISTS "Allow anon read staff_schedules" ON staff_schedules;
 DROP POLICY IF EXISTS "Allow authenticated manage staff_schedules" ON staff_schedules;
-CREATE POLICY "Allow anon read staff_schedules" ON staff_schedules FOR SELECT TO anon USING (true);
-CREATE POLICY "Allow authenticated manage staff_schedules" ON staff_schedules FOR ALL TO authenticated USING (true);
+CREATE POLICY "Auth read staff_schedules" ON staff_schedules FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Auth manage staff_schedules" ON staff_schedules FOR ALL TO authenticated USING (true);
 
 ALTER TABLE time_off_requests ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Staff manage own time off" ON time_off_requests;
@@ -347,8 +345,8 @@ DROP POLICY IF EXISTS "Admins view all time off" ON time_off_requests;
 DROP POLICY IF EXISTS "Admins manage time off" ON time_off_requests;
 DROP POLICY IF EXISTS "Allow anon read time_off_requests" ON time_off_requests;
 DROP POLICY IF EXISTS "Allow authenticated manage time_off_requests" ON time_off_requests;
-CREATE POLICY "Allow anon read time_off_requests" ON time_off_requests FOR SELECT TO anon USING (true);
-CREATE POLICY "Allow authenticated manage time_off_requests" ON time_off_requests FOR ALL TO authenticated USING (true);
+CREATE POLICY "Auth read time_off_requests" ON time_off_requests FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Auth manage time_off_requests" ON time_off_requests FOR ALL TO authenticated USING (true);
 
 -- ============================================================
 -- STEP 10: Seed inventory with refreshment items (if empty)

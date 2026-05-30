@@ -1,4 +1,26 @@
+import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags'
+
 export default function AboutContact() {
+  const sectionTitle = CUSTOMER_ONLINE_BOOKING ? 'Book Your Experience' : 'Get in Touch'
+  const sectionDescription = CUSTOMER_ONLINE_BOOKING
+    ? 'Ready to experience nail couture? Schedule your appointment today.'
+    : 'We’re here to help. Reach out now to discuss availability and styling requests.'
+
+  const handlePrimaryAction = () => {
+    if (CUSTOMER_ONLINE_BOOKING) {
+      const element = document.getElementById('book')
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+      return
+    }
+
+    const element = document.getElementById('contact')
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
   return (
     <div className="flex-1">
       <section className="py-16 sm:py-24 px-4 sm:px-6 bg-charcoal">
@@ -102,20 +124,13 @@ export default function AboutContact() {
 
       <section className="py-16 sm:py-24 px-4 sm:px-6 bg-charcoal">
         <div className="max-w-4xl mx-auto text-center">
-          <h3 className="font-heading text-offwhite text-2xl sm:text-3xl mb-6">Book Your Experience</h3>
-          <p className="text-offwhite/70 mb-8">
-            Ready to experience nail couture? Schedule your appointment today.
-          </p>
+          <h3 className="font-heading text-offwhite text-2xl sm:text-3xl mb-6">{sectionTitle}</h3>
+          <p className="text-offwhite/70 mb-8">{sectionDescription}</p>
           <button 
-            onClick={() => {
-              const element = document.getElementById('book');
-              if (element) {
-                element.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
+            onClick={handlePrimaryAction}
             className="px-8 py-3 bg-gold text-charcoal hover:bg-gold/90 transition-all tracking-wider"
           >
-            REQUEST APPOINTMENT
+            {CUSTOMER_ONLINE_BOOKING ? 'REQUEST APPOINTMENT' : 'CONTACT US'}
           </button>
         </div>
       </section>

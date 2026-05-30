@@ -103,11 +103,29 @@ export default function Sidebar() {
   }, [userPhone]);
 
   useEffect(() => {
-    if (!userPhone) return;
+    if (!userPhone || !notifPanelOpen) return;
+
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
-    return () => clearInterval(interval);
-  }, [userPhone, fetchNotifications]);
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchNotifications();
+      }
+    }, 15000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNotifications();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [userPhone, notifPanelOpen, fetchNotifications]);
 
   useEffect(() => {
     if (!showUserMenu) return;
@@ -144,19 +162,26 @@ export default function Sidebar() {
     
     // Feature flag mappings for navigation items
     const navItemFeatureMappings = {
-      bookings: 'customer.onlineBooking',
-      book: 'customer.onlineBooking',
-      customers: 'management.customerHistory'
+      bookings: ['customer.onlineBooking', 'customer.onlineCalendarBooking'],
+      book: ['customer.onlineBooking', 'customer.onlineCalendarBooking'],
+      customers: ['management.customerHistory']
     };
     
     // Filter navigation items based on feature flags
     // Only super_admin sees all features regardless of flags (for system management)
     if (actualUserRole !== 'super_admin') {
       navItems = navItems.filter(item => {
-        // If no feature mapping exists for this item, show it by default
-        if (!navItemFeatureMappings[item.id]) {
+        const mapping = navItemFeatureMappings[item.id];
+        if (!mapping) {
           return true;
         }
+
+        const flagsToCheck = Array.isArray(mapping) ? mapping : [mapping];
+        return flagsToCheck.some((flag) => {
+          const [featureArea, featureName] = flag.split('.')
+          const featureFlag = featureFlags[featureArea]?.[featureName]
+          return featureFlag === true
+        })
         
         // Get the feature flag value using the mapping
         const [featureArea, featureName] = navItemFeatureMappings[item.id].split('.');

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 import Sidebar from './Sidebar';
 
 const statusColors = {
@@ -75,16 +76,7 @@ export default function ClientPortal() {
   }
 
   const fetchUserData = useCallback(async () => {
-    const { user: sessionUser } = await supabase.auth.getUser();
-    if (sessionUser && ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'].includes(sessionUser.role)) {
-      try {
-        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', sessionUser.id).single();
-        if (profileData) setProfile(profileData);
-      } catch { }
-    }
-
-    const currentUser = localStorage.getItem('salon_user_data');
-    const userId = currentUser ? JSON.parse(currentUser).id : null;
+    const userId = user?.id;
     if (!userId) { navigate('/login'); return; }
 
     try {
@@ -264,9 +256,15 @@ export default function ClientPortal() {
               <div className="text-offwhite/40 text-5xl mb-4">&#128133;</div>
               <h3 className="font-heading text-2xl text-offwhite mb-3">Book Your Experience</h3>
               <p className="text-offwhite/50 mb-8 max-w-sm mx-auto">Treat yourself to our premium nail services. We can't wait to see you.</p>
-              <Link to="/customer/book" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
-                Book Now
-              </Link>
+              {CUSTOMER_ONLINE_BOOKING ? (
+                <Link to="/customer/book" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
+                  Book Now
+                </Link>
+              ) : (
+                <a href="/about#contact" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
+                  Contact Support
+                </a>
+              )}
             </div>
           )}
 

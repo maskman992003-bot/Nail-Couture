@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 import Sidebar from './Sidebar';
 
 export default function CustomerBooking() {
@@ -24,9 +25,8 @@ export default function CustomerBooking() {
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupSize, setGroupSize] = useState('');
 
-  const currentUser = localStorage.getItem('salon_user_data');
-  const userData = currentUser ? JSON.parse(currentUser) : null;
-  const firstName = userData?.full_name ? userData.full_name.split(' ')[0] : 'there';
+  const userId = user?.id;
+  const firstName = user?.full_name ? user.full_name.split(' ')[0] : 'there';
 
   const fetchServices = async () => {
     try {
@@ -65,8 +65,6 @@ export default function CustomerBooking() {
   const handleBooking = async () => {
     if (selectedServices.length === 0 || !selectedDate || !selectedTime) return;
     setBookLoading(true);
-    const currentUser = localStorage.getItem('salon_user_data');
-    const userId = currentUser ? JSON.parse(currentUser).id : null;
     if (!userId) { setBookLoading(false); navigate('/login'); return; }
     const checkInTime = new Date(`${selectedDate}T${selectedTime}:00`);
     const allNames = [...selectedServices.map((s) => s.name), ...selectedAddOns.map((id) => {
@@ -102,6 +100,24 @@ export default function CustomerBooking() {
     fetchServices();
     fetchCategories();
   }, [user, navigate]);
+
+  if (!CUSTOMER_ONLINE_BOOKING) {
+    return (
+      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+        <Sidebar />
+        <div className="flex items-center justify-center p-6">
+          <div className="max-w-xl rounded-3xl border border-gold/30 bg-[#111] p-10 text-center">
+            <div className="text-gold text-4xl font-heading mb-4">Booking Temporarily Unavailable</div>
+            <p className="text-offwhite/70 mb-6">Online booking is currently disabled while we complete system updates. Please contact us to schedule your visit.</p>
+            <div className="flex flex-col gap-3 sm:flex-row justify-center">
+              <Link to="/portal" className="px-6 py-3 bg-offwhite/10 text-offwhite rounded-xl hover:bg-offwhite/20">Return to Portal</Link>
+              <a href="/about#contact" className="px-6 py-3 bg-gold text-charcoal rounded-xl hover:bg-gold/90">Contact Us</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (selectedDate && selectedTime) {
@@ -494,20 +510,16 @@ export default function CustomerBooking() {
                 </button>
                 <button
                   onClick={() => {
-                    if (groupSize >= 4) {
-                      const currentUser = localStorage.getItem('salon_user_data');
-                      const userId = currentUser ? JSON.parse(currentUser).id : null;
-                      if (userId) {
-                        supabase.from('appointments').insert({
-                          customer_id: userId,
-                          service_id: null,
-                          scheduled_at: null,
-                          checked_in_at: null,
-                          status: 'confirmed',
-                          booking_type: 'online',
-                          notes: `Bridal Party Bundle - Group size: ${groupSize} guests (25% discount)`,
-                        });
-                      }
+                    if (groupSize >= 4 && userId) {
+                      supabase.from('appointments').insert({
+                        customer_id: userId,
+                        service_id: null,
+                        scheduled_at: null,
+                        checked_in_at: null,
+                        status: 'confirmed',
+                        booking_type: 'online',
+                        notes: `Bridal Party Bundle - Group size: ${groupSize} guests (25% discount)`,
+                      });
                       setShowGroupModal(false);
                       setBookingSuccess(true);
                     }
