@@ -25,7 +25,7 @@ import StaffSchedule from './components/StaffSchedule.jsx'
 import TechnicianSchedule from './components/TechnicianSchedule.jsx'
 import Settings from './components/Settings.jsx'
 import Services from './components/Services.jsx'
-import AdminStock from './components/AdminStock.jsx'
+import AdminInventory from './components/AdminInventory.jsx'
 import AdminServices from './components/AdminServices.jsx'
 import AdminBookings from './components/AdminBookings.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
@@ -92,9 +92,9 @@ createRoot(document.getElementById('root')).render(
                <Settings />
              </ProtectedRoute>
            } />
-           <Route path="/superadmin/stock" element={
+<Route path="/superadmin/inventory" element={
              <ProtectedRoute allowedRoles={['super_admin']}>
-               <AdminStock />
+               <AdminInventory />
              </ProtectedRoute>
            } />
            <Route path="/superadmin/schedule" element={
@@ -149,11 +149,11 @@ createRoot(document.getElementById('root')).render(
                <Settings />
              </ProtectedRoute>
            } />
-           <Route path="/owner/stock" element={
-             <ProtectedRoute allowedRoles={['owner']}>
-               <AdminStock />
-             </ProtectedRoute>
-           } />
+            <Route path="/owner/inventory" element={
+              <ProtectedRoute allowedRoles={['owner']}>
+                <AdminInventory />
+              </ProtectedRoute>
+            } />
            <Route path="/owner/schedule" element={
              <ProtectedRoute allowedRoles={['owner']}>
                <StaffSchedule />
@@ -211,11 +211,11 @@ createRoot(document.getElementById('root')).render(
                <Settings />
              </ProtectedRoute>
            } />
-           <Route path="/partner/stock" element={
-             <ProtectedRoute allowedRoles={['partner']}>
-               <AdminStock />
-             </ProtectedRoute>
-           } />
+            <Route path="/partner/inventory" element={
+              <ProtectedRoute allowedRoles={['partner']}>
+                <AdminInventory />
+              </ProtectedRoute>
+            } />
            <Route path="/partner/schedule" element={
              <ProtectedRoute allowedRoles={['partner']}>
                <StaffSchedule />
@@ -226,97 +226,7 @@ createRoot(document.getElementById('root')).render(
                <AdminBookings />
              </ProtectedRoute>
            } />
-          <Route path="/superadmin/lobby" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <AdminLobby />
-            </ProtectedRoute>
-          } />
-          <Route path="/superadmin/reports" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <AdminReports />
-            </ProtectedRoute>
-          } />
-          <Route path="/superadmin/services" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <AdminServices />
-            </ProtectedRoute>
-          } />
-          <Route path="/superadmin/staff" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <StaffManagement />
-            </ProtectedRoute>
-          } />
-          <Route path="/superadmin/staff/:id" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <StaffProfile />
-            </ProtectedRoute>
-          } />
-          <Route path="/superadmin/settings" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician']}>
-              <Settings />
-            </ProtectedRoute>
-          } />
 
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Admin />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/lobby" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminLobby />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/reports" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminReports />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/services" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminServices />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/staff" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <StaffManagement />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/staff/:id" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <StaffProfile />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/stock" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminStock />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/schedule" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <StaffSchedule />
-            </ProtectedRoute>
-          } />
-          <Route path="/superadmin/stock" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <AdminStock />
-            </ProtectedRoute>
-          } />
-          <Route path="/superadmin/schedule" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <StaffSchedule />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/bookings" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminBookings />
-            </ProtectedRoute>
-          } />
-          <Route path="/superadmin/bookings" element={
-            <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
-              <AdminBookings />
-            </ProtectedRoute>
-          } />
 
           <Route path="/cashier" element={
             <ProtectedRoute allowedRoles={['cashier']}>

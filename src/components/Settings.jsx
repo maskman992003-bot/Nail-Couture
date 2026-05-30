@@ -8,7 +8,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(user); // Initialize with user from auth context
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinMode, setPinMode] = useState('set');
   const [pinStep, setPinStep] = useState(1);
@@ -96,16 +96,10 @@ export default function Settings() {
   };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      const storedUser = localStorage.getItem('salon_user_data');
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setProfile(userData);
-      }
-      setLoading(false);
-    };
-    fetchProfile();
-  }, []);
+    // Update profile when user from auth context changes
+    setProfile(user);
+    setLoading(false);
+  }, [user]);
 
   if (loading) {
     return (

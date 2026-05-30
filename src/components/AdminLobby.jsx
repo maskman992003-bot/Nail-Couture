@@ -474,18 +474,59 @@ export default function AdminLobby() {
     setTodayTotal(count || 0)
   }, [])
 
-  const updateStatus = async (appointmentId, status, techId = null) => {
+  // Helper function to decrement refreshment inventory when a customer is served
+const decrementRefreshmentInventory = async (refreshmentName) => {
+  try {
+    // Find the inventory item by name and category 'refreshment'
+    const { data: inventoryItems, error: fetchError } = await supabase
+      .from('inventory')
+      .select('id, quantity')
+      .eq('item_name', refreshmentName)
+      .eq('category', 'refreshment')
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows returned
+      console.error('Error fetching refreshment inventory:', fetchError);
+      return;
+    }
+
+    if (inventoryItems && inventoryItems.quantity > 0) {
+      const newQuantity = inventoryItems.quantity - 1;
+      const { error: updateError } = await supabase
+        .from('inventory')
+        .update({ quantity: newQuantity })
+        .eq('id', inventoryItems.id);
+
+      if (updateError) {
+        console.error('Error updating refreshment inventory:', updateError);
+      }
+      // Optional: Show notification if stock gets low
+      else if (newQuantity <= 0) {
+        setNotification({ message: `Low stock: ${refreshmentName}`, name: 'Inventory Alert' });
+        setTimeout(() => setNotification(null), 3000);
+      }
+    }
+  } catch (err) {
+    console.error('Error in decrementRefreshmentInventory:', err);
+  }
+};
+
+const updateStatus = async (appointmentId, status, techId = null) => {
     setUpdating(appointmentId)
     const updates = { status }
     if (techId) updates.technician_id = techId
     if (status === 'serving') updates.start_time = new Date().toISOString()
-    if (status === 'completed') {
-      const appt = servingAppointments.find(a => a.id === appointmentId)
-      if (appt) {
-        if (appt.final_price == null && appt.services?.price) updates.final_price = appt.services.price
-        setNotification({ message: 'Service Complete!', name: appt?.customer?.full_name })
-        setTimeout(() => setNotification(null), 3000)
+if (status === 'completed') {
+    const appt = servingAppointments.find(a => a.id === appointmentId)
+    if (appt) {
+      if (appt.final_price == null && appt.services?.price) updates.final_price = appt.services.price
+      setNotification({ message: 'Service Complete!', name: appt?.customer?.full_name })
+      // Decrement inventory for refreshment if offered
+      if (appt.customer?.refreshment_pref) {
+        await decrementRefreshmentInventory(appt.customer.refreshment_pref);
       }
+      setTimeout(() => setNotification(null), 3000)
+    }
 
       await supabase.from('appointments').update(updates).eq('id', appointmentId)
 

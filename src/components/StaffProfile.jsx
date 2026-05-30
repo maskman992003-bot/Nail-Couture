@@ -128,10 +128,15 @@ export default function StaffProfile() {
     setUpdatingRole(false);
   };
 
-  const getStaffPath = (role) => {
-    if (['super_admin', 'owner', 'partner'].includes(role)) return '/superadmin/staff';
-    return '/admin/staff';
-  };
+   const getStaffPath = (role) => {
+     switch (role) {
+       case 'super_admin': return '/superadmin/staff';
+       case 'owner': return '/owner/staff';
+       case 'partner': return '/partner/staff';
+       case 'admin': return '/admin/staff';
+       default: return '/admin/staff';
+     }
+   };
 
   if (loading) {
     return (

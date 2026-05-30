@@ -89,16 +89,12 @@ export default function Admin() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <Link to="/admin/lobby" className="block p-8 bg-offwhite/5 border border-gold/20 rounded-xl hover:bg-gold/10 transition-colors">
-              <h3 className="font-heading text-2xl text-gold mb-2">Manage Lobby</h3>
-              <p className="text-offwhite/60">Assign customers to technicians and manage floor</p>
-            </Link>
-            <Link to="/admin/services" className="block p-8 bg-offwhite/5 border border-gold/20 rounded-xl hover:bg-gold/10 transition-colors">
-              <h3 className="font-heading text-2xl text-gold mb-2">Services</h3>
-              <p className="text-offwhite/60">Manage services and pricing</p>
-            </Link>
-          </div>
+           <div className="grid md:grid-cols-2 gap-6">
+             <Link to="/admin/lobby" className="block p-8 bg-offwhite/5 border border-gold/20 rounded-xl hover:bg-gold/10 transition-colors">
+               <h3 className="font-heading text-2xl text-gold mb-2">Manage Lobby</h3>
+               <p className="text-offwhite/60">Assign customers to technicians and manage floor</p>
+             </Link>
+           </div>
         </div>
       </div>
     </div>

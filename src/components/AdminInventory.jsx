@@ -6,11 +6,11 @@ import Sidebar from './Sidebar';
 
 const emptyForm = { item_name: '', category: 'material', quantity: '', unit: '', reorder_threshold: '' };
 
-export default function AdminStock() {
+export default function AdminInventory() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [inventory, setStock] = useState([]);
+  const [inventory, setInventory] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [adjustingId, setAdjustingId] = useState(null);
@@ -46,7 +46,7 @@ export default function AdminStock() {
       if (error) throw error;
       setShowAddModal(false);
       setAddForm(emptyForm);
-      fetchStock(true);
+      fetchInventory(true);
     } catch (err) {
       setAddError(err.message || 'Failed to add item');
     } finally {
@@ -54,7 +54,7 @@ export default function AdminStock() {
     }
   };
 
-  const fetchStock = async (isRefreshing = false) => {
+  const fetchInventory = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
     try {
       const { data, error } = await supabase.from('inventory').select('*').order('item_name');
@@ -62,7 +62,7 @@ export default function AdminStock() {
         console.error('Supabase error:', error);
         return;
       }
-      setStock(data || []);
+      setInventory(data || []);
     } catch (err) {
       console.error('Error fetching inventory:', err);
     } finally {
@@ -80,26 +80,26 @@ export default function AdminStock() {
     setAdjustingId(id);
     showFeedback(id, delta > 0 ? 'plus' : 'minus');
 
-    try {
-      const { error } = await supabase
-        .from('inventory')
-        .update({ quantity: newQty })
-        .eq('id', id);
+     try {
+       const { error } = await supabase
+         .from('inventory')
+         .update({ quantity: newQty })
+         .eq('id', id);
 
-      if (error) {
-        console.error('Supabase update error:', error);
-        showFeedback(id, 'error');
-        return;
-      }
+       if (error) {
+         console.error('Supabase update error:', error);
+         showFeedback(id, 'error');
+         return;
+       }
 
-      setStock((prev) => prev.map((s) => (s.id === id ? { ...s, quantity: newQty } : s)));
-      showFeedback(id, 'ok');
-    } catch (err) {
-      console.error('Error adjusting inventory:', err);
-      showFeedback(id, 'error');
-    } finally {
-      setAdjustingId(null);
-    }
+       setInventory((prev) => prev.map((s) => (s.id === id ? { ...s, quantity: newQty } : s)));
+       showFeedback(id, 'ok');
+     } catch (err) {
+       console.error('Error adjusting inventory:', err);
+       showFeedback(id, 'error');
+     } finally {
+       setAdjustingId(null);
+     }
   }, [inventory, showFeedback]);
 
   const saveQuantity = useCallback(async (id, newQty) => {
@@ -110,26 +110,26 @@ export default function AdminStock() {
 
     setSavingId(id);
 
-    try {
-      const { error } = await supabase
-        .from('inventory')
-        .update({ quantity: newQty })
-        .eq('id', id);
+     try {
+       const { error } = await supabase
+         .from('inventory')
+         .update({ quantity: newQty })
+         .eq('id', id);
 
-      if (error) {
-        console.error('Supabase update error:', error);
-        showFeedback(id, 'error');
-        return;
-      }
+       if (error) {
+         console.error('Supabase update error:', error);
+         showFeedback(id, 'error');
+         return;
+       }
 
-      setStock((prev) => prev.map((s) => (s.id === id ? { ...s, quantity: newQty } : s)));
-      showFeedback(id, 'ok');
-    } catch (err) {
-      console.error('Error saving quantity:', err);
-      showFeedback(id, 'error');
-    } finally {
-      setSavingId(null);
-    }
+       setInventory((prev) => prev.map((s) => (s.id === id ? { ...s, quantity: newQty } : s)));
+       showFeedback(id, 'ok');
+     } catch (err) {
+       console.error('Error saving quantity:', err);
+       showFeedback(id, 'error');
+     } finally {
+       setSavingId(null);
+     }
   }, [inventory, showFeedback]);
 
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function AdminStock() {
       navigate(user.role === 'technician' ? '/technician' : '/portal');
       return;
     }
-    fetchStock();
+     fetchInventory();
   }, [user, navigate]);
 
   const getStatus = (item) => {

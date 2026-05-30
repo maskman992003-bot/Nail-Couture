@@ -12,6 +12,7 @@ export default function AdminServices() {
   const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', });
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [catForm, setCatForm] = useState({ name: '', sort_order: '' });
   const [catEditing, setCatEditing] = useState(null);
@@ -26,6 +27,17 @@ export default function AdminServices() {
     if (data) setServices(data);
     setLoading(false);
   };
+
+  const filteredServices = services.filter(service => {
+    const search = searchTerm.toLowerCase().trim();
+    if (!search) return true;
+    return (
+      service.name.toLowerCase().includes(search) ||
+      (service.category || '').toLowerCase().includes(search) ||
+      String(service.price || '').includes(search) ||
+      String(service.duration_minutes || '').includes(search)
+    );
+  });
 
   const fetchCategories = async () => {
     const { data, error } = await supabase.from('service_categories').select('*').order('sort_order');
@@ -87,17 +99,17 @@ export default function AdminServices() {
     fetchServices();
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this service? This cannot be undone.')) return;
-    setApiError('');
-    const currentUser = JSON.parse(localStorage.getItem('salon_user_data') || '{}');
-    const { error } = await supabase.rpc('manage_service', {
-      admin_phone: currentUser.phone,
-      action: 'delete', service_data: {}, service_id: id,
-    });
-    if (error) { setApiError(error.message); return; }
-    fetchServices();
-  };
+    const handleDelete = async (id) => {
+      if (!window.confirm('Delete this service? Services using it will keep the text value.')) return;
+      setApiError('');
+      const currentUser = JSON.parse(localStorage.getItem('salon_user_data') || '{}');
+      const { error } = await supabase.rpc('manage_service', {
+        admin_phone: currentUser.phone,
+        action: 'delete', service_data: {}, service_id: id,
+      });
+      if (error) { setApiError(error.message); return; }
+      fetchServices();
+    };
 
   const catOpenAdd = () => {
     setCatEditing(null);
@@ -168,13 +180,26 @@ export default function AdminServices() {
           <button onClick={() => setActiveSubTab('categories')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeSubTab === 'categories' ? 'bg-gold text-charcoal' : 'bg-offwhite/10 text-offwhite/60 hover:bg-offwhite/20'}`}>Categories</button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
-          {activeSubTab === 'services' && (
-            <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-heading text-xl text-offwhite">All Services</h2>
-                <button onClick={openAdd} className="px-4 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors">+ Add Service</button>
-              </div>
+            <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
+           {activeSubTab === 'services' && (
+             <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-6">
+               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
+                 <div>
+                   <h2 className="font-heading text-xl text-offwhite">All Services</h2>
+                 </div>
+                 <div>
+                   <input
+                     type="text"
+                     placeholder="Search services..."
+                     value={searchTerm}
+                     onChange={(e) => setSearchTerm(e.target.value)}
+                     className="w-full sm:w-auto px-4 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:border-gold focus:outline-none"
+                   />
+                 </div>
+                 <div>
+                   <button onClick={openAdd} className="px-4 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors">+ Add Service</button>
+                 </div>
+               </div>
 
               {showForm && (
                 <div className="mb-6 p-4 bg-offwhite/10 rounded-xl border border-gold/30">
@@ -211,40 +236,40 @@ export default function AdminServices() {
 
               {apiError && !showForm && <div className="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-300 text-sm">{apiError}</div>}
 
-              {loading ? (
-                <div className="text-offwhite/40 text-center py-12">Loading services...</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-offwhite/50 text-sm border-b border-offwhite/10">
-                        <th className="text-left py-3 px-4">Name</th>
-                        <th className="text-left py-3 px-4">Category</th>
-                      <th className="text-left py-3 px-4">Price</th>
-                      <th className="text-left py-3 px-4">Duration</th>
-                      <th className="text-left py-3 px-4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {services.map(svc => (
-                        <tr key={svc.id} className="border-b border-offwhite/5 hover:bg-offwhite/5">
-                          <td className="py-3 px-4 text-offwhite font-medium">{svc.name}</td>
-                          <td className="py-3 px-4 text-offwhite/60">{svc.category || '—'}</td>
-                          <td className="py-3 px-4 text-gold">${parseFloat(svc.price).toFixed(2)}</td>
-                        <td className="py-3 px-4 text-offwhite/60">{svc.duration_minutes || 0} min</td>
-                        <td className="py-3 px-4">
-                            <div className="flex items-center gap-3">
-                              <button onClick={() => openEdit(svc)} className="text-gold hover:underline text-sm">Edit</button>
-                              <button onClick={() => handleDelete(svc.id)} className="text-red-400 hover:underline text-sm">Delete</button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {services.length === 0 && <tr><td colSpan="5" className="py-8 text-center text-offwhite/40">No services found</td></tr>}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+               {loading ? (
+                 <div className="text-offwhite/40 text-center py-12">Loading services...</div>
+               ) : (
+                 <div className="overflow-x-auto">
+                   <table className="w-full">
+                     <thead>
+                       <tr className="text-offwhite/50 text-sm border-b border-offwhite/10">
+                         <th className="text-left py-3 px-4">Name</th>
+                         <th className="text-left py-3 px-4">Category</th>
+                       <th className="text-left py-3 px-4">Price</th>
+                       <th className="text-left py-3 px-4">Duration</th>
+                       <th className="text-left py-3 px-4">Actions</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {filteredServices.map(svc => (
+                         <tr key={svc.id} className="border-b border-offwhite/5 hover:bg-offwhite/5">
+                           <td className="py-3 px-4 text-offwhite font-medium">{svc.name}</td>
+                           <td className="py-3 px-4 text-offwhite/60">{svc.category || '—'}</td>
+                           <td className="py-3 px-4 text-gold">${parseFloat(svc.price).toFixed(2)}</td>
+                         <td className="py-3 px-4 text-offwhite/60">{svc.duration_minutes || 0} min</td>
+                         <td className="py-3 px-4">
+                             <div className="flex items-center gap-3">
+                               <button onClick={() => openEdit(svc)} className="text-gold hover:underline text-sm">Edit</button>
+                               <button onClick={() => handleDelete(svc.id)} className="text-red-400 hover:underline text-sm">Delete</button>
+                             </div>
+                           </td>
+                         </tr>
+                       ))}
+                       {filteredServices.length === 0 && <tr><td colSpan="5" className="py-8 text-center text-offwhite/40">No services found</td></tr>}
+                     </tbody>
+                   </table>
+                 </div>
+               )}
             </div>
           )}
 

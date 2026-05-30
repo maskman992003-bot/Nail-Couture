@@ -11,6 +11,7 @@ export default function ServicesAdmin() {
   const [showAddOnModal, setShowAddOnModal] = useState(false);
   const [addOnForm, setAddOnForm] = useState({ name: '', price: '', duration_minutes: '' });
   const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchServices();
@@ -19,7 +20,18 @@ export default function ServicesAdmin() {
   const fetchServices = async () => {
     try {
       const data = await getServices();
-      setServices(data);
+      // Filter services locally if we have a search term
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase().trim();
+        const filtered = data.filter(service => 
+          service.name.toLowerCase().includes(term) ||
+          (service.description && service.description.toLowerCase().includes(term)) ||
+          service.category.toLowerCase().includes(term)
+        );
+        setServices(filtered);
+      } else {
+        setServices(data);
+      }
     } catch (err) {
       console.error('Error fetching services:', err);
     }
@@ -80,21 +92,39 @@ export default function ServicesAdmin() {
     <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
       <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="font-heading text-3xl text-gold mb-2">Service Editor</h1>
-              <p className="text-offwhite/60">Manage services and pricing</p>
-            </div>
-            <button
-              onClick={() => setShowAddOnModal(true)}
-              className="px-5 py-2.5 border border-gold/40 text-gold/80 hover:bg-gold hover:text-charcoal rounded-lg text-sm font-heading flex items-center gap-2 transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add New Add-On
-            </button>
-          </div>
+              <div className="mb-8 flex items-center justify-between">
+                <div>
+                  <h1 className="font-heading text-3xl text-gold mb-2">Service Editor</h1>
+                  <p className="text-offwhite/60">Manage services and pricing</p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAddOnModal(true)}
+                    className="px-5 py-2.5 border border-gold/40 text-gold/80 hover:bg-gold hover:text-charcoal rounded-lg text-sm font-heading flex items-center gap-2 transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add New Add-On
+                  </button>
+                  <div className="relative w-64">
+                    <input
+                      type="text"
+                      placeholder="Search services..."
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        // Trigger re-filter when search term changes
+                        fetchServices();
+                      }}
+                      className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 rounded-xl text-offwhite placeholder-offwhite/40 focus:border-gold focus:outline-none"
+                    />
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-offwhite/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 8a3 3 0 100 6 3 3 0 000-6z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
 
           {editingId ? (
             <div className="rounded-xl p-6" style={{ backgroundColor: '#1a1a1a' }}>

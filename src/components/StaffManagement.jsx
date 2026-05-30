@@ -99,10 +99,15 @@ export default function StaffManagement() {
     );
   });
 
-  const getStaffPath = (role) => {
-    if (['super_admin', 'owner', 'partner'].includes(role)) return '/superadmin/staff';
-    return '/admin/staff';
-  };
+const getStaffPath = (role) => {
+  switch (role) {
+    case 'super_admin': return '/superadmin/staff';
+    case 'owner': return '/owner/staff';
+    case 'partner': return '/partner/staff';
+    case 'admin': return '/admin/staff';
+    default: return '/admin/staff';
+  }
+};
 
   if (loading) {
     return (
@@ -208,14 +213,14 @@ export default function StaffManagement() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-3">
-                            <Link to={`${staffPath}/schedule?staff=${member.id}`} className="text-blue-400 hover:underline text-sm">
-                              Schedule
-                            </Link>
-                            <Link to={`${staffPath}/${member.id}`} className="text-gold hover:underline text-sm">
-                              Edit
-                            </Link>
-                          </div>
+                           <div className="flex items-center justify-center gap-3">
+                             <Link to={`/${getStaffPath(member.role).replace(/\/staff$/, '')}/schedule?staff=${member.id}`} className="text-blue-400 hover:underline text-sm">
+                               Schedule
+                             </Link>
+                             <Link to={`${getStaffPath(member.route)}/${member.id}`} className="text-gold hover:underline text-sm">
+                               Edit
+                             </Link>
+                           </div>
                         </td>
                       </tr>
                     ))}

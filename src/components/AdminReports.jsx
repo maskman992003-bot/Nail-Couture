@@ -58,8 +58,8 @@ const getAppointmentsData = async (startDate, endDate) => {
         price
       )
     `)
-    .gte('check_in_time', startDate)
-    .lt('check_in_time', endDate)
+    .gte('checked_in_at', startDate)
+    .lt('checked_in_at', endDate)
     .not('customer_id', 'is', null)
   
   return data || []
