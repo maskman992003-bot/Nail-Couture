@@ -431,7 +431,7 @@ export default function Sidebar() {
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="text-offwhite font-heading text-sm mb-1">{notif.title}</div>
-                      <div className="text-offwhite/60 text-xs mb-2">{notif.message}</div>
+                      <div className="text-offwhite/60 text-xs mb-2">{notif.body || notif.message}</div>
                       <div className="text-offwhite/30 text-[10px]">
                         {new Date(notif.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at{' '}
                         {new Date(notif.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}

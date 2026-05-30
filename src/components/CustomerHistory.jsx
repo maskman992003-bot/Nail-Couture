@@ -251,7 +251,7 @@ export default function CustomerHistory() {
                 {notifications.slice(0, 5).map((n) => (
                   <div key={n.id} className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
                     <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: n.is_read ? 'rgba(197,160,89,0.3)' : '#c5a059' }}></div>
-                    <div className="text-offwhite/80 text-sm">{n.message}</div>
+                    <div className="text-offwhite/80 text-sm">{n.body || n.message}</div>
                   </div>
                 ))}
               </div>

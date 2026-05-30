@@ -75,6 +75,11 @@ createRoot(document.getElementById('root')).render(
                 <StaffProfile />
               </ProtectedRoute>
             } />
+            <Route path="/:role/staff/schedule" element={
+              <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
+                <StaffSchedule />
+              </ProtectedRoute>
+            } />
            <Route path="/superadmin/settings" element={
              <ProtectedRoute allowedRoles={['super_admin', 'admin', 'cashier', 'technician']}>
                <Settings />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
@@ -58,13 +58,27 @@ export default function StaffSchedule() {
   const [copiedDay, setCopiedDay] = useState(null);
   const [selectedDays, setSelectedDays] = useState([]);
 
+  const location = useLocation();
   const weekDates = getWeekDates(new Date(Date.now() + weekOffset * 7 * 24 * 60 * 60 * 1000));
 
-   useEffect(() => {
-     const params = new URLSearchParams(window.location.search);
-     const staffParam = params.get('staff');
-     if (staffParam) setSelectedStaffId(staffParam);
-   }, [window.location.search]);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const staffParam = params.get('staff');
+
+    if (id) {
+      setSelectedStaffId(id);
+      if (staffParam !== id) {
+        params.set('staff', id);
+        const newSearch = params.toString();
+        const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ''}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+    } else if (staffParam) {
+      setSelectedStaffId(staffParam);
+    } else {
+      setSelectedStaffId(null);
+    }
+  }, [id, location.search]);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -268,7 +282,15 @@ export default function StaffSchedule() {
             </div>
             <select
               value={selectedStaffId || ''}
-              onChange={e => { setSelectedStaffId(e.target.value || null); const url = new URL(window.location); if (e.target.value) url.searchParams.set('staff', e.target.value); else url.searchParams.delete('staff'); window.history.replaceState({}, '', url); }}
+              onChange={e => {
+                const nextId = e.target.value || null;
+                setSelectedStaffId(nextId);
+                const url = new URL(window.location);
+                url.pathname = `/${role}/staff/schedule`;
+                if (nextId) url.searchParams.set('staff', nextId);
+                else url.searchParams.delete('staff');
+                window.history.replaceState({}, '', url);
+              }}
               className="px-4 py-2.5 bg-[#1a1a1a] border border-white/10 text-offwhite text-sm rounded-xl focus:border-gold focus:outline-none"
             >
               <option value="">All Staff</option>
@@ -276,6 +298,17 @@ export default function StaffSchedule() {
                 <option key={m.id} value={m.id}>{m.full_name}</option>
               ))}
             </select>
+            {(selectedStaffId || id) && (
+              <button
+                onClick={() => {
+                  setSelectedStaffId(null);
+                  navigate(`/${role}/staff/schedule`);
+                }}
+                className="px-4 py-2.5 text-sm bg-white/5 border border-white/10 rounded-xl text-offwhite hover:bg-white/10 transition-colors"
+              >
+                View full staff schedule
+              </button>
+            )}
             <div className="flex items-center gap-1 bg-[#1a1a1a] rounded-xl p-1 border border-white/5">
               <button onClick={() => setWeekOffset(w => w - 1)} className="w-10 h-10 flex items-center justify-center rounded-lg text-offwhite/40 hover:text-gold hover:bg-white/5 transition-all">&#8249;</button>
               <div className="px-4 py-2 text-sm text-offwhite/80 min-w-[160px] text-center font-medium">

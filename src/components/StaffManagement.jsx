@@ -214,10 +214,10 @@ const getStaffPath = (role) => {
                         </td>
                           <td className="px-6 py-4 text-center">
                               <div className="flex items-center justify-center gap-3">
-                                <Link to={`/${member.role}/staff/${member.id}/schedule`} className="text-blue-400 hover:underline text-sm">
+                                <Link to={`${staffPath}/${member.id}/schedule`} className="text-blue-400 hover:underline text-sm">
                                   Schedule
                                 </Link>
-                                <Link to={`/${member.role}/staff/${member.id}`} className="text-gold hover:underline text-sm">
+                                <Link to={`${staffPath}/${member.id}`} className="text-gold hover:underline text-sm">
                                   Edit
                                 </Link>
                               </div>

@@ -122,14 +122,20 @@ export default function CustomerManagementHistory() {
           
           // Format appointment data with proper null handling for LEFT JOINS
           // Extract discount info directly from appointment table (flat columns)
+          const addOnNames = appointment.add_ons ? appointment.add_ons.split(',').map((name) => name.trim()).filter(Boolean) : [];
+          const primaryServiceName = appointment.services?.name || 'Unknown Service';
+          const serviceList = [primaryServiceName, ...addOnNames].filter((name, index, arr) => name && arr.indexOf(name) === index);
+
           const visit = {
             id: appointment.id,
             date: appointment.scheduled_at || appointment.checked_in_at,
             service: appointment.services ? {
-              name: appointment.services.name,
+              name: primaryServiceName,
               price: appointment.services.price,
               duration: appointment.services.duration_minutes
-            } : { name: 'Unknown Service', price: 0, duration: 0 },
+            } : { name: primaryServiceName, price: 0, duration: 0 },
+            serviceSummary: serviceList.join(', '),
+            addOns: addOnNames,
             technician: appointment.technicians ? {
               id: appointment.technicians.id,
               name: appointment.technicians.full_name,
@@ -468,7 +474,7 @@ export default function CustomerManagementHistory() {
                             <div key={visit.id} className="p-3 bg-offwhite/3 rounded-lg border border-gold/5 mb-2">
                               <div className="flex items-start justify-between mb-1">
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-offwhite font-heading">{visit.service.name}</div>
+                                  <div className="text-offwhite font-heading">{visit.serviceSummary}</div>
                                   <div className="text-offwhite/50 text-sm">Technician: {visit.technician.name}</div>
                                   <div className="text-offwhite/50 text-sm">
                                     {new Date(visit.date).toLocaleString('en-US', { 
