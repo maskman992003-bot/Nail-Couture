@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
@@ -42,6 +42,7 @@ function formatTime(time) {
 export default function StaffSchedule() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { role, id } = useParams();
   const [weekOffset, setWeekOffset] = useState(0);
   const [staff, setStaff] = useState([]);
   const [shifts, setShifts] = useState([]);
@@ -59,11 +60,11 @@ export default function StaffSchedule() {
 
   const weekDates = getWeekDates(new Date(Date.now() + weekOffset * 7 * 24 * 60 * 60 * 1000));
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const staffParam = params.get('staff');
-    if (staffParam) setSelectedStaffId(staffParam);
-  }, []);
+   useEffect(() => {
+     const params = new URLSearchParams(window.location.search);
+     const staffParam = params.get('staff');
+     if (staffParam) setSelectedStaffId(staffParam);
+   }, [window.location.search]);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }

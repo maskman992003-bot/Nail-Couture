@@ -212,16 +212,16 @@ const getStaffPath = (role) => {
                             Active
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center">
-                           <div className="flex items-center justify-center gap-3">
-                             <Link to={`/${getStaffPath(member.role).replace(/\/staff$/, '')}/schedule?staff=${member.id}`} className="text-blue-400 hover:underline text-sm">
-                               Schedule
-                             </Link>
-                             <Link to={`${getStaffPath(member.route)}/${member.id}`} className="text-gold hover:underline text-sm">
-                               Edit
-                             </Link>
-                           </div>
-                        </td>
+                          <td className="px-6 py-4 text-center">
+                              <div className="flex items-center justify-center gap-3">
+                                <Link to={`/${member.role}/staff/${member.id}/schedule`} className="text-blue-400 hover:underline text-sm">
+                                  Schedule
+                                </Link>
+                                <Link to={`/${member.role}/staff/${member.id}`} className="text-gold hover:underline text-sm">
+                                  Edit
+                                </Link>
+                              </div>
+                            </td>
                       </tr>
                     ))}
                   </tbody>

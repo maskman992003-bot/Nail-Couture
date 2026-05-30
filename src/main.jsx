@@ -70,11 +70,11 @@ createRoot(document.getElementById('root')).render(
                <StaffManagement />
              </ProtectedRoute>
            } />
-           <Route path="/superadmin/staff/:id" element={
-             <ProtectedRoute allowedRoles={['super_admin']}>
-               <StaffProfile />
-             </ProtectedRoute>
-           } />
+            <Route path="/:role/staff/:id" element={
+              <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
+                <StaffProfile />
+              </ProtectedRoute>
+            } />
            <Route path="/superadmin/settings" element={
              <ProtectedRoute allowedRoles={['super_admin', 'admin', 'cashier', 'technician']}>
                <Settings />
@@ -85,11 +85,11 @@ createRoot(document.getElementById('root')).render(
                <AdminInventory />
              </ProtectedRoute>
            } />
-           <Route path="/superadmin/schedule" element={
-             <ProtectedRoute allowedRoles={['super_admin']}>
-               <StaffSchedule />
-             </ProtectedRoute>
-           } />
+            <Route path="/:role/staff/:id/schedule" element={
+              <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
+                <StaffSchedule />
+              </ProtectedRoute>
+            } />
             <Route path="/superadmin/bookings" element={
               <ProtectedRoute allowedRoles={['super_admin']}>
                 <AdminBookings />
@@ -142,11 +142,7 @@ createRoot(document.getElementById('root')).render(
                 <AdminInventory />
               </ProtectedRoute>
             } />
-           <Route path="/owner/schedule" element={
-             <ProtectedRoute allowedRoles={['owner']}>
-               <StaffSchedule />
-             </ProtectedRoute>
-           } />
+
             <Route path="/owner/bookings" element={
               <ProtectedRoute allowedRoles={['owner']}>
                 <AdminBookings />
@@ -204,11 +200,7 @@ createRoot(document.getElementById('root')).render(
                 <AdminInventory />
               </ProtectedRoute>
             } />
-           <Route path="/partner/schedule" element={
-             <ProtectedRoute allowedRoles={['partner']}>
-               <StaffSchedule />
-             </ProtectedRoute>
-           } />
+
            <Route path="/partner/bookings" element={
              <ProtectedRoute allowedRoles={['partner']}>
                <AdminBookings />
@@ -226,11 +218,7 @@ createRoot(document.getElementById('root')).render(
                <AdminLobby />
              </ProtectedRoute>
            } />
-           <Route path="/admin/schedule" element={
-             <ProtectedRoute allowedRoles={['admin']}>
-               <StaffSchedule />
-             </ProtectedRoute>
-           } />
+
            <Route path="/admin/bookings" element={
              <ProtectedRoute allowedRoles={['admin']}>
                <AdminBookings />
@@ -273,11 +261,7 @@ createRoot(document.getElementById('root')).render(
               <Technician />
             </ProtectedRoute>
           } />
-          <Route path="/technician/schedule" element={
-            <ProtectedRoute allowedRoles={['technician', 'cashier']}>
-              <TechnicianSchedule />
-            </ProtectedRoute>
-          } />
+
 
           <Route path="/portal" element={
             <ProtectedRoute allowedRoles={['customer']}>
