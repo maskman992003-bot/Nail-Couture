@@ -10,6 +10,7 @@ import CustomerBooking from './components/CustomerBooking.jsx'
 import CustomerHistory from './components/CustomerHistory.jsx'
 import CustomerLoyalty from './components/CustomerLoyalty.jsx'
 import CustomerProfile from './components/CustomerProfile.jsx'
+import CustomerServices from './components/CustomerServices.jsx'
 import CustomerManagementHistory from './components/CustomerManagementHistory.jsx'
 import EditBooking from './components/EditBooking.jsx'
 import SuperAdmin from './components/SuperAdmin.jsx'
@@ -260,10 +261,20 @@ createRoot(document.getElementById('root')).render(
               <AdminReports />
             </ProtectedRoute>
           } />
+          <Route path="/cashier/settings" element={
+            <ProtectedRoute allowedRoles={['cashier']}>
+              <Settings />
+            </ProtectedRoute>
+          } />
 
           <Route path="/technician" element={
             <ProtectedRoute allowedRoles={['technician']}>
               <Technician />
+            </ProtectedRoute>
+          } />
+          <Route path="/technician/settings" element={
+            <ProtectedRoute allowedRoles={['technician']}>
+              <Settings />
             </ProtectedRoute>
           } />
 
@@ -276,6 +287,11 @@ createRoot(document.getElementById('root')).render(
           <Route path="/customer/book" element={
             <ProtectedRoute allowedRoles={['customer']}>
               <CustomerBooking />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/services" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <CustomerServices />
             </ProtectedRoute>
           } />
           <Route path="/customer/history" element={

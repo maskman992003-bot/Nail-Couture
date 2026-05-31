@@ -155,6 +155,7 @@ export default function AdminInventory() {
 
   const lowStockCount = inventory.filter((s) => s.quantity > 0 && s.quantity <= s.reorder_threshold).length;
   const outOfStockCount = inventory.filter((s) => s.quantity === 0).length;
+  const offeredRefreshmentCount = inventory.filter((s) => s.category === 'refreshment' && s.quantity > 0).length;
 
   if (loading) {
     return (
@@ -175,7 +176,14 @@ export default function AdminInventory() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-heading text-3xl text-gold">Inventory Management</h1>
-              <p className="text-offwhite/60 text-sm mt-1">Track refreshments and materials in real time</p>
+              <p className="text-offwhite/60 text-sm mt-1">
+                Track refreshments and materials in real time. Refreshments with stock appear in customer menus.
+              </p>
+              {offeredRefreshmentCount > 0 && (
+                <p className="text-gold/70 text-xs mt-2">
+                  {offeredRefreshmentCount} refreshment{offeredRefreshmentCount === 1 ? '' : 's'} currently offered to customers
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-4">
               {lowStockCount > 0 && (
@@ -202,6 +210,9 @@ export default function AdminInventory() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+          <div className="mb-6 rounded-xl border border-gold/20 bg-gold/5 px-4 py-3 text-sm text-offwhite/70">
+            Refreshment items with quantity above zero are shown in check-in, kiosk registration, and customer profile preference lists. Set quantity to zero to hide an item from customers.
+          </div>
           <div className="rounded-xl p-5 mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(197, 160, 89, 0.1)' }}>
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex-1 w-full sm:max-w-sm">
@@ -268,6 +279,11 @@ export default function AdminInventory() {
                             <div>
                               <div className="text-offwhite font-heading text-base">{item.item_name}</div>
                               <div className="text-offwhite/40 text-xs mt-0.5">Min: {item.reorder_threshold} {item.unit}</div>
+                              {item.category === 'refreshment' && (
+                                <div className={`text-xs mt-1 ${item.quantity > 0 ? 'text-gold/70' : 'text-offwhite/40'}`}>
+                                  {item.quantity > 0 ? 'Offered to customers' : 'Hidden from customer menus'}
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-6 py-4">

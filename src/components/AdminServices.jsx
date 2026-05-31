@@ -20,6 +20,8 @@ export default function AdminServices() {
   const [catEditing, setCatEditing] = useState(null);
   const [catSaving, setCatSaving] = useState(false);
   const [showCatForm, setShowCatForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { fetchServices(); fetchCategories(); }, []);
 
@@ -101,15 +103,22 @@ export default function AdminServices() {
     fetchServices();
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this service? Services using it will keep the text value.')) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     setApiError('');
     const currentUser = user || {};
     const { error } = await supabase.rpc('manage_service', {
       admin_phone: currentUser.phone,
-      action: 'delete', service_data: {}, service_id: id,
+      action: 'delete', service_data: {}, service_id: deleteTarget.id,
     });
-    if (error) { setApiError(error.message); return; }
+    setDeleting(false);
+    if (error) {
+      setApiError(error.message);
+      setDeleteTarget(null);
+      return;
+    }
+    setDeleteTarget(null);
     fetchServices();
   };
 
@@ -269,7 +278,7 @@ export default function AdminServices() {
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
                               <button onClick={() => openEdit(svc)} className="text-gold hover:underline text-sm">Edit</button>
-                              <button onClick={() => handleDelete(svc.id)} className="text-red-400 hover:underline text-sm">Delete</button>
+                              <button onClick={() => setDeleteTarget(svc)} className="text-red-400 hover:underline text-sm">Delete</button>
                             </div>
                           </td>
                         </tr>
@@ -340,6 +349,50 @@ export default function AdminServices() {
           )}
         </div>
       </div>
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+          <div
+            className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#141414] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/20 shadow-2xl"
+            style={{ borderColor: 'rgba(197,160,89,0.3)' }}
+          >
+            <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </div>
+                <h3 className="font-heading text-xl text-offwhite mb-2">Delete Service?</h3>
+                <p className="text-offwhite/50 text-sm">
+                  Are you sure you want to delete <span className="text-gold">{deleteTarget.name}</span>?
+                </p>
+                <p className="text-offwhite/40 text-xs mt-2">
+                  Existing bookings will keep the service name as text. This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(null)}
+                  disabled={deleting}
+                  className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-xl hover:bg-offwhite/20 transition-colors text-sm disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  {deleting ? 'Deleting...' : 'Delete Service'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

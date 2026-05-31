@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 import { getHomePath } from '../utils/routes';
+import { isRefreshmentAvailable } from '../services/inventoryService';
+import { useAvailableRefreshments } from '../hooks/useAvailableRefreshments';
+import RefreshmentSelect from './RefreshmentSelect';
 import Sidebar from './Sidebar';
 
 const statusColors = {
@@ -55,7 +58,7 @@ export default function ClientPortal() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showEarningModal, setShowEarningModal] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [refreshments, setRefreshments] = useState([]);
+  const { refreshments, loading: refreshmentsLoading } = useAvailableRefreshments();
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
@@ -65,15 +68,7 @@ export default function ClientPortal() {
       return;
     }
     fetchUserData();
-    fetchRefreshments();
   }, [user, authLoading, navigate]);
-
-  const fetchRefreshments = async () => {
-    try {
-      const { data } = await supabase.from('inventory').select('item_name').eq('category', 'refreshment').gt('quantity', 0).order('item_name')
-      setRefreshments(data || [])
-    } catch { }
-  }
 
   const fetchUserData = useCallback(async () => {
     const userId = user?.id;
@@ -111,12 +106,15 @@ export default function ClientPortal() {
 
   const saveProfile = async () => {
     setSaving(true);
+    const refreshmentPref = isRefreshmentAvailable(editForm.refreshment_pref, refreshments)
+      ? (editForm.refreshment_pref || null)
+      : null;
     const { data } = await supabase.from('profiles').update({
       full_name: editForm.full_name,
       email: editForm.email,
       phone: editForm.phone.replace(/\D/g, ''),
       nail_goal: editForm.nail_goal || null,
-      refreshment_pref: editForm.refreshment_pref || null,
+      refreshment_pref: refreshmentPref,
     }).eq('id', profile.id).select();
     if (data && data[0]) setProfile(data[0]);
     setEditingProfile(false);
@@ -291,19 +289,17 @@ export default function ClientPortal() {
                   <div className="text-offwhite/40 text-xs mb-2">Phone</div>
                   <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="w-full p-3 text-offwhite border border-offwhite/10 rounded-lg focus:border-gold focus:outline-none bg-transparent" />
                 </div>
-                <div>
-                  <div className="text-offwhite/40 text-xs mb-2">Refreshment Preference</div>
-                  <select
-                    value={editForm.refreshment_pref || ''}
-                    onChange={(e) => setEditForm({ ...editForm, refreshment_pref: e.target.value })}
-                    className="w-full p-3 text-offwhite border border-offwhite/10 rounded-lg focus:border-gold focus:outline-none bg-transparent appearance-none cursor-pointer"
-                  >
-                    <option value="">None</option>
-                    {refreshments.map((item) => (
-                      <option key={item.name} value={item.name}>{item.name}</option>
-                    ))}
-                  </select>
-                </div>
+                <RefreshmentSelect
+                  label="Refreshment Preference"
+                  labelClassName="text-offwhite/40 text-xs mb-2"
+                  value={editForm.refreshment_pref || ''}
+                  onChange={(e) => setEditForm({ ...editForm, refreshment_pref: e.target.value })}
+                  refreshments={refreshments}
+                  loading={refreshmentsLoading}
+                  showUnavailableNote
+                  emptyLabel="None"
+                  className="p-3 bg-transparent border-offwhite/10"
+                />
                 <div className="flex items-end gap-3">
                   <button onClick={saveProfile} disabled={saving} className="px-6 py-3 bg-gold text-charcoal font-heading text-sm rounded-lg hover:bg-gold/90 disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>
                   <button onClick={() => { setEditingProfile(false); setEditForm({}); }} className="px-6 py-3 border border-offwhite/10 text-offwhite/60 text-sm rounded-lg hover:border-gold/30">Cancel</button>

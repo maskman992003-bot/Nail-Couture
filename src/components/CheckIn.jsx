@@ -4,6 +4,8 @@ import { getServices } from '../services/services'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import { CATEGORIES } from '../data/servicesData'
+import { getAvailableRefreshments, isRefreshmentAvailable } from '../services/inventoryService'
+import RefreshmentSelect from './RefreshmentSelect'
 
 const Sparkle = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -27,6 +29,7 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [refreshmentList, setRefreshmentList] = useState([])
+  const [refreshmentsLoading, setRefreshmentsLoading] = useState(true)
   const [refreshmentPref, setRefreshmentPref] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [expandedCategory, setExpandedCategory] = useState(null)
@@ -37,14 +40,14 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
     setLoading(true)
     Promise.all([
       getServices(),
-      supabase.from('inventory').select('item_name').eq('category', 'refreshment').gt('quantity', 0).order('item_name')
+      getAvailableRefreshments(),
     ])
       .then(([svcData, refData]) => {
         setServices(svcData)
-        setRefreshmentList(refData.data || [])
+        setRefreshmentList(refData)
       })
       .catch((err) => { setError(err.message) })
-      .finally(() => setLoading(false))
+      .finally(() => { setLoading(false); setRefreshmentsLoading(false) })
   }, [])
 
   if (loading) {
@@ -238,21 +241,17 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
               </div>
             )}
 
-            {refreshmentList.length > 0 && (
-              <div className="mb-3">
-                <label className="block text-offwhite/50 text-xs uppercase tracking-wider mb-2">Refreshment</label>
-                <select
-                  value={refreshmentPref}
-                  onChange={(e) => setRefreshmentPref(e.target.value)}
-                  className="w-full px-3 py-2 bg-offwhite/5 border border-offwhite/20 text-offwhite rounded-lg focus:outline-none focus:border-gold text-sm"
-                >
-                  <option value="" className="bg-charcoal">No refreshment</option>
-                  {refreshmentList.map((item) => (
-                    <option key={item.name} value={item.name} className="bg-charcoal">{item.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <RefreshmentSelect
+              label="Refreshment"
+              labelClassName="block text-offwhite/50 text-xs uppercase tracking-wider mb-2"
+              value={refreshmentPref}
+              onChange={(e) => setRefreshmentPref(e.target.value)}
+              refreshments={refreshmentList}
+              loading={refreshmentsLoading}
+              emptyLabel="No refreshment"
+              hideWhenEmpty
+              className="px-3 py-2 text-sm"
+            />
 
             <button
               onClick={() => {
@@ -277,6 +276,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
   const [email, setEmail] = useState('')
   const [nailGoal, setNailGoal] = useState('')
   const [refreshmentList, setRefreshmentList] = useState([])
+  const [refreshmentsLoading, setRefreshmentsLoading] = useState(true)
   const [refreshmentPref, setRefreshmentPref] = useState('')
   const [selectedServices, setSelectedServices] = useState([])
   const [showServiceSelection, setShowServiceSelection] = useState(false)
@@ -296,9 +296,10 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
   useEffect(() => {
     const fetchRefreshments = async () => {
       try {
-        const { data } = await supabase.from('inventory').select('item_name').eq('category', 'refreshment').gt('quantity', 0).order('item_name')
-        setRefreshmentList(data || [])
+        const data = await getAvailableRefreshments()
+        setRefreshmentList(data)
       } catch (err) { console.error('Error fetching refreshments:', err) }
+      finally { setRefreshmentsLoading(false) }
     }
     fetchRefreshments()
   }, [])
@@ -311,6 +312,9 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
     setError(null)
     try {
       const cleanPhone = phone.replace(/\D/g, '')
+      const safeRefreshmentPref = isRefreshmentAvailable(refreshmentPref, refreshmentList)
+        ? (refreshmentPref || null)
+        : null
       
        const { data: existingProfile, error: profileSearchError } = await supabase
          .from('profiles')
@@ -334,7 +338,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
              email: email,
              phone: cleanPhone,
              nail_goal: nailGoal,
-             refreshment_pref: refreshmentPref || null
+             refreshment_pref: safeRefreshmentPref
            })
            .select()
            .single()
@@ -357,7 +361,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
           final_price: totalPrice,
           status: 'waiting',
           checked_in_at: new Date().toISOString(),
-          refreshment_pref: refreshmentPref || null,
+          refreshment_pref: safeRefreshmentPref,
           booking_type: 'walk_in',
         })
 
@@ -471,19 +475,15 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
             </select>
           </div>
 
-          <div>
-            <label className="block text-offwhite/80 text-sm mb-2">Refreshment Preference</label>
-            <select
-              value={refreshmentPref}
-              onChange={(e) => setRefreshmentPref(e.target.value)}
-              className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:outline-none focus:border-gold transition-colors appearance-none cursor-pointer"
-            >
-              <option value="" className="bg-charcoal">Select a refreshment (optional)</option>
-              {refreshmentList.map((item) => (
-                <option key={item.name} value={item.name} className="bg-charcoal">{item.name}</option>
-              ))}
-            </select>
-          </div>
+          <RefreshmentSelect
+            label="Refreshment Preference"
+            labelClassName="block text-offwhite/80 text-sm mb-2"
+            value={refreshmentPref}
+            onChange={(e) => setRefreshmentPref(e.target.value)}
+            refreshments={refreshmentList}
+            loading={refreshmentsLoading}
+            emptyLabel="Select a refreshment (optional)"
+          />
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
@@ -588,11 +588,15 @@ export default function CheckIn({ onNavigate }) {
     try {
       const allNames = [...addOns.map((a) => a.name), ...services.map((s) => s.name)].join(', ')
       const totalPrice = services.reduce((sum, s) => sum + (s.price || 0), 0) + addOns.reduce((sum, a) => sum + (a.price || 0), 0)
+      const availableRefreshments = await getAvailableRefreshments()
+      const safeRefreshmentPref = isRefreshmentAvailable(refreshmentPref, availableRefreshments)
+        ? (refreshmentPref || null)
+        : null
       await supabase.from('appointments').update({
         service_id: services[0]?.id || null,
         add_ons: allNames || null,
         final_price: totalPrice,
-        refreshment_pref: refreshmentPref || null
+        refreshment_pref: safeRefreshmentPref
       }).eq('id', result.appointment.id)
       setSelectedServices(services)
       setSelectedAddOns(addOns)

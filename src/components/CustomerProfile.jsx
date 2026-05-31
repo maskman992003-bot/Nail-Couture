@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getHomePath } from '../utils/routes';
+import { isRefreshmentAvailable } from '../services/inventoryService';
+import { useAvailableRefreshments } from '../hooks/useAvailableRefreshments';
+import RefreshmentSelect from './RefreshmentSelect';
 import Sidebar from './Sidebar';
 
 export default function CustomerProfile() {
@@ -13,7 +16,7 @@ export default function CustomerProfile() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
-  const [refreshments, setRefreshments] = useState([]);
+  const { refreshments, loading: refreshmentsLoading } = useAvailableRefreshments();
   const [showPinForm, setShowPinForm] = useState(false);
   const [pinMode, setPinMode] = useState('set');
   const [pinForm, setPinForm] = useState({ current_pin: '', new_pin: '', confirm_pin: '' });
@@ -25,7 +28,6 @@ export default function CustomerProfile() {
     if (!user) { navigate('/login'); return; }
     if (user.is_staff) { navigate(getHomePath(user.role)); return; }
     fetchProfile();
-    fetchRefreshments();
   }, [user, navigate]);
 
   const fetchProfile = async () => {
@@ -45,6 +47,7 @@ export default function CustomerProfile() {
       setProfile(data);
       setForm({
         full_name: data.full_name || '',
+        email: data.email || '',
         refreshment_pref: data.refreshment_pref || '',
         nail_goal: data.nail_goal || '',
       });
@@ -53,26 +56,21 @@ export default function CustomerProfile() {
     setLoading(false);
   };
 
-  const fetchRefreshments = async () => {
-    const { data } = await supabase
-      .from('inventory')
-      .select('item_name')
-      .eq('category', 'refreshment')
-      .gt('quantity', 0)
-      .order('item_name');
-    if (data) setRefreshments(data);
-  };
-
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     if (!profile) return;
     setSaving(true);
+
+    const refreshmentPref = isRefreshmentAvailable(form.refreshment_pref, refreshments)
+      ? (form.refreshment_pref || null)
+      : null;
     
     const { data, error } = await supabase
       .from('profiles')
       .update({
         full_name: form.full_name,
-        refreshment_pref: form.refreshment_pref || null,
+        email: form.email.trim() || null,
+        refreshment_pref: refreshmentPref,
         nail_goal: form.nail_goal || null,
       })
       .eq('id', profile.id)
@@ -199,18 +197,26 @@ export default function CustomerProfile() {
                   </div>
 
                   <div>
-                    <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Complementary Drink</label>
-                    <select
-                      value={form.refreshment_pref}
-                      onChange={e => setForm({ ...form, refreshment_pref: e.target.value })}
+                    <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={e => setForm({ ...form, email: e.target.value })}
                       className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm"
-                    >
-                      <option value="">None / No Preference</option>
-                      {refreshments.map((r, i) => (
-                        <option key={i} value={r.item_name}>{r.item_name}</option>
-                      ))}
-                    </select>
+                      placeholder="name@example.com"
+                    />
                   </div>
+
+                  <RefreshmentSelect
+                    label="Complementary Drink"
+                    value={form.refreshment_pref}
+                    onChange={e => setForm({ ...form, refreshment_pref: e.target.value })}
+                    refreshments={refreshments}
+                    loading={refreshmentsLoading}
+                    showUnavailableNote
+                    emptyLabel="None / No Preference"
+                    className="p-3 text-sm"
+                  />
 
                   <div>
                     <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Nail Philosophy Goal</label>
@@ -229,7 +235,7 @@ export default function CustomerProfile() {
                   <div className="flex gap-3 pt-2">
                     <button
                       type="button"
-                      onClick={() => { setEditing(false); setForm({ full_name: profile.full_name, refreshment_pref: profile.refreshment_pref || '', nail_goal: profile.nail_goal || '' }); }}
+                      onClick={() => { setEditing(false); setForm({ full_name: profile.full_name, email: profile.email || '', refreshment_pref: profile.refreshment_pref || '', nail_goal: profile.nail_goal || '' }); }}
                       className="flex-1 py-3 bg-charcoal border border-white/10 text-offwhite text-sm rounded-xl hover:bg-white/5 transition-colors"
                     >
                       Cancel
@@ -247,6 +253,26 @@ export default function CustomerProfile() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Full name</span>
+                      <span className="text-sm text-offwhite font-medium">{profile.full_name || 'Not set'}</span>
+                    </div>
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Phone</span>
+                      <span className="text-sm text-offwhite font-medium">{profile.phone || 'Not set'}</span>
+                    </div>
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Email</span>
+                      <span className="text-sm text-offwhite font-medium">{profile.email || 'Not set'}</span>
+                    </div>
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Member since</span>
+                      <span className="text-sm text-offwhite font-medium">
+                        {profile.created_at
+                          ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                          : 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
                       <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Refreshment preference</span>
                       <span className="text-sm text-offwhite font-medium">{profile.refreshment_pref || 'None'}</span>
                     </div>
@@ -254,6 +280,20 @@ export default function CustomerProfile() {
                       <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Nail profile journey</span>
                       <span className="text-sm text-gold font-heading">{profile.nail_goal || 'Not specified'}</span>
                     </div>
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Loyalty tier</span>
+                      <span className="text-sm text-gold font-heading">{profile.tier || 'Silver'}</span>
+                    </div>
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Loyalty points</span>
+                      <span className="text-sm text-offwhite font-medium">{profile.loyalty_points ?? 0}</span>
+                    </div>
+                    {profile.referral_code && (
+                      <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl sm:col-span-2">
+                        <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Referral code</span>
+                        <span className="text-sm text-gold font-heading tracking-widest">{profile.referral_code}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -1,14 +1,76 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { DndContext, DragOverlay, useDraggable, useDroppable, rectIntersection } from '@dnd-kit/core'
+import { DndContext, DragOverlay, useDraggable, useDroppable, pointerWithin, rectIntersection } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '../services/services'
 import { useAuth } from '../contexts/AuthContext'
 import Sidebar from './Sidebar'
 
-const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, updating, onAccept, onComplete, wiggle }) => {
-  const { isOver, setNodeRef } = useDroppable({ id: tech.id, disabled: isBusy || isPending })
+const LOBBY_DROP_ID = 'lobby'
+
+const floorManagerCollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args)
+  if (pointerCollisions.length > 0) {
+    const technicianCollision = pointerCollisions.find(c => String(c.id) !== LOBBY_DROP_ID)
+    if (technicianCollision) return [technicianCollision]
+    return pointerCollisions
+  }
+  return rectIntersection(args)
+}
+
+const LobbyWaitingDropZone = ({ children, activeDragId, pendingAppointments }) => {
+  const isDraggingPending = pendingAppointments.some(a => String(a.id) === String(activeDragId))
+  const { isOver, setNodeRef } = useDroppable({
+    id: LOBBY_DROP_ID,
+    disabled: !isDraggingPending
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-xl transition-all ${
+        isDraggingPending && isOver
+          ? 'ring-2 ring-gold bg-gold/10 p-3 -m-3'
+          : isDraggingPending
+            ? 'ring-1 ring-dashed ring-gold/30 p-3 -m-3'
+            : ''
+      }`}
+    >
+      {isDraggingPending && (
+        <p className="text-xs text-gold/70 mb-3 text-center">
+          {isOver ? 'Release to return to waiting' : 'Drop here to return to waiting'}
+        </p>
+      )}
+      {children}
+    </div>
+  )
+}
+
+const DraggablePendingCustomer = ({ appointment, children }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: appointment.id,
+    data: { type: 'pending-assignment', appointment }
+  })
+
+  const style = {
+    transform: isDragging ? undefined : CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.4 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
+      {children}
+    </div>
+  )
+}
+
+const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, updating, onAccept, onComplete, wiggle, activeDragId }) => {
+  const isDraggingThisPending = activeDragId && pendingCustomer && String(pendingCustomer.id) === String(activeDragId)
+  const { isOver, setNodeRef } = useDroppable({
+    id: tech.id,
+    disabled: isBusy || isPending || isDraggingThisPending
+  })
 
   const showAcceptButton = !!pendingCustomer
   const dropHighlight = isOver && !isBusy
@@ -47,17 +109,21 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
           </button>
         </div>
       ) : showAcceptButton ? (
-        <div className="text-sm text-offwhite/70">
-          <div className="mb-2">{pendingCustomer.customer?.full_name || 'Customer'}</div>
-          <div className="text-xs text-offwhite/50">{pendingCustomer.add_ons || pendingCustomer.services?.name}</div>
-          <button
-            onClick={() => onAccept(pendingCustomer.id, tech.id)}
-            disabled={updating === pendingCustomer.id}
-            className="mt-3 w-full py-2 bg-green-500 text-white font-heading text-sm hover:bg-green-600 disabled:opacity-50 rounded-lg"
-          >
-            {updating === pendingCustomer.id ? 'Starting...' : '✓ Confirm Start'}
-          </button>
-        </div>
+        <DraggablePendingCustomer appointment={pendingCustomer}>
+          <div className="text-sm text-offwhite/70">
+            <div className="mb-2">{pendingCustomer.customer?.full_name || 'Customer'}</div>
+            <div className="text-xs text-offwhite/50">{pendingCustomer.add_ons || pendingCustomer.services?.name}</div>
+            <p className="text-[10px] text-gold/60 mt-1">Drag to reassign or back to waiting</p>
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onAccept(pendingCustomer.id, tech.id)}
+              disabled={updating === pendingCustomer.id}
+              className="mt-3 w-full py-2 bg-green-500 text-white font-heading text-sm hover:bg-green-600 disabled:opacity-50 rounded-lg"
+            >
+              {updating === pendingCustomer.id ? 'Starting...' : '✓ Confirm Start'}
+            </button>
+          </div>
+        </DraggablePendingCustomer>
       ) : (
         <div className="text-sm text-offwhite/40">
           {dropHighlight ? 'Release to assign' : 'Drop here to assign'}
@@ -562,28 +628,81 @@ export default function AdminLobby() {
     if (!over) return
 
     const appointmentId = active.id
-    const technicianId = over.id
+    const dropTargetId = String(over.id)
+    const pendingAppointment = pendingAppointments.find(a => String(a.id) === String(appointmentId))
+    const isReallocation = !!pendingAppointment
 
-    if (technicianId && technicianId !== 'lobby') {
-      if (allBusyTechnicians.includes(technicianId)) {
-        setWiggleTechId(technicianId)
-        setTimeout(() => setWiggleTechId(null), 500)
-        setNotification({ message: 'Technician is busy', name: 'Cannot assign right now' })
-        setTimeout(() => setNotification(null), 3000)
-        return
-      }
-
+    if (dropTargetId === LOBBY_DROP_ID && isReallocation) {
       setUpdating(appointmentId)
       await supabase
         .from('appointments')
         .update({
-          technician_id: technicianId,
-          status: 'assigned_pending'
+          status: 'waiting',
+          technician_id: null
         })
         .eq('id', appointmentId)
+
+      setNotification({ message: 'Returned to waiting', name: pendingAppointment.customer?.full_name })
+      setTimeout(() => setNotification(null), 3000)
+
       await Promise.all([fetchAppointments(), fetchPendingAppointments(), fetchTechnicians()])
       setUpdating(null)
+      return
     }
+
+    if (dropTargetId === LOBBY_DROP_ID) return
+
+    const technicianId = dropTargetId
+
+    if (isReallocation && String(pendingAppointment.technician_id) === technicianId) return
+
+    const targetHasOtherAssignment = pendingAppointments.some(
+      a => String(a.technician_id) === technicianId && String(a.id) !== String(appointmentId)
+    )
+    const targetIsServing = servingAppointments.some(
+      a => String(a.technician_id) === technicianId && a.status === 'serving'
+    )
+
+    if (targetIsServing || targetHasOtherAssignment) {
+      setWiggleTechId(technicianId)
+      setTimeout(() => setWiggleTechId(null), 500)
+      setNotification({ message: 'Technician is busy', name: 'Cannot assign right now' })
+      setTimeout(() => setNotification(null), 3000)
+      return
+    }
+
+    if (!isReallocation && allBusyTechnicians.map(String).includes(technicianId)) {
+      setWiggleTechId(technicianId)
+      setTimeout(() => setWiggleTechId(null), 500)
+      setNotification({ message: 'Technician is busy', name: 'Cannot assign right now' })
+      setTimeout(() => setNotification(null), 3000)
+      return
+    }
+
+    setUpdating(appointmentId)
+    const { error } = await supabase
+      .from('appointments')
+      .update({
+        technician_id: technicianId,
+        status: 'assigned_pending'
+      })
+      .eq('id', appointmentId)
+
+    if (error) {
+      setNotification({ message: 'Assignment failed', name: error.message })
+      setTimeout(() => setNotification(null), 3000)
+      setUpdating(null)
+      return
+    }
+
+    if (isReallocation) {
+      const techName = technicians.find(t => String(t.id) === technicianId)?.full_name || 'technician'
+      setNotification({ message: `Reassigned to ${techName}`, name: pendingAppointment.customer?.full_name })
+      setTimeout(() => setNotification(null), 3000)
+    }
+
+    await Promise.all([fetchAppointments(), fetchPendingAppointments(), fetchTechnicians()])
+    setUpdating(null)
   }
 
   const acceptAssignment = async (appointmentId, techId) => {
@@ -617,13 +736,13 @@ export default function AdminLobby() {
   }
 
   return (
-    <DndContext collisionDetection={rectIntersection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
+    <DndContext collisionDetection={floorManagerCollisionDetection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
       <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
         <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
             <div className="mb-6">
               <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
-              <p className="text-offwhite/60 mt-1">Drag customers to assign technicians</p>
+              <p className="text-offwhite/60 mt-1">Drag to assign, reassign, or return pending customers to waiting</p>
             </div>
 
             {notification && (
@@ -635,25 +754,27 @@ export default function AdminLobby() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
-                <h2 className="font-heading text-xl text-gold mb-4 flex items-center gap-2">
-                  <span className="w-3 h-3 bg-gold rounded-full animate-pulse"></span>
-                  Waiting ({lobbyAppointments.length})
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {lobbyAppointments.map(appointment => (
-                    <DraggableAppointmentCard
-                      key={appointment.id}
-                      appointment={appointment}
-                      onEdit={setEditingAppointment}
-                      onCancel={setCancelConfirm}
-                    />
-                  ))}
-                  {lobbyAppointments.length === 0 && (
-                    <div className="col-span-1 sm:col-span-2 text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
-                      <p className="text-offwhite/40">No guests waiting</p>
-                    </div>
-                  )}
-                </div>
+                <LobbyWaitingDropZone activeDragId={activeId} pendingAppointments={pendingAppointments}>
+                  <h2 className="font-heading text-xl text-gold mb-4 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-gold rounded-full animate-pulse"></span>
+                    Waiting ({lobbyAppointments.length})
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {lobbyAppointments.map(appointment => (
+                      <DraggableAppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        onEdit={setEditingAppointment}
+                        onCancel={setCancelConfirm}
+                      />
+                    ))}
+                    {lobbyAppointments.length === 0 && (
+                      <div className="col-span-1 sm:col-span-2 text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
+                        <p className="text-offwhite/40">No guests waiting</p>
+                      </div>
+                    )}
+                  </div>
+                </LobbyWaitingDropZone>
 
                 <h2 className="font-heading text-xl text-gold mt-8 mb-4">Currently Serving ({servingAppointments.length})</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -695,7 +816,7 @@ export default function AdminLobby() {
 
               <div>
                 <h2 className="font-heading text-xl text-gold mb-4">Technician Grid</h2>
-                <p className="text-offwhite/40 text-sm mb-4">Drop a customer on a technician to assign</p>
+                <p className="text-offwhite/40 text-sm mb-4">Drop a customer on a technician to assign or reassign</p>
                 <div className="space-y-4">
                   {technicians.map(tech => {
                     const activeCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')
@@ -711,10 +832,11 @@ export default function AdminLobby() {
                         pendingCustomer={pendingCustomer}
                         isBusy={isBusy}
                         isPending={isPending}
-                        wiggle={wiggleTechId === tech.id}
+                        wiggle={String(wiggleTechId) === String(tech.id)}
                         updating={updating}
                         onAccept={acceptAssignment}
                         onComplete={(id) => updateStatus(id, 'completed')}
+                        activeDragId={activeId}
                       />
                     )
                   })}
@@ -730,11 +852,22 @@ export default function AdminLobby() {
       </div>
 
       <DragOverlay>
-        {activeId && lobbyAppointments.find(a => a.id === activeId) && (
-          <div className="bg-gold/10 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none w-72">
-            <p className="font-heading text-offwhite truncate">Drop to assign</p>
-          </div>
-        )}
+        {activeId && (() => {
+          const waitingAppt = lobbyAppointments.find(a => a.id === activeId)
+          const pendingAppt = pendingAppointments.find(a => a.id === activeId)
+          const appointment = waitingAppt || pendingAppt
+          if (!appointment) return null
+          return (
+            <div className="bg-gold/10 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none w-72">
+              <p className="font-heading text-offwhite truncate">
+                {appointment.customer?.full_name || 'Customer'}
+              </p>
+              <p className="text-xs text-offwhite/60 mt-1">
+                {pendingAppt ? 'Drop to reassign or return to waiting' : 'Drop to assign'}
+              </p>
+            </div>
+          )
+        })()}
       </DragOverlay>
 
       {editingAppointment && (

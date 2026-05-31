@@ -40,7 +40,7 @@ export default function SuperAdmin() {
       const [apptsRes, waitingRes, staffRes] = await Promise.all([
         supabase
           .from('appointments')
-          .select('*, services(name, price), customer:profiles!appointments_client_id_fkey(full_name)')
+          .select('*, services(name, price), customer:profiles!appointments_client_id_fkey(full_name), technician:profiles!technician_id(full_name)')
           .gte('checked_in_at', `${today}T00:00:00`)
           .order('checked_in_at', { ascending: false }),
         supabase
@@ -108,7 +108,13 @@ export default function SuperAdmin() {
   };
 
   const getAppointmentTechnicianName = (appt) => {
-    return appt.technician?.full_name || appt.technician_name || 'Unassigned';
+    if (appt.technician?.full_name) return appt.technician.full_name;
+    if (appt.technician_name) return appt.technician_name;
+    if (appt.technician_id) {
+      const tech = staff.find((member) => String(member.id) === String(appt.technician_id));
+      if (tech?.full_name) return tech.full_name;
+    }
+    return 'Unassigned';
   };
 
   const getAppointmentFinalPrice = (appt) => {

@@ -4,11 +4,56 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
 
+const roleLabels = {
+  super_admin: 'Super Admin',
+  owner: 'Owner',
+  partner: 'Partner',
+  admin: 'Admin',
+  cashier: 'Cashier',
+  technician: 'Technician',
+};
+
+const roleColors = {
+  super_admin: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+  owner: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+  partner: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
+  admin: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  cashier: 'bg-green-500/20 text-green-300 border-green-500/30',
+  technician: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+};
+
+const formatPhone = (phone) => {
+  if (!phone) return 'Not set';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11) {
+    return `+${digits[0]} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  return phone;
+};
+
+const formatDate = (timestamp) => {
+  if (!timestamp) return 'Unknown';
+  return new Date(timestamp).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
 export default function Settings() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState(user); // Initialize with user from auth context
+  const [profile, setProfile] = useState(null);
+  const [form, setForm] = useState({ full_name: '', phone: '', email: '' });
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [workStats, setWorkStats] = useState({ todayCount: 0, todayValue: 0, weekCount: 0, weekValue: 0 });
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinMode, setPinMode] = useState('set');
   const [pinStep, setPinStep] = useState(1);
@@ -18,8 +63,167 @@ export default function Settings() {
   const [pinError, setPinError] = useState('');
   const [pinSaving, setPinSaving] = useState(false);
 
-  const handleNavigate = (page) => {
-    if (page === 'home') navigate('/');
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchProfile();
+  }, [user, navigate]);
+
+  const fetchProfile = async () => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+      setProfile(user);
+      setForm({
+        full_name: user.full_name || '',
+        phone: user.phone || '',
+        email: user.email || '',
+      });
+    } else if (data) {
+      setProfile(data);
+      setForm({
+        full_name: data.full_name || '',
+        phone: data.phone || '',
+        email: data.email || '',
+      });
+      await fetchWorkStats(data.id, data.role);
+    }
+
+    setLoading(false);
+  };
+
+  const fetchWorkStats = async (userId, role) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - 7);
+
+    if (role === 'technician') {
+      const { count: todayCount } = await supabase
+        .from('appointments')
+        .select('id', { count: 'exact', head: true })
+        .eq('technician_id', userId)
+        .eq('status', 'completed')
+        .gte('checked_in_at', today.toISOString());
+
+      const { data: todayAppts } = await supabase
+        .from('appointments')
+        .select('final_price, services(price)')
+        .eq('technician_id', userId)
+        .eq('status', 'completed')
+        .gte('checked_in_at', today.toISOString());
+
+      const { count: weekCount } = await supabase
+        .from('appointments')
+        .select('id', { count: 'exact', head: true })
+        .eq('technician_id', userId)
+        .eq('status', 'completed')
+        .gte('checked_in_at', weekStart.toISOString());
+
+      const { data: weekAppts } = await supabase
+        .from('appointments')
+        .select('final_price, services(price)')
+        .eq('technician_id', userId)
+        .eq('status', 'completed')
+        .gte('checked_in_at', weekStart.toISOString());
+
+      const sumPrices = (rows) =>
+        (rows || []).reduce((sum, row) => sum + (row.final_price ?? row.services?.price ?? 0), 0);
+
+      setWorkStats({
+        todayCount: todayCount || 0,
+        todayValue: sumPrices(todayAppts),
+        weekCount: weekCount || 0,
+        weekValue: sumPrices(weekAppts),
+      });
+      return;
+    }
+
+    if (['cashier', 'admin', 'super_admin', 'owner', 'partner'].includes(role)) {
+      const { count: todayCount } = await supabase
+        .from('payment_transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('cashier_id', userId)
+        .eq('status', 'completed')
+        .gte('created_at', today.toISOString());
+
+      const { data: todayPayments } = await supabase
+        .from('payment_transactions')
+        .select('final_amount')
+        .eq('cashier_id', userId)
+        .eq('status', 'completed')
+        .gte('created_at', today.toISOString());
+
+      const { count: weekCount } = await supabase
+        .from('payment_transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('cashier_id', userId)
+        .eq('status', 'completed')
+        .gte('created_at', weekStart.toISOString());
+
+      const { data: weekPayments } = await supabase
+        .from('payment_transactions')
+        .select('final_amount')
+        .eq('cashier_id', userId)
+        .eq('status', 'completed')
+        .gte('created_at', weekStart.toISOString());
+
+      setWorkStats({
+        todayCount: todayCount || 0,
+        todayValue: (todayPayments || []).reduce((sum, row) => sum + (row.final_amount || 0), 0),
+        weekCount: weekCount || 0,
+        weekValue: (weekPayments || []).reduce((sum, row) => sum + (row.final_amount || 0), 0),
+      });
+    }
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    if (!profile) return;
+
+    const cleanPhone = form.phone.replace(/\D/g, '');
+    if (cleanPhone && cleanPhone.length < 10) {
+      setSaveError('Please enter a valid phone number');
+      return;
+    }
+
+    setSaving(true);
+    setSaveError('');
+    setSaveMessage('');
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: form.full_name.trim(),
+        phone: cleanPhone || null,
+        email: form.email.trim() || null,
+      })
+      .eq('id', profile.id)
+      .select()
+      .single();
+
+    setSaving(false);
+
+    if (error) {
+      setSaveError(error.message || 'Failed to update profile');
+      return;
+    }
+
+    setProfile(data);
+    login({ ...user, ...data });
+    setEditing(false);
+    setSaveMessage('Profile updated successfully');
+    setTimeout(() => setSaveMessage(''), 3000);
   };
 
   const openPinModal = (mode) => {
@@ -90,23 +294,19 @@ export default function Settings() {
       return;
     }
     const updated = { ...profile, pin: newPin };
-    localStorage.setItem('salon_user_data', JSON.stringify(updated));
+    setProfile(updated);
+    login({ ...user, ...updated });
     setShowPinModal(false);
-    alert(pinMode === 'set' ? 'PIN set successfully!' : 'PIN changed successfully!');
+    setSaveMessage(pinMode === 'set' ? 'PIN set successfully' : 'PIN changed successfully');
+    setTimeout(() => setSaveMessage(''), 3000);
   };
-
-  useEffect(() => {
-    // Update profile when user from auth context changes
-    setProfile(user);
-    setLoading(false);
-  }, [user]);
 
   if (loading) {
     return (
       <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
         <div className="flex items-center justify-center py-20">
-          <div className="text-gold animate-pulse">Loading...</div>
+          <div className="text-gold animate-pulse">Loading profile...</div>
         </div>
       </div>
     );
@@ -114,72 +314,200 @@ export default function Settings() {
 
   const displayName = profile?.full_name || profile?.email || 'Staff Member';
   const initials = displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+  const role = profile?.role || user?.role;
+  const isTechnician = role === 'technician';
+  const showWorkStats = isTechnician || ['cashier', 'admin', 'super_admin', 'owner', 'partner'].includes(role);
+  const todayLabel = isTechnician ? 'Services completed' : 'Transactions processed';
+  const weekLabel = isTechnician ? 'Services this week' : 'Transactions this week';
+  const valueLabel = isTechnician ? 'Service value' : 'Revenue processed';
 
   return (
     <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <div className="max-w-2xl mx-auto px-6 py-8 pb-24 lg:pb-8">
+      <style>{`.settings-page select, .settings-page option { background: #1a1a1a; color: #fff; }`}</style>
+      <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-24 lg:pb-8">
         <div className="mb-8">
-          <h1 className="font-heading text-3xl text-gold mb-2">Account Settings</h1>
-          <p className="text-offwhite/60">View your account information</p>
+          <h1 className="font-heading text-3xl text-gold mb-2">Profile Settings</h1>
+          <p className="text-offwhite/60">Manage your account details and security</p>
         </div>
 
-        <div className="rounded-xl p-6" style={{ backgroundColor: '#1a1a1a' }}>
-          <div className="flex items-center gap-4 mb-8 pb-6 border-b border-offwhite/10">
-            <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center">
-              <span className="text-gold font-heading text-2xl">{initials || '??'}</span>
-            </div>
-            <div>
-              <h2 className="text-offwhite font-heading text-xl">{displayName}</h2>
-              <p className="text-offwhite/50 text-sm">{profile?.email || 'No email'}</p>
-            </div>
+        {saveMessage && (
+          <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-green-300 text-sm">
+            {saveMessage}
           </div>
+        )}
+        {saveError && !editing && (
+          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-300 text-sm">
+            {saveError}
+          </div>
+        )}
 
-          <div className="space-y-6">
-            <div>
-              <label className="text-offwhite/40 text-xs uppercase tracking-wider block mb-2">Email</label>
-              <p className="text-offwhite text-lg">{profile?.email || 'Not set'}</p>
-            </div>
-
-            <div>
-              <label className="text-offwhite/40 text-xs uppercase tracking-wider block mb-2">Role</label>
-              <div className="mt-1">
-                <span className="inline-block px-4 py-2 bg-gold/20 text-gold border border-gold/30 rounded-full text-sm font-heading">
-                  {profile?.role ? profile.role.replace('_', ' ').toUpperCase() : 'STAFF'}
+        <div className="rounded-2xl border border-white/5 bg-[#1a1a1a] p-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-offwhite/10">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center shrink-0">
+                <span className="text-gold font-heading text-2xl">{initials || '??'}</span>
+              </div>
+              <div>
+                <h2 className="text-offwhite font-heading text-xl">{displayName}</h2>
+                <p className="text-offwhite/50 text-sm mt-1">{formatPhone(profile?.phone)}</p>
+                <span className={`inline-flex mt-2 px-3 py-1 text-xs border rounded-full ${roleColors[role] || 'bg-offwhite/10 text-offwhite/60 border-offwhite/20'}`}>
+                  {roleLabels[role] || role}
                 </span>
               </div>
             </div>
+            {!editing && (
+              <button
+                onClick={() => { setEditing(true); setSaveError(''); }}
+                className="px-4 py-2 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-sm font-heading"
+              >
+                Edit Profile
+              </button>
+            )}
+          </div>
 
-            <div>
-              <label className="text-offwhite/40 text-xs uppercase tracking-wider block mb-2">Access Level</label>
-              <p className="text-offwhite">
-                {profile?.role && ['admin', 'super_admin', 'owner', 'partner', 'cashier', 'technician'].includes(profile.role) ? 'Staff Member' : 'Client'}
-              </p>
-            </div>
-
-            <div className="pt-4 border-t border-offwhite/10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-offwhite font-heading text-base">PIN Login</p>
-                  <p className="text-offwhite/40 text-sm">
-                    {profile?.pin ? 'Change your login PIN' : 'Set a 4-digit PIN for quick login'}
-                  </p>
+          {editing ? (
+            <form onSubmit={handleSaveProfile} className="space-y-5">
+              <div>
+                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Full Name</label>
+                <input
+                  type="text"
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:border-gold focus:outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Phone Number</label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:border-gold focus:outline-none"
+                  placeholder="(555) 123-4567"
+                />
+                <p className="text-offwhite/40 text-xs mt-1">Used for login and account identification</p>
+              </div>
+              <div>
+                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Email</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:border-gold focus:outline-none"
+                  placeholder="name@example.com"
+                />
+              </div>
+              {saveError && <p className="text-red-400 text-sm">{saveError}</p>}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(false);
+                    setSaveError('');
+                    setForm({
+                      full_name: profile?.full_name || '',
+                      phone: profile?.phone || '',
+                      email: profile?.email || '',
+                    });
+                  }}
+                  className="flex-1 py-3 border border-offwhite/20 text-offwhite/70 rounded-xl hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 py-3 bg-gold text-charcoal font-heading rounded-xl hover:bg-gold/90 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-2">Full Name</div>
+                <div className="text-offwhite">{profile?.full_name || 'Not set'}</div>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-2">Phone</div>
+                <div className="text-offwhite">{formatPhone(profile?.phone)}</div>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-2">Email</div>
+                <div className="text-offwhite">{profile?.email || 'Not set'}</div>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-2">Member Since</div>
+                <div className="text-offwhite">{formatDate(profile?.created_at)}</div>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 sm:col-span-2">
+                <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-2">Access Level</div>
+                <div className="text-offwhite/80 text-sm">
+                  {role === 'technician' && 'Perform services, view your schedule, and manage your assigned customers.'}
+                  {role === 'cashier' && 'Process checkouts, manage lobby flow, and handle daily transactions.'}
+                  {role === 'admin' && 'Manage daily salon operations, staff schedules, and customer bookings.'}
+                  {['super_admin', 'owner', 'partner'].includes(role) && 'Full salon oversight including staff, services, reports, and business settings.'}
                 </div>
-<button
-                    onClick={() => openPinModal(profile?.pin ? 'change' : 'set')}
-                    className="flex items-center gap-2 bg-gold/10 border border-gold/30 text-gold px-4 py-2 rounded-lg hover:bg-gold/20 transition-colors text-sm font-heading"
-                  >
-                    {profile?.pin ? 'Change PIN' : 'Set PIN'}
-                  </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {showWorkStats && !editing && (
+          <div className="rounded-2xl border border-white/5 bg-[#1a1a1a] p-6 mb-6">
+            <h3 className="font-heading text-xl text-gold mb-4">My Activity</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-4">
+                <div className="text-green-300 text-sm mb-2">Today</div>
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <div className="text-2xl font-heading text-offwhite">{workStats.todayCount}</div>
+                    <div className="text-xs text-offwhite/50">{todayLabel}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xl font-heading text-gold">${workStats.todayValue.toFixed(0)}</div>
+                    <div className="text-xs text-offwhite/50">{valueLabel}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-4">
+                <div className="text-blue-300 text-sm mb-2">This Week</div>
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <div className="text-2xl font-heading text-offwhite">{workStats.weekCount}</div>
+                    <div className="text-xs text-offwhite/50">{weekLabel}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xl font-heading text-gold">${workStats.weekValue.toFixed(0)}</div>
+                    <div className="text-xs text-offwhite/50">{valueLabel}</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="mt-8 text-center">
-          <p className="text-offwhite/40 text-sm">
-            Contact your administrator to update account information.
-          </p>
+        <div className="rounded-2xl border border-white/5 bg-[#1a1a1a] p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-heading text-lg text-offwhite">Login PIN</h3>
+              <p className="text-offwhite/40 text-sm mt-1">
+                {profile?.pin ? 'A 4-digit PIN is enabled for quick staff login' : 'Set a 4-digit PIN for faster login on shared devices'}
+              </p>
+              <p className="text-offwhite/30 text-xs mt-2">
+                Status: {profile?.pin ? 'Active' : 'Not configured'}
+              </p>
+            </div>
+            <button
+              onClick={() => openPinModal(profile?.pin ? 'change' : 'set')}
+              className="shrink-0 flex items-center gap-2 bg-gold/10 border border-gold/30 text-gold px-4 py-2 rounded-lg hover:bg-gold/20 transition-colors text-sm font-heading"
+            >
+              {profile?.pin ? 'Change PIN' : 'Set PIN'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -230,6 +558,7 @@ export default function Settings() {
                     return (
                       <button
                         key={idx}
+                        type="button"
                         onClick={() => {
                           if (pinStep === 1) handlePinBackspace(setOldPin, oldPin);
                           else if (pinStep === 2) handlePinBackspace(setNewPin, newPin);
@@ -244,6 +573,7 @@ export default function Settings() {
                   return (
                     <button
                       key={idx}
+                      type="button"
                       onClick={() => {
                         if (pinStep === 1) handlePinDigit(setOldPin, oldPin, key);
                         else if (pinStep === 2) handlePinDigit(setNewPin, newPin, key);
@@ -259,12 +589,14 @@ export default function Settings() {
 
               <div className="flex gap-3">
                 <button
+                  type="button"
                   onClick={() => { setShowPinModal(false); setPinStep(1); }}
                   className="flex-1 py-3 rounded-xl border border-offwhite/20 text-offwhite hover:bg-white/5 transition-colors text-sm"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     if (pinStep === 1) handlePinStep1();
                     else if (pinStep === 2) handlePinStep2();
