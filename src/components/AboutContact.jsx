@@ -1,25 +1,6 @@
-import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags'
-
 export default function AboutContact() {
-  const sectionTitle = CUSTOMER_ONLINE_BOOKING ? 'Book Your Experience' : 'Get in Touch'
-  const sectionDescription = CUSTOMER_ONLINE_BOOKING
-    ? 'Ready to experience nail couture? Schedule your appointment today.'
-    : 'We’re here to help. Reach out now to discuss availability and styling requests.'
-
-  const handlePrimaryAction = () => {
-    if (CUSTOMER_ONLINE_BOOKING) {
-      const element = document.getElementById('book')
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
-      }
-      return
-    }
-
-    const element = document.getElementById('contact')
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
+  const sectionTitle = 'Get in Touch'
+  const sectionDescription = 'We’re here to help. Reach out now to discuss availability and styling requests.'
 
   return (
     <div className="flex-1">
@@ -45,17 +26,21 @@ export default function AboutContact() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h3 className="font-heading text-charcoal text-2xl sm:text-3xl mb-4">Visit Our Studio</h3>
+            <div className="mx-auto mb-4 h-0.5 w-20 rounded-full bg-gold/70" />
             <p className="text-charcoal/60">By appointment only for your comfort and privacy</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white border border-charcoal/10 p-6 sm:p-8">
-              <h4 className="font-heading text-charcoal text-xl mb-6">Contact Information</h4>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+            <div className="h-full rounded-3xl bg-white border border-charcoal/10 p-6 sm:p-8 shadow-2xl shadow-black/5">
+              <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-gold/20 bg-gold/5 px-4 py-2 text-sm uppercase tracking-[0.28em] text-gold font-semibold">
+                <span className="h-2.5 w-2.5 rounded-full bg-gold shadow-lg shadow-gold/30" />
+                Contact Information
+              </div>
               
               <div className="space-y-6">
                 <div>
                   <div className="text-sm text-charcoal/50 tracking-wider uppercase mb-2">Address</div>
-                  <p className="text-charcoal">123 Luxury Avenue, Suite 500<br />Beverly Hills, CA 90210</p>
+                  <p className="text-charcoal">5300 Tchoupitoulas St #32-34<br />New Orleans, LA 70115</p>
                 </div>
                 
                 <div>
@@ -105,35 +90,28 @@ export default function AboutContact() {
               </div>
             </div>
 
-            <div className="h-[300px sm:h-[400px] lg:h-full min-h-[300px] bg-charcoal/5 border border-charcoal/10">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3305.7156683720423!2d-118.40036582346527!3d34.0736204187055!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80c2bc04d6d147ab%3A0xd6c7c4fd0f942563!2sBeverly%20Hills%2C%20CA%2090210!5e0!3m2!1sen!2sus!4v1699999999999!5m2!1sen!2sus"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Nail Couture Location"
-                className="grayscale"
-              />
+            <div className="h-full space-y-4">
+              <div className="flex items-center justify-between rounded-full border border-charcoal/10 bg-white/90 px-4 py-2 text-sm uppercase tracking-[0.30em] text-charcoal/90 shadow-sm shadow-black/5">
+                <span>Map</span>
+                <span className="text-gold font-semibold">New Orleans</span>
+              </div>
+              <div className="h-[300px sm:h-[400px] lg:h-full min-h-[300px] overflow-hidden rounded-3xl bg-charcoal/5 border border-charcoal/10 shadow-2xl shadow-black/10">
+                <iframe
+                  src="https://www.google.com/maps?q=5300+Tchoupitoulas+St+%2332-34+New+Orleans+LA+70115&output=embed"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Nail Couture Location"
+                />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 sm:py-24 px-4 sm:px-6 bg-charcoal">
-        <div className="max-w-4xl mx-auto text-center">
-          <h3 className="font-heading text-offwhite text-2xl sm:text-3xl mb-6">{sectionTitle}</h3>
-          <p className="text-offwhite/70 mb-8">{sectionDescription}</p>
-          <button 
-            onClick={handlePrimaryAction}
-            className="px-8 py-3 bg-gold text-charcoal hover:bg-gold/90 transition-all tracking-wider"
-          >
-            {CUSTOMER_ONLINE_BOOKING ? 'REQUEST APPOINTMENT' : 'CONTACT US'}
-          </button>
-        </div>
-      </section>
     </div>
   );
 }

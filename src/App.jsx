@@ -75,32 +75,57 @@ function App() {
           <>
             <section className="min-h-[70vh] sm:min-h-[80vh] bg-charcoal flex items-center justify-center relative overflow-hidden px-4 sm:px-6">
               <div className="absolute inset-0 bg-gradient-to-b from-charcoal via-charcoal/95 to-charcoal" />
-              <div className="text-center z-10 max-w-3xl mx-auto">
-                <h1 className="font-heading text-offwhite text-3xl sm:text-4xl md:text-5xl lg:text-7xl mb-4 sm:mb-6 tracking-wide">
-                  Couture Nails. Expertly Tailored.
+              <div className="text-center z-10 max-w-4xl mx-auto">
+                <div className="inline-flex items-center justify-center gap-2 mb-8 rounded-full border border-gold/20 bg-white/5 px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-gold font-semibold">
+                  <span className="h-2.5 w-2.5 rounded-full bg-gold shadow-lg shadow-gold/30" />
+                  FLAWLESS MEDICAL-GRADE STERILIZATION
+                </div>
+                <h1 className="font-heading text-offwhite text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-5 sm:mb-7 tracking-wide">
+                  Couture Nails.
+                  <span className="block text-gold mt-3">Expertly Tailored.</span>
                 </h1>
-                <p className="text-offwhite/70 text-base sm:text-lg md:text-xl max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
+                <p className="text-offwhite/70 text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
                   Discover the precision of the Russian Manicure technique. Medical-grade sterilization,
                   non-toxic products, and artisans trained in the finest traditions of nail couture.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <div className="grid gap-4 sm:grid-cols-3">
                   <button
                     onClick={scrollToLookbook}
-                    className="px-6 sm:px-8 py-3 border-2 border-gold text-gold hover:bg-gold hover:text-charcoal transition-all tracking-wider text-sm sm:text-base"
+                    className="group flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-offwhite transition duration-200 ease-out hover:border-gold hover:bg-gold/10 hover:text-gold hover:-translate-y-0.5 hover:scale-[1.02] animate-fade-in"
                   >
-                    EXPLORE THE LOOKBOOK
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gold transition duration-200 ease-out group-hover:border-gold group-hover:bg-gold/10 group-hover:-translate-y-1">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <path d="M6 4h12v16H6z" />
+                        <path d="M6 8h12" />
+                        <path d="M9 12h6" />
+                      </svg>
+                    </span>
+                    LOOKBOOK
                   </button>
+
                   <button
                     onClick={() => navigate('/check-in')}
-                    className="px-6 sm:px-8 py-3 bg-gold text-charcoal hover:bg-gold/90 transition-all tracking-wider text-sm sm:text-base"
+                    className="group relative flex items-center justify-center gap-2 rounded-full bg-gold px-5 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-charcoal transition duration-200 ease-out hover:bg-gold/90 hover:-translate-y-0.5 hover:scale-[1.02] shadow-[0_0_40px_rgba(197,160,89,0.18)] animate-fade-in"
                   >
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-charcoal text-gold shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition duration-200 ease-out group-hover:-translate-y-1">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    </span>
                     CHECK IN
                   </button>
+
                   <button
                     onClick={scrollToBooking}
-                    className="px-6 sm:px-8 py-3 border-2 border-offwhite/30 text-offwhite hover:border-offwhite hover:text-offwhite transition-all tracking-wider text-sm sm:text-base"
+                    className="group flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-offwhite transition duration-200 ease-out hover:border-gold hover:bg-gold/10 hover:text-gold hover:-translate-y-0.5 hover:scale-[1.02] animate-fade-in"
                   >
-                    {bookingEnabled ? 'REQUEST APPOINTMENT' : 'CONTACT US'}
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gold transition duration-200 ease-out group-hover:border-gold group-hover:bg-gold/10 group-hover:-translate-y-1">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <circle cx="12" cy="12" r="8" />
+                        <path d="M12 8v4l3 2" />
+                      </svg>
+                    </span>
+                    SALON INFO
                   </button>
                 </div>
               </div>

@@ -5,8 +5,8 @@ export default function Footer({ onNavigate }) {
         <div>
           <img src="/NC.jpg" alt="Nail Couture" className="h-20 w-auto mb-4" />
           <p className="text-offwhite/60 text-sm leading-relaxed">
-            123 Luxury Avenue, Suite 500<br />
-            Beverly Hills, CA 90210<br />
+            5300 Tchoupitoulas St #32-34<br />
+            New Orleans, LA 70115<br />
             <span className="text-gold">+1 (555) 123-4567</span>
           </p>
         </div>
@@ -56,19 +56,6 @@ export default function Footer({ onNavigate }) {
             >
               About & Contact
             </button>
-            <a 
-              href="/login"
-              className="block text-offwhite/60 hover:text-gold transition-colors text-sm"
-            >
-              Client Portal
-            </a>
-            <a 
-              href="/admin" 
-              target="_blank"
-              className="block text-offwhite/40 hover:text-gold transition-colors text-sm"
-            >
-              Admin Dashboard
-            </a>
           </div>
         </div>
       </div>

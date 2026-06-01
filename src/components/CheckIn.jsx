@@ -538,7 +538,7 @@ const keys = [
   ['1', '2', '3'],
   ['4', '5', '6'],
   ['7', '8', '9'],
-  ['del', '0', '']
+  ['del', '0', 'clear']
 ]
 
 export default function CheckIn({ onNavigate }) {
@@ -559,6 +559,9 @@ export default function CheckIn({ onNavigate }) {
   const handleKeyPress = (key) => {
     if (key === 'del') {
       setPhone(prev => prev.slice(0, -1))
+      setResult(null)
+    } else if (key === 'clear') {
+      setPhone('')
       setResult(null)
     } else if (key && phone.length < 10) {
       setPhone(prev => prev + key)
@@ -746,7 +749,7 @@ export default function CheckIn({ onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-charcoal flex flex-col">
+    <div className="min-h-screen bg-charcoal flex flex-col animate-fade-in">
       <div className="p-6">
         <button
           onClick={() => onNavigate('home')}
@@ -788,11 +791,13 @@ export default function CheckIn({ onNavigate }) {
                     w-20 h-20 rounded-full text-2xl font-heading transition-all
                     ${key === 'del' 
                       ? 'bg-offwhite/10 text-offwhite hover:bg-offwhite/20' 
-                      : key === '' 
-                        ? 'bg-transparent cursor-default'
-                        : phone.length >= 10
-                          ? 'bg-offwhite/5 text-offwhite/20 cursor-not-allowed'
-                          : 'bg-offwhite/10 text-offwhite hover:bg-gold/20 hover:text-gold'
+                      : key === 'clear'
+                        ? 'bg-offwhite/10 text-offwhite hover:bg-offwhite/20 text-xs tracking-[0.24em] uppercase'
+                        : key === '' 
+                          ? 'bg-transparent cursor-default'
+                          : phone.length >= 10
+                            ? 'bg-offwhite/5 text-offwhite/20 cursor-not-allowed'
+                            : 'bg-offwhite/10 text-offwhite hover:bg-gold/20 hover:text-gold'
                     }
                   `}
                 >
@@ -800,7 +805,7 @@ export default function CheckIn({ onNavigate }) {
                     <svg className="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 4l18 16" />
                     </svg>
-                  ) : key}
+                  ) : key === 'clear' ? 'CLEAR' : key}
                 </button>
               ))}
             </div>
@@ -808,12 +813,26 @@ export default function CheckIn({ onNavigate }) {
         </div>
 
         {phone.length === 10 && !loading && (
-          <button
-            onClick={handleSubmit}
-            className="mt-6 px-12 py-4 bg-gold text-charcoal text-lg font-heading tracking-wider hover:bg-gold/90 transition-all animate-fade-in"
-          >
-            CHECK IN
-          </button>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-in">
+            <button
+              type="button"
+              onClick={() => {
+                setPhone('')
+                setResult(null)
+                setError(null)
+                onNavigate('home')
+              }}
+              className="min-w-[120px] px-5 py-3 rounded-full border border-offwhite/20 text-offwhite text-sm font-heading uppercase tracking-[0.24em] hover:border-gold hover:text-gold transition-all"
+            >
+              CANCEL
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all"
+            >
+              CHECK IN
+            </button>
+          </div>
         )}
 
         {loading && (

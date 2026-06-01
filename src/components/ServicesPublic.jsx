@@ -1,19 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-const CATEGORIES = ['All', 'Nail Art', 'Extensions', 'Russian Manicure', 'Treatment', 'Packages'];
-const categoryOrder = ['Nail Art', 'Extensions', 'Russian Manicure', 'Treatment', 'Packages'];
-
 export default function ServicesPublic() {
   const [services, setServices] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const [expandedCategory, setExpandedCategory] = useState(null);
+  const categoryScrollRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartScrollRef = useRef(0);
 
   useEffect(() => {
     fetchServices();
+    fetchCategories();
   }, []);
+
+  const handleCategoryPointerDown = (event) => {
+    if (!categoryScrollRef.current) return;
+    isDraggingRef.current = true;
+    dragStartXRef.current = event.clientX;
+    dragStartScrollRef.current = categoryScrollRef.current.scrollLeft;
+    categoryScrollRef.current.setPointerCapture(event.pointerId);
+  };
+
+  const handleCategoryPointerMove = (event) => {
+    if (!isDraggingRef.current || !categoryScrollRef.current) return;
+    const deltaX = event.clientX - dragStartXRef.current;
+    categoryScrollRef.current.scrollLeft = dragStartScrollRef.current - deltaX;
+  };
+
+  const handleCategoryPointerUp = (event) => {
+    if (!categoryScrollRef.current) return;
+    isDraggingRef.current = false;
+    categoryScrollRef.current.releasePointerCapture(event.pointerId);
+  };
 
   const fetchServices = async () => {
     const { data } = await supabase
@@ -25,6 +48,14 @@ export default function ServicesPublic() {
     setLoading(false);
   };
 
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from('service_categories')
+      .select('*')
+      .order('sort_order', { ascending: true });
+    setDbCategories(data || []);
+  };
+
   const groupedServices = services.reduce((acc, service) => {
     const cat = service.category || 'Other';
     if (!acc[cat]) acc[cat] = [];
@@ -32,11 +63,17 @@ export default function ServicesPublic() {
     return acc;
   }, {});
 
+  const categoryOrder = dbCategories.map((category) => category.name);
+  const categoryOrderMap = new Map(categoryOrder.map((cat, index) => [cat, index]));
+
   const sortedCategories = Object.keys(groupedServices).sort((a, b) => {
-    const aIdx = categoryOrder.indexOf(a);
-    const bIdx = categoryOrder.indexOf(b);
-    return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+    const aIdx = categoryOrderMap.has(a) ? categoryOrderMap.get(a) : 999;
+    const bIdx = categoryOrderMap.has(b) ? categoryOrderMap.get(b) : 999;
+    if (aIdx !== bIdx) return aIdx - bIdx;
+    return a.localeCompare(b);
   });
+
+  const categories = ['All', ...sortedCategories];
 
   const displayCategories = activeCategory === 'All'
     ? sortedCategories
@@ -44,22 +81,21 @@ export default function ServicesPublic() {
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden" style={{ backgroundColor: '#0a0a0a' }}>
-      <div className="sticky top-0 z-50 bg-charcoal border-b border-gold/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-4">
-            <img src="/NC.jpg" alt="Nail Couture" className="h-12 w-auto" />
-            <span className="font-heading text-gold text-xl hidden sm:block">Services & Pricing</span>
-          </Link>
-          <Link
-            to="/booking"
-            className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-sm rounded-lg"
-          >
-            Book Appointment
-          </Link>
+      <div className="sticky top-0 z-50 bg-charcoal">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="text-gold font-heading text-xl">Services & Pricing</div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-4">
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            {CATEGORIES.map((cat) => (
+          <div
+            ref={categoryScrollRef}
+            onPointerDown={handleCategoryPointerDown}
+            onPointerMove={handleCategoryPointerMove}
+            onPointerUp={handleCategoryPointerUp}
+            onPointerCancel={handleCategoryPointerUp}
+            className="flex gap-2 overflow-x-auto no-scrollbar pb-1 cursor-grab"
+            style={{ touchAction: 'pan-x' }}
+          >
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => { setActiveCategory(cat); setExpandedCategory(null); }}
@@ -126,12 +162,12 @@ export default function ServicesPublic() {
                           )}
                           <div className="flex items-center justify-between">
                             <span className="text-offwhite/40 text-sm">~{service.duration_minutes} min</span>
-                            <Link
-                              to="/booking"
+                            <a
+                              href="/about#contact"
                               className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-xs rounded-lg transition-colors"
                             >
-                              Book Now
-                            </Link>
+                              Contact Us
+                            </a>
                           </div>
                         </div>
                       ))}
@@ -145,14 +181,14 @@ export default function ServicesPublic() {
 
         <div className="mt-16 text-center">
           <div className="bg-gold/10 border border-gold/30 rounded-xl p-8 max-w-2xl mx-auto">
-            <h3 className="font-heading text-2xl text-gold mb-2">Ready to Book?</h3>
-            <p className="text-offwhite/60 mb-6">Schedule your appointment online or visit us for a consultation.</p>
-            <Link
-              to="/booking"
+            <h3 className="font-heading text-2xl text-gold mb-2">Need Help Scheduling?</h3>
+            <p className="text-offwhite/60 mb-6">Please contact us so we can schedule your visit.</p>
+            <a
+              href="/about#contact"
               className="inline-block px-8 py-3 bg-gold text-charcoal hover:bg-gold/90 font-heading text-lg rounded-lg transition-colors"
             >
-              Request Appointment
-            </Link>
+              Contact Us
+            </a>
           </div>
         </div>
       </div>

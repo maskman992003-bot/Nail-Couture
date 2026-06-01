@@ -34,6 +34,22 @@ export default function Navbar({ currentPage, onNavigate }) {
 
   const scrollToSection = (id) => {
     setMobileMenuOpen(false);
+
+    if (id === 'contact') {
+      if (currentPage !== 'about') {
+        navigate('/about');
+        onNavigate('about');
+        setTimeout(() => {
+          const element = document.getElementById('contact');
+          if (element) element.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      } else {
+        const element = document.getElementById('contact');
+        if (element) element.scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
+    }
+
     if (currentPage === 'portal') {
       navigate('/');
       setTimeout(() => {
@@ -83,22 +99,31 @@ export default function Navbar({ currentPage, onNavigate }) {
                 </>
               ) : (
                 <>
-                  <a href="/login" className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium">
+                  <a href="/login" className="px-5 py-2 rounded-full bg-gold text-charcoal hover:bg-gold/90 transition-all text-sm tracking-wider font-medium">
                     Login
                   </a>
-                  {CUSTOMER_ONLINE_BOOKING ? (
-                    <button
-                      onClick={() => scrollToSection('book')}
-                      className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
-                    >
-                      BOOK
-                    </button>
+                  {currentPage === 'home' ? (
+                    CUSTOMER_ONLINE_BOOKING ? (
+                      <button
+                        onClick={() => scrollToSection('book')}
+                        className="px-6 py-2 rounded-full border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                      >
+                        BOOK
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => scrollToSection('contact')}
+                        className="px-6 py-2 rounded-full border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                      >
+                        CONTACT US
+                      </button>
+                    )
                   ) : (
                     <button
-                      onClick={() => scrollToSection('contact')}
-                      className="px-6 py-2 border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
+                      onClick={() => { navigate('/'); setMobileMenuOpen(false); onNavigate('home'); }}
+                      className="px-6 py-2 rounded-full border border-gold text-gold hover:bg-gold hover:text-charcoal transition-all text-sm tracking-wider"
                     >
-                      CONTACT US
+                      HOME
                     </button>
                   )}
                 </>
@@ -141,10 +166,14 @@ export default function Navbar({ currentPage, onNavigate }) {
                     <button onClick={() => scrollToSection('services')} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">SERVICES</button>
                     <button onClick={() => scrollToSection('gallery')} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">LOOKBOOK</button>
                     <button onClick={() => { setMobileMenuOpen(false); onNavigate('about'); }} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">ABOUT</button>
-                    {CUSTOMER_ONLINE_BOOKING ? (
-                      <button onClick={() => scrollToSection('book')} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider border-t border-gold/10 mt-2 pt-2">BOOK APPOINTMENT</button>
+                    {currentPage === 'home' ? (
+                      CUSTOMER_ONLINE_BOOKING ? (
+                        <button onClick={() => scrollToSection('book')} className="py-3 rounded-full bg-gold text-charcoal text-center px-4 text-sm tracking-wider font-medium border border-transparent hover:bg-gold/90 mt-2">BOOK APPOINTMENT</button>
+                      ) : (
+                        <button onClick={() => scrollToSection('contact')} className="py-3 rounded-full border border-gold text-gold text-center px-4 text-sm tracking-wider hover:bg-gold hover:text-charcoal mt-2">CONTACT US</button>
+                      )
                     ) : (
-                      <button onClick={() => scrollToSection('contact')} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider border-t border-gold/10 mt-2 pt-2">CONTACT US</button>
+                      <button onClick={() => { setMobileMenuOpen(false); navigate('/'); onNavigate('home'); }} className="py-3 rounded-full border border-gold text-gold text-center px-4 text-sm tracking-wider hover:bg-gold hover:text-charcoal mt-2">HOME</button>
                     )}
                   </>
                 )

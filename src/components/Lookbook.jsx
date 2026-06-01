@@ -92,10 +92,10 @@ export default function Lookbook() {
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
-              className={`px-6 py-2 text-sm tracking-wider transition-all ${
+              className={`px-6 py-2 rounded-full text-sm tracking-wider transition-all duration-200 ease-out ${
                 activeCategory === category
-                  ? 'bg-charcoal text-offwhite'
-                  : 'border border-charcoal/20 text-charcoal/60 hover:border-gold hover:text-gold'
+                  ? 'bg-charcoal text-offwhite shadow-[0_0_20px_rgba(0,0,0,0.08)]'
+                  : 'border border-charcoal/20 text-charcoal/60 hover:border-gold hover:text-gold hover:-translate-y-0.5 hover:scale-[1.02]'
               }`}
             >
               {category}
