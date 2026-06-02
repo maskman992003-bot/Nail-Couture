@@ -1,19 +1,22 @@
+import { useTheme } from '../contexts/ThemeContext'
+
 export default function AboutContact() {
   const sectionTitle = 'Get in Touch'
   const sectionDescription = 'We’re here to help. Reach out now to discuss availability and styling requests.'
+  const { theme } = useTheme()
 
   return (
     <div className="flex-1">
-      <section className="py-16 sm:py-24 px-4 sm:px-6 bg-charcoal">
+      <section className={`py-16 sm:py-24 px-4 sm:px-6 ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="font-heading text-offwhite text-3xl sm:text-4xl md:text-5xl mb-6">The Story of Nail Couture</h2>
-          <p className="text-offwhite/70 text-lg leading-relaxed mb-8">
+          <h2 className={`font-heading text-3xl sm:text-4xl md:text-5xl mb-6 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>The Story of Nail Couture</h2>
+          <p className={`text-lg leading-relaxed mb-8 ${theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}`}>
             Born from a passion for precision and an unwavering commitment to excellence, Nail Couture 
             was founded on the principle that every client deserves an exceptional experience. Our artisans 
             undergo rigorous training in the Russian Manicure technique, mastering the art of cuticle 
             work and nail shaping that has been refined over decades in Eastern Europe.
           </p>
-          <p className="text-offwhite/70 text-lg leading-relaxed">
+          <p className={`text-lg leading-relaxed ${theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}`}>
             We believe in more than just beautiful nails. We believe in an elevated standard of hygiene, 
             using medical-grade sterilization equipment and exclusively non-toxic, vegan products. 
             Each visit to Nail Couture is a sanctuary moment—an escape from the ordinary, 
@@ -22,10 +25,10 @@ export default function AboutContact() {
         </div>
       </section>
 
-       <section id="contact" className="py-16 sm:py-24 px-4 sm:px-6 bg-offwhite">
+       <section id="contact" className={`py-16 sm:py-24 px-4 sm:px-6 ${theme === 'dark' ? 'bg-offwhite' : 'bg-cream'}`}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h3 className="font-heading text-charcoal text-2xl sm:text-3xl mb-4">Visit Our Studio</h3>
+            <h3 className={`font-heading text-2xl sm:text-3xl mb-4 ${theme === 'dark' ? 'text-charcoal' : 'text-charcoal'}`}>Visit Our Studio</h3>
             <div className="mx-auto mb-4 h-0.5 w-20 rounded-full bg-gold/70" />
             <p className="text-charcoal/60">By appointment only for your comfort and privacy</p>
           </div>
@@ -45,15 +48,15 @@ export default function AboutContact() {
                 
                 <div>
                   <div className="text-sm text-charcoal/50 tracking-wider uppercase mb-2">Phone</div>
-                  <a href="tel:+15551234567" className="text-gold hover:text-gold/80 transition-colors">
-                    +1 (555) 123-4567
+                  <a href="tel:+15044817879" className="text-gold hover:text-gold/80 transition-colors">
+                    504-481-7879
                   </a>
                 </div>
                 
                 <div>
                   <div className="text-sm text-charcoal/50 tracking-wider uppercase mb-2">WhatsApp</div>
                   <a 
-                    href="https://wa.me/15551234567" 
+                    href="https://wa.me/15044817879" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-gold hover:text-gold/80 transition-colors"
@@ -90,12 +93,12 @@ export default function AboutContact() {
               </div>
             </div>
 
-            <div className="h-full space-y-4">
-              <div className="flex items-center justify-between rounded-full border border-charcoal/10 bg-white/90 px-4 py-2 text-sm uppercase tracking-[0.30em] text-charcoal/90 shadow-sm shadow-black/5">
+            <div className="h-full flex flex-col gap-4">
+              <div className="flex items-center justify-between rounded-full border border-charcoal/10 bg-white/90 px-4 py-2 text-sm uppercase tracking-[0.30em] text-charcoal/90 shadow-sm shadow-black/5 flex-shrink-0">
                 <span>Map</span>
                 <span className="text-gold font-semibold">New Orleans</span>
               </div>
-              <div className="h-[300px sm:h-[400px] lg:h-full min-h-[300px] overflow-hidden rounded-3xl bg-charcoal/5 border border-charcoal/10 shadow-2xl shadow-black/10">
+              <div className="flex-1 min-h-[300px] overflow-hidden rounded-3xl bg-charcoal/5 border border-charcoal/10 shadow-2xl shadow-black/10">
                 <iframe
                   src="https://www.google.com/maps?q=5300+Tchoupitoulas+St+%2332-34+New+Orleans+LA+70115&output=embed"
                   width="100%"

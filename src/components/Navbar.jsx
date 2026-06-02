@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 import { getHomePath } from '../utils/routes';
 
 export default function Navbar({ currentPage, onNavigate }) {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -71,7 +73,7 @@ export default function Navbar({ currentPage, onNavigate }) {
   const firstName = user?.full_name ? user.full_name.split(' ')[0] : '';
 
   return (
-    <nav className="sticky top-0 z-50 bg-charcoal border-b border-gold/30">
+    <nav className={`sticky top-0 z-50 border-b border-gold/30 ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -81,6 +83,23 @@ export default function Navbar({ currentPage, onNavigate }) {
           </div>
 
           <div className="hidden md:flex items-center gap-6">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-center w-10 h-10 rounded-full border border-gold/30 bg-gold/10 hover:bg-gold/20 hover:border-gold/50 transition-all duration-300 hover:scale-110 active:scale-95"
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? (
+                <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
+            
             <div className="flex items-center gap-4">
               {user ? (
                 <>
@@ -131,17 +150,36 @@ export default function Navbar({ currentPage, onNavigate }) {
             </div>
           </div>
 
-          <button className="md:hidden p-2 text-offwhite" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
+          <div className="flex items-center gap-3 md:hidden">
+            {/* Mobile Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-center w-10 h-10 rounded-full border border-gold/30 bg-gold/10 hover:bg-gold/20 hover:border-gold/50 transition-all duration-300 hover:scale-110 active:scale-95"
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? (
+                <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
+            
+            <button className={`p-2 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
         {mobileMenuOpen && (
@@ -154,18 +192,18 @@ export default function Navbar({ currentPage, onNavigate }) {
             <div className="flex flex-col gap-2">
               {currentPage === 'portal' ? (
                 <>
-                  <button onClick={handleHomeClick} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">HOME</button>
-                  <button onClick={() => { setMobileMenuOpen(false); navigate('/'); }} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider w-full">SERVICES</button>
-                  <Link to="/" onClick={() => setMobileMenuOpen(false)} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">LOOKBOOK</Link>
+                  <button onClick={handleHomeClick} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>HOME</button>
+                  <button onClick={() => { setMobileMenuOpen(false); navigate('/'); }} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider w-full ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>SERVICES</button>
+                  <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>LOOKBOOK</Link>
                 </>
               ) : (
                 user && user.is_staff ? (
-                  <button onClick={() => { setMobileMenuOpen(false); navigate(getHomeHref()); }} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">STAFF HOME</button>
+                  <button onClick={() => { setMobileMenuOpen(false); navigate(getHomeHref()); }} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>STAFF HOME</button>
                 ) : (
                   <>
-                    <button onClick={() => scrollToSection('services')} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">SERVICES</button>
-                    <button onClick={() => scrollToSection('gallery')} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">LOOKBOOK</button>
-                    <button onClick={() => { setMobileMenuOpen(false); onNavigate('about'); }} className="py-3 text-offwhite/80 hover:text-gold text-left px-2 text-sm tracking-wider">ABOUT</button>
+                    <button onClick={() => scrollToSection('services')} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>SERVICES</button>
+                    <button onClick={() => scrollToSection('gallery')} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>LOOKBOOK</button>
+                    <button onClick={() => { setMobileMenuOpen(false); onNavigate('about'); }} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>ABOUT</button>
                     {currentPage === 'home' ? (
                       CUSTOMER_ONLINE_BOOKING ? (
                         <button onClick={() => scrollToSection('book')} className="py-3 rounded-full bg-gold text-charcoal text-center px-4 text-sm tracking-wider font-medium border border-transparent hover:bg-gold/90 mt-2">BOOK APPOINTMENT</button>

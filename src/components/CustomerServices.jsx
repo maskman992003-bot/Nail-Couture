@@ -5,6 +5,7 @@ import { getHomePath } from '../utils/routes';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 import { getServices } from '../services/services';
 import Sidebar from './Sidebar';
+/* @vite-ignore */ import ws from "ws";
 
 export default function CustomerServices() {
   const navigate = useNavigate();

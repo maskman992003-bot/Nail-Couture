@@ -23,7 +23,8 @@
     "react-router-dom": "^7.15.0",
     "recharts": "^3.8.1",
     "swiper": "^12.1.4",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

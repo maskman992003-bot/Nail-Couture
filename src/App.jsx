@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { featureFlags } from './constants/featureFlags'
+import { useTheme } from './contexts/ThemeContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Services from './components/Services'
@@ -13,6 +14,7 @@ import './index.css'
 function App() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { theme } = useTheme()
   const [currentPage, setCurrentPage] = useState('home')
 
   useEffect(() => {
@@ -61,7 +63,7 @@ function App() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col relative ${currentPage === 'check-in' ? 'bg-charcoal' : 'bg-offwhite'}`}>
+    <div className={`min-h-screen flex flex-col relative ${currentPage === 'check-in' ? (theme === 'dark' ? 'bg-charcoal' : 'bg-cream') : (theme === 'dark' ? 'bg-offwhite' : 'bg-white')}`}>
       <img 
         src="/NC.jfif.png" 
         alt="" 
@@ -73,27 +75,27 @@ function App() {
       <main className="flex-1 relative z-10">
         {currentPage === 'home' && (
           <>
-            <section className="min-h-[70vh] sm:min-h-[80vh] bg-charcoal flex items-center justify-center relative overflow-hidden px-4 sm:px-6">
-              <div className="absolute inset-0 bg-gradient-to-b from-charcoal via-charcoal/95 to-charcoal" />
+            <section className={`min-h-[70vh] sm:min-h-[80vh] flex items-center justify-center relative overflow-hidden px-4 sm:px-6 ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
+              <div className={`absolute inset-0 bg-gradient-to-b ${theme === 'dark' ? 'from-charcoal via-charcoal/95 to-charcoal' : 'from-cream via-cream/95 to-cream'}`} />
               <div className="text-center z-10 max-w-4xl mx-auto">
-                <div className="inline-flex items-center justify-center gap-2 mb-8 rounded-full border border-gold/20 bg-white/5 px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-gold font-semibold">
+                <div className={`inline-flex items-center justify-center gap-2 mb-8 rounded-full border border-gold/20 px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-gold font-semibold ${theme === 'dark' ? 'bg-white/5' : 'bg-gold/5'}`}>
                   <span className="h-2.5 w-2.5 rounded-full bg-gold shadow-lg shadow-gold/30" />
                   FLAWLESS MEDICAL-GRADE STERILIZATION
                 </div>
-                <h1 className="font-heading text-offwhite text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-5 sm:mb-7 tracking-wide">
+                <h1 className={`font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-5 sm:mb-7 tracking-wide ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>
                   Couture Nails.
                   <span className="block text-gold mt-3">Expertly Tailored.</span>
                 </h1>
-                <p className="text-offwhite/70 text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+                <p className={`text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed ${theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}`}>
                   Discover the precision of the Russian Manicure technique. Medical-grade sterilization,
                   non-toxic products, and artisans trained in the finest traditions of nail couture.
                 </p>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <button
                     onClick={scrollToLookbook}
-                    className="group flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-offwhite transition duration-200 ease-out hover:border-gold hover:bg-gold/10 hover:text-gold hover:-translate-y-0.5 hover:scale-[1.02] animate-fade-in"
+                    className={`group flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold uppercase tracking-[0.24em] transition duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] animate-fade-in ${theme === 'dark' ? 'border-white/10 bg-white/5 text-offwhite hover:border-gold hover:bg-gold/10 hover:text-gold' : 'border-charcoal/20 bg-charcoal/5 text-charcoal hover:border-gold hover:bg-gold/10 hover:text-gold'}`}
                   >
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gold transition duration-200 ease-out group-hover:border-gold group-hover:bg-gold/10 group-hover:-translate-y-1">
+                    <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full border text-gold transition duration-200 ease-out group-hover:-translate-y-1 ${theme === 'dark' ? 'border-white/10 bg-white/5 group-hover:border-gold group-hover:bg-gold/10' : 'border-charcoal/20 bg-charcoal/5 group-hover:border-gold group-hover:bg-gold/10'}`}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                         <path d="M6 4h12v16H6z" />
                         <path d="M6 8h12" />
@@ -117,9 +119,9 @@ function App() {
 
                   <button
                     onClick={scrollToBooking}
-                    className="group flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-offwhite transition duration-200 ease-out hover:border-gold hover:bg-gold/10 hover:text-gold hover:-translate-y-0.5 hover:scale-[1.02] animate-fade-in"
+                    className={`group flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold uppercase tracking-[0.24em] transition duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.02] animate-fade-in ${theme === 'dark' ? 'border-white/10 bg-white/5 text-offwhite hover:border-gold hover:bg-gold/10 hover:text-gold' : 'border-charcoal/20 bg-charcoal/5 text-charcoal hover:border-gold hover:bg-gold/10 hover:text-gold'}`}
                   >
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gold transition duration-200 ease-out group-hover:border-gold group-hover:bg-gold/10 group-hover:-translate-y-1">
+                    <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full border text-gold transition duration-200 ease-out group-hover:-translate-y-1 ${theme === 'dark' ? 'border-white/10 bg-white/5 group-hover:border-gold group-hover:bg-gold/10' : 'border-charcoal/20 bg-charcoal/5 group-hover:border-gold group-hover:bg-gold/10'}`}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                         <circle cx="12" cy="12" r="8" />
                         <path d="M12 8v4l3 2" />
