@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 import Sidebar from './Sidebar';
 
@@ -25,6 +26,7 @@ const tabs = [
 export default function CustomerHistory() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -161,17 +163,17 @@ export default function CustomerHistory() {
         key={booking.id}
         onClick={openDetail}
         className="rounded-xl p-5 border transition-all cursor-pointer hover:border-gold/30"
-        style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(197,160,89,0.15)' }}
+        style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', borderColor: 'rgba(197,160,89,0.15)' }}
       >
         <div className="flex items-start justify-between mb-2">
           <div>
-            <div className="text-offwhite font-heading text-base">{booking.service?.name || 'Service'}</div>
-            <div className="text-offwhite/40 text-xs mt-0.5">
+            <div className={theme === 'dark' ? 'text-offwhite font-heading text-base' : 'text-charcoal font-heading text-base'}>{booking.service?.name || 'Service'}</div>
+            <div className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-0.5' : 'text-charcoal/40 text-xs mt-0.5'}>
               {booking.service?.duration_minutes ? `${booking.service.duration_minutes} min` : ''}
               {booking.tech && ` · ${booking.tech.full_name}`}
             </div>
             {(booking.addonDetails || []).map((addon) => (
-              <div key={addon.id} className="text-offwhite/30 text-xs mt-1">+ {addon.name} (+${addon.price})</div>
+              <div key={addon.id} className={theme === 'dark' ? 'text-offwhite/30 text-xs mt-1' : 'text-charcoal/30 text-xs mt-1'}>+ {addon.name} (+${addon.price})</div>
             ))}
           </div>
           <span className={`px-2.5 py-1 text-[10px] rounded-full border flex-shrink-0 ${cfg?.color || ''}`}>
@@ -179,7 +181,7 @@ export default function CustomerHistory() {
           </span>
         </div>
 
-        <div className="text-offwhite/50 text-sm mb-1">
+        <div className={theme === 'dark' ? 'text-offwhite/50 text-sm mb-1' : 'text-charcoal/50 text-sm mb-1'}>
           {appointmentDate ? `${new Date(appointmentDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${new Date(appointmentDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : 'Walk-in Appointment'}
         </div>
         <div className="text-gold font-heading text-lg">${totalPrice.toFixed(2)}</div>
@@ -189,8 +191,8 @@ export default function CustomerHistory() {
             <Link
               to={`/customer/edit/${booking.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border text-offwhite/60 hover:text-gold hover:border-gold/50 transition-all inline-block"
-              style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+              className={theme === 'dark' ? 'px-3 py-1.5 text-xs font-medium rounded-lg border text-offwhite/60 hover:text-gold hover:border-gold/50 transition-all inline-block' : 'px-3 py-1.5 text-xs font-medium rounded-lg border text-charcoal/60 hover:text-gold hover:border-gold/50 transition-all inline-block'}
+              style={{ borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}
             >
               Edit Booking
             </Link>
@@ -200,7 +202,7 @@ export default function CustomerHistory() {
               onClick={(e) => { e.stopPropagation(); setConfirmCancel(booking); }}
               disabled={isUpdating}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border text-red-400 hover:bg-red-900/20 hover:border-red-500/50 transition-all disabled:opacity-30"
-              style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+              style={{ borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}
             >
               Cancel
             </button>
@@ -221,7 +223,7 @@ export default function CustomerHistory() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
         <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -231,27 +233,27 @@ export default function CustomerHistory() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <Link to="/portal" className="text-offwhite/40 hover:text-gold text-sm">Home</Link>
-              <span className="text-offwhite/30">/</span>
+              <Link to="/portal" className={theme === 'dark' ? 'text-offwhite/40 hover:text-gold text-sm' : 'text-charcoal/40 hover:text-gold text-sm'}>Home</Link>
+              <span className={theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}>/</span>
               <span className="text-gold font-heading text-sm">My Bookings</span>
             </div>
             <h1 className="font-heading text-4xl text-gold">My Bookings</h1>
-            <p className="text-offwhite/50 text-sm mt-1">Track your appointments and stay updated</p>
+            <p className={theme === 'dark' ? 'text-offwhite/50 text-sm mt-1' : 'text-charcoal/50 text-sm mt-1'}>Track your appointments and stay updated</p>
           </div>
 
           {notifications.length > 0 && (
-            <div className="rounded-2xl p-6 border-2" style={{ background: 'linear-gradient(135deg, rgba(197,160,89,0.08) 0%, rgba(26,26,26,1) 100%)', borderColor: 'rgba(197,160,89,0.3)' }}>
-              <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Notifications</div>
+            <div className="rounded-2xl p-6 border-2" style={{ background: theme === 'dark' ? 'linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, rgba(26,26,26,1) 100%)' : 'linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, #ffffff 100%)', borderColor: 'rgba(197, 160, 89, 0.3)' }}>
+              <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-4' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-4'}>Notifications</div>
               <div className="space-y-3">
                 {notifications.slice(0, 5).map((n) => (
-                  <div key={n.id} className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                  <div key={n.id} className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
                     <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: n.is_read ? 'rgba(197,160,89,0.3)' : '#c5a059' }}></div>
-                    <div className="text-offwhite/80 text-sm">{n.body || n.message}</div>
+                    <div className={theme === 'dark' ? 'text-offwhite/80 text-sm' : 'text-charcoal/80 text-sm'}>{n.body || n.message}</div>
                   </div>
                 ))}
               </div>
@@ -263,11 +265,11 @@ export default function CustomerHistory() {
               <select
                 value={activeTab}
                 onChange={(e) => setActiveTab(e.target.value)}
-                className="w-full p-3 pr-10 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none text-sm appearance-none cursor-pointer"
+                className={theme === 'dark' ? 'w-full p-3 pr-10 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none text-sm appearance-none cursor-pointer' : 'w-full p-3 pr-10 bg-charcoal/10 border border-charcoal/10 text-charcoal rounded-lg focus:border-gold focus:outline-none text-sm appearance-none cursor-pointer'}
                 style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23c5a059' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
               >
                 {tabs.map((tab) => (
-                  <option key={tab.key} value={tab.key} style={{ backgroundColor: '#111', color: '#e2e8f0' }}>
+                  <option key={tab.key} value={tab.key} style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff', color: theme === 'dark' ? '#e2e8f0' : '#000' }}>
                     {tab.label} ({tabCounts[tab.key]})
                   </option>
                 ))}
@@ -276,10 +278,10 @@ export default function CustomerHistory() {
           </div>
 
           {filteredBookings.length === 0 ? (
-            <div className="rounded-2xl p-12 border-2 text-center" style={{ borderColor: 'rgba(197,160,89,0.15)', backgroundColor: '#111' }}>
-              <div className="text-offwhite/30 text-5xl mb-4">&#128340;</div>
-              <h3 className="font-heading text-2xl text-offwhite mb-3">No Bookings Found</h3>
-              <p className="text-offwhite/50 mb-8 max-w-sm mx-auto">No bookings match your current filter.</p>
+            <div className="rounded-2xl p-12 border-2 text-center" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#fdf8f0' }}>
+              <div className={theme === 'dark' ? 'text-offwhite/30 text-5xl mb-4' : 'text-charcoal/30 text-5xl mb-4'}>&#128340;</div>
+              <h3 className={theme === 'dark' ? 'font-heading text-2xl text-offwhite mb-3' : 'font-heading text-2xl text-charcoal mb-3'}>No Bookings Found</h3>
+              <p className={theme === 'dark' ? 'text-offwhite/50 mb-8 max-w-sm mx-auto' : 'text-charcoal/50 mb-8 max-w-sm mx-auto'}>No bookings match your current filter.</p>
               {CUSTOMER_ONLINE_BOOKING ? (
                 <Link to="/customer/book" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
                   Book Now
@@ -294,7 +296,7 @@ export default function CustomerHistory() {
             <>
               {activeTab === 'all' && activeBookings.length > 0 && (
                 <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Upcoming & Active</div>
+                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-4' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-4'}>Upcoming & Active</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {activeBookings.map(renderCard)}
                   </div>
@@ -302,7 +304,7 @@ export default function CustomerHistory() {
               )}
               {activeTab === 'all' && pastBookings.length > 0 && (
                 <div>
-                  <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Past Visits</div>
+                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-4' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-4'}>Past Visits</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {pastBookings.map(renderCard)}
                   </div>
@@ -317,8 +319,8 @@ export default function CustomerHistory() {
           )}
 
           {confirmCancel && (
-            <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
-              <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197,160,89,0.4)' }}>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
+              <div className="w-full max-w-sm flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197,160,89,0.4)' }}>
                 <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
                   <div>
                     <div className="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center mx-auto mb-4">
@@ -362,8 +364,8 @@ export default function CustomerHistory() {
           )}
 
           {showDetailModal && selectedDetailBooking && (
-            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowDetailModal(false)}>
-              <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowDetailModal(false)}>
+              <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
                 <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
                   <h2 className="font-heading text-2xl text-gold">Appointment Details</h2>
                   <button onClick={() => setShowDetailModal(false)} className="text-offwhite/40 hover:text-gold text-xl leading-none">&times;</button>

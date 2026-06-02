@@ -2,13 +2,23 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
+import AppModal, {
+  modalLabelClass,
+  modalInputClass,
+  modalSelectClass,
+  modalBtnSecondary,
+  modalBtnPrimary,
+} from './AppModal';
+import clsx from 'clsx';
 
 const emptyForm = { item_name: '', category: 'material', quantity: '', unit: '', reorder_threshold: '' };
 
 export default function AdminInventory() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [inventory, setInventory] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -159,7 +169,7 @@ export default function AdminInventory() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
         <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -169,14 +179,14 @@ export default function AdminInventory() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
-        <div className="px-4 sm:px-6 lg:px-8 py-6 border-b flex-shrink-0" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+        <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-light flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-heading text-3xl text-gold">Inventory Management</h1>
-              <p className="text-offwhite/60 text-sm mt-1">
+              <p className="text-secondary text-sm mt-1">
                 Track refreshments and materials in real time. Refreshments with stock appear in customer menus.
               </p>
               {offeredRefreshmentCount > 0 && (
@@ -210,10 +220,10 @@ export default function AdminInventory() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-          <div className="mb-6 rounded-xl border border-gold/20 bg-gold/5 px-4 py-3 text-sm text-offwhite/70">
+          <div className="mb-6 rounded-xl border border-card bg-gold/5 px-4 py-3 text-secondary text-sm">
             Refreshment items with quantity above zero are shown in check-in, kiosk registration, and customer profile preference lists. Set quantity to zero to hide an item from customers.
           </div>
-          <div className="rounded-xl p-5 mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(197, 160, 89, 0.1)' }}>
+          <div className="rounded-xl p-5 mb-6 bg-secondary border border-card">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex-1 w-full sm:max-w-sm">
                 <input
@@ -221,7 +231,7 @@ export default function AdminInventory() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search items..."
-                  className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/30 rounded-lg focus:border-gold focus:outline-none text-sm"
+                  className="w-full p-3 bg-input border border-input rounded-lg focus:border-gold focus:outline-none text-primary placeholder-text-muted text-sm"
                 />
               </div>
               <div className="flex gap-2">
@@ -229,12 +239,13 @@ export default function AdminInventory() {
                   <button
                     key={cat}
                     onClick={() => setFilterCategory(cat)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      filterCategory === cat
-                        ? 'text-charcoal'
-                        : 'text-offwhite/60 border hover:text-offwhite'
-                    }`}
-                    style={filterCategory === cat ? { background: 'linear-gradient(135deg, #c5a059, #f0d78c)' } : { borderColor: 'rgba(255,255,255,0.1)' }}
+                    className={clsx(
+                      "px-4 py-2 rounded-lg text-sm font-medium transition-all border",
+                      filterCategory === cat 
+                        ? 'text-charcoal border-transparent' 
+                        : 'text-secondary border-light hover:text-primary'
+                    )}
+                    style={filterCategory === cat ? { background: 'linear-gradient(135deg, #c5a059, #f0d78c)' } : {}}
                   >
                     {cat.charAt(0).toUpperCase() + cat.slice(1)}
                   </button>
@@ -244,17 +255,17 @@ export default function AdminInventory() {
           </div>
 
           {filteredStock.length === 0 ? (
-            <div className="rounded-xl p-12 text-center" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="text-offwhite/30 text-4xl mb-4">&#128230;</div>
-              <h2 className="font-heading text-2xl text-offwhite mb-2">No Items Found</h2>
-              <p className="text-offwhite/50 text-sm">No inventory items match your current search or filter.</p>
+            <div className="rounded-xl p-12 text-center bg-secondary border border-card">
+              <div className="text-muted text-4xl mb-4">&#128230;</div>
+              <h2 className="font-heading text-2xl text-primary mb-2">No Items Found</h2>
+              <p className="text-secondary text-sm">No inventory items match your current search or filter.</p>
             </div>
           ) : (
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(197, 160, 89, 0.1)' }}>
+            <div className="rounded-xl overflow-hidden bg-secondary border border-card">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[700px]">
                   <thead>
-                    <tr className="text-offwhite/40 text-xs uppercase tracking-widest border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                    <tr className="text-muted text-xs uppercase tracking-widest border-b border-light">
                       <th className="px-6 py-4 text-left font-medium">Item</th>
                       <th className="px-6 py-4 text-left font-medium">Category</th>
                       <th className="px-6 py-4 text-center font-medium">Quantity</th>
@@ -272,15 +283,14 @@ export default function AdminInventory() {
                       return (
                         <tr
                           key={item.id}
-                          className="border-b transition-colors hover:bg-white/3"
-                          style={{ borderColor: 'rgba(255,255,255,0.04)' }}
+                          className="border-b border-light transition-colors hover:bg-gold/5"
                         >
                           <td className="px-6 py-4">
                             <div>
-                              <div className="text-offwhite font-heading text-base">{item.item_name}</div>
-                              <div className="text-offwhite/40 text-xs mt-0.5">Min: {item.reorder_threshold} {item.unit}</div>
+                              <div className="font-heading text-base text-primary">{item.item_name}</div>
+                              <div className="text-muted text-xs mt-0.5">Min: {item.reorder_threshold} {item.unit}</div>
                               {item.category === 'refreshment' && (
-                                <div className={`text-xs mt-1 ${item.quantity > 0 ? 'text-gold/70' : 'text-offwhite/40'}`}>
+                                <div className={clsx("text-xs mt-1", item.quantity > 0 ? 'text-gold/70' : 'text-muted')}>
                                   {item.quantity > 0 ? 'Offered to customers' : 'Hidden from customer menus'}
                                 </div>
                               )}
@@ -288,11 +298,9 @@ export default function AdminInventory() {
                           </td>
                           <td className="px-6 py-4">
                             <span
-                              className="px-3 py-1 text-xs rounded-full border"
+                              className="px-3 py-1 text-xs rounded-full border text-gold border-card"
                               style={{
                                 backgroundColor: item.category === 'refreshment' ? 'rgba(197, 160, 89, 0.1)' : 'rgba(197, 160, 89, 0.06)',
-                                borderColor: 'rgba(197, 160, 89, 0.3)',
-                                color: '#c5a059',
                               }}
                             >
                               {item.category === 'refreshment' ? 'Refreshment' : 'Material'}
@@ -305,8 +313,8 @@ export default function AdminInventory() {
                               defaultValue={item.quantity}
                               key={`qty-${item.id}-${item.quantity}`}
                               onBlur={(e) => saveQuantity(item.id, parseInt(e.target.value) || 0)}
-                              className="w-20 text-center p-2 rounded-lg text-offwhite font-heading text-lg border focus:border-gold focus:outline-none"
-                              style={{ backgroundColor: '#111', borderColor: savingId === item.id ? '#c5a059' : 'rgba(255,255,255,0.1)' }}
+                              className="w-20 text-center p-2 rounded-lg font-heading text-lg border border-light focus:border-gold focus:outline-none text-primary bg-secondary"
+                              style={{ borderColor: savingId === item.id ? '#c5a059' : 'var(--border-light)' }}
                             />
                             {isSaving && <div className="text-gold text-[10px] mt-0.5 animate-pulse">saving...</div>}
                             {fb === 'ok' && !isSaving && <div className="text-green-400 text-[10px] mt-0.5">saved</div>}
@@ -317,10 +325,10 @@ export default function AdminInventory() {
                               <button
                                 onClick={() => adjustStock(item.id, -1)}
                                 disabled={item.quantity === 0 || isAdjusting}
-                                className="w-9 h-9 rounded-lg border flex items-center justify-center transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:border-red-400/50 hover:text-red-400"
+                                className="w-9 h-9 rounded-lg border border-light flex items-center justify-center transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:border-red-400/50 hover:text-red-400"
                                 style={{
-                                  borderColor: fb === 'minus' ? '#4ade80' : 'rgba(255,255,255,0.1)',
-                                  color: fb === 'minus' ? '#4ade80' : '#e2e8f0',
+                                  borderColor: fb === 'minus' ? '#4ade80' : 'var(--border-light)',
+                                  color: fb === 'minus' ? '#4ade80' : 'var(--text-primary)',
                                 }}
                               >
                                 {isAdjusting ? (
@@ -329,14 +337,14 @@ export default function AdminInventory() {
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
                                 )}
                               </button>
-                              <span className="text-offwhite font-heading text-sm w-6 text-center">{item.quantity}</span>
+                              <span className="font-heading text-sm w-6 text-center text-primary">{item.quantity}</span>
                               <button
                                 onClick={() => adjustStock(item.id, 1)}
                                 disabled={isAdjusting}
-                                className="w-9 h-9 rounded-lg border flex items-center justify-center transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:border-green-400/50 hover:text-green-400"
+                                className="w-9 h-9 rounded-lg border border-light flex items-center justify-center transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:border-green-400/50 hover:text-green-400"
                                 style={{
-                                  borderColor: fb === 'plus' ? '#4ade80' : 'rgba(255,255,255,0.1)',
-                                  color: fb === 'plus' ? '#4ade80' : '#e2e8f0',
+                                  borderColor: fb === 'plus' ? '#4ade80' : 'var(--border-light)',
+                                  color: fb === 'plus' ? '#4ade80' : 'var(--text-primary)',
                                 }}
                               >
                                 {isAdjusting ? (
@@ -367,50 +375,84 @@ export default function AdminInventory() {
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
-          <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197, 160, 89, 0.4)' }}>
-            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
-              <h2 className="font-heading text-2xl text-gold">Add New Item</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors">&times;</button>
+        <AppModal
+          open
+          onClose={() => setShowAddModal(false)}
+          title="Add New Item"
+          maxWidth="max-w-md"
+          zIndex="z-[100]"
+          footer={
+            <>
+              <button type="button" onClick={() => setShowAddModal(false)} className={modalBtnSecondary}>
+                Cancel
+              </button>
+              <button type="submit" form="add-inventory-form" disabled={addLoading} className={modalBtnPrimary}>
+                {addLoading ? 'Adding...' : 'Add Item'}
+              </button>
+            </>
+          }
+        >
+          <form id="add-inventory-form" onSubmit={handleAddItem} className="space-y-4">
+            <div>
+              <label className={modalLabelClass}>Item Name *</label>
+              <input
+                type="text"
+                value={addForm.item_name}
+                onChange={(e) => setAddForm({ ...addForm, item_name: e.target.value })}
+                placeholder="e.g. OPI Nail Polish"
+                className={modalInputClass}
+              />
             </div>
-            <form onSubmit={handleAddItem} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-                <div>
-                    <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Item Name *</label>
-                    <input type="text" value={addForm.item_name} onChange={(e) => setAddForm({ ...addForm, item_name: e.target.value })} placeholder="e.g. OPI Nail Polish" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/20 rounded-lg focus:border-gold focus:outline-none" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Category</label>
-                        <select value={addForm.category} onChange={(e) => setAddForm({ ...addForm, category: e.target.value })} className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none appearance-none cursor-pointer" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23c5a059' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}>
-                            <option value="material" style={{ backgroundColor: '#111', color: '#c5a059' }}>Material</option>
-                            <option value="refreshment" style={{ backgroundColor: '#111', color: '#c5a059' }}>Refreshment</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Unit *</label>
-                        <input type="text" value={addForm.unit} onChange={(e) => setAddForm({ ...addForm, unit: e.target.value })} placeholder="e.g. bottle" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/20 rounded-lg focus:border-gold focus:outline-none" />
-                    </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Initial Quantity *</label>
-                        <input type="number" min={0} value={addForm.quantity} onChange={(e) => setAddForm({ ...addForm, quantity: e.target.value })} placeholder="0" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none" />
-                    </div>
-                    <div>
-                        <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Low Stock Alert</label>
-                        <input type="number" min={0} value={addForm.reorder_threshold} onChange={(e) => setAddForm({ ...addForm, reorder_threshold: e.target.value })} placeholder="5" className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none" />
-                    </div>
-                </div>
-                {addError && <p className="text-red-400 text-sm">{addError}</p>}
-                <div className="flex gap-3 pt-2">
-                    <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 transition-colors">Cancel</button>
-                    <button type="submit" disabled={addLoading} className="flex-1 py-3 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors font-medium disabled:opacity-50">
-                        {addLoading ? 'Adding...' : 'Add Item'}
-                    </button>
-                </div>
-            </form>
-          </div>
-        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={modalLabelClass}>Category</label>
+                <select
+                  value={addForm.category}
+                  onChange={(e) => setAddForm({ ...addForm, category: e.target.value })}
+                  className={modalSelectClass}
+                >
+                  <option value="material">Material</option>
+                  <option value="refreshment">Refreshment</option>
+                </select>
+              </div>
+              <div>
+                <label className={modalLabelClass}>Unit *</label>
+                <input
+                  type="text"
+                  value={addForm.unit}
+                  onChange={(e) => setAddForm({ ...addForm, unit: e.target.value })}
+                  placeholder="e.g. bottle"
+                  className={modalInputClass}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={modalLabelClass}>Initial Quantity *</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={addForm.quantity}
+                  onChange={(e) => setAddForm({ ...addForm, quantity: e.target.value })}
+                  placeholder="0"
+                  className={modalInputClass}
+                />
+              </div>
+              <div>
+                <label className={modalLabelClass}>Low Stock Alert</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={addForm.reorder_threshold}
+                  onChange={(e) => setAddForm({ ...addForm, reorder_threshold: e.target.value })}
+                  placeholder="5"
+                  className={modalInputClass}
+                />
+              </div>
+            </div>
+            {addError && <p className="text-red-500 text-sm">{addError}</p>}
+          </form>
+        </AppModal>
       )}
     </div>
   );

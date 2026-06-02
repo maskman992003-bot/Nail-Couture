@@ -34,13 +34,13 @@ function Lightbox({ item, onClose }) {
   if (!item) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
       <button onClick={onClose} className="absolute top-6 right-6 w-12 h-12 flex items-center justify-center text-offwhite/60 hover:text-offwhite transition-colors z-10">
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-      <div className="w-full max-w-6xl h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-6xl flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-h-[90vh]">
         <div className="flex items-center justify-center bg-charcoal/50 p-4">

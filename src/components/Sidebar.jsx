@@ -1,9 +1,11 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
 import { featureFlags } from '../constants/featureFlags';
 import { getSettingsPath } from '../utils/routes';
+import { modalBtnPrimary, modalBtnSecondary } from './AppModal';
 
 const navItemsByRole = {
   super_admin: [
@@ -86,6 +88,7 @@ function isActive(pathname, search, href) {
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
@@ -196,8 +199,8 @@ export default function Sidebar() {
     navigate('/login');
   };
 
-  const sidebarBg = '#0a0a0a';
-  const borderColor = 'rgba(197, 160, 89, 0.1)';
+  const sidebarBg = theme === 'dark' ? '#0a0a0a' : '#fdf8f0';
+  const borderColor = theme === 'dark' ? 'rgba(197, 160, 89, 0.1)' : 'rgba(197, 160, 89, 0.2)';
 
   return (
     <>
@@ -223,7 +226,7 @@ export default function Sidebar() {
                   className={`relative flex items-center gap-3 px-0 lg:px-3 py-3 transition-all md:justify-center lg:justify-start ${
                     active
                       ? 'text-gold bg-gold/10 md:mx-1 lg:mx-0 rounded-xl lg:rounded-xl'
-                      : 'text-offwhite/40 hover:text-offwhite/80 hover:bg-offwhite/5 md:mx-1 lg:mx-0 rounded-xl lg:rounded-xl'
+                      : `${theme === 'dark' ? 'text-offwhite/50 hover:text-offwhite/90 hover:bg-offwhite/5' : 'text-charcoal/70 hover:text-charcoal hover:bg-charcoal/5'} md:mx-1 lg:mx-0 rounded-xl lg:rounded-xl`
                   }`}
                 >
                   <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
@@ -247,18 +250,18 @@ export default function Sidebar() {
                 <span className="text-gold text-xs lg:text-sm font-heading">{initials || '?'}</span>
               </div>
               <div className="text-left min-w-0 hidden lg:block">
-                <div className="text-offwhite/80 text-sm font-medium truncate">{displayName}</div>
+                <div className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>{displayName}</div>
               </div>
             </button>
 
             {showUserMenu && (
               <div
-                className="absolute bottom-16 left-4 md:left-full md:right-auto lg:left-4 md:ml-2 z-50 w-48 rounded-xl bg-[#121214] border border-zinc-800/80 shadow-2xl origin-bottom-left transition-all"
+                className={`absolute bottom-16 left-4 md:left-full md:right-auto lg:left-4 md:ml-2 z-50 w-48 rounded-xl border shadow-2xl origin-bottom-left transition-all ${theme === 'dark' ? 'bg-[#121214] border-zinc-800/80' : 'bg-white border-gold/20'}`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={() => { navigate(settingsPath); setShowUserMenu(false); }}
-                  className="w-full px-4 py-3 text-left text-offwhite/80 hover:text-gold hover:bg-gold/10 transition-colors text-sm flex items-center gap-2 border-b"
+                  className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-sm flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/90' : 'text-charcoal'}`}
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -268,8 +271,28 @@ export default function Sidebar() {
                   Settings
                 </button>
                 <button
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    toggleTheme(); 
+                    setShowUserMenu(false); 
+                  }}
+                  className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/90' : 'text-charcoal'}`}
+                  style={{ borderColor: 'rgba(197,160,89,0.15)' }}
+                >
+                  {theme === 'dark' ? (
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  )}
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </button>
+                <button
                   onClick={() => { setNotifPanelOpen(true); setShowUserMenu(false); }}
-                  className="w-full px-4 py-3 text-left text-offwhite/80 hover:text-gold hover:bg-gold/10 transition-colors text-sm flex items-center gap-2 border-b"
+                  className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-sm flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/90' : 'text-charcoal'}`}
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -306,7 +329,7 @@ export default function Sidebar() {
               <Link
                 key={item.id}
                 to={item.href}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all flex-1 max-w-[72px] ${active ? 'text-gold' : 'text-offwhite/40'}`}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all flex-1 max-w-[72px] ${active ? 'text-gold' : theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}
               >
                 <div className="w-5 h-5">{renderIcon(item.icon)}</div>
                 <span className="text-[8px] font-medium tracking-wide text-center">{item.label}</span>
@@ -316,23 +339,23 @@ export default function Sidebar() {
           <div className="relative flex flex-col items-center flex-1 max-w-[60px] user-menu">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex flex-col items-center gap-0.5 px-2 py-1.5 text-offwhite/40 hover:text-gold hover:bg-offwhite/5 transition-colors rounded-lg mx-1 w-full"
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 transition-colors rounded-lg mx-1 w-full ${theme === 'dark' ? 'text-offwhite/55 hover:text-gold hover:bg-offwhite/5' : 'text-charcoal/75 hover:text-gold hover:bg-charcoal/5'}`}
             >
               <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center">
                 <span className="text-[10px] text-gold font-heading">{initials || '?'}</span>
               </div>
-              <span className="text-[8px] font-medium truncate max-w-[50px]">{displayName}</span>
+              <span className={`text-[8px] font-medium truncate max-w-[50px] ${theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}>{displayName}</span>
             </button>
 
             {showUserMenu && (
               <div
-                className="absolute bottom-full right-0 mb-2 w-44 rounded-xl border overflow-hidden shadow-2xl z-50"
-                style={{ backgroundColor: '#141414', borderColor: 'rgba(197,160,89,0.4)' }}
+                className={`absolute bottom-full right-0 mb-2 w-44 rounded-xl border overflow-hidden shadow-2xl z-50 ${theme === 'dark' ? 'bg-[#141414]' : 'bg-white'}`}
+                style={{ borderColor: theme === 'dark' ? 'rgba(197,160,89,0.4)' : 'rgba(197,160,89,0.3)' }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={() => { navigate(settingsPath); setShowUserMenu(false); }}
-                  className="w-full px-4 py-3 text-left text-offwhite/80 hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b"
+                  className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/90' : 'text-charcoal'}`}
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -342,8 +365,29 @@ export default function Sidebar() {
                   Settings
                 </button>
                 <button
+                  onClick={(e) => { 
+                    console.log('Sidebar theme toggle clicked!');
+                    e.stopPropagation(); 
+                    toggleTheme(); 
+                    setShowUserMenu(false); 
+                  }}
+                  className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}
+                  style={{ borderColor: 'rgba(197,160,89,0.15)' }}
+                >
+                  {theme === 'dark' ? (
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  )}
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </button>
+                <button
                   onClick={() => { setNotifPanelOpen(true); setShowUserMenu(false); }}
-                  className="w-full px-4 py-3 text-left text-offwhite/80 hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b"
+                  className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/90' : 'text-charcoal'}`}
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,14 +424,20 @@ export default function Sidebar() {
         <div className="fixed inset-0 z-[200]" onClick={() => setNotifPanelOpen(false)}>
           <div className="absolute inset-0 bg-black/60" />
           <div
-            className="absolute right-0 top-0 h-full w-full max-w-sm overflow-y-auto shadow-2xl"
-            style={{ backgroundColor: '#111', borderLeft: '1px solid rgba(197,160,89,0.2)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b" style={{ borderColor: 'rgba(197,160,89,0.15)', backgroundColor: '#111' }}>
+              className="absolute right-0 top-0 h-full w-full max-w-sm overflow-y-auto shadow-2xl"
+              style={{ 
+                backgroundColor: theme === 'dark' ? '#111' : '#fff', 
+                borderLeft: `1px solid ${theme === 'dark' ? 'rgba(197,160,89,0.2)' : 'rgba(197,160,89,0.3)'}` 
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b" style={{ 
+                borderColor: theme === 'dark' ? 'rgba(197,160,89,0.15)' : 'rgba(197,160,89,0.2)', 
+                backgroundColor: theme === 'dark' ? '#111' : '#fff' 
+              }}>
               <div>
                 <h2 className="font-heading text-2xl text-gold">Notifications</h2>
-                {unreadCount > 0 && <p className="text-offwhite/40 text-xs mt-1">{unreadCount} unread</p>}
+                {unreadCount > 0 && <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>{unreadCount} unread</p>}
               </div>
               <div className="flex items-center gap-3">
                 {unreadCount > 0 && (
@@ -400,7 +450,7 @@ export default function Sidebar() {
                 )}
                 <button
                   onClick={() => setNotifPanelOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-offwhite/40 hover:text-offwhite hover:bg-white/5 transition-colors text-xl"
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors text-xl ${theme === 'dark' ? 'text-offwhite/40 hover:text-offwhite' : 'text-charcoal/40 hover:text-charcoal'}`}
                 >
                   &times;
                 </button>
@@ -410,12 +460,12 @@ export default function Sidebar() {
             <div className="p-4 space-y-3">
               {notifications.length === 0 ? (
                 <div className="text-center py-12">
-                  <svg className="w-10 h-10 mx-auto text-offwhite/20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-10 h-10 mx-auto mb-3 ${theme === 'dark' ? 'text-offwhite/20' : 'text-charcoal/20'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                       d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                     />
                   </svg>
-                  <p className="text-offwhite/40 text-sm">No notifications yet</p>
+                  <p className={`text-sm ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No notifications yet</p>
                 </div>
               ) : notifications.map((notif) => (
                 <div
@@ -423,8 +473,12 @@ export default function Sidebar() {
                   onClick={() => { if (!notif.is_read) markOneRead(notif.id); }}
                   className="rounded-xl p-4 border transition-all cursor-pointer"
                   style={{
-                    backgroundColor: notif.is_read ? 'rgba(255,255,255,0.02)' : 'rgba(197,160,89,0.06)',
-                    borderColor: notif.is_read ? 'rgba(255,255,255,0.06)' : 'rgba(197,160,89,0.3)',
+                    backgroundColor: theme === 'dark' 
+                      ? (notif.is_read ? 'rgba(255,255,255,0.02)' : 'rgba(197,160,89,0.06)') 
+                      : (notif.is_read ? 'rgba(197,160,89,0.03)' : 'rgba(197,160,89,0.1)'),
+                    borderColor: theme === 'dark' 
+                      ? (notif.is_read ? 'rgba(255,255,255,0.06)' : 'rgba(197,160,89,0.3)') 
+                      : (notif.is_read ? 'rgba(197,160,89,0.15)' : 'rgba(197,160,89,0.4)'),
                   }}
                 >
                   <div className="flex items-start gap-3">
@@ -432,9 +486,9 @@ export default function Sidebar() {
                       <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0 bg-gold" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="text-offwhite font-heading text-sm mb-1">{notif.title}</div>
-                      <div className="text-offwhite/60 text-xs mb-2">{notif.body || notif.message}</div>
-                      <div className="text-offwhite/30 text-[10px]">
+                      <div className={`font-heading text-sm mb-1 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{notif.title}</div>
+                      <div className={`text-xs mb-2 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>{notif.body || notif.message}</div>
+                      <div className={`text-[10px] ${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}`}>
                         {new Date(notif.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at{' '}
                         {new Date(notif.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                       </div>
@@ -448,27 +502,29 @@ export default function Sidebar() {
       ) : null}
 
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#141414] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/20 shadow-2xl" style={{ borderColor: 'rgba(197,160,89,0.3)' }}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className={`w-full max-w-sm flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border shadow-2xl ${theme === 'dark' ? 'bg-[#141414] border-gold/20' : 'bg-white border-gold/30'}`} style={{ borderColor: theme === 'dark' ? 'rgba(197,160,89,0.3)' : 'rgba(197,160,89,0.4)' }}>
             <div className="text-center mb-6 p-6">
-              <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </div>
-              <h3 className="font-heading text-xl text-offwhite mb-2">Log Out?</h3>
-              <p className="text-offwhite/50 text-sm">Are you sure you want to log out of your account?</p>
+              <h3 className={`font-heading text-xl mb-2 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Log Out?</h3>
+              <p className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Are you sure you want to log out of your account?</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 px-6 pb-6">
               <button
+                type="button"
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-xl hover:bg-offwhite/20 transition-colors text-sm"
+                className={modalBtnSecondary}
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => { setShowLogoutConfirm(false); handleLogout(); }}
-                className="flex-1 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors text-sm font-medium"
+                className={modalBtnPrimary}
               >
                 Log Out
               </button>

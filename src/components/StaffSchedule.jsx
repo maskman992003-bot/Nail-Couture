@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
 import {
   SHIFT_TYPES,
@@ -61,34 +62,34 @@ function CustomShiftTimeModal({ open, title, startTime, endTime, onSave, onClose
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl border border-gold/30 overflow-hidden mx-0 sm:mx-4"
+        className="w-full max-w-sm bg-card rounded-t-2xl sm:rounded-xl border border-gold/30 overflow-hidden mx-0 sm:mx-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-light">
           <h3 className="font-heading text-gold">{title || 'Custom shift times'}</h3>
-          <button type="button" onClick={onClose} className="text-offwhite/50 hover:text-offwhite text-xl leading-none">&times;</button>
+          <button type="button" onClick={onClose} className="text-secondary hover:text-primary text-xl leading-none">&times;</button>
         </div>
         <div className="p-5 space-y-4">
           <label className="block">
-            <span className="text-[10px] uppercase tracking-wider text-offwhite/40">From</span>
+            <span className="text-[10px] uppercase tracking-wider text-secondary">From</span>
             <input
               type="time"
               value={start}
               onChange={(e) => setStart(e.target.value)}
-              className="w-full mt-1.5 text-sm bg-[#141414] border border-gold/30 rounded-lg px-3 py-2.5 text-gold focus:border-gold focus:outline-none"
+              className="w-full mt-1.5 text-sm bg-input border border-gold/30 rounded-lg px-3 py-2.5 text-gold focus:border-gold focus:outline-none"
             />
           </label>
           <label className="block">
-            <span className="text-[10px] uppercase tracking-wider text-offwhite/40">To</span>
+            <span className="text-[10px] uppercase tracking-wider text-secondary">To</span>
             <input
               type="time"
               value={end}
               onChange={(e) => setEnd(e.target.value)}
-              className="w-full mt-1.5 text-sm bg-[#141414] border border-gold/30 rounded-lg px-3 py-2.5 text-gold focus:border-gold focus:outline-none"
+              className="w-full mt-1.5 text-sm bg-input border border-gold/30 rounded-lg px-3 py-2.5 text-gold focus:border-gold focus:outline-none"
             />
           </label>
         </div>
@@ -96,7 +97,7 @@ function CustomShiftTimeModal({ open, title, startTime, endTime, onSave, onClose
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-white/10 text-offwhite/60 hover:text-offwhite text-sm transition-colors"
+            className="flex-1 py-2.5 rounded-lg border border-light text-secondary hover:text-primary text-sm transition-colors"
           >
             Cancel
           </button>
@@ -145,14 +146,14 @@ function PatternDayCell({ dayIdx, value, onChange }) {
 
   return (
     <div className="flex flex-col items-stretch gap-2 min-w-0">
-      <span className="text-[10px] font-bold uppercase tracking-widest text-offwhite/40 text-center">{DAY_LABELS[dayIdx]}</span>
+      <span className="text-[10px] font-bold uppercase tracking-widest text-secondary text-center">{DAY_LABELS[dayIdx]}</span>
       <button
         type="button"
         onClick={() => onChange(active ? null : createSlot('morning'))}
         className={`w-full rounded-xl border px-1.5 py-2 sm:px-2 sm:py-3 transition-all ${
           active
             ? SHIFT_COLORS[colorKey] || SHIFT_COLORS.custom
-            : 'border-white/10 bg-offwhite/[0.02] text-offwhite/30 hover:border-white/20 hover:text-offwhite/50'
+            : 'border-light bg-secondary text-muted hover:border-white/20 hover:text-secondary'
         }`}
       >
         <div className="text-xs font-semibold">{active ? typeCfg?.short : 'Off'}</div>
@@ -173,7 +174,7 @@ function PatternDayCell({ dayIdx, value, onChange }) {
           <select
             value={shiftType || ''}
             onChange={(e) => handleTypeChange(e.target.value || null)}
-            className="w-full text-[10px] bg-[#141414] border border-white/10 rounded-lg px-1.5 py-1 text-offwhite focus:border-gold focus:outline-none"
+            className="w-full text-[10px] bg-input border border-light rounded-lg px-1.5 py-1 text-primary focus:border-gold focus:outline-none"
           >
             {SHIFT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
@@ -212,19 +213,19 @@ function DayDetailBody({
 
   return (
     <>
-      <div className="p-4 border-b border-white/5 flex items-start justify-between gap-2 shrink-0">
+      <div className="p-4 border-b border-light flex items-start justify-between gap-2 shrink-0">
         <div className="min-w-0">
           <h3 className="font-heading text-gold truncate">{DAY_LABELS_FULL[new Date(selectedDay + 'T12:00:00').getDay()]}</h3>
-          <p className="text-xs text-offwhite/40">
+          <p className="text-xs text-secondary">
             {new Date(selectedDay + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <button type="button" onClick={onClose} className="text-offwhite/40 hover:text-offwhite text-xl leading-none shrink-0">&times;</button>
+        <button type="button" onClick={onClose} className="text-secondary hover:text-primary text-xl leading-none shrink-0">&times;</button>
       </div>
 
       <div className="p-4 space-y-3 overflow-y-auto flex-1 min-h-0">
         {dayShifts.length === 0 ? (
-          <p className="text-sm text-offwhite/40 text-center py-4">No shifts scheduled</p>
+          <p className="text-sm text-secondary text-center py-4">No shifts scheduled</p>
         ) : (
           dayShifts.map((s) => (
             <div key={s.id} className={`rounded-xl border p-3 ${SHIFT_COLORS[s.shift_type] || SHIFT_COLORS.custom}`}>
@@ -237,15 +238,15 @@ function DayDetailBody({
           ))
         )}
 
-        <div className="pt-2 border-t border-white/5">
-          <p className="text-[10px] uppercase tracking-widest text-offwhite/40 mb-2">Quick add</p>
+        <div className="pt-2 border-t border-light">
+          <p className="text-[10px] uppercase tracking-widest text-secondary mb-2">Quick add</p>
           <div className="grid grid-cols-2 min-[480px]:grid-cols-3 gap-1.5 mb-3">
             {SHIFT_TYPES.filter((t) => t.value !== 'custom').map((t) => (
               <button
                 key={t.value}
                 type="button"
                 onClick={() => onAddShift(selectedDay, t.value)}
-                className="px-2 py-2.5 rounded-lg text-[10px] sm:text-xs font-medium border border-white/10 text-offwhite/60 hover:border-gold/30 hover:text-gold transition-all"
+                className="px-2 py-2.5 rounded-lg text-[10px] sm:text-xs font-medium border border-light text-secondary hover:border-gold/30 hover:text-gold transition-all"
               >
                 {t.label}
               </button>
@@ -261,13 +262,13 @@ function DayDetailBody({
         </div>
 
         {dayDetailAppts.length > 0 && (
-          <div className="pt-3 border-t border-white/5">
-            <p className="text-[10px] uppercase tracking-widest text-offwhite/40 mb-2">{dayDetailAppts.length} appointment{dayDetailAppts.length !== 1 ? 's' : ''}</p>
+          <div className="pt-3 border-t border-light">
+            <p className="text-[10px] uppercase tracking-widest text-secondary mb-2">{dayDetailAppts.length} appointment{dayDetailAppts.length !== 1 ? 's' : ''}</p>
             <div className="space-y-2">
               {dayDetailAppts.map((a) => (
-                <div key={a.appointment_id} className="rounded-lg bg-white/[0.03] border border-white/5 p-2.5">
-                  <div className="text-sm text-offwhite font-medium truncate">{a.customer_name}</div>
-                  <div className="text-[10px] text-offwhite/40 truncate">{a.service_name}</div>
+                <div key={a.appointment_id} className="rounded-lg bg-white/[0.03] border border-light p-2.5">
+                  <div className="text-sm text-primary font-medium truncate">{a.customer_name}</div>
+                  <div className="text-[10px] text-secondary truncate">{a.service_name}</div>
                   <div className="text-[10px] text-gold mt-1">
                     {new Date(a.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                   </div>
@@ -287,7 +288,7 @@ function StaffMemberButton({ member, isActive, count, onSelect }) {
       type="button"
       onClick={() => onSelect(member.id)}
       className={`flex items-center gap-3 text-left transition-all shrink-0 ${
-        isActive ? 'bg-gold/10 border-gold/30 text-gold' : 'bg-offwhite/[0.02] border-white/10 text-offwhite hover:border-white/20'
+        isActive ? 'bg-gold/10 border-gold/30 text-gold' : 'bg-secondary border-light text-primary hover:border-white/20'
       } border rounded-xl px-3 py-2.5 lg:w-full lg:rounded-none lg:border-0 lg:border-l-2 lg:px-4 lg:py-3 ${
         isActive ? 'lg:border-l-gold' : 'lg:border-l-transparent lg:hover:bg-white/[0.03]'
       }`}
@@ -298,16 +299,17 @@ function StaffMemberButton({ member, isActive, count, onSelect }) {
         {getInitials(member.full_name)}
       </div>
       <div className="min-w-0 flex-1 lg:block">
-        <div className={`text-sm font-medium truncate ${isActive ? 'text-gold' : 'text-offwhite'}`}>{member.full_name}</div>
-        <div className="text-[10px] text-offwhite/40 uppercase tracking-wide">{ROLE_LABELS[member.role] || member.role}</div>
+        <div className={`text-sm font-medium truncate ${isActive ? 'text-gold' : 'text-primary'}`}>{member.full_name}</div>
+        <div className="text-[10px] text-secondary uppercase tracking-wide">{ROLE_LABELS[member.role] || member.role}</div>
       </div>
-      <span className="text-[10px] text-offwhite/30 tabular-nums">{count}</span>
+      <span className="text-[10px] text-muted tabular-nums">{count}</span>
     </button>
   );
 }
 
 export default function StaffSchedule() {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const { role, id } = useParams();
   const location = useLocation();
@@ -583,7 +585,7 @@ export default function StaffSchedule() {
 
   if (loading && staff.length === 0) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
         <div className="flex items-center justify-center py-24">
           <div className="text-gold animate-pulse tracking-widest text-sm">LOADING SCHEDULE...</div>
@@ -593,29 +595,29 @@ export default function StaffSchedule() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0B0C] text-white pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <style>{`.staff-schedule select, .staff-schedule option { background: #141414; color: #fff; } .staff-schedule input[type="time"] { color-scheme: dark; }`}</style>
+      <style>{`.staff-schedule select, .staff-schedule option { background: var(--input-bg); color: var(--text-primary); } .staff-schedule input[type="time"] { color-scheme: ${theme}; }`}</style>
 
       <div className="staff-schedule p-3 sm:p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto w-full min-w-0 overflow-x-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-gold/10 pb-4 sm:pb-6 mb-4 sm:mb-6">
           <div className="min-w-0">
             <h1 className="font-heading text-2xl sm:text-3xl text-gold tracking-wide">Staff Schedule</h1>
-            <p className="text-xs text-offwhite/40 mt-1">
+            <p className="text-xs text-secondary mt-1">
               Build a weekly pattern once, then apply it to the whole month
             </p>
           </div>
-          <div className="flex items-center gap-2 bg-offwhite/5 rounded-xl p-1 border border-white/10 w-full sm:w-auto">
+          <div className="flex items-center gap-2 bg-secondary rounded-xl p-1 border border-light w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('schedule')}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'schedule' ? 'bg-gold text-charcoal shadow-lg shadow-gold/20' : 'text-offwhite/50 hover:text-offwhite'}`}
+              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'schedule' ? 'bg-gold text-charcoal shadow-lg shadow-gold/20' : 'text-secondary hover:text-primary'}`}
             >
               Planner
             </button>
             <button
               onClick={() => setActiveTab('timeoff')}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all relative ${activeTab === 'timeoff' ? 'bg-gold text-charcoal shadow-lg shadow-gold/20' : 'text-offwhite/50 hover:text-offwhite'}`}
+              className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all relative ${activeTab === 'timeoff' ? 'bg-gold text-charcoal shadow-lg shadow-gold/20' : 'text-secondary hover:text-primary'}`}
             >
               Time-Off
               {pendingTimeOff.length > 0 && (
@@ -638,7 +640,7 @@ export default function StaffSchedule() {
                     type="button"
                     onClick={() => setRoleFilter(r)}
                     className={`px-2.5 py-1 rounded-lg text-[10px] font-medium uppercase tracking-wide transition-all ${
-                      roleFilter === r ? 'bg-gold/15 text-gold border border-gold/30' : 'text-offwhite/40 hover:text-offwhite border border-transparent'
+                      roleFilter === r ? 'bg-gold/15 text-gold border border-gold/30' : 'text-secondary hover:text-primary border border-transparent'
                     }`}
                   >
                     {r === 'all' ? 'All' : ROLE_LABELS[r]}
@@ -660,7 +662,7 @@ export default function StaffSchedule() {
                     );
                   })}
                   {filteredStaff.length === 0 && (
-                    <p className="text-sm text-offwhite/40 py-2">No team members</p>
+                    <p className="text-sm text-secondary py-2">No team members</p>
                   )}
                 </div>
               </div>
@@ -668,18 +670,18 @@ export default function StaffSchedule() {
 
             {/* Desktop team sidebar */}
             <aside className="hidden lg:block lg:w-56 xl:w-64 shrink-0">
-              <div className="rounded-2xl border border-white/5 bg-offwhite/[0.02] overflow-hidden">
-                <div className="p-4 border-b border-white/5">
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-offwhite/40">Team</h2>
+              <div className="rounded-2xl border border-light bg-secondary overflow-hidden">
+                <div className="p-4 border-b border-light">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-secondary">Team</h2>
                 </div>
-                <div className="flex flex-wrap gap-1.5 p-3 border-b border-white/5">
+                <div className="flex flex-wrap gap-1.5 p-3 border-b border-light">
                   {['all', 'technician', 'cashier', 'admin'].map((r) => (
                     <button
                       key={r}
                       type="button"
                       onClick={() => setRoleFilter(r)}
                       className={`px-2.5 py-1 rounded-lg text-[10px] font-medium uppercase tracking-wide transition-all ${
-                        roleFilter === r ? 'bg-gold/15 text-gold border border-gold/30' : 'text-offwhite/40 hover:text-offwhite border border-transparent'
+                        roleFilter === r ? 'bg-gold/15 text-gold border border-gold/30' : 'text-secondary hover:text-primary border border-transparent'
                       }`}
                     >
                       {r === 'all' ? 'All' : ROLE_LABELS[r]}
@@ -700,7 +702,7 @@ export default function StaffSchedule() {
                     );
                   })}
                   {filteredStaff.length === 0 && (
-                    <p className="p-4 text-sm text-offwhite/40 text-center">No team members</p>
+                    <p className="p-4 text-sm text-secondary text-center">No team members</p>
                   )}
                 </div>
               </div>
@@ -710,8 +712,8 @@ export default function StaffSchedule() {
             {/* Main planner */}
             <div className="flex-1 min-w-0 space-y-4 sm:space-y-5">
               {!selectedMember ? (
-                <div className="rounded-2xl border border-dashed border-white/10 p-8 sm:p-16 text-center">
-                  <p className="text-offwhite/50 text-sm">Select a team member to build their schedule</p>
+                <div className="rounded-2xl border border-dashed border-light p-8 sm:p-16 text-center">
+                  <p className="text-secondary text-sm">Select a team member to build their schedule</p>
                 </div>
               ) : (
                 <>
@@ -722,14 +724,14 @@ export default function StaffSchedule() {
                         {getInitials(selectedMember.full_name)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-heading text-base sm:text-lg text-offwhite truncate">{selectedMember.full_name}</div>
-                        <div className="text-xs text-offwhite/40">{ROLE_LABELS[selectedMember.role]} · {monthShiftCount} shifts this month</div>
+                        <div className="font-heading text-base sm:text-lg text-primary truncate">{selectedMember.full_name}</div>
+                        <div className="text-xs text-secondary">{ROLE_LABELS[selectedMember.role]} · {monthShiftCount} shifts this month</div>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => savePattern(patternFromRole(selectedMember.role))}
-                      className="w-full sm:w-auto text-xs px-3 py-2 rounded-lg border border-white/10 text-offwhite/60 hover:text-gold hover:border-gold/30 transition-colors"
+                      className="w-full sm:w-auto text-xs px-3 py-2 rounded-lg border border-light text-secondary hover:text-gold hover:border-gold/30 transition-colors"
                     >
                       Load {ROLE_LABELS[selectedMember.role]} default
                     </button>
@@ -742,7 +744,7 @@ export default function StaffSchedule() {
                         key={preset.id}
                         type="button"
                         onClick={() => savePattern([...preset.pattern])}
-                        className="px-3 py-1.5 rounded-full text-xs border border-white/10 text-offwhite/50 hover:border-gold/30 hover:text-gold transition-all"
+                        className="px-3 py-1.5 rounded-full text-xs border border-light text-secondary hover:border-gold/30 hover:text-gold transition-all"
                       >
                         {preset.label}
                       </button>
@@ -750,13 +752,13 @@ export default function StaffSchedule() {
                   </div>
 
                   {/* Weekly pattern */}
-                  <div className="rounded-2xl border border-white/5 bg-offwhite/[0.02] p-4 sm:p-5">
+                  <div className="rounded-2xl border border-light bg-secondary p-4 sm:p-5">
                     <div className="flex items-center justify-between mb-4 gap-2">
-                      <h3 className="text-sm font-medium text-offwhite">Weekly pattern</h3>
+                      <h3 className="text-sm font-medium text-primary">Weekly pattern</h3>
                       <button
                         type="button"
                         onClick={() => savePattern(emptyWeekPattern())}
-                        className="text-xs text-offwhite/40 hover:text-red-400 transition-colors shrink-0"
+                        className="text-xs text-secondary hover:text-red-400 transition-colors shrink-0"
                       >
                         Clear all
                       </button>
@@ -778,14 +780,14 @@ export default function StaffSchedule() {
                   </div>
 
                   {/* Apply controls */}
-                  <div className="rounded-2xl border border-white/5 bg-offwhite/[0.02] p-4 sm:p-5 space-y-4">
+                  <div className="rounded-2xl border border-light bg-secondary p-4 sm:p-5 space-y-4">
                     <div className="flex flex-col gap-3">
                       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                        <button onClick={goPrevMonth} className="p-2 rounded-lg border border-white/10 text-offwhite/50 hover:text-gold hover:border-gold/30 transition-all shrink-0" aria-label="Previous month">
+                        <button onClick={goPrevMonth} className="p-2 rounded-lg border border-light text-secondary hover:text-gold hover:border-gold/30 transition-all shrink-0" aria-label="Previous month">
                           <ChevronLeft />
                         </button>
-                        <span className="font-heading text-base sm:text-lg text-offwhite text-center min-w-[140px] sm:min-w-[160px]">{getMonthLabel(viewYear, viewMonth)}</span>
-                        <button onClick={goNextMonth} className="p-2 rounded-lg border border-white/10 text-offwhite/50 hover:text-gold hover:border-gold/30 transition-all shrink-0" aria-label="Next month">
+                        <span className="font-heading text-base sm:text-lg text-primary text-center min-w-[140px] sm:min-w-[160px]">{getMonthLabel(viewYear, viewMonth)}</span>
+                        <button onClick={goNextMonth} className="p-2 rounded-lg border border-light text-secondary hover:text-gold hover:border-gold/30 transition-all shrink-0" aria-label="Next month">
                           <ChevronRight />
                         </button>
                         {(viewYear !== now.getFullYear() || viewMonth !== now.getMonth()) && (
@@ -794,18 +796,18 @@ export default function StaffSchedule() {
                           </button>
                         )}
                       </div>
-                      <div className="text-xs text-offwhite/40 text-center sm:text-left">
+                      <div className="text-xs text-secondary text-center sm:text-left">
                         Pattern fills <span className="text-gold font-medium">{previewCount}</span> days in this month
                       </div>
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[10px] uppercase tracking-widest text-offwhite/40 block mb-1.5">Apply to</label>
+                        <label className="text-[10px] uppercase tracking-widest text-secondary block mb-1.5">Apply to</label>
                         <select
                           value={bulkTarget}
                           onChange={(e) => setBulkTarget(e.target.value)}
-                          className="w-full px-3 py-2.5 bg-[#141414] border border-white/10 rounded-xl text-sm text-offwhite focus:border-gold focus:outline-none"
+                          className="w-full px-3 py-2.5 bg-input border border-light rounded-xl text-sm text-primary focus:border-gold focus:outline-none"
                         >
                           <option value="selected">Only {selectedMember.full_name}</option>
                           <option value="role">All {ROLE_LABELS[selectedMember.role] || selectedMember.role}s</option>
@@ -813,14 +815,14 @@ export default function StaffSchedule() {
                         </select>
                       </div>
                       <div className="flex items-end">
-                        <label className="flex items-center gap-2 cursor-pointer px-3 py-2.5 rounded-xl border border-white/10 w-full">
+                        <label className="flex items-center gap-2 cursor-pointer px-3 py-2.5 rounded-xl border border-light w-full">
                           <input
                             type="checkbox"
                             checked={replaceExisting}
                             onChange={(e) => setReplaceExisting(e.target.checked)}
                             className="rounded border-white/20 bg-transparent text-gold focus:ring-gold/30"
                           />
-                          <span className="text-sm text-offwhite/70">Replace existing shifts in range</span>
+                          <span className="text-sm text-primary">Replace existing shifts in range</span>
                         </label>
                       </div>
                     </div>
@@ -850,11 +852,11 @@ export default function StaffSchedule() {
                   </div>
 
                   {/* Month calendar */}
-                  <div className="rounded-2xl border border-white/5 bg-offwhite/[0.02] p-3 sm:p-5">
-                    <h3 className="text-sm font-medium text-offwhite mb-3 sm:mb-4">Month overview</h3>
+                  <div className="rounded-2xl border border-light bg-secondary p-3 sm:p-5">
+                    <h3 className="text-sm font-medium text-primary mb-3 sm:mb-4">Month overview</h3>
                     <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
                       {DAY_LABELS.map((d) => (
-                        <div key={d} className="text-center text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-offwhite/30 py-1">{d.slice(0, 1)}</div>
+                        <div key={d} className="text-center text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted py-1">{d.slice(0, 1)}</div>
                       ))}
                     </div>
                     <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
@@ -873,11 +875,11 @@ export default function StaffSchedule() {
                             className={`min-h-[2.25rem] sm:aspect-square rounded-md sm:rounded-xl border p-0.5 sm:p-1 flex flex-col items-center justify-center sm:justify-start transition-all ${
                               today ? 'border-gold/40 bg-gold/[0.06]' :
                               selectedDay === dateStr ? 'border-gold ring-1 ring-gold/30 bg-gold/[0.04]' :
-                              hasShift ? 'border-white/10 bg-white/[0.02] hover:border-gold/30 active:border-gold/30' :
-                              'border-white/5 hover:border-white/15 active:border-white/15'
+                              hasShift ? 'border-light bg-white/[0.02] hover:border-gold/30 active:border-gold/30' :
+                              'border-light hover:border-white/15 active:border-white/15'
                             }`}
                           >
-                            <span className={`text-[10px] sm:text-xs font-medium ${today ? 'text-gold' : 'text-offwhite/60'}`}>{date.getDate()}</span>
+                            <span className={`text-[10px] sm:text-xs font-medium ${today ? 'text-gold' : 'text-secondary'}`}>{date.getDate()}</span>
                             <div className="hidden sm:flex flex-wrap gap-0.5 justify-center mt-1">
                               {dayShifts.slice(0, 3).map((s) => (
                                 <span key={s.id} className={`w-1.5 h-1.5 rounded-full ${SHIFT_DOT[s.shift_type] || SHIFT_DOT.custom}`} />
@@ -887,9 +889,9 @@ export default function StaffSchedule() {
                         );
                       })}
                     </div>
-                    <div className="flex flex-wrap gap-x-3 gap-y-2 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-white/5">
+                    <div className="flex flex-wrap gap-x-3 gap-y-2 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-light">
                       {SHIFT_TYPES.map((t) => (
-                        <div key={t.value} className="flex items-center gap-1.5 text-[10px] text-offwhite/40">
+                        <div key={t.value} className="flex items-center gap-1.5 text-[10px] text-secondary">
                           <span className={`w-2 h-2 rounded-full ${SHIFT_DOT[t.value]}`} />
                           {t.label}
                         </div>
@@ -903,7 +905,7 @@ export default function StaffSchedule() {
             {/* Day detail — desktop sidebar */}
             {selectedDay && selectedMember && (
               <aside className="hidden xl:block xl:w-72 shrink-0">
-                <div className="rounded-2xl border border-white/5 bg-offwhite/[0.02] overflow-hidden sticky top-6 flex flex-col max-h-[calc(100vh-6rem)]">
+                <div className="rounded-2xl border border-light bg-secondary overflow-hidden sticky top-6 flex flex-col max-h-[calc(100vh-6rem)]">
                   <DayDetailBody
                     selectedDay={selectedDay}
                     selectedStaffId={selectedStaffId}
@@ -928,11 +930,11 @@ export default function StaffSchedule() {
         {/* Day detail — mobile / tablet modal */}
         {activeTab === 'schedule' && selectedDay && selectedMember && (
           <div
-            className="xl:hidden fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
+            className="xl:hidden fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
             onClick={() => { setSelectedDay(null); setShowDayCustomModal(false); }}
           >
             <div
-              className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[85vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl border border-gold/30 overflow-hidden"
+              className="w-full max-w-md max-h-[90vh] flex flex-col bg-card rounded-t-2xl sm:rounded-xl border border-card overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               <DayDetailBody
@@ -973,15 +975,15 @@ export default function StaffSchedule() {
         {activeTab === 'timeoff' && (
           <div className="space-y-3 max-w-3xl">
             {timeOffRequests.length === 0 ? (
-              <div className="rounded-2xl p-12 text-center bg-offwhite/[0.02] border border-white/5">
-                <h2 className="font-heading text-xl text-offwhite mb-2">No Time-Off Requests</h2>
-                <p className="text-offwhite/50 text-sm">All caught up.</p>
+              <div className="rounded-2xl p-12 text-center bg-secondary border border-light">
+                <h2 className="font-heading text-xl text-primary mb-2">No Time-Off Requests</h2>
+                <p className="text-secondary text-sm">All caught up.</p>
               </div>
             ) : (
               timeOffRequests.map((r) => (
                 <div
                   key={r.request_id || r.id}
-                  className={`rounded-2xl p-5 bg-offwhite/[0.02] ${r.status === 'pending' ? 'border border-gold/30' : 'border border-white/5'}`}
+                  className={`rounded-2xl p-5 bg-secondary ${r.status === 'pending' ? 'border border-gold/30' : 'border border-light'}`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -989,12 +991,12 @@ export default function StaffSchedule() {
                         <span className="text-gold text-xs font-heading">{getInitials(r.staff_name)}</span>
                       </div>
                       <div>
-                        <div className="text-offwhite font-medium">{r.staff_name}</div>
-                        <div className="text-offwhite/50 text-xs">
+                        <div className="text-primary font-medium">{r.staff_name}</div>
+                        <div className="text-secondary text-xs">
                           {new Date(r.start_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           {r.start_date !== r.end_date && ` – ${new Date(r.end_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                         </div>
-                        {r.reason && <p className="text-sm text-offwhite/40 mt-1">{r.reason}</p>}
+                        {r.reason && <p className="text-sm text-secondary mt-1">{r.reason}</p>}
                       </div>
                     </div>
                     <div className="flex flex-col items-start sm:items-end gap-2">

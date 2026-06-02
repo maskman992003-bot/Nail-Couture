@@ -37,7 +37,7 @@ export async function processCheckIn(phoneNumber, checkedInBy = null) {
         .single()
 
       if (updateError) throw updateError
-      return { isNew: false, name: profile.full_name, appointment: updated }
+      return { isNew: false, name: profile.full_name, profile: profile, appointment: updated }
     }
 
     const { data: appointments, error: appointmentError } = await supabase
@@ -54,7 +54,7 @@ export async function processCheckIn(phoneNumber, checkedInBy = null) {
 
     if (appointmentError) throw appointmentError
 
-    return { isNew: false, name: profile.full_name, appointment: appointments }
+    return { isNew: false, name: profile.full_name, profile: profile, appointment: appointments }
   }
 
   return { isNew: true }

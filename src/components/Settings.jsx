@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
+import clsx from 'clsx';
 
 const roleLabels = {
   super_admin: 'Super Admin',
@@ -46,6 +48,7 @@ const formatDate = (timestamp) => {
 export default function Settings() {
   const navigate = useNavigate();
   const { user, login } = useAuth();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({ full_name: '', phone: '', email: '' });
@@ -303,7 +306,7 @@ export default function Settings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
         <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading profile...</div>
@@ -322,13 +325,13 @@ export default function Settings() {
   const valueLabel = isTechnician ? 'Service value' : 'Revenue processed';
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <style>{`.settings-page select, .settings-page option { background: #1a1a1a; color: #fff; }`}</style>
+      <style>{`.settings-page select, .settings-page option { background: var(--input-bg); color: var(--text-primary); }`}</style>
       <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-24 lg:pb-8">
         <div className="mb-8">
           <h1 className="font-heading text-3xl text-gold mb-2">Profile Settings</h1>
-          <p className="text-offwhite/60">Manage your account details and security</p>
+          <p className="text-secondary">Manage your account details and security</p>
         </div>
 
         {saveMessage && (
@@ -342,16 +345,19 @@ export default function Settings() {
           </div>
         )}
 
-        <div className="rounded-2xl border border-white/5 bg-[#1a1a1a] p-6 mb-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-offwhite/10">
+        <div className="rounded-2xl border border-card bg-card p-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-light">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center shrink-0">
                 <span className="text-gold font-heading text-2xl">{initials || '??'}</span>
               </div>
               <div>
-                <h2 className="text-offwhite font-heading text-xl">{displayName}</h2>
-                <p className="text-offwhite/50 text-sm mt-1">{formatPhone(profile?.phone)}</p>
-                <span className={`inline-flex mt-2 px-3 py-1 text-xs border rounded-full ${roleColors[role] || 'bg-offwhite/10 text-offwhite/60 border-offwhite/20'}`}>
+                <h2 className="text-primary font-heading text-xl">{displayName}</h2>
+                <p className="text-secondary text-sm mt-1">{formatPhone(profile?.phone)}</p>
+                <span className={clsx(
+                  "inline-flex mt-2 px-3 py-1 text-xs border rounded-full",
+                  roleColors[role] || 'bg-secondary text-secondary border-light'
+                )}>
                   {roleLabels[role] || role}
                 </span>
               </div>
@@ -369,33 +375,33 @@ export default function Settings() {
           {editing ? (
             <form onSubmit={handleSaveProfile} className="space-y-5">
               <div>
-                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Full Name</label>
+                <label className="text-secondary text-xs uppercase tracking-wider block mb-2">Full Name</label>
                 <input
                   type="text"
                   value={form.full_name}
                   onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:border-gold focus:outline-none"
+                  className="w-full px-4 py-3 bg-input border border-input text-primary rounded-lg focus:border-gold focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Phone Number</label>
+                <label className="text-secondary text-xs uppercase tracking-wider block mb-2">Phone Number</label>
                 <input
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:border-gold focus:outline-none"
+                  className="w-full px-4 py-3 bg-input border border-input text-primary rounded-lg focus:border-gold focus:outline-none"
                   placeholder="(555) 123-4567"
                 />
-                <p className="text-offwhite/40 text-xs mt-1">Used for login and account identification</p>
+                <p className="text-muted text-xs mt-1">Used for login and account identification</p>
               </div>
               <div>
-                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Email</label>
+                <label className="text-secondary text-xs uppercase tracking-wider block mb-2">Email</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:border-gold focus:outline-none"
+                  className="w-full px-4 py-3 bg-input border border-input text-primary rounded-lg focus:border-gold focus:outline-none"
                   placeholder="name@example.com"
                 />
               </div>
@@ -412,7 +418,7 @@ export default function Settings() {
                       email: profile?.email || '',
                     });
                   }}
-                  className="flex-1 py-3 border border-offwhite/20 text-offwhite/70 rounded-xl hover:bg-white/5 transition-colors"
+                  className="flex-1 py-3 border border-input text-secondary rounded-xl hover:bg-secondary transition-colors"
                 >
                   Cancel
                 </button>
@@ -427,25 +433,25 @@ export default function Settings() {
             </form>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-2">Full Name</div>
-                <div className="text-offwhite">{profile?.full_name || 'Not set'}</div>
+              <div className="rounded-xl border border-light bg-secondary p-4">
+                <div className="text-secondary text-xs uppercase tracking-wider mb-2">Full Name</div>
+                <div className="text-primary">{profile?.full_name || 'Not set'}</div>
               </div>
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-2">Phone</div>
-                <div className="text-offwhite">{formatPhone(profile?.phone)}</div>
+              <div className="rounded-xl border border-light bg-secondary p-4">
+                <div className="text-secondary text-xs uppercase tracking-wider mb-2">Phone</div>
+                <div className="text-primary">{formatPhone(profile?.phone)}</div>
               </div>
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-2">Email</div>
-                <div className="text-offwhite">{profile?.email || 'Not set'}</div>
+              <div className="rounded-xl border border-light bg-secondary p-4">
+                <div className="text-secondary text-xs uppercase tracking-wider mb-2">Email</div>
+                <div className="text-primary">{profile?.email || 'Not set'}</div>
               </div>
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-2">Member Since</div>
-                <div className="text-offwhite">{formatDate(profile?.created_at)}</div>
+              <div className="rounded-xl border border-light bg-secondary p-4">
+                <div className="text-secondary text-xs uppercase tracking-wider mb-2">Member Since</div>
+                <div className="text-primary">{formatDate(profile?.created_at)}</div>
               </div>
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 sm:col-span-2">
-                <div className="text-offwhite/40 text-xs uppercase tracking-wider mb-2">Access Level</div>
-                <div className="text-offwhite/80 text-sm">
+              <div className="rounded-xl border border-light bg-secondary p-4 sm:col-span-2">
+                <div className="text-secondary text-xs uppercase tracking-wider mb-2">Access Level</div>
+                <div className="text-primary text-sm">
                   {role === 'technician' && 'Perform services, view your schedule, and manage your assigned customers.'}
                   {role === 'cashier' && 'Process checkouts, manage lobby flow, and handle daily transactions.'}
                   {role === 'admin' && 'Manage daily salon operations, staff schedules, and customer bookings.'}
@@ -457,32 +463,32 @@ export default function Settings() {
         </div>
 
         {showWorkStats && !editing && (
-          <div className="rounded-2xl border border-white/5 bg-[#1a1a1a] p-6 mb-6">
+          <div className="rounded-2xl border border-card bg-card p-6 mb-6">
             <h3 className="font-heading text-xl text-gold mb-4">My Activity</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-4">
-                <div className="text-green-300 text-sm mb-2">Today</div>
+                <div className="text-green-600 dark:text-green-300 text-sm mb-2">Today</div>
                 <div className="flex items-end justify-between gap-4">
                   <div>
-                    <div className="text-2xl font-heading text-offwhite">{workStats.todayCount}</div>
-                    <div className="text-xs text-offwhite/50">{todayLabel}</div>
+                    <div className="text-2xl font-heading text-primary">{workStats.todayCount}</div>
+                    <div className="text-xs text-secondary">{todayLabel}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xl font-heading text-gold">${workStats.todayValue.toFixed(0)}</div>
-                    <div className="text-xs text-offwhite/50">{valueLabel}</div>
+                    <div className="text-xl font-heading text-gold-strong">${workStats.todayValue.toFixed(0)}</div>
+                    <div className="text-xs text-secondary">{valueLabel}</div>
                   </div>
                 </div>
               </div>
               <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-4">
-                <div className="text-blue-300 text-sm mb-2">This Week</div>
+                <div className="text-blue-600 dark:text-blue-300 text-sm mb-2">This Week</div>
                 <div className="flex items-end justify-between gap-4">
                   <div>
-                    <div className="text-2xl font-heading text-offwhite">{workStats.weekCount}</div>
-                    <div className="text-xs text-offwhite/50">{weekLabel}</div>
+                    <div className="text-2xl font-heading text-primary">{workStats.weekCount}</div>
+                    <div className="text-xs text-secondary">{weekLabel}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xl font-heading text-gold">${workStats.weekValue.toFixed(0)}</div>
-                    <div className="text-xs text-offwhite/50">{valueLabel}</div>
+                    <div className="text-xl font-heading text-gold-strong">${workStats.weekValue.toFixed(0)}</div>
+                    <div className="text-xs text-secondary">{valueLabel}</div>
                   </div>
                 </div>
               </div>
@@ -490,14 +496,14 @@ export default function Settings() {
           </div>
         )}
 
-        <div className="rounded-2xl border border-white/5 bg-[#1a1a1a] p-6">
+        <div className="rounded-2xl border border-card bg-card p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="font-heading text-lg text-offwhite">Login PIN</h3>
-              <p className="text-offwhite/40 text-sm mt-1">
+              <h3 className="font-heading text-lg text-primary">Login PIN</h3>
+              <p className="text-secondary text-sm mt-1">
                 {profile?.pin ? 'A 4-digit PIN is enabled for quick staff login' : 'Set a 4-digit PIN for faster login on shared devices'}
               </p>
-              <p className="text-offwhite/30 text-xs mt-2">
+              <p className="text-muted text-xs mt-2">
                 Status: {profile?.pin ? 'Active' : 'Not configured'}
               </p>
             </div>
@@ -512,14 +518,14 @@ export default function Settings() {
       </div>
 
       {showPinModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowPinModal(false)}>
-          <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowPinModal(false)}>
+          <div className="w-full max-w-sm max-h-[90vh] flex flex-col bg-card rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
               <div>
                 <h3 className="font-heading text-xl text-gold mb-0">
                   {pinMode === 'set' ? 'Set PIN' : 'Change PIN'}
                 </h3>
-                <p className="text-offwhite/50 text-sm mt-1">
+                <p className="text-secondary text-sm mt-1">
                   {pinStep === 1 && 'Enter your current PIN'}
                   {pinStep === 2 && 'Enter a new 4-digit PIN'}
                   {pinStep === 3 && 'Confirm your new PIN'}
@@ -527,19 +533,19 @@ export default function Settings() {
               </div>
               <button
                 onClick={() => setShowPinModal(false)}
-                className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5"
+                className="text-secondary hover:text-primary text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary"
               >
                 ×
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="p-4 sm:p-6">
               <div className="flex justify-center gap-4 mb-4">
                 {[1, 2, 3, 4].map((i) => {
                   const val = pinStep === 1 ? oldPin : pinStep === 2 ? newPin : confirmPin;
                   return (
                     <div
                       key={i}
-                      className="w-14 h-14 rounded-xl bg-[#0B0B0C] border border-offwhite/20 flex items-center justify-center text-2xl font-heading"
+                      className="w-14 h-14 rounded-xl bg-input border border-input flex items-center justify-center text-2xl font-heading"
                     >
                       {val[i - 1] ? '●' : ''}
                     </div>
@@ -564,7 +570,7 @@ export default function Settings() {
                           else if (pinStep === 2) handlePinBackspace(setNewPin, newPin);
                           else handlePinBackspace(setConfirmPin, confirmPin);
                         }}
-                        className="h-12 bg-[#0B0B0C] rounded-xl text-offwhite hover:bg-white/10 transition-colors text-lg"
+                        className="h-12 bg-input rounded-xl text-primary hover:bg-secondary transition-colors text-lg"
                       >
                         {key}
                       </button>
@@ -579,7 +585,7 @@ export default function Settings() {
                         else if (pinStep === 2) handlePinDigit(setNewPin, newPin, key);
                         else handlePinDigit(setConfirmPin, confirmPin, key);
                       }}
-                      className="h-12 bg-[#0B0B0C] rounded-xl text-offwhite hover:bg-white/10 transition-colors text-xl font-heading"
+                      className="h-12 bg-input rounded-xl text-primary hover:bg-secondary transition-colors text-xl font-heading"
                     >
                       {key}
                     </button>
@@ -591,7 +597,7 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => { setShowPinModal(false); setPinStep(1); }}
-                  className="flex-1 py-3 rounded-xl border border-offwhite/20 text-offwhite hover:bg-white/5 transition-colors text-sm"
+                  className="flex-1 py-3 rounded-xl border border-input text-primary hover:bg-secondary transition-colors text-sm"
                 >
                   Cancel
                 </button>

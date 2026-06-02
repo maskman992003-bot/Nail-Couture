@@ -43,8 +43,8 @@ const CheckoutModal = ({ appointment, onConfirm, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-md flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
         <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
           <h3 className="font-heading text-2xl text-gold">Settle Payment</h3>
           <button onClick={onClose} className="text-offwhite/50 hover:text-offwhite text-2xl">&times;</button>

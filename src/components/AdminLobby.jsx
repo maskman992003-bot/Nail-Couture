@@ -5,7 +5,17 @@ import { DndContext, DragOverlay, useDraggable, useDroppable, pointerWithin, rec
 import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '../services/services'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import Sidebar from './Sidebar'
+import AppModal, {
+  modalLabelClass,
+  modalInputClass,
+  modalSelectClass,
+  modalBtnSecondary,
+  modalBtnPrimary,
+  modalBtnDanger,
+} from './AppModal'
+import clsx from 'clsx'
 
 const LOBBY_DROP_ID = 'lobby'
 
@@ -26,16 +36,15 @@ const LobbyWaitingDropZone = ({ children, activeDragId, pendingAppointments }) =
     disabled: !isDraggingPending
   })
 
+  const dropZoneClass = clsx('rounded-xl transition-all', {
+    'ring-2 ring-gold bg-gold/10 p-3 -m-3': isDraggingPending && isOver,
+    'ring-1 ring-dashed ring-gold/30 p-3 -m-3': isDraggingPending && !isOver
+  })
+
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-xl transition-all ${
-        isDraggingPending && isOver
-          ? 'ring-2 ring-gold bg-gold/10 p-3 -m-3'
-          : isDraggingPending
-            ? 'ring-1 ring-dashed ring-gold/30 p-3 -m-3'
-            : ''
-      }`}
+      className={dropZoneClass}
     >
       {isDraggingPending && (
         <p className="text-xs text-gold/70 mb-3 text-center">
@@ -65,7 +74,7 @@ const DraggablePendingCustomer = ({ appointment, children }) => {
   )
 }
 
-const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, updating, onAccept, onComplete, wiggle, activeDragId }) => {
+const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, updating, onAccept, onComplete, wiggle, activeDragId, theme }) => {
   const isDraggingThisPending = activeDragId && pendingCustomer && String(pendingCustomer.id) === String(activeDragId)
   const { isOver, setNodeRef } = useDroppable({
     id: tech.id,
@@ -75,31 +84,48 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
   const showAcceptButton = !!pendingCustomer
   const dropHighlight = isOver && !isBusy
 
+  const gridItemClass = clsx(
+    'rounded-xl p-5 border-2 transition-all',
+    {
+      'border-gold border-4 bg-gold/20 scale-105': dropHighlight,
+      'border-red-500/50 bg-red-900/10': isBusy && !dropHighlight,
+      'animate-wiggle': wiggle
+    },
+    !dropHighlight && !isBusy && (
+      theme === 'dark' ? 'border-offwhite/20 bg-offwhite/5 hover:border-gold/50' : 'border-charcoal/20 bg-charcoal/5 hover:border-gold/50'
+    )
+  )
+
+  const techNameClass = clsx('font-heading text-lg', {
+    'text-red-400': isBusy,
+    [theme === 'dark' ? 'text-offwhite' : 'text-charcoal']: !isBusy
+  })
+
+  const statusBadgeClass = clsx('text-xs px-2 py-1 rounded', {
+    'bg-red-500/30 text-red-400': isBusy,
+    'bg-yellow-500/30 text-yellow-400': showAcceptButton && !isBusy
+  }, !isBusy && !showAcceptButton && (
+    theme === 'dark' ? 'bg-offwhite/20 text-offwhite/50' : 'bg-charcoal/20 text-charcoal/50'
+  ))
+
+  const activeCustomerTextClass = clsx('text-sm', theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60')
+  const activeCustomerDetailClass = clsx('text-xs', theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40')
+
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-xl p-5 border-2 transition-all ${
-        dropHighlight ? 'border-gold border-4 bg-gold/20 scale-105' : isBusy
-          ? 'border-red-500/50 bg-red-900/10'
-          : 'border-offwhite/20 bg-offwhite/5 hover:border-gold/50'
-      } ${wiggle ? 'animate-wiggle' : ''}`}
+      className={gridItemClass}
     >
       <div className="flex items-center justify-between mb-2">
-        <h4 className={`font-heading text-lg ${isBusy ? 'text-red-400' : 'text-offwhite'}`}>{tech.full_name}</h4>
-        <span className={`text-xs px-2 py-1 rounded ${
-          isBusy
-            ? 'bg-red-500/30 text-red-400'
-            : showAcceptButton
-              ? 'bg-yellow-500/30 text-yellow-400'
-              : 'bg-offwhite/20 text-offwhite/50'
-        }`}>
+        <h4 className={techNameClass}>{tech.full_name}</h4>
+        <span className={statusBadgeClass}>
           {isBusy ? 'Busy' : showAcceptButton ? 'Pending' : 'Available'}
         </span>
       </div>
       {isBusy ? (
-        <div className="text-sm text-gray-400">
+        <div className={activeCustomerTextClass}>
           <div className="mb-2">{activeCustomer.customer?.full_name || 'Customer'}</div>
-          <div className="text-xs text-gray-600">{activeCustomer.add_ons || activeCustomer.services?.name}</div>
+          <div className={activeCustomerDetailClass}>{activeCustomer.add_ons || activeCustomer.services?.name}</div>
           <button
             onClick={() => onComplete(activeCustomer.id)}
             disabled={updating === activeCustomer.id}
@@ -133,7 +159,7 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
   )
 }
 
-const DraggableAppointmentCard = ({ appointment, onEdit, onCancel }) => {
+const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, theme }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: appointment.id,
     data: { type: 'appointment', appointment }
@@ -148,18 +174,54 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel }) => {
 
   const stopProp = (e) => { e.stopPropagation() }
 
+  const cardClass = clsx('border rounded-xl p-4 sm:p-5 cursor-grab active:cursor-grabbing transition-all', 
+    theme === 'dark' ? 'bg-offwhite/5 border-offwhite/10' : 'bg-charcoal/5 border-charcoal/10'
+  )
+
+  const customerNameClass = clsx('font-heading text-lg truncate', 
+    theme === 'dark' ? 'text-offwhite' : 'text-charcoal'
+  )
+
+  const customerDetailClass = clsx('flex flex-wrap gap-x-2 gap-y-0.5 text-xs mt-0.5', 
+    theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'
+  )
+
+  const timeTextClass = clsx('text-xs whitespace-nowrap', 
+    theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'
+  )
+
+  const editBtnClass = clsx('text-sm', 
+    theme === 'dark' ? 'text-offwhite/40 hover:text-offwhite' : 'text-charcoal/40 hover:text-charcoal'
+  )
+
+  const lineThroughPriceClass = clsx('line-through text-xs', 
+    theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'
+  )
+
+  const durationClass = clsx('', 
+    theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'
+  )
+
+  const nailGoalClass = clsx('text-xs', 
+    theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'
+  )
+
+  const addOnClass = clsx('text-xs', 
+    theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'
+  )
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...listeners}
       {...attributes}
-      className={`bg-offwhite/5 border rounded-xl p-4 sm:p-5 cursor-grab active:cursor-grabbing transition-all border-offwhite/10`}
+      className={cardClass}
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-heading text-lg text-offwhite truncate">
+            <h3 className={customerNameClass}>
               {appointment.customer?.full_name || 'Guest'}
             </h3>
             {appointment.booking_type === 'walk_in' ? (
@@ -168,15 +230,15 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel }) => {
               <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded shrink-0">Online</span>
             )}
           </div>
-          <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-offwhite/50 mt-0.5">
+          <div className={customerDetailClass}>
             {appointment.customer?.phone && <span>📞 {appointment.customer.phone}</span>}
             {appointment.customer?.refreshment_pref && <span>☕ {appointment.customer.refreshment_pref}</span>}
           </div>
         </div>
         <div className="flex items-start gap-2 shrink-0">
-          <span className="text-offwhite/50 text-xs whitespace-nowrap">{formatTime(appointment.checked_in_at)}</span>
+          <span className={timeTextClass}>{formatTime(appointment.checked_in_at)}</span>
           <div className="flex items-center gap-1">
-            <button onPointerDown={stopProp} onClick={(e) => { e.stopPropagation(); onEdit(appointment) }} className="text-offwhite/40 hover:text-offwhite text-sm">✎</button>
+            <button onPointerDown={stopProp} onClick={(e) => { e.stopPropagation(); onEdit(appointment) }} className={editBtnClass}>✎</button>
             <button onPointerDown={stopProp} onClick={(e) => { e.stopPropagation(); onCancel(appointment) }} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
           </div>
         </div>
@@ -189,19 +251,19 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel }) => {
         {appointment.final_price != null && appointment.final_price < (appointment.services?.price || 0) ? (
           <>
             <span className="text-green-400 font-medium">${appointment.final_price.toFixed(2)}</span>
-            <span className="text-offwhite/40 line-through text-xs">${appointment.services?.price}</span>
+            <span className={lineThroughPriceClass}>${appointment.services?.price}</span>
           </>
         ) : appointment.services?.price > 0 ? (
           <span className="text-green-400 font-medium">${appointment.services.price}</span>
         ) : null}
         {appointment.services?.duration_minutes && (
-          <span className="text-offwhite/50">{appointment.services.duration_minutes}min</span>
+          <span className={durationClass}>{appointment.services.duration_minutes}min</span>
         )}
         {appointment.customer?.nail_goal && (
-          <span className="text-offwhite/60 text-xs">{appointment.customer.nail_goal}</span>
+          <span className={nailGoalClass}>{appointment.customer.nail_goal}</span>
         )}
         {appointment.add_ons && (
-          <span className="text-offwhite/40 text-xs">+{appointment.add_ons}</span>
+          <span className={addOnClass}>+{appointment.add_ons}</span>
         )}
       </div>
     </div>
@@ -297,140 +359,151 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden border border-gold/30 mx-0 sm:mx-4">
-        <style>{`.edit-modal select, .edit-modal option { background: #1a1a1a; color: #fff; }`}</style>
-        <div className="p-4 sm:p-6 border-b border-offwhite/10">
-          <div className="flex items-center justify-between gap-4">
-            <h3 className="font-heading text-2xl text-gold">Edit Appointment</h3>
-            <button onClick={onClose} className="text-offwhite/50 hover:text-offwhite">✕</button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 min-h-0">
-          <div>
-            <label className="block text-offwhite/80 text-sm mb-2">Services</label>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {mainServices.map(s => {
-                const isSelected = formData.selected_services.some(sv => sv.id === s.id)
-                return (
-                  <label key={s.id} className="flex items-center gap-3 p-2 bg-offwhite/5 rounded-lg cursor-pointer hover:bg-offwhite/10">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleMainService(s)}
-                      className="accent-gold"
-                    />
-                    <span className="text-offwhite text-sm">{s.name}</span>
-                    <span className="text-green-400 text-sm ml-auto">${s.price}</span>
-                  </label>
-                )
-              })}
-            </div>
-          </div>
-
-          {addOnServices.length > 0 && (
-            <div>
-              <label className="block text-offwhite/80 text-sm mb-2">Add-on Services</label>
-              <div className="space-y-2">
-                {addOnServices.map(s => (
-                  <label key={s.id} className="flex items-center gap-3 p-2 bg-offwhite/5 rounded-lg cursor-pointer hover:bg-offwhite/10">
-                    <input
-                      type="checkbox"
-                      checked={formData.selected_addons.includes(s.name)}
-                      onChange={() => toggleAddOn(s.name)}
-                      className="accent-gold"
-                    />
-                    <span className="text-offwhite text-sm">{s.name}</span>
-                    <span className="text-green-400 text-sm ml-auto">+${s.price}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-offwhite/80 text-sm mb-2">Nail Goal</label>
-            <select
-              value={formData.nail_goal}
-              onChange={(e) => setFormData({...formData, nail_goal: e.target.value})}
-              className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
-            >
-              <option value="">Select goal</option>
-              <option value="Healthy Natural Nails">Healthy Natural Nails</option>
-              <option value="Long Extensions">Long Extensions</option>
-              <option value="Intricate Art">Intricate Art</option>
-            </select>
-          </div>
-
-          <div className="border-t border-offwhite/10 pt-5">
-            <h4 className="text-gold font-heading mb-3">Apply Discount</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-offwhite/60 text-sm mb-1">Amount</label>
-                <input
-                  type="number"
-                  value={formData.discount_amount}
-                  onChange={(e) => setFormData({...formData, discount_amount: e.target.value})}
-                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="block text-offwhite/60 text-sm mb-1">Type</label>
-                <select
-                  value={formData.discount_type}
-                  onChange={(e) => setFormData({...formData, discount_type: e.target.value})}
-                  className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg"
-                >
-                  <option value="amount">$</option>
-                  <option value="percent">%</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {formData.selected_services.length > 0 && (
-            <div className="bg-gold/10 border border-gold/30 rounded-lg p-4">
-              <div className="space-y-1">
-                {formData.selected_services.map(s => (
-                  <div key={s.id} className="flex justify-between text-sm">
-                    <span className="text-offwhite/60">{s.name}</span>
-                    <span className="text-offwhite">${s.price.toFixed(2)}</span>
-                  </div>
-                ))}
-                {formData.selected_addons.map(name => {
-                  const svc = addOnServices.find(s => s.name === name)
-                  return svc ? (
-                    <div key={name} className="flex justify-between text-sm">
-                      <span className="text-offwhite/60">{svc.name} (add-on)</span>
-                      <span className="text-offwhite">+${svc.price.toFixed(2)}</span>
-                    </div>
-                  ) : null
-                })}
-                {formData.discount_amount > 0 && (
-                  <div className="flex justify-between text-sm text-green-400">
-                    <span>Discount</span>
-                    <span>-${(basePrice - parseFloat(finalDisplayPrice)).toFixed(2)}</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-between items-center mt-3 pt-3 border-t border-gold/20">
-                <span className="text-offwhite/60">Total</span>
-                <span className="font-heading text-2xl text-gold">${finalDisplayPrice}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-3 p-4 sm:p-6 border-t border-offwhite/10">
-          <button onClick={onClose} className="flex-1 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg">Cancel</button>
-          <button onClick={handleSave} disabled={saving || formData.selected_services.length === 0} className="flex-1 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg disabled:opacity-50">
+    <AppModal
+      open
+      onClose={onClose}
+      title="Edit Appointment"
+      scrollBody
+      maxWidth="max-w-lg"
+      zIndex="z-[200]"
+      footer={
+        <>
+          <button type="button" onClick={onClose} className={modalBtnSecondary}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || formData.selected_services.length === 0}
+            className={modalBtnPrimary}
+          >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <label className={`${modalLabelClass} normal-case tracking-normal text-sm`}>Services</label>
+          <div className="space-y-2 max-h-52 overflow-y-auto">
+            {mainServices.map((s) => {
+              const isSelected = formData.selected_services.some((sv) => sv.id === s.id)
+              return (
+                <label
+                  key={s.id}
+                  className="flex items-center gap-3 p-2 bg-secondary border border-light rounded-lg cursor-pointer hover:bg-gold/10"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleMainService(s)}
+                    className="accent-gold"
+                  />
+                  <span className="text-primary text-sm flex-1">{s.name}</span>
+                  <span className="text-green-600 text-sm font-medium">${s.price}</span>
+                </label>
+              )
+            })}
+          </div>
         </div>
+
+        {addOnServices.length > 0 && (
+          <div>
+            <label className={`${modalLabelClass} normal-case tracking-normal text-sm`}>Add-on Services</label>
+            <div className="space-y-2">
+              {addOnServices.map((s) => (
+                <label
+                  key={s.id}
+                  className="flex items-center gap-3 p-2 bg-secondary border border-light rounded-lg cursor-pointer hover:bg-gold/10"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.selected_addons.includes(s.name)}
+                    onChange={() => toggleAddOn(s.name)}
+                    className="accent-gold"
+                  />
+                  <span className="text-primary text-sm flex-1">{s.name}</span>
+                  <span className="text-green-600 text-sm font-medium">+${s.price}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <label className={`${modalLabelClass} normal-case tracking-normal text-sm`}>Nail Goal</label>
+          <select
+            value={formData.nail_goal}
+            onChange={(e) => setFormData({ ...formData, nail_goal: e.target.value })}
+            className={modalSelectClass}
+          >
+            <option value="">Select goal</option>
+            <option value="Healthy Natural Nails">Healthy Natural Nails</option>
+            <option value="Long Extensions">Long Extensions</option>
+            <option value="Intricate Art">Intricate Art</option>
+          </select>
+        </div>
+
+        <div className="border-t border-light pt-4">
+          <h4 className="text-gold font-heading mb-3">Apply Discount</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={`${modalLabelClass} normal-case tracking-normal text-sm`}>Amount</label>
+              <input
+                type="number"
+                value={formData.discount_amount}
+                onChange={(e) => setFormData({ ...formData, discount_amount: e.target.value })}
+                className={modalInputClass}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <label className={`${modalLabelClass} normal-case tracking-normal text-sm`}>Type</label>
+              <select
+                value={formData.discount_type}
+                onChange={(e) => setFormData({ ...formData, discount_type: e.target.value })}
+                className={modalSelectClass}
+              >
+                <option value="amount">$</option>
+                <option value="percent">%</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {formData.selected_services.length > 0 && (
+          <div className="bg-gold/10 border border-gold/30 rounded-lg p-4">
+            <div className="space-y-1">
+              {formData.selected_services.map((s) => (
+                <div key={s.id} className="flex justify-between text-sm">
+                  <span className="text-secondary">{s.name}</span>
+                  <span className="text-primary">${s.price.toFixed(2)}</span>
+                </div>
+              ))}
+              {formData.selected_addons.map((name) => {
+                const svc = addOnServices.find((s) => s.name === name)
+                return svc ? (
+                  <div key={name} className="flex justify-between text-sm">
+                    <span className="text-secondary">{svc.name} (add-on)</span>
+                    <span className="text-primary">+${svc.price.toFixed(2)}</span>
+                  </div>
+                ) : null
+              })}
+              {formData.discount_amount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Discount</span>
+                  <span>-${(basePrice - parseFloat(finalDisplayPrice)).toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-between items-center mt-3 pt-3 border-t border-gold/20">
+              <span className="text-secondary">Total</span>
+              <span className="font-heading text-2xl text-gold-strong">${finalDisplayPrice}</span>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </AppModal>
   )
 }
 
@@ -450,6 +523,7 @@ export default function AdminLobby() {
   const [cancelReason, setCancelReason] = useState('')
   const [wiggleTechId, setWiggleTechId] = useState(null)
   const { user } = useAuth()
+  const { theme } = useTheme()
   const navigate = useNavigate()
 
   const busyTechnicians = servingAppointments
@@ -726,7 +800,7 @@ export default function AdminLobby() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
         <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -737,12 +811,12 @@ export default function AdminLobby() {
 
   return (
     <DndContext collisionDetection={floorManagerCollisionDetection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
         <Sidebar />
         <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
             <div className="mb-6">
               <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
-              <p className="text-offwhite/60 mt-1">Drag to assign, reassign, or return pending customers to waiting</p>
+              <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Drag to assign, reassign, or return pending customers to waiting</p>
             </div>
 
             {notification && (
@@ -766,11 +840,12 @@ export default function AdminLobby() {
                         appointment={appointment}
                         onEdit={setEditingAppointment}
                         onCancel={setCancelConfirm}
+                        theme={theme}
                       />
                     ))}
                     {lobbyAppointments.length === 0 && (
-                      <div className="col-span-1 sm:col-span-2 text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-xl">
-                        <p className="text-offwhite/40">No guests waiting</p>
+                      <div className={`col-span-1 sm:col-span-2 text-center py-16 border rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-offwhite/10' : 'bg-charcoal/5 border-charcoal/10'}`}>
+                        <p className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No guests waiting</p>
                       </div>
                     )}
                   </div>
@@ -782,13 +857,13 @@ export default function AdminLobby() {
                     <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="font-heading text-lg text-offwhite">{appointment.customer?.full_name || 'Guest'}</h3>
+                          <h3 className={`font-heading text-lg ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{appointment.customer?.full_name || 'Guest'}</h3>
                           {appointment.customer?.phone && (
-                            <span className="text-xs text-offwhite/40">📞 {appointment.customer.phone}</span>
+                            <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>📞 {appointment.customer.phone}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <button onClick={(e) => { e.stopPropagation(); setEditingAppointment(appointment) }} className="text-offwhite/40 hover:text-offwhite text-sm">✎</button>
+                          <button onClick={(e) => { e.stopPropagation(); setEditingAppointment(appointment) }} className={`text-sm ${theme === 'dark' ? 'text-offwhite/40 hover:text-offwhite' : 'text-charcoal/40 hover:text-charcoal'}`}>✎</button>
                           <button onClick={() => setCancelConfirm(appointment)} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
                         </div>
                       </div>
@@ -802,10 +877,10 @@ export default function AdminLobby() {
                         )}
                       </div>
                       {appointment.add_ons && (
-                        <div className="text-xs text-offwhite/40 mt-1">+ {appointment.add_ons}</div>
+                        <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>+ {appointment.add_ons}</div>
                       )}
                       {appointment.start_time && (
-                        <div className="text-xs text-offwhite/40 mt-1">
+                        <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>
                           Started: {formatTime(appointment.start_time)}
                         </div>
                       )}
@@ -816,7 +891,7 @@ export default function AdminLobby() {
 
               <div>
                 <h2 className="font-heading text-xl text-gold mb-4">Technician Grid</h2>
-                <p className="text-offwhite/40 text-sm mb-4">Drop a customer on a technician to assign or reassign</p>
+                <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>Drop a customer on a technician to assign or reassign</p>
                 <div className="space-y-4">
                   {technicians.map(tech => {
                     const activeCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')
@@ -837,11 +912,12 @@ export default function AdminLobby() {
                         onAccept={acceptAssignment}
                         onComplete={(id) => updateStatus(id, 'completed')}
                         activeDragId={activeId}
+                        theme={theme}
                       />
                     )
                   })}
                   {technicians.length === 0 && (
-                    <div className="text-center py-8 text-offwhite/40">
+                    <div className={`text-center py-8 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>
                       No technicians found (add role='technician' to profiles)
                     </div>
                   )}
@@ -859,10 +935,10 @@ export default function AdminLobby() {
           if (!appointment) return null
           return (
             <div className="bg-gold/10 border-2 border-gold rounded-xl p-4 sm:p-5 shadow-2xl max-w-[90vw] pointer-events-none w-72">
-              <p className="font-heading text-offwhite truncate">
+              <p className={`font-heading truncate ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>
                 {appointment.customer?.full_name || 'Customer'}
               </p>
-              <p className="text-xs text-offwhite/60 mt-1">
+              <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>
                 {pendingAppt ? 'Drop to reassign or return to waiting' : 'Drop to assign'}
               </p>
             </div>
@@ -876,58 +952,57 @@ export default function AdminLobby() {
           services={services}
           onSave={handleEditSave}
           onClose={() => setEditingAppointment(null)}
+          theme={theme}
         />
       )}
 
       {cancelConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
-            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-red-500/20">
-              <div>
-                <div className="text-4xl">⚠️</div>
-              </div>
-              <button onClick={() => setCancelConfirm(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              <div className="text-center">
-                <h3 className="font-heading text-2xl text-offwhite mb-2">Cancel Appointment?</h3>
-                <p className="text-offwhite/60 mb-4">
-                  Are you sure you want to cancel the appointment for <span className="text-gold">{cancelConfirm.customer?.full_name}</span>?
-                </p>
-               <div className="mb-6 text-left">
-                 <label className="block text-offwhite/60 text-sm mb-2">Reason for cancellation</label>
-                <select
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  style={{ backgroundColor: '#1a1a1a', color: '#ffffff', border: '1px solid #333' }}
-                  className="w-full px-4 py-3 border rounded-lg"
-                >
-                  <option value="">Select a reason...</option>
-                  <option value="Wait time too long">Wait time too long</option>
-                  <option value="Customer left">Customer left</option>
-                  <option value="Mistake check-in">Mistake check-in</option>
-                </select>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setCancelConfirm(null); setCancelReason('') }}
-                  className="flex-1 py-3 border border-offwhite/30 text-offwhite/60 hover:text-offwhite rounded-lg"
-                >
-                  Keep Appointment
-                </button>
-                <button
-                  onClick={() => cancelAppointment(cancelConfirm)}
-                  disabled={!cancelReason || updating === cancelConfirm.id}
-                  className="flex-1 py-3 bg-red-500 text-white font-heading hover:bg-red-600 rounded-lg disabled:opacity-50"
-                >
-                  {updating === cancelConfirm.id ? 'Cancelling...' : 'Confirm Cancellation'}
-                </button>
-              </div>
-            </div>
+        <AppModal
+          open
+          onClose={() => { setCancelConfirm(null); setCancelReason('') }}
+          title="Cancel Appointment?"
+          maxWidth="max-w-md"
+          zIndex="z-[200]"
+          headerExtra={<div className="text-3xl mt-1" aria-hidden>⚠️</div>}
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => { setCancelConfirm(null); setCancelReason('') }}
+                className={modalBtnSecondary}
+              >
+                Keep Appointment
+              </button>
+              <button
+                type="button"
+                onClick={() => cancelAppointment(cancelConfirm)}
+                disabled={!cancelReason || updating === cancelConfirm.id}
+                className={modalBtnDanger}
+              >
+                {updating === cancelConfirm.id ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </>
+          }
+        >
+          <p className="text-primary text-sm mb-4 text-center">
+            Are you sure you want to cancel the appointment for{' '}
+            <span className="text-gold-strong font-medium">{cancelConfirm.customer?.full_name}</span>?
+          </p>
+          <div>
+            <label className={modalLabelClass}>Reason for cancellation</label>
+            <select
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              className={modalSelectClass}
+            >
+              <option value="">Select a reason...</option>
+              <option value="Wait time too long">Wait time too long</option>
+              <option value="Customer left">Customer left</option>
+              <option value="Mistake check-in">Mistake check-in</option>
+            </select>
           </div>
-        </div>
-      </div>
-     )}
+        </AppModal>
+      )}
     </DndContext>
   )
 }

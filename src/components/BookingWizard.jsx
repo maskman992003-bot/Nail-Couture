@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useTheme } from '../contexts/ThemeContext';
 
 const servicesData = [
   {
@@ -98,7 +99,7 @@ const generateTimeSlots = () => {
 
 const timeSlots = generateTimeSlots();
 
-function Calendar({ selectedDate, onSelectDate }) {
+function Calendar({ selectedDate, onSelectDate, theme }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
   const today = new Date();
@@ -154,22 +155,22 @@ function Calendar({ selectedDate, onSelectDate }) {
   };
 
   return (
-    <div className="bg-white border border-charcoal/10 p-3 sm:p-4 md:p-6">
+    <div className={`${theme === 'dark' ? 'bg-[#111] border-gold/10' : 'bg-white border-charcoal/10'} border p-3 sm:p-4 md:p-6`}>
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <button
           onClick={prevMonth}
           disabled={!canGoPrev()}
-          className={`p-2 ${canGoPrev() ? 'hover:bg-charcoal/5' : 'opacity-30 cursor-not-allowed'}`}
+          className={`p-2 ${canGoPrev() ? theme === 'dark' ? 'hover:bg-offwhite/10' : 'hover:bg-charcoal/5' : 'opacity-30 cursor-not-allowed'}`}
         >
-          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <span className="font-heading text-base sm:text-lg text-charcoal">
+        <span className={`font-heading text-base sm:text-lg ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>
           {monthNames[month]} {year}
         </span>
-        <button onClick={nextMonth} className="p-2 hover:bg-charcoal/5">
-          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button onClick={nextMonth} className={`p-2 ${theme === 'dark' ? 'hover:bg-offwhite/10' : 'hover:bg-charcoal/5'}`}>
+          <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -177,7 +178,7 @@ function Calendar({ selectedDate, onSelectDate }) {
       
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
         {dayNames.map((day) => (
-          <div key={day} className="text-center text-[10px] sm:text-xs text-charcoal/50 py-1 sm:py-2">
+          <div key={day} className={`text-center text-[10px] sm:text-xs py-1 sm:py-2 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>
             {day}
           </div>
         ))}
@@ -197,7 +198,7 @@ function Calendar({ selectedDate, onSelectDate }) {
               onClick={() => selectDate(day)}
               disabled={disabled}
               className={`aspect-square flex items-center justify-center text-xs sm:text-sm rounded-none transition-all touch-manipulation
-                ${disabled ? 'text-charcoal/20 cursor-not-allowed' : 'hover:bg-gold/20 active:bg-gold/30'}
+                ${disabled ? (theme === 'dark' ? 'text-offwhite/20 cursor-not-allowed' : 'text-charcoal/20 cursor-not-allowed') : theme === 'dark' ? 'text-offwhite hover:bg-gold/20 active:bg-gold/30' : 'text-charcoal hover:bg-gold/20 active:bg-gold/30'}
                 ${selected ? 'bg-gold text-charcoal' : ''}
               `}
             >
@@ -210,7 +211,7 @@ function Calendar({ selectedDate, onSelectDate }) {
   );
 }
 
-function StepIndicator({ currentStep }) {
+function StepIndicator({ currentStep, theme }) {
   const steps = ['Selections', 'Time & Artist', 'Details'];
   return (
     <div className="flex items-center justify-center mb-8 sm:mb-12">
@@ -221,20 +222,20 @@ function StepIndicator({ currentStep }) {
               className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center border-2 transition-all ${
                 index + 1 <= currentStep
                   ? 'bg-gold border-gold text-charcoal'
-                  : 'border-charcoal/20 text-charcoal/20'
+                  : theme === 'dark' ? 'border-offwhite/20 text-offwhite/20' : 'border-charcoal/20 text-charcoal/20'
               }`}
             >
               <span className="font-heading text-sm sm:text-lg">{index + 1}</span>
             </div>
-            <span className={`text-[10px] sm:text-xs mt-1 sm:mt-2 ${index + 1 <= currentStep ? 'text-charcoal' : 'text-charcoal/40'}`}>
+            <span className={`text-[10px] sm:text-xs mt-1 sm:mt-2 ${index + 1 <= currentStep ? (theme === 'dark' ? 'text-offwhite' : 'text-charcoal') : (theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40')}`}>
               {step}
             </span>
           </div>
           {index < steps.length - 1 && (
             <div
               className={`w-12 sm:w-24 h-0.5 mx-1 sm:mx-2 transition-all ${
-                index + 1 < currentStep ? 'bg-gold' : 'bg-charcoal/10'
-              }`}
+                index + 1 < currentStep ? 'bg-gold' : (theme === 'dark' ? 'bg-offwhite/10' : 'bg-charcoal/10')}
+              `}
             />
           )}
         </div>
@@ -275,6 +276,7 @@ function BookingWizard() {
   const [bookingId, setBookingId] = useState('');
   const [errors, setErrors] = useState({});
   const [animationKey, setAnimationKey] = useState(0);
+  const { theme } = useTheme();
 
   const toggleAddOn = (addOn) => {
     setSelectedAddOns((prev) =>
@@ -396,22 +398,22 @@ function BookingWizard() {
   };
 
   return (
-    <section id="book" className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 bg-offwhite">
+    <section id="book" className={`py-12 sm:py-16 md:py-24 px-4 sm:px-6 ${theme === 'dark' ? 'bg-charcoal' : 'bg-offwhite'}`}>
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8 sm:mb-12">
-          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-2 sm:mb-4">Book Your Appointment</h2>
-          <p className="text-charcoal/60 text-sm sm:text-base">Reserve your moment of luxury</p>
+          <h2 className={`font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-2 sm:mb-4 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Book Your Appointment</h2>
+          <p className={`text-sm sm:text-base ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Reserve your moment of luxury</p>
         </div>
 
-        {step < 4 && <StepIndicator currentStep={step} />}
+        {step < 4 && <StepIndicator currentStep={step} theme={theme} />}
 
         <div key={animationKey} className="animate-fade-in">
           {step === 1 && (
-            <div className="bg-white border border-charcoal/10 p-4 sm:p-6 md:p-8 rounded-sm">
-              <h3 className="font-heading text-xl sm:text-2xl mb-6 sm:mb-8 text-center">Select Your Service or Package</h3>
+            <div className={`${theme === 'dark' ? 'bg-[#111] border-gold/10' : 'bg-white border-charcoal/10'} border p-4 sm:p-6 md:p-8 rounded-sm`}>
+              <h3 className={`font-heading text-xl sm:text-2xl mb-6 sm:mb-8 text-center ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Select Your Service or Package</h3>
               
               <div className="mb-8">
-                <div className="text-xs text-charcoal/50 uppercase tracking-wider mb-4">Special Packages & Bundles</div>
+                <div className={`text-xs uppercase tracking-wider mb-4 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Special Packages & Bundles</div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {packagesData.map((pkg) => (
                     <div
@@ -420,7 +422,7 @@ function BookingWizard() {
                       className={`relative p-4 sm:p-6 border cursor-pointer transition-all touch-manipulation ${
                         selectedPackage?.id === pkg.id
                           ? 'border-gold bg-gold/5'
-                          : 'border-charcoal/10 hover:border-gold/30'
+                          : theme === 'dark' ? 'border-offwhite/10 hover:border-gold/30' : 'border-charcoal/10 hover:border-gold/30'
                       }`}
                     >
                       {pkg.tag && (
@@ -428,19 +430,19 @@ function BookingWizard() {
                           {pkg.tag}
                         </div>
                       )}
-                      <h4 className="font-heading text-base sm:text-lg mb-2">{pkg.name}</h4>
-                      <p className="text-sm text-charcoal/60 mb-3">{pkg.description}</p>
+                      <h4 className={`font-heading text-base sm:text-lg mb-2 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{pkg.name}</h4>
+                      <p className={`text-sm mb-3 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>{pkg.description}</p>
                       {pkg.originalPrice > 0 ? (
                         <div className="flex items-baseline gap-2">
                           <span className="text-gold text-lg sm:text-xl font-heading">${pkg.packagePrice}</span>
-                          <span className="text-charcoal/40 text-sm line-through">${pkg.originalPrice}</span>
-                          <span className="text-green-600 text-sm">Save {pkg.savings}%</span>
+                          <span className={`text-sm line-through ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>${pkg.originalPrice}</span>
+                          <span className={theme === 'dark' ? 'text-green-400 text-sm' : 'text-green-600 text-sm'}>Save {pkg.savings}%</span>
                         </div>
                       ) : (
                         <div className="text-gold text-lg sm:text-xl">Custom Quote</div>
                       )}
                       {pkg.minPeople && (
-                        <div className="mt-2 text-xs text-charcoal/50">Min. {pkg.minPeople} people</div>
+                        <div className={`mt-2 text-xs ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Min. {pkg.minPeople} people</div>
                       )}
                     </div>
                   ))}
@@ -448,7 +450,7 @@ function BookingWizard() {
               </div>
 
               <div className="mb-6">
-                <div className="text-xs text-charcoal/50 uppercase tracking-wider mb-4">Individual Services</div>
+                <div className={`text-xs uppercase tracking-wider mb-4 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Individual Services</div>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 {servicesData.map((service) => (
@@ -458,21 +460,21 @@ function BookingWizard() {
                     className={`p-4 sm:p-6 border cursor-pointer transition-all touch-manipulation ${
                       selectedService?.id === service.id
                         ? 'border-gold bg-gold/5'
-                        : 'border-charcoal/10 hover:border-gold/30'
+                        : theme === 'dark' ? 'border-offwhite/10 hover:border-gold/30' : 'border-charcoal/10 hover:border-gold/30'
                     }`}
                   >
-                    <h4 className="font-heading text-base sm:text-lg mb-2">{service.name}</h4>
+                    <h4 className={`font-heading text-base sm:text-lg mb-2 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{service.name}</h4>
                     <div className="flex justify-between items-baseline">
                       <span className="text-gold text-lg sm:text-xl">${service.price}</span>
-                      <span className="text-charcoal/50 text-sm">{service.duration} min</span>
+                      <span className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>{service.duration} min</span>
                     </div>
                   </div>
                 ))}
               </div>
 
               {(selectedService || selectedPackage) && (
-                <div className="border-t border-charcoal/10 pt-6 sm:pt-8">
-                  <h4 className="text-xs sm:text-sm text-charcoal/50 tracking-wider uppercase mb-4">Extra Enhancements</h4>
+                <div className={`border-t pt-6 sm:pt-8 ${theme === 'dark' ? 'border-offwhite/10' : 'border-charcoal/10'}`}>
+                  <h4 className={`text-xs sm:text-sm tracking-wider uppercase mb-4 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Extra Enhancements</h4>
                   <div className="grid grid-cols-1 gap-3 sm:gap-4 mb-6 sm:mb-8">
                     {(selectedService?.addOns || [
                       { name: 'French Tip', price: 15 },
@@ -487,13 +489,13 @@ function BookingWizard() {
                           className={`flex items-center justify-between p-3 sm:p-4 border cursor-pointer transition-all touch-manipulation ${
                             isSelected
                               ? 'border-gold bg-gold/5'
-                              : 'border-charcoal/10 hover:border-gold/30'
+                              : theme === 'dark' ? 'border-offwhite/10 hover:border-gold/30' : 'border-charcoal/10 hover:border-gold/30'
                           }`}
                         >
                           <div className="flex items-center gap-2 sm:gap-3">
                             <div
                               className={`w-4 sm:w-5 h-4 sm:h-5 border flex items-center justify-center ${
-                                isSelected ? 'bg-gold border-gold' : 'border-charcoal/30'
+                                isSelected ? 'bg-gold border-gold' : (theme === 'dark' ? 'border-offwhite/30' : 'border-charcoal/30')
                               }`}
                             >
                               {isSelected && (
@@ -502,7 +504,7 @@ function BookingWizard() {
                                 </svg>
                               )}
                             </div>
-                            <span className="text-sm text-charcoal">{addOn.name}</span>
+                            <span className={`text-sm ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{addOn.name}</span>
                           </div>
                           <span className="text-sm text-gold">+${addOn.price}</span>
                           <input
@@ -516,13 +518,13 @@ function BookingWizard() {
                     })}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row justify-between items-center p-3 sm:p-4 bg-charcoal text-offwhite gap-2">
+                  <div className={`flex flex-col sm:flex-row justify-between items-center p-3 sm:p-4 ${theme === 'dark' ? 'bg-[#0d0d0d] border border-gold/10 text-offwhite' : 'bg-charcoal text-offwhite'} gap-2`}>
                     <div>
-                      <span className="text-xs sm:text-sm text-offwhite/60">Total Time: </span>
+                      <span className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-offwhite/60' : 'text-offwhite/60'}`}>Total Time: </span>
                       <span className="font-medium">{totalMinutes} min</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs sm:text-sm text-offwhite/60">Total: </span>
+                      <span className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-offwhite/60' : 'text-offwhite/60'}`}>Total: </span>
                       <span className="text-gold text-xl sm:text-2xl font-heading ml-2">${totalPrice}</span>
                     </div>
                   </div>
@@ -535,8 +537,8 @@ function BookingWizard() {
                   disabled={!selectedService}
                   className={`w-full sm:w-auto px-6 sm:px-8 py-3 tracking-wider transition-all touch-manipulation ${
                     selectedService
-                      ? 'bg-charcoal text-offwhite hover:bg-charcoal/80'
-                      : 'bg-charcoal/30 text-charcoal/50 cursor-not-allowed'
+                      ? (theme === 'dark' ? 'bg-gold text-charcoal hover:bg-gold/90' : 'bg-charcoal text-offwhite hover:bg-charcoal/80')
+                      : (theme === 'dark' ? 'bg-offwhite/30 text-offwhite/50 cursor-not-allowed' : 'bg-charcoal/30 text-charcoal/50 cursor-not-allowed')
                   }`}
                 >
                   CONTINUE
@@ -546,18 +548,18 @@ function BookingWizard() {
           )}
 
           {step === 2 && (
-            <div className="bg-white border border-charcoal/10 p-4 sm:p-6 md:p-8 rounded-sm">
-              <h3 className="font-heading text-xl sm:text-2xl mb-6 sm:mb-8 text-center">Schedule Your Appointment</h3>
+            <div className={`${theme === 'dark' ? 'bg-[#111] border-gold/10' : 'bg-white border-charcoal/10'} border p-4 sm:p-6 md:p-8 rounded-sm`}>
+              <h3 className={`font-heading text-xl sm:text-2xl mb-6 sm:mb-8 text-center ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Schedule Your Appointment</h3>
               
               <div className="grid grid-cols-1 gap-6 sm:gap-8 mb-6 sm:mb-8">
                 <div>
-                  <label className="text-xs sm:text-sm text-charcoal/50 tracking-wider uppercase block mb-3 sm:mb-4">Select Date</label>
-                  <Calendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+                  <label className={`text-xs sm:text-sm tracking-wider uppercase block mb-3 sm:mb-4 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Select Date</label>
+                  <Calendar selectedDate={selectedDate} onSelectDate={setSelectedDate} theme={theme} />
                 </div>
               
                 <div>
-                  <label className="text-xs sm:text-sm text-charcoal/50 tracking-wider uppercase block mb-3 sm:mb-4">Select Time</label>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2 max-h-48 sm:max-h-72 overflow-y-auto border border-charcoal/10 p-2 sm:p-4">
+                  <label className={`text-xs sm:text-sm tracking-wider uppercase block mb-3 sm:mb-4 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Select Time</label>
+                  <div className={`grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2 max-h-48 sm:max-h-72 overflow-y-auto border p-2 sm:p-4 ${theme === 'dark' ? 'border-offwhite/10' : 'border-charcoal/10'}`}>
                     {timeSlots.map((slot) => (
                       <button
                         key={slot.value}
@@ -565,8 +567,8 @@ function BookingWizard() {
                         className={`py-2 px-1 sm:px-3 text-xs sm:text-sm transition-all touch-manipulation ${
                           selectedTime === slot.value
                             ? 'bg-gold text-charcoal'
-                            : 'bg-white text-charcoal hover:bg-gold/20'
-                        } border border-charcoal/10`}
+                            : (theme === 'dark' ? 'bg-offwhite/10 text-offwhite hover:bg-gold/20' : 'bg-white text-charcoal hover:bg-gold/20')
+                        } border ${theme === 'dark' ? 'border-offwhite/10' : 'border-charcoal/10'}`}
                       >
                         {slot.label}
                       </button>
@@ -576,11 +578,11 @@ function BookingWizard() {
               </div>
 
               <div className="mb-6 sm:mb-8">
-                <label className="text-xs sm:text-sm text-charcoal/50 tracking-wider uppercase block mb-3 sm:mb-4">Select Artist (Optional)</label>
+                <label className={`text-xs sm:text-sm tracking-wider uppercase block mb-3 sm:mb-4 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Select Artist (Optional)</label>
                 <select
                   value={selectedArtist}
                   onChange={(e) => setSelectedArtist(e.target.value)}
-                  className="w-full p-3 sm:p-4 border border-charcoal/10 bg-white text-charcoal focus:border-gold focus:outline-none text-sm sm:text-base"
+                  className={`w-full p-3 sm:p-4 border focus:border-gold focus:outline-none text-sm sm:text-base ${theme === 'dark' ? 'border-offwhite/10 bg-offwhite/10 text-offwhite' : 'border-charcoal/10 bg-white text-charcoal'}`}
                 >
                   <option value="">Choose an artist...</option>
                   {artists.map((artist) => (
@@ -591,7 +593,7 @@ function BookingWizard() {
                 </select>
               </div>
 
-              <div className="flex flex-col sm:flex-row justify-between items-center p-3 sm:p-4 bg-charcoal text-offwhite gap-2 text-xs sm:text-sm">
+              <div className={`flex flex-col sm:flex-row justify-between items-center p-3 sm:p-4 gap-2 text-xs sm:text-sm ${theme === 'dark' ? 'bg-[#0d0d0d] border border-gold/10 text-offwhite' : 'bg-charcoal text-offwhite'}`}>
                 <span>
                   {selectedDate?.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   {selectedTime && ` at ${timeSlots.find(s => s.value === selectedTime)?.label}`}
@@ -602,7 +604,7 @@ function BookingWizard() {
               <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-between gap-3">
                 <button
                   onClick={() => handleNextStep(1)}
-                  className="order-2 sm:order-1 px-6 py-3 border border-charcoal/20 text-charcoal hover:bg-charcoal/5 transition-all touch-manipulation text-sm sm:text-base"
+                  className={`order-2 sm:order-1 px-6 py-3 border transition-all touch-manipulation text-sm sm:text-base ${theme === 'dark' ? 'border-offwhite/20 text-offwhite hover:bg-offwhite/10' : 'border-charcoal/20 text-charcoal hover:bg-charcoal/5'}`}
                 >
                   BACK
                 </button>
@@ -611,8 +613,8 @@ function BookingWizard() {
                   disabled={!selectedDate || !selectedTime}
                   className={`order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-8 py-3 tracking-wider transition-all touch-manipulation text-sm sm:text-base ${
                     selectedDate && selectedTime
-                      ? 'bg-charcoal text-offwhite hover:bg-charcoal/80'
-                      : 'bg-charcoal/30 text-charcoal/50 cursor-not-allowed'
+                      ? (theme === 'dark' ? 'bg-gold text-charcoal hover:bg-gold/90' : 'bg-charcoal text-offwhite hover:bg-charcoal/80')
+                      : (theme === 'dark' ? 'bg-offwhite/30 text-offwhite/50 cursor-not-allowed' : 'bg-charcoal/30 text-charcoal/50 cursor-not-allowed')
                   }`}
                 >
                   CONTINUE
@@ -622,57 +624,57 @@ function BookingWizard() {
           )}
 
           {step === 3 && (
-            <div className="bg-white border border-charcoal/10 p-4 sm:p-6 md:p-8 rounded-sm">
-              <h3 className="font-heading text-xl sm:text-2xl mb-6 sm:mb-8 text-center">Your Details</h3>
+            <div className={`${theme === 'dark' ? 'bg-[#111] border-gold/10' : 'bg-white border-charcoal/10'} border p-4 sm:p-6 md:p-8 rounded-sm`}>
+              <h3 className={`font-heading text-xl sm:text-2xl mb-6 sm:mb-8 text-center ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Your Details</h3>
               
               <div className="max-w-md mx-auto">
                 <div className="mb-4 sm:mb-6">
-                  <label className="text-xs sm:text-sm text-charcoal/50 tracking-wider uppercase block mb-2">Full Name</label>
+                  <label className={`text-xs sm:text-sm tracking-wider uppercase block mb-2 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Full Name</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className={`w-full p-3 sm:p-4 border bg-white text-charcoal focus:outline-none transition-colors text-sm sm:text-base ${
-                      errors.name ? 'border-red-500' : 'border-charcoal/10 focus:border-gold'
-                    }`}
+                    className={`w-full p-3 sm:p-4 border focus:outline-none transition-colors text-sm sm:text-base ${
+                      theme === 'dark' ? 'bg-offwhite/10 text-offwhite' : 'bg-white text-charcoal'
+                    } ${errors.name ? 'border-red-500' : theme === 'dark' ? 'border-offwhite/10 focus:border-gold' : 'border-charcoal/10 focus:border-gold'}`}
                     placeholder="Alexandra Chen"
                   />
-                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                  {errors.name && <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-500'}`}>{errors.name}</p>}
                 </div>
 
                 <div className="mb-4 sm:mb-6">
-                  <label className="text-xs sm:text-sm text-charcoal/50 tracking-wider uppercase block mb-2">Email</label>
+                  <label className={`text-xs sm:text-sm tracking-wider uppercase block mb-2 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Email</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className={`w-full p-3 sm:p-4 border bg-white text-charcoal focus:outline-none transition-colors text-sm sm:text-base ${
-                      errors.email ? 'border-red-500' : 'border-charcoal/10 focus:border-gold'
-                    }`}
+                    className={`w-full p-3 sm:p-4 border focus:outline-none transition-colors text-sm sm:text-base ${
+                      theme === 'dark' ? 'bg-offwhite/10 text-offwhite' : 'bg-white text-charcoal'
+                    } ${errors.email ? 'border-red-500' : theme === 'dark' ? 'border-offwhite/10 focus:border-gold' : 'border-charcoal/10 focus:border-gold'}`}
                     placeholder="alexandra@example.com"
                   />
-                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                  {errors.email && <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-500'}`}>{errors.email}</p>}
                 </div>
 
                 <div className="mb-4 sm:mb-6">
-                  <label className="text-xs sm:text-sm text-charcoal/50 tracking-wider uppercase block mb-2">Phone (10 digits)</label>
+                  <label className={`text-xs sm:text-sm tracking-wider uppercase block mb-2 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Phone (10 digits)</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={handlePhoneChange}
-                    className={`w-full p-3 sm:p-4 border bg-white text-charcoal focus:outline-none transition-colors text-sm sm:text-base ${
-                      errors.phone ? 'border-red-500' : 'border-charcoal/10 focus:border-gold'
-                    }`}
+                    className={`w-full p-3 sm:p-4 border focus:outline-none transition-colors text-sm sm:text-base ${
+                      theme === 'dark' ? 'bg-offwhite/10 text-offwhite' : 'bg-white text-charcoal'
+                    } ${errors.phone ? 'border-red-500' : theme === 'dark' ? 'border-offwhite/10 focus:border-gold' : 'border-charcoal/10 focus:border-gold'}`}
                     placeholder="5551234567"
                   />
-                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                  {errors.phone && <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-500'}`}>{errors.phone}</p>}
                 </div>
 
                 <label className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 border cursor-pointer transition-all mb-6 sm:mb-8 touch-manipulation ${
-                  errors.agreed ? 'border-red-500' : formData.agreed ? 'border-gold bg-gold/5' : 'border-charcoal/10'
+                  errors.agreed ? 'border-red-500' : formData.agreed ? 'border-gold bg-gold/5' : theme === 'dark' ? 'border-offwhite/10' : 'border-charcoal/10'
                 }`}>
                   <div className={`w-4 sm:w-5 h-4 sm:h-5 mt-0.5 border flex items-center justify-center flex-shrink-0 ${
-                    formData.agreed ? 'bg-gold border-gold' : 'border-charcoal/30'
+                    formData.agreed ? 'bg-gold border-gold' : theme === 'dark' ? 'border-offwhite/30' : 'border-charcoal/30'
                   }`}>
                     {formData.agreed && (
                       <svg className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -686,13 +688,13 @@ function BookingWizard() {
                     onChange={(e) => setFormData({ ...formData, agreed: e.target.checked })}
                     className="sr-only"
                   />
-                  <span className="text-xs sm:text-sm text-charcoal leading-relaxed">
+                  <span className={`text-xs sm:text-sm leading-relaxed ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>
                     I agree to pay on-site and understand the 24-hour cancellation policy.
                   </span>
                 </label>
-                {errors.agreed && <p className="text-red-500 text-xs -mt-6 sm:-mt-8 mb-6 sm:mb-8">{errors.agreed}</p>}
+                {errors.agreed && <p className={`text-xs -mt-6 sm:-mt-8 mb-6 sm:mb-8 ${theme === 'dark' ? 'text-red-400' : 'text-red-500'}`}>{errors.agreed}</p>}
 
-                <div className="flex flex-col sm:flex-row justify-between items-center p-3 sm:p-4 bg-charcoal text-offwhite gap-2">
+                <div className={`flex flex-col sm:flex-row justify-between items-center p-3 sm:p-4 gap-2 ${theme === 'dark' ? 'bg-[#0d0d0d] border border-gold/10 text-offwhite' : 'bg-charcoal text-offwhite'}`}>
                   <span className="text-xs sm:text-sm">
                     {selectedPackage?.name || selectedService?.name}
                     {selectedAddOns.length > 0 && ` + ${selectedAddOns.map(a => a.name).join(', ')}`}
@@ -703,7 +705,7 @@ function BookingWizard() {
                 <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-between gap-3">
                   <button
                     onClick={() => handleNextStep(2)}
-                    className="order-2 sm:order-1 px-6 py-3 border border-charcoal/20 text-charcoal hover:bg-charcoal/5 transition-all touch-manipulation text-sm sm:text-base"
+                    className={`order-2 sm:order-1 px-6 py-3 border transition-all touch-manipulation text-sm sm:text-base ${theme === 'dark' ? 'border-offwhite/20 text-offwhite hover:bg-offwhite/10' : 'border-charcoal/20 text-charcoal hover:bg-charcoal/5'}`}
                   >
                     BACK
                   </button>
@@ -719,38 +721,38 @@ function BookingWizard() {
           )}
 
           {step === 4 && (
-            <div className="bg-white border border-gold/30 p-6 sm:p-8 md:p-12 text-center rounded-sm">
+            <div className={`${theme === 'dark' ? 'bg-[#111] border-gold/30' : 'bg-white border-charcoal/10'} border p-6 sm:p-8 md:p-12 text-center rounded-sm`}>
               <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-full bg-gold/20 flex items-center justify-center">
                 <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="font-heading text-2xl sm:text-3xl mb-2">Reservation Confirmed</h3>
-              <p className="text-charcoal/60 text-sm sm:text-base mb-4 sm:mb-8">Your booking ID is:</p>
-              <div className="inline-block px-6 sm:px-8 py-3 sm:py-4 bg-charcoal text-gold font-heading text-xl sm:text-2xl tracking-wider mb-6 sm:mb-8">
+              <h3 className={`font-heading text-2xl sm:text-3xl mb-2 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Reservation Confirmed</h3>
+              <p className={`text-sm sm:text-base mb-4 sm:mb-8 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Your booking ID is:</p>
+              <div className={`inline-block px-6 sm:px-8 py-3 sm:py-4 ${theme === 'dark' ? 'bg-offwhite/10' : 'bg-charcoal/5'} text-gold font-heading text-xl sm:text-2xl tracking-wider mb-6 sm:mb-8 border border-gold/10`}>
                 {bookingId}
               </div>
-              <div className="text-left max-w-md mx-auto p-4 sm:p-6 bg-offwhite border border-charcoal/10 mb-6 sm:mb-8">
-                <h4 className="font-heading text-base sm:text-lg mb-3 sm:mb-4">Booking Details</h4>
+              <div className={`text-left max-w-md mx-auto p-4 sm:p-6 ${theme === 'dark' ? 'bg-[#0d0d0d] border-gold/10' : 'bg-offwhite border-charcoal/10'} border mb-6 sm:mb-8`}>
+                <h4 className={`font-heading text-base sm:text-lg mb-3 sm:mb-4 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Booking Details</h4>
                 <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-                  <p><span className="text-charcoal/50">{selectedPackage ? 'Package' : 'Service'}:</span> <span className="text-charcoal">{selectedPackage?.name || selectedService?.name}</span></p>
+                  <p><span className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>{selectedPackage ? 'Package' : 'Service'}:</span> <span className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{selectedPackage?.name || selectedService?.name}</span></p>
                   {selectedPackage && (
-                    <p><span className="text-charcoal/50">Includes:</span> <span className="text-charcoal">{selectedPackage.includes.join(', ')}</span></p>
+                    <p><span className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Includes:</span> <span className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{selectedPackage.includes.join(', ')}</span></p>
                   )}
                   {selectedAddOns.length > 0 && (
-                    <p><span className="text-charcoal/50">Add-ons:</span> <span className="text-charcoal">{selectedAddOns.map(a => a.name).join(', ')}</span></p>
+                    <p><span className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Add-ons:</span> <span className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{selectedAddOns.map(a => a.name).join(', ')}</span></p>
                   )}
-                  <p><span className="text-charcoal/50">Date:</span> <span className="text-charcoal">{selectedDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span></p>
-                  <p><span className="text-charcoal/50">Time:</span> <span className="text-charcoal">{timeSlots.find(s => s.value === selectedTime)?.label}</span></p>
-                  <p><span className="text-charcoal/50">Artist:</span> <span className="text-charcoal">{selectedArtist || 'Any Available'}</span></p>
-                  <p><span className="text-charcoal/50">Client:</span> <span className="text-charcoal">{formData.name}</span></p>
-                  <p><span className="text-charcoal/50">Total:</span> <span className="text-gold font-heading">${totalPrice}</span></p>
+                  <p><span className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Date:</span> <span className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{selectedDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span></p>
+                  <p><span className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Time:</span> <span className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{timeSlots.find(s => s.value === selectedTime)?.label}</span></p>
+                  <p><span className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Artist:</span> <span className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{selectedArtist || 'Any Available'}</span></p>
+                  <p><span className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Client:</span> <span className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{formData.name}</span></p>
+                  <p><span className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Total:</span> <span className="text-gold font-heading">${totalPrice}</span></p>
                 </div>
               </div>
-              <p className="text-charcoal/50 text-xs sm:text-sm mb-4 sm:mb-6">Confirmation sent to {formData.email}</p>
+              <p className={`text-xs sm:text-sm mb-4 sm:mb-6 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Confirmation sent to {formData.email}</p>
               <button
                 onClick={resetBooking}
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-charcoal text-offwhite hover:bg-charcoal/80 transition-all tracking-wider touch-manipulation text-sm sm:text-base"
+                className={`w-full sm:w-auto px-6 sm:px-8 py-3 transition-all tracking-wider touch-manipulation text-sm sm:text-base ${theme === 'dark' ? 'bg-charcoal text-offwhite hover:bg-charcoal/80' : 'bg-charcoal text-offwhite hover:bg-charcoal/80'}`}
               >
                 BOOK ANOTHER
               </button>

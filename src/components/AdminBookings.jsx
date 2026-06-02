@@ -3,6 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
+import AppModal, {
+  modalLabelClass,
+  modalInputClass,
+  modalSelectClass,
+  modalTextareaClass,
+  modalBtnSecondary,
+  modalBtnPrimary,
+  modalBtnDanger,
+  modalCardClass,
+} from './AppModal';
 
 const statusConfig = {
   confirmed: { label: 'Confirmed', color: 'bg-blue-900/50 text-blue-300 border-blue-700/50', dot: 'bg-blue-400' },
@@ -713,81 +723,87 @@ const { error } = await supabase.from('appointments').insert({
       </div>
 
       {editingBooking && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
-            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
-              <h2 className="font-heading text-2xl text-gold">Edit Booking</h2>
-              <button onClick={() => setEditingBooking(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-              <div className="p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="text-offwhite font-heading mb-1">{editingBooking.customer?.full_name}</div>
-                <div className="text-offwhite/50 text-xs">{editingBooking.service?.name} &middot; ${editingBooking.service?.price || 0}</div>
+        <AppModal
+          open
+          onClose={() => setEditingBooking(null)}
+          title="Edit Booking"
+          scrollBody
+          maxWidth="max-w-lg"
+          zIndex="z-[100]"
+          footer={
+            <>
+              <button type="button" onClick={() => setEditingBooking(null)} className={modalBtnSecondary}>
+                Cancel
+              </button>
+              <button type="button" onClick={saveEdit} disabled={savingEdit} className={modalBtnPrimary}>
+                {savingEdit ? 'Saving...' : 'Save Changes'}
+              </button>
+            </>
+          }
+        >
+            <div className="space-y-4">
+              <div className={`${modalCardClass} text-center`}>
+                <div className="text-primary font-heading mb-1">{editingBooking.customer?.full_name}</div>
+                <div className="text-secondary text-xs">
+                  {editingBooking.service?.name} &middot; ${editingBooking.service?.price || 0}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Service</label>
-                  <select value={editServiceId} onChange={(e) => setEditServiceId(e.target.value)} className="w-full p-3 border rounded-lg focus:border-gold focus:outline-none" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.3)', color: '#f0d78c' }}>
-                    <option value="" style={{ backgroundColor: '#111', color: '#888' }}>Select service</option>
-                    {services.map(s => <option key={s.id} value={s.id} style={{ backgroundColor: '#111', color: '#f0d78c' }}>{s.name} — ${s.price}</option>)}
+                  <label className={modalLabelClass}>Service</label>
+                  <select value={editServiceId} onChange={(e) => setEditServiceId(e.target.value)} className={modalSelectClass}>
+                    <option value="">Select service</option>
+                    {services.map(s => <option key={s.id} value={s.id}>{s.name} — ${s.price}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Technician</label>
-                  <select value={editTechId} onChange={(e) => setEditTechId(e.target.value)} className="w-full p-3 border rounded-lg focus:border-gold focus:outline-none" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.3)', color: '#f0d78c' }}>
-                    <option value="" style={{ backgroundColor: '#111', color: '#888' }}>Unassigned</option>
-                    {technicians.map(t => <option key={t.id} value={t.id} style={{ backgroundColor: '#111', color: '#f0d78c' }}>{t.full_name}</option>)}
+                  <label className={modalLabelClass}>Technician</label>
+                  <select value={editTechId} onChange={(e) => setEditTechId(e.target.value)} className={modalSelectClass}>
+                    <option value="">Unassigned</option>
+                    {technicians.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Date</label>
+                  <label className={modalLabelClass}>Date</label>
                   {editDate ? (
-                    <div className="p-3 rounded-lg text-offwhite font-heading text-sm flex items-center justify-between" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(197,160,89,0.3)' }}>
+                    <div className={`${modalCardClass} text-primary font-heading text-sm flex items-center justify-between`}>
                       {new Date(editDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                      <button onClick={() => setEditDate('')} className="text-red-400 text-xs hover:text-red-300 ml-2">Change</button>
+                      <button type="button" onClick={() => setEditDate('')} className="text-red-500 text-xs hover:text-red-400 ml-2">Change</button>
                     </div>
                   ) : (
                     <DatePicker value={editDate} onChange={(v) => setEditDate(v)} />
                   )}
                 </div>
                 <div>
-                  <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Time</label>
+                  <label className={modalLabelClass}>Time</label>
                   {editTime ? (
-                    <div className="p-3 rounded-lg text-offwhite font-heading text-sm flex items-center justify-between" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(197,160,89,0.3)' }}>
+                    <div className={`${modalCardClass} text-primary font-heading text-sm flex items-center justify-between`}>
                       {fmtTimeInput(editTime)}
-                      <button onClick={() => setEditTime('')} className="text-red-400 text-xs hover:text-red-300 ml-2">Change</button>
+                      <button type="button" onClick={() => setEditTime('')} className="text-red-500 text-xs hover:text-red-400 ml-2">Change</button>
                     </div>
                   ) : (
                     <TimePicker value={editTime} onChange={(v) => setEditTime(v)} />
                   )}
                 </div>
               </div>
-              {editError && <p className="text-red-400 text-sm">{editError}</p>}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setEditingBooking(null)} className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 transition-colors">Cancel</button>
-                <button type="button" onClick={saveEdit} disabled={savingEdit} className="flex-1 py-3 bg-gold text-charcoal rounded-lg hover:bg-gold/90 font-medium disabled:opacity-50">
-                  {savingEdit ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
+              {editError && <p className="text-red-500 text-sm">{editError}</p>}
             </div>
-          </div>
-        </div>
+        </AppModal>
       )}
 
       {historyBooking && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
-            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
-              <div>
-                <h2 className="font-heading text-xl text-gold">Booking History</h2>
-                <p className="text-offwhite/50 text-xs mt-1">{historyBooking.customer?.full_name} — {historyBooking.service?.name || 'Service'}</p>
-              </div>
-              <button onClick={() => setHistoryBooking(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              <div className="mb-6 p-4 rounded-xl space-y-3" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(197,160,89,0.15)' }}>
+        <AppModal
+          open
+          onClose={() => setHistoryBooking(null)}
+          title="Booking History"
+          subtitle={`${historyBooking.customer?.full_name} — ${historyBooking.service?.name || 'Service'}`}
+          maxWidth="max-w-lg"
+          zIndex="z-[100]"
+          scrollBody
+        >
+              <div className={`${modalCardClass} mb-6 space-y-3`}>
                 {[
                   { label: 'Source', value: <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] border bg-gold/20 text-gold border-gold/40"><span className="w-1 h-1 rounded-full bg-gold mr-1" />Online</span> },
                   { label: 'Status', value: <span className={`px-3 py-1 text-xs rounded-full border ${statusConfig[historyBooking.status]?.color}`}>{statusConfig[historyBooking.status]?.label}</span> },
@@ -808,148 +824,190 @@ const { error } = await supabase.from('appointments').insert({
                   { label: 'Nail Goal', value: historyBooking.customer?.nail_goal || '—' },
                   { label: 'Refreshment', value: historyBooking.customer?.refreshment_pref || '—' },
                 ].map(({ label, value }) => (
-                  <div key={label} className="flex justify-between items-start">
-                    <div className="text-offwhite/30 text-[10px] uppercase tracking-widest flex-shrink-0 mr-4">{label}</div>
-                    <div className={`font-heading text-sm text-right ${label === 'Cancel Reason' ? 'text-red-400/70' : label === 'Lobby At' ? 'text-yellow-400' : 'text-offwhite'}`}>{value}</div>
+                  <div key={label} className="flex justify-between items-start gap-3">
+                    <div className="text-muted text-[10px] uppercase tracking-widest flex-shrink-0">{label}</div>
+                    <div className={`font-heading text-sm text-right text-primary ${label === 'Cancel Reason' ? 'text-red-500' : ''}`}>{value}</div>
                   </div>
                 ))}
               </div>
               <div>
-                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-3">Activity Timeline</div>
+                <div className={modalLabelClass}>Activity Timeline</div>
                 <div className="space-y-0">
                   {buildTimeline(historyBooking).map((event, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="w-2 h-2 rounded-full flex-shrink-0 mt-2" style={{ backgroundColor: event.color }} />
-                      <div className="flex-1 pb-4 border-l ml-1" style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
-                        <div className="text-offwhite font-heading text-sm">{event.label}</div>
-                        <div className="text-offwhite/40 text-xs mt-0.5">{event.detail}</div>
-                        <div className="text-offwhite/20 text-[10px] mt-1">{fmtTime(event.time)}</div>
+                      <div className="flex-1 pb-4 border-l border-light ml-1">
+                        <div className="text-primary font-heading text-sm">{event.label}</div>
+                        <div className="text-secondary text-xs mt-0.5">{event.detail}</div>
+                        <div className="text-muted text-[10px] mt-1">{fmtTime(event.time)}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
+        </AppModal>
       )}
 
       {cancelTarget && (
-        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
-            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
-              <h2 className="font-heading text-xl text-offwhite">Cancel Booking</h2>
-              <button onClick={() => setCancelTarget(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
-            </div>
-            <div className="mb-4 p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="text-offwhite font-heading">{cancelTarget.customer?.full_name || 'Guest'}</div>
-              <div className="text-offwhite/50 text-sm">{cancelTarget.service?.name || 'Service'}</div>
-            </div>
-            <p className="text-offwhite/50 text-sm mb-3">Add a cancellation note (optional):</p>
-            <textarea value={cancelNote} onChange={(e) => setCancelNote(e.target.value)} placeholder="Reason for cancellation..." rows={3} className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/20 rounded-lg focus:border-red-500/50 focus:outline-none text-sm resize-none" style={{ backgroundColor: '#111' }} />
-            <p className="text-offwhite/30 text-xs mt-3 mb-6">This can be reactivated later from the Past section.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setCancelTarget(null)} className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 transition-colors text-sm">Keep Booking</button>
-              <button onClick={executeCancel} disabled={cancelling} className="flex-1 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium disabled:opacity-50">
+        <AppModal
+          open
+          onClose={() => setCancelTarget(null)}
+          title="Cancel Booking"
+          maxWidth="max-w-md"
+          zIndex="z-[110]"
+          footer={
+            <>
+              <button type="button" onClick={() => setCancelTarget(null)} className={modalBtnSecondary}>
+                Keep Booking
+              </button>
+              <button type="button" onClick={executeCancel} disabled={cancelling} className={modalBtnDanger}>
                 {cancelling ? 'Cancelling...' : 'Confirm Cancel'}
               </button>
-            </div>
+            </>
+          }
+        >
+          <div className={`${modalCardClass} text-center mb-4`}>
+            <div className="text-primary font-heading">{cancelTarget.customer?.full_name || 'Guest'}</div>
+            <div className="text-secondary text-sm">{cancelTarget.service?.name || 'Service'}</div>
           </div>
-        </div>
+          <p className="text-secondary text-sm mb-3">Add a cancellation note (optional):</p>
+          <textarea
+            value={cancelNote}
+            onChange={(e) => setCancelNote(e.target.value)}
+            placeholder="Reason for cancellation..."
+            rows={3}
+            className={modalTextareaClass}
+          />
+          <p className="text-muted text-xs mt-3">This can be reactivated later from the Past section.</p>
+        </AppModal>
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
-          <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#111] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-red-500/30 shadow-2xl" style={{ borderColor: 'rgba(239,68,68,0.4)' }}>
-            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-red-500/20">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-red-900/30 flex items-center justify-center">
-                  <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </div>
-                <div>
-                  <h2 className="font-heading text-xl text-offwhite mb-0">Delete Booking?</h2>
-                </div>
-              </div>
-              <button onClick={() => setDeleteTarget(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 text-left">
-              <p className="text-offwhite/50 text-sm mb-3">{deleteTarget.customer?.full_name || 'Guest'} — {deleteTarget.service?.name || 'Service'}</p>
-              <p className="text-red-400/60 text-xs mb-4">This action cannot be undone.</p>
-              <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-3 mb-4">
-                <p className="text-yellow-300 text-xs"><strong>Tip:</strong> Export your bookings before deleting.</p>
-              </div>
-              <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </div>
-            <div className="flex gap-3 p-4 sm:p-6 border-t border-red-500/10 bg-[#0d0d0d]">
-              <button onClick={() => setDeleteTarget(null)} className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 text-sm">Cancel</button>
-              <button onClick={executeDelete} disabled={deleting} className="flex-1 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-medium disabled:opacity-50">
+        <AppModal
+          open
+          onClose={() => setDeleteTarget(null)}
+          title="Delete Booking?"
+          maxWidth="max-w-sm"
+          zIndex="z-[110]"
+          panelClassName="border-red-500/30"
+          footer={
+            <>
+              <button type="button" onClick={() => setDeleteTarget(null)} className={modalBtnSecondary}>
+                Cancel
+              </button>
+              <button type="button" onClick={executeDelete} disabled={deleting} className={modalBtnDanger}>
                 {deleting ? 'Deleting...' : 'Yes, Delete'}
               </button>
+            </>
+          }
+        >
+          <div className="flex justify-center mb-4">
+            <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center">
+              <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
             </div>
           </div>
-        </div>
+          <p className="text-secondary text-sm text-center mb-2">
+            {deleteTarget.customer?.full_name || 'Guest'} — {deleteTarget.service?.name || 'Service'}
+          </p>
+          <p className="text-red-500 text-xs text-center mb-4">This action cannot be undone.</p>
+          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+            <p className="text-primary text-xs">
+              <strong>Tip:</strong> Export your bookings before deleting.
+            </p>
+          </div>
+        </AppModal>
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
-          <div className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197,160,89,0.4)' }}>
-            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
-              <h2 className="font-heading text-2xl text-gold">New Booking</h2>
-              <button onClick={() => setShowCreateModal(false)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
+        <AppModal
+          open
+          onClose={() => setShowCreateModal(false)}
+          title="New Booking"
+          maxWidth="max-w-lg"
+          zIndex="z-[100]"
+          scrollBody
+          footer={
+            <>
+              <button type="button" onClick={() => setShowCreateModal(false)} className={modalBtnSecondary}>
+                Cancel
+              </button>
+              <button type="button" onClick={saveCreate} disabled={creating} className={modalBtnPrimary}>
+                {creating ? 'Creating...' : 'Create Booking'}
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <div>
+              <label className={modalLabelClass}>Customer Phone *</label>
+              <input
+                type="tel"
+                value={createForm.phone}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                className={modalInputClass}
+                placeholder="10-digit phone"
+                maxLength={10}
+              />
+              {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
+              {customerName && (
+                <div className={`${modalCardClass} mt-2 text-center`}>
+                  <span className="text-gold-strong font-heading text-sm">{customerName}</span>
+                </div>
+              )}
             </div>
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-              <div>
-                <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Customer Phone *</label>
-                <input type="tel" value={createForm.phone} onChange={(e) => handlePhoneChange(e.target.value)} className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none" placeholder="10-digit phone" maxLength={10} />
-                {phoneError && <p className="text-red-400 text-xs mt-1">{phoneError}</p>}
-                {customerName && <div className="mt-2 p-2 rounded-lg text-center" style={{ backgroundColor: 'rgba(197,160,89,0.1)', border: '1px solid rgba(197,160,89,0.2)' }}><span className="text-gold font-heading text-sm">{customerName}</span></div>}
-              </div>
-              <div>
-                <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Service *</label>
-                <select value={createForm.service_id} onChange={(e) => setCreateForm({ ...createForm, service_id: e.target.value })} className="w-full p-3 border rounded-lg focus:border-gold focus:outline-none" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.3)', color: '#f0d78c' }}>
-                  <option value="" style={{ backgroundColor: '#111', color: '#888' }}>Select service</option>
-                  {services.map(s => <option key={s.id} value={s.id} style={{ backgroundColor: '#111', color: '#f0d78c' }}>{s.name} — ${s.price}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Technician</label>
-                <select value={createForm.tech_id} onChange={(e) => setCreateForm({ ...createForm, tech_id: e.target.value })} className="w-full p-3 border rounded-lg focus:border-gold focus:outline-none" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.3)', color: '#f0d78c' }}>
-                  <option value="" style={{ backgroundColor: '#111', color: '#888' }}>Auto-assign</option>
-                  {technicians.map(t => <option key={t.id} value={t.id} style={{ backgroundColor: '#111', color: '#f0d78c' }}>{t.full_name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Date *</label>
-                {createForm.date ? (
-                  <div className="p-3 rounded-lg text-offwhite font-heading text-sm flex items-center justify-between" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(197,160,89,0.3)' }}>
-                    {new Date(createForm.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                    <button onClick={() => setCreateForm(p => ({ ...p, date: '' }))} className="text-red-400 text-xs hover:text-red-300 ml-2">Change</button>
-                  </div>
-                ) : (
-                  <DatePicker value={createForm.date} onChange={(v) => setCreateForm(p => ({ ...p, date: v }))} />
-                )}
-              </div>
-              <div>
-                <label className="text-offwhite/40 text-xs uppercase tracking-widest block mb-2">Time</label>
-                {createForm.time ? (
-                  <div className="p-3 rounded-lg text-offwhite font-heading text-sm flex items-center justify-between" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(197,160,89,0.3)' }}>
-                    {fmtTimeInput(createForm.time)}
-                    <button onClick={() => setCreateForm(p => ({ ...p, time: '' }))} className="text-red-400 text-xs hover:text-red-300 ml-2">Change</button>
-                  </div>
-                ) : (
-                  <TimePicker value={createForm.time} onChange={(v) => setCreateForm(p => ({ ...p, time: v }))} />
-                )}
-              </div>
-              {createError && <p className="text-red-400 text-sm">{createError}</p>}
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 transition-colors">Cancel</button>
-                <button type="button" onClick={saveCreate} disabled={creating} className="flex-1 py-3 bg-gold text-charcoal rounded-lg hover:bg-gold/90 font-medium disabled:opacity-50">
-                  {creating ? 'Creating...' : 'Create Booking'}
-                </button>
-              </div>
+            <div>
+              <label className={modalLabelClass}>Service *</label>
+              <select
+                value={createForm.service_id}
+                onChange={(e) => setCreateForm({ ...createForm, service_id: e.target.value })}
+                className={modalSelectClass}
+              >
+                <option value="">Select service</option>
+                {services.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} — ${s.price}</option>
+                ))}
+              </select>
             </div>
+            <div>
+              <label className={modalLabelClass}>Technician</label>
+              <select
+                value={createForm.tech_id}
+                onChange={(e) => setCreateForm({ ...createForm, tech_id: e.target.value })}
+                className={modalSelectClass}
+              >
+                <option value="">Auto-assign</option>
+                {technicians.map(t => (
+                  <option key={t.id} value={t.id}>{t.full_name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={modalLabelClass}>Date *</label>
+              {createForm.date ? (
+                <div className={`${modalCardClass} text-primary font-heading text-sm flex items-center justify-between`}>
+                  {new Date(createForm.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  <button type="button" onClick={() => setCreateForm(p => ({ ...p, date: '' }))} className="text-red-500 text-xs hover:text-red-400 ml-2">Change</button>
+                </div>
+              ) : (
+                <DatePicker value={createForm.date} onChange={(v) => setCreateForm(p => ({ ...p, date: v }))} />
+              )}
+            </div>
+            <div>
+              <label className={modalLabelClass}>Time</label>
+              {createForm.time ? (
+                <div className={`${modalCardClass} text-primary font-heading text-sm flex items-center justify-between`}>
+                  {fmtTimeInput(createForm.time)}
+                  <button type="button" onClick={() => setCreateForm(p => ({ ...p, time: '' }))} className="text-red-500 text-xs hover:text-red-400 ml-2">Change</button>
+                </div>
+              ) : (
+                <TimePicker value={createForm.time} onChange={(v) => setCreateForm(p => ({ ...p, time: v }))} />
+              )}
+            </div>
+            {createError && <p className="text-red-500 text-sm">{createError}</p>}
           </div>
-        </div>
+        </AppModal>
       )}
     </div>
   );

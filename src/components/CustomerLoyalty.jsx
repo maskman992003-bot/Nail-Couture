@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
 
 const getTierInfo = (points) => {
@@ -27,6 +28,7 @@ const tierDetails = {
 export default function CustomerLoyalty() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [confirmationCode, setConfirmationCode] = useState(null);
@@ -73,7 +75,7 @@ export default function CustomerLoyalty() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
         <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -84,11 +86,11 @@ export default function CustomerLoyalty() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
         <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <p className="text-offwhite/60 mb-4">Unable to load profile</p>
+            <p className={theme === 'dark' ? 'text-offwhite/60 mb-4' : 'text-charcoal/60 mb-4'}>Unable to load profile</p>
             <Link to="/login" className="px-4 py-2 bg-gold text-charcoal rounded-lg">Return to Login</Link>
           </div>
         </div>
@@ -99,21 +101,21 @@ export default function CustomerLoyalty() {
   const tier = getTierInfo(profile.loyalty_points || 0);
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-10">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <Link to="/portal" className="text-offwhite/40 hover:text-gold text-sm">Home</Link>
-              <span className="text-offwhite/30">/</span>
+              <Link to="/portal" className={theme === 'dark' ? 'text-offwhite/40 hover:text-gold text-sm' : 'text-charcoal/40 hover:text-gold text-sm'}>Home</Link>
+              <span className={theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}>/</span>
               <span className="text-gold font-heading text-sm">Loyalty Rewards</span>
             </div>
             <h1 className="font-heading text-4xl text-gold">Loyalty Rewards</h1>
-            <p className="text-offwhite/50 text-sm mt-1">Your exclusive perks and how to unlock more</p>
+            <p className={theme === 'dark' ? 'text-offwhite/50 text-sm mt-1' : 'text-charcoal/50 text-sm mt-1'}>Your exclusive perks and how to unlock more</p>
           </div>
 
-          <div className="rounded-2xl p-8 border-2 text-center" style={{ background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, rgba(26, 26, 26, 1) 100%)', borderColor: 'rgba(197, 160, 89, 0.4)' }}>
-            <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-3">Membership Card</div>
+          <div className="rounded-2xl p-8 border-2 text-center" style={{ background: theme === 'dark' ? 'linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, rgba(26, 26, 26, 1) 100%)' : 'linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, rgba(255, 255, 255, 1) 100%)', borderColor: 'rgba(197, 160, 89, 0.4)' }}>
+            <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-3' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-3'}>Membership Card</div>
             <div className="flex items-center justify-center gap-3 mb-2">
               <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)' }}>
                 <span className="text-charcoal font-heading text-xl font-bold">{profile.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
@@ -121,29 +123,29 @@ export default function CustomerLoyalty() {
             </div>
             <div className={`font-heading text-3xl mb-1 ${tier.color}`}>{tier.name} Member</div>
             <div className="text-5xl font-heading text-gold mb-3">{profile.loyalty_points || 0}</div>
-            <div className="text-offwhite/50 text-sm">points</div>
+            <div className={theme === 'dark' ? 'text-offwhite/50 text-sm' : 'text-charcoal/50 text-sm'}>points</div>
             {tier.nextTier && (
               <div className="mt-4 max-w-sm mx-auto">
-                <div className="flex justify-between text-xs text-offwhite/40 mb-1">
+                <div className="flex justify-between text-xs mb-1" style={{ color: theme === 'dark' ? 'rgba(249, 249, 249, 0.4)' : 'rgba(18, 18, 18, 0.4)' }}>
                   <span>Next: {tier.nextTier}</span>
                   <span>{profile.loyalty_points || 0} / {tier.nextThreshold}</span>
                 </div>
-                <div className="w-full rounded-full h-1.5" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
+                <div className="w-full rounded-full h-1.5" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(18,18,18,0.1)' }}>
                   <div className="h-1.5 rounded-full" style={{ width: `${tier.progress}%`, backgroundColor: '#c5a059' }}></div>
                 </div>
               </div>
             )}
-            <div className="mt-4 text-offwhite/60 text-sm">{tier.benefit}</div>
+            <div className={theme === 'dark' ? 'mt-4 text-offwhite/60 text-sm' : 'mt-4 text-charcoal/60 text-sm'}>{tier.benefit}</div>
             {tier.nextTier && (
-              <div className="mt-4 text-offwhite/50 text-sm">
+              <div className={theme === 'dark' ? 'mt-4 text-offwhite/50 text-sm' : 'mt-4 text-charcoal/50 text-sm'}>
                 Need <span className="text-gold font-heading">{tier.nextThreshold - (profile.loyalty_points || 0)}</span> more points to unlock {tier.nextTier}
               </div>
             )}
           </div>
 
           {profile.referral_code && (
-            <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
-              <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-4">Your Referral Code</div>
+            <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>
+              <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-4' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-4'}>Your Referral Code</div>
               <div className="flex items-center justify-center gap-4 flex-wrap mb-4">
                 <div className="font-heading text-3xl text-gold tracking-widest">{profile.referral_code}</div>
                 <button
@@ -164,20 +166,20 @@ export default function CustomerLoyalty() {
                   Share via WhatsApp
                 </a>
               </div>
-              <p className="text-offwhite/40 text-sm text-center max-w-md mx-auto">Share the luxury. Friends get a discount on their first visit, and you earn bonus loyalty points!</p>
+              <p className={theme === 'dark' ? 'text-offwhite/40 text-sm text-center max-w-md mx-auto' : 'text-charcoal/40 text-sm text-center max-w-md mx-auto'}>Share the luxury. Friends get a discount on their first visit, and you earn bonus loyalty points!</p>
             </div>
           )}
 
-          <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: '#111' }}>
-            <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">How to Earn More Points</div>
+          <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>
+            <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-6' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-6'}>How to Earn More Points</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="flex items-start gap-4 p-5 rounded-xl" style={{ backgroundColor: 'rgba(197, 160, 89, 0.08)' }}>
                 <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)' }}>
                   <span className="text-charcoal font-heading text-xl font-bold">$</span>
                 </div>
                 <div>
-                  <div className="text-offwhite font-heading text-lg mb-1">Spend & Earn</div>
-                  <div className="text-offwhite/60 text-sm">Earn <span className="text-gold font-heading">1 point</span> for every <span className="text-gold font-heading">$1 spent</span> on any service. The more you enjoy, the more you earn!</div>
+                  <div className={theme === 'dark' ? 'text-offwhite font-heading text-lg mb-1' : 'text-charcoal font-heading text-lg mb-1'}>Spend & Earn</div>
+                  <div className={theme === 'dark' ? 'text-offwhite/60 text-sm' : 'text-charcoal/60 text-sm'}>Earn <span className="text-gold font-heading">1 point</span> for every <span className="text-gold font-heading">$1 spent</span> on any service. The more you enjoy, the more you earn!</div>
                 </div>
               </div>
               <div className="flex items-start gap-4 p-5 rounded-xl" style={{ backgroundColor: 'rgba(197, 160, 89, 0.08)' }}>
@@ -185,33 +187,33 @@ export default function CustomerLoyalty() {
                   <span className="text-charcoal font-heading text-xl">&#9733;</span>
                 </div>
                 <div>
-                  <div className="text-offwhite font-heading text-lg mb-1">Refer a Friend</div>
-                  <div className="text-offwhite/60 text-sm">Share your referral code with a friend. When they book their first visit, you both earn bonus points!</div>
+                  <div className={theme === 'dark' ? 'text-offwhite font-heading text-lg mb-1' : 'text-charcoal font-heading text-lg mb-1'}>Refer a Friend</div>
+                  <div className={theme === 'dark' ? 'text-offwhite/60 text-sm' : 'text-charcoal/60 text-sm'}>Share your referral code with a friend. When they book their first visit, you both earn bonus points!</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: '#111' }}>
-            <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-6">Redeem Rewards</div>
+          <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>
+            <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-6' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-6'}>Redeem Rewards</div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-xl p-5 border" style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }}>
-                <div className="text-offwhite font-heading text-base mb-1">Free Basic Nail Art</div>
-                <div className="text-offwhite/40 text-sm mb-4">100 points</div>
+              <div className="rounded-xl p-5 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(18,18,18,0.02)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(18,18,18,0.05)' }}>
+                <div className={theme === 'dark' ? 'text-offwhite font-heading text-base mb-1' : 'text-charcoal font-heading text-base mb-1'}>Free Basic Nail Art</div>
+                <div className={theme === 'dark' ? 'text-offwhite/40 text-sm mb-4' : 'text-charcoal/40 text-sm mb-4'}>100 points</div>
                 <button onClick={() => handleRedeem(100, 'Free Basic Nail Art')} disabled={(profile.loyalty_points || 0) < 100} className="w-full py-2 text-sm rounded-lg border-2 transition-colors disabled:opacity-30" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', color: '#c5a059' }}>
                   Redeem
                 </button>
               </div>
-              <div className="rounded-xl p-5 border" style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }}>
-                <div className="text-offwhite font-heading text-base mb-1">Free Refreshment</div>
-                <div className="text-offwhite/40 text-sm mb-4">200 points</div>
+              <div className="rounded-xl p-5 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(18,18,18,0.02)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(18,18,18,0.05)' }}>
+                <div className={theme === 'dark' ? 'text-offwhite font-heading text-base mb-1' : 'text-charcoal font-heading text-base mb-1'}>Free Refreshment</div>
+                <div className={theme === 'dark' ? 'text-offwhite/40 text-sm mb-4' : 'text-charcoal/40 text-sm mb-4'}>200 points</div>
                 <button onClick={() => handleRedeem(200, 'Free Refreshment')} disabled={(profile.loyalty_points || 0) < 200} className="w-full py-2 text-sm rounded-lg border-2 transition-colors disabled:opacity-30" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', color: '#c5a059' }}>
                   Redeem
                 </button>
               </div>
-              <div className="rounded-xl p-5 border" style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }}>
-                <div className="text-offwhite font-heading text-base mb-1">$25 Voucher</div>
-                <div className="text-offwhite/40 text-sm mb-4">500 points</div>
+              <div className="rounded-xl p-5 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(18,18,18,0.02)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(18,18,18,0.05)' }}>
+                <div className={theme === 'dark' ? 'text-offwhite font-heading text-base mb-1' : 'text-charcoal font-heading text-base mb-1'}>$25 Voucher</div>
+                <div className={theme === 'dark' ? 'text-offwhite/40 text-sm mb-4' : 'text-charcoal/40 text-sm mb-4'}>500 points</div>
                 <button onClick={() => handleRedeem(500, '$25 Voucher')} disabled={(profile.loyalty_points || 0) < 500} className="w-full py-2 text-sm rounded-lg border-2 transition-colors disabled:opacity-30" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', color: '#c5a059' }}>
                   Redeem
                 </button>
@@ -220,13 +222,13 @@ export default function CustomerLoyalty() {
           </div>
 
           {confirmationCode && (
-            <div className="rounded-2xl p-8 border-2 text-center" style={{ borderColor: 'rgba(197, 160, 89, 0.5)', background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #1a1a1a 100%)' }}>
-              <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-3">Your Redemption Code</div>
+            <div className="rounded-2xl p-8 border-2 text-center" style={{ borderColor: 'rgba(197, 160, 89, 0.5)', background: theme === 'dark' ? 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #1a1a1a 100%)' : 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #ffffff 100%)' }}>
+              <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-3' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-3'}>Your Redemption Code</div>
               <div className="font-heading text-4xl text-gold tracking-widest mb-3">{confirmationCode.code}</div>
-              <div className="text-offwhite/60 text-lg">{confirmationCode.reward}</div>
+              <div className={theme === 'dark' ? 'text-offwhite/60 text-lg' : 'text-charcoal/60 text-lg'}>{confirmationCode.reward}</div>
               <button onClick={() => setConfirmationCode(null)} className="mt-6 px-6 py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90">Got It</button>
             </div>
-)}
+          )}
         </div>
     </div>
   );

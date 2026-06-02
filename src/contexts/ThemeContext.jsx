@@ -1,21 +1,32 @@
-// E:\ElGarhy\Automation\Nail-Couture\Nail-Couture\src\contexts\ThemeContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
+
+const STORAGE_KEY = 'theme';
+
+function readStoredTheme() {
+  if (typeof window === 'undefined') return 'dark';
+  return window.localStorage.getItem(STORAGE_KEY) || 'dark';
+}
+
+function applyTheme(theme) {
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+}
+
+applyTheme(readStoredTheme());
 
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved || 'dark';
-  });
+  const [theme, setTheme] = useState(readStoredTheme);
 
   useEffect(() => {
-    localStorage.setItem('theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(STORAGE_KEY, theme);
+    applyTheme(theme);
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
   return (

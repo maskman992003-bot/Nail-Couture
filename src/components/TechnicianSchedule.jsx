@@ -306,11 +306,11 @@ export default function TechnicianSchedule() {
       {/* Responsive Floating Detail Modal Window */}
       {detailModal.open && (
         <div 
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" 
           onClick={() => setDetailModal({ open: false, date: null, dayAppts: [] })}
         >
           <div 
-            className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl"
+            className="w-full max-w-lg flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}

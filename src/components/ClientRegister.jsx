@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Sparkle = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -35,6 +36,21 @@ export default function ClientRegister() {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { theme } = useTheme();
+
+  const cardClass = theme === 'dark'
+    ? 'bg-[#111] border border-gold/20 rounded-2xl p-8 shadow-xl'
+    : 'bg-white border border-gold/30 rounded-2xl p-8 shadow-xl';
+
+  const inputClass = theme === 'dark'
+    ? 'w-full px-4 py-3 rounded-lg bg-offwhite/10 border border-offwhite/20 text-offwhite placeholder-offwhite/30 focus:outline-none focus:border-gold transition-colors'
+    : 'w-full px-4 py-3 rounded-lg bg-charcoal/5 border border-charcoal/10 text-charcoal placeholder-charcoal/30 focus:outline-none focus:border-gold transition-colors';
+
+  const labelClass = `text-xs tracking-wider uppercase block mb-2 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`;
+
+  const btnPrimaryClass = 'w-full py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all disabled:opacity-50 shadow-[0_0_40px_rgba(197,160,89,0.18)]';
+
+  const subtitleClass = theme === 'dark' ? 'text-offwhite/60 mt-2' : 'text-charcoal/60 mt-2';
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -131,7 +147,7 @@ export default function ClientRegister() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-charcoal flex items-center justify-center p-8 relative overflow-hidden">
+      <div className={`min-h-screen flex items-center justify-center p-8 relative overflow-hidden ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
         <Sparkle />
         <div className="relative z-10 text-center animate-fade-in">
           <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-8">
@@ -140,28 +156,37 @@ export default function ClientRegister() {
             </svg>
           </div>
           <h2 className="font-heading text-4xl text-gold mb-4 tracking-wide">Welcome to the Club</h2>
-          <p className="font-heading text-2xl text-offwhite mb-6">{formData.full_name}</p>
+          <p className={`font-heading text-2xl mb-6 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{formData.full_name}</p>
           {formData.referral_code && (
-            <p className="text-xl text-offwhite/70">
+            <p className={`text-xl ${theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}`}>
               Your <span className="text-gold">50 loyalty points</span> are being added
             </p>
           )}
+          <div className="mt-8 animate-fade-in">
+            <button
+              type="button"
+              onClick={() => navigate('/portal')}
+              className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all shadow-[0_0_40px_rgba(197,160,89,0.18)]"
+            >
+              Go to Portal
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-offwhite flex items-center justify-center px-4">
+    <div className={`min-h-screen flex items-center justify-center px-4 ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
       <div className="w-full max-w-md">
-        <div className="bg-white border border-charcoal/10 p-8">
+        <div className={cardClass}>
           <div className="text-center mb-8">
             <Link to="/" className="block">
               <img src="/NC.jpg" alt="Nail Couture" className="h-28 w-auto mx-auto" />
             </Link>
-            <p className="text-charcoal/60 mt-2">Create Your Account</p>
+            <p className={subtitleClass}>Create Your Account</p>
             {formData.referral_code && (
-              <p className="text-green-600 text-sm mt-2 font-medium">
+              <p className={theme === 'dark' ? 'text-green-400 text-sm mt-2 font-medium' : 'text-green-600 text-sm mt-2 font-medium'}>
                 You have a referral code! You'll earn 50 loyalty points after signup.
               </p>
             )}
@@ -169,7 +194,7 @@ export default function ClientRegister() {
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
+              <label className={labelClass}>
                 Full Name
               </label>
               <input
@@ -178,12 +203,12 @@ export default function ClientRegister() {
                 value={formData.full_name}
                 onChange={handleChange}
                 placeholder="Enter your full name"
-                className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+                className={inputClass}
               />
             </div>
 
             <div className="mb-4">
-              <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
+              <label className={labelClass}>
                 Phone Number
               </label>
               <input
@@ -192,12 +217,12 @@ export default function ClientRegister() {
                  value={formData.phone}
                 onChange={handleChange}
                 placeholder="Enter your phone number"
-                className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+                className={inputClass}
               />
             </div>
 
             <div className="mb-6">
-              <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
+              <label className={labelClass}>
                 Email
               </label>
               <input
@@ -206,13 +231,13 @@ export default function ClientRegister() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Enter your email"
-                className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+                className={inputClass}
               />
             </div>
 
             <div className="mb-6">
-              <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
-                Referral Code <span className="text-charcoal/30">(Optional)</span>
+              <label className={labelClass}>
+                Referral Code <span className={theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}>(Optional)</span>
               </label>
               <input
                 type="text"
@@ -220,16 +245,16 @@ export default function ClientRegister() {
                 value={formData.referral_code}
                 onChange={handleChange}
                 placeholder="Enter friend's referral code"
-                className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none uppercase"
+                className={`${inputClass} uppercase`}
               />
             </div>
 
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            {error && <p className={theme === 'dark' ? 'text-red-400 text-sm mb-4' : 'text-red-500 text-sm mb-4'}>{error}</p>}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gold text-charcoal py-3 font-heading tracking-wider hover:bg-gold/90 transition-colors disabled:opacity-50"
+              className={btnPrimaryClass}
             >
               {loading ? 'Creating Account...' : 'Create Account'}
             </button>

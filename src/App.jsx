@@ -63,7 +63,7 @@ function App() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col relative ${currentPage === 'check-in' ? (theme === 'dark' ? 'bg-charcoal' : 'bg-cream') : (theme === 'dark' ? 'bg-offwhite' : 'bg-white')}`}>
+    <div className="min-h-screen flex flex-col relative">
       <img 
         src="/NC.jfif.png" 
         alt="" 

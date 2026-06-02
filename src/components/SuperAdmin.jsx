@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '../utils/routes';
 import Sidebar from './Sidebar';
+import AppModal from './AppModal';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -25,6 +27,7 @@ export default function SuperAdmin() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ todayRevenue: 0, activeTechnicians: 0, waitingCustomers: 0, completedToday: 0 });
   const [recentAppointments, setRecentAppointments] = useState([]);
@@ -45,7 +48,7 @@ export default function SuperAdmin() {
           .order('checked_in_at', { ascending: false }),
         supabase
           .from('appointments')
-          .select('id, status', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('status', 'waiting'),
         supabase
           .from('profiles')
@@ -53,6 +56,11 @@ export default function SuperAdmin() {
           .in('role', ['admin', 'cashier', 'technician'])
           .order('full_name'),
       ]);
+      
+      // Log any errors
+      if (apptsRes.error) console.error('Error fetching appointments:', apptsRes.error);
+      if (waitingRes.error) console.error('Error fetching waiting count:', waitingRes.error);
+      if (staffRes.error) console.error('Error fetching staff:', staffRes.error);
       
       const appointments = apptsRes.data;
       const staffData = staffRes.data;
@@ -160,7 +168,7 @@ export default function SuperAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading Dashboard...</div>
@@ -170,29 +178,29 @@ export default function SuperAdmin() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
-         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
+         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: theme === 'dark' ? 'rgba(197, 160, 89, 0.1)' : 'rgba(197, 160, 89, 0.2)' }}>
         <div className="flex items-center justify-between">
               <div>
                 <h1 className="font-heading text-3xl text-gold">
                   {user?.role === 'owner' ? 'Owner Dashboard' : user?.role === 'partner' ? 'Partner Dashboard' : 'Super Admin'}
                 </h1>
-                <p className="text-offwhite/60 text-sm mt-1">Welcome back, {user?.full_name}</p>
+                <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Welcome back, {user?.full_name}</p>
               </div>
-             <div className="text-offwhite/50 text-sm">
+             <div className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>
                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
              </div>
            </div>
          </div>
 
          {user?.role !== 'owner' && (
-           <div className="px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row gap-2 border-b" style={{ borderColor: 'rgba(197, 160, 89, 0.1)' }}>
-             <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-gold text-charcoal' : 'bg-offwhite/10 text-offwhite/60 hover:bg-offwhite/20'}`}>
+           <div className="px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row gap-2 border-b" style={{ borderColor: theme === 'dark' ? 'rgba(197, 160, 89, 0.1)' : 'rgba(197, 160, 89, 0.2)' }}>
+             <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-gold text-charcoal' : theme === 'dark' ? 'bg-offwhite/10 text-offwhite/60 hover:bg-offwhite/20' : 'bg-charcoal/10 text-charcoal/60 hover:bg-charcoal/20'}`}>
                Dashboard
              </button>
-             <button onClick={() => setActiveTab('staff')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'staff' ? 'bg-gold text-charcoal' : 'bg-offwhite/10 text-offwhite/60 hover:bg-offwhite/20'}`}>
+             <button onClick={() => setActiveTab('staff')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'staff' ? 'bg-gold text-charcoal' : theme === 'dark' ? 'bg-offwhite/10 text-offwhite/60 hover:bg-offwhite/20' : 'bg-charcoal/10 text-charcoal/60 hover:bg-charcoal/20'}`}>
                Staff
              </button>
            </div>
@@ -202,28 +210,28 @@ export default function SuperAdmin() {
           {activeTab === 'dashboard' && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl">
-                  <div className="text-offwhite/50 text-sm mb-1">Today's Revenue</div>
+                <div className={`border p-6 rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
+                  <div className={`text-sm mb-1 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Today's Revenue</div>
                   <div className="text-3xl font-heading text-gold">${stats.todayRevenue.toFixed(0)}</div>
                 </div>
-                <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl">
-                  <div className="text-offwhite/50 text-sm mb-1">Active Technicians</div>
-                  <div className="text-3xl font-heading text-offwhite">{stats.activeTechnicians}</div>
+                <div className={`border p-6 rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
+                  <div className={`text-sm mb-1 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Active Technicians</div>
+                  <div className={`text-3xl font-heading ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{stats.activeTechnicians}</div>
                 </div>
-                <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl">
-                  <div className="text-offwhite/50 text-sm mb-1">Waiting</div>
+                <div className={`border p-6 rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
+                  <div className={`text-sm mb-1 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Waiting</div>
                   <div className="text-3xl font-heading text-yellow-400">{stats.waitingCustomers}</div>
                 </div>
-                <div className="bg-offwhite/5 border border-gold/20 p-6 rounded-xl">
-                  <div className="text-offwhite/50 text-sm mb-1">Completed</div>
+                <div className={`border p-6 rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
+                  <div className={`text-sm mb-1 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Completed</div>
                   <div className="text-3xl font-heading text-green-400">{stats.completedToday}</div>
                 </div>
               </div>
 
               <div className="grid lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-offwhite/5 border border-gold/20 rounded-xl p-6">
+                <div className={`lg:col-span-2 border rounded-xl p-6 ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
 <div className="flex items-center justify-between mb-4">
-  <h2 className="font-heading text-xl text-offwhite">Today's Activity</h2>
+  <h2 className={`font-heading text-xl ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Today's Activity</h2>
   <Link to={user?.role === 'owner' ? '/owner/lobby' : user?.role === 'partner' ? '/partner/lobby' : '/superadmin/lobby'} className="text-gold text-sm hover:underline">View Lobby</Link>
 </div>
                <div className="space-y-3">
@@ -233,22 +241,22 @@ export default function SuperAdmin() {
                         const extraServiceCount = services.length > 1 ? services.length - 1 : 0;
                         return (
                           <button
-                            type="button"
-                            key={appt.id}
-                            onClick={() => {
-                              setSelectedAppointment(appt);
-                              setIsDetailsModalOpen(true);
-                            }}
-                            className="grid grid-cols-1 gap-3 md:grid-cols-[1.5fr_2fr_1fr] items-center p-3 bg-offwhite/5 rounded-lg w-full text-left"
-                          >
-                            <div className="min-w-0">
-                              <div className="text-offwhite font-medium truncate">{appt.customer?.full_name || appt.customer?.phone || 'Guest'}</div>
-                              <div className="text-xs text-offwhite/40 mt-1">{getAppointmentCheckInLabel(appt)}</div>
-                            </div>
+                        type="button"
+                        key={appt.id}
+                        onClick={() => {
+                          setSelectedAppointment(appt);
+                          setIsDetailsModalOpen(true);
+                        }}
+                        className={`grid grid-cols-1 gap-3 md:grid-cols-[1.5fr_2fr_1fr] items-center p-3 rounded-lg w-full text-left ${theme === 'dark' ? 'bg-offwhite/5' : 'bg-charcoal/5'}`}
+                      >
+                        <div className="min-w-0">
+                          <div className={`font-medium truncate ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{appt.customer?.full_name || appt.customer?.phone || 'Guest'}</div>
+                          <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>{getAppointmentCheckInLabel(appt)}</div>
+                        </div>
 
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 overflow-hidden">
-                                <div className="truncate text-offwhite/60 text-sm">{primaryService}</div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <div className={`truncate text-sm ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>{primaryService}</div>
                                 {extraServiceCount > 0 && (
                                   <span className="flex-shrink-0 rounded-full border border-gold/30 bg-gold/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">
                                     +{extraServiceCount} more
@@ -266,90 +274,79 @@ export default function SuperAdmin() {
                           </button>
                         );
                      }) : (
-                       <p className="text-offwhite/40 text-center py-8">No appointments today</p>
+                       <p className={`text-center py-8 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No appointments today</p>
                      )}
                    </div>
                 </div>
                 {isDetailsModalOpen && selectedAppointment && (
-                  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
-                    <div className="w-full max-w-lg h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-xl border-t sm:border border-gold/10 bg-[#1a1a1a] overflow-hidden">
-                      <div className="relative border-b border-gold/10 p-4 sm:p-6">
-                        <button
-                          type="button"
-                          onClick={() => setIsDetailsModalOpen(false)}
-                          className="absolute right-4 top-4 text-offwhite/60 hover:text-offwhite"
-                          aria-label="Close details"
-                        >
-                          <span className="text-3xl leading-none">×</span>
-                        </button>
-                        <div className="flex flex-col gap-3">
-                          <div>
-                            <h3 className="text-2xl font-heading text-gold">{selectedAppointment.customer?.full_name || 'Guest'}</h3>
-                            <div className="text-offwhite/50 text-sm mt-1">{formatTime(selectedAppointment.checked_in_at)}</div>
-                          </div>
-                          <span className={`inline-flex w-fit px-3 py-1 text-xs font-semibold rounded-full border ${statusColors[selectedAppointment.status]}`}>
-                            {statusLabels[selectedAppointment.status]}
-                          </span>
+                  <AppModal
+                    open
+                    onClose={() => setIsDetailsModalOpen(false)}
+                    maxWidth="max-w-lg"
+                    zIndex="z-50"
+                    scrollBody
+                    title={selectedAppointment.customer?.full_name || 'Guest'}
+                    subtitle={formatTime(selectedAppointment.checked_in_at)}
+                    headerExtra={
+                      <span className={`inline-flex w-fit mt-2 px-3 py-1 text-xs font-semibold rounded-full border ${statusColors[selectedAppointment.status]}`}>
+                        {statusLabels[selectedAppointment.status]}
+                      </span>
+                    }
+                  >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-0">
+                        <div className="rounded-2xl border border-card bg-secondary p-4">
+                          <div className="text-secondary text-xs uppercase tracking-[0.2em] mb-2">Booking Type</div>
+                          <div className="text-primary">{getAppointmentBookingType(selectedAppointment)}</div>
+                        </div>
+                        <div className="rounded-2xl border border-card bg-secondary p-4">
+                          <div className="text-secondary text-xs uppercase tracking-[0.2em] mb-2">Assigned Technician</div>
+                          <div className="text-primary">{getAppointmentTechnicianName(selectedAppointment)}</div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 sm:p-6 pb-0">
-                        <div className="rounded-2xl border border-gold/10 bg-white/5 p-4">
-                          <div className="text-offwhite/50 text-xs uppercase tracking-[0.2em] mb-2">Booking Type</div>
-                          <div className="text-offwhite">{getAppointmentBookingType(selectedAppointment)}</div>
-                        </div>
-                        <div className="rounded-2xl border border-gold/10 bg-white/5 p-4">
-                          <div className="text-offwhite/50 text-xs uppercase tracking-[0.2em] mb-2">Assigned Technician</div>
-                          <div className="text-offwhite">{getAppointmentTechnicianName(selectedAppointment)}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-sm">
-                        <div className="rounded-2xl border border-gold/10 bg-white/5 p-4">
+                      <div className="space-y-4 text-sm pt-4">
+                        <div className="rounded-2xl border border-card bg-secondary p-4">
                           <div className="flex items-center justify-between mb-3 gap-3">
-                            <div className="text-offwhite/50 text-xs uppercase tracking-[0.2em]">Services & Add-ons</div>
-                            <div className="text-offwhite/40 text-xs">{getAppointmentServices(selectedAppointment).length} item(s)</div>
+                            <div className="text-secondary text-xs uppercase tracking-[0.2em]">Services & Add-ons</div>
+                            <div className="text-muted text-xs">{getAppointmentServices(selectedAppointment).length} item(s)</div>
                           </div>
-                          <ul className="list-disc list-inside space-y-2 text-offwhite/80">
+                          <ul className="list-disc list-inside space-y-2 text-primary">
                             {getAppointmentServices(selectedAppointment).map((service, idx) => (
                               <li key={`${service}-${idx}`} className="truncate">{service}</li>
                             ))}
                             {getAppointmentServices(selectedAppointment).length === 0 && (
-                              <li className="text-offwhite/50">No services listed</li>
+                              <li className="text-secondary">No services listed</li>
                             )}
                           </ul>
                         </div>
 
-                        <div className="rounded-2xl border border-gold/10 bg-white/5 p-4">
-                          <div className="text-offwhite/50 text-xs uppercase tracking-[0.2em] mb-2">Notes</div>
-                          <div className="text-offwhite/80 min-h-[52px]">{selectedAppointment.notes || 'No notes provided'}</div>
+                        <div className="rounded-2xl border border-card bg-secondary p-4">
+                          <div className="text-secondary text-xs uppercase tracking-[0.2em] mb-2">Notes</div>
+                          <div className="text-primary min-h-[52px]">{selectedAppointment.notes || 'No notes provided'}</div>
                         </div>
                       </div>
 
-                      <div className="border-t border-gold/10 p-4 sm:p-6">
-                        <div className="rounded-3xl border border-gold/30 bg-gold/10 p-5 text-right">
-                          <div className="text-offwhite/50 text-xs uppercase tracking-[0.2em] mb-2">Total Final Price</div>
-                          <div className="text-3xl font-heading text-gold">${getAppointmentFinalPrice(selectedAppointment).toFixed(2)}</div>
-                        </div>
+                      <div className="rounded-3xl border border-gold/30 bg-gold/10 p-5 text-right mt-4">
+                        <div className="text-secondary text-xs uppercase tracking-[0.2em] mb-2">Total Final Price</div>
+                        <div className="text-3xl font-heading text-gold-strong">${getAppointmentFinalPrice(selectedAppointment).toFixed(2)}</div>
                       </div>
-                    </div>
-                  </div>
+                  </AppModal>
                 )}
 
-                <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-6">
-                  <h2 className="font-heading text-xl text-offwhite mb-4">Quick Actions</h2>
+                <div className={`border rounded-xl p-6 ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
+                  <h2 className={`font-heading text-xl mb-4 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Quick Actions</h2>
                    <div className="space-y-3">
                      <Link to={user?.role === 'owner' ? '/owner/lobby' : user?.role === 'partner' ? '/partner/lobby' : '/superadmin/lobby'} className="block p-4 bg-gold/10 border border-gold/30 rounded-lg hover:bg-gold/20 transition-colors">
                        <div className="text-gold font-heading">Manage Lobby</div>
-                       <div className="text-offwhite/50 text-sm">Assign customers to technicians</div>
+                       <div className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Assign customers to technicians</div>
                      </Link>
-                     <Link to={user?.role === 'owner' ? '/owner/services' : user?.role === 'partner' ? '/partner/services' : '/superadmin/services'} className="block p-4 bg-offwhite/5 border border-offwhite/20 rounded-lg hover:bg-offwhite/10 transition-colors">
-                       <div className="text-offwhite font-heading">Services</div>
-                       <div className="text-offwhite/50 text-sm">Manage pricing</div>
+                     <Link to={user?.role === 'owner' ? '/owner/services' : user?.role === 'partner' ? '/partner/services' : '/superadmin/services'} className={`block p-4 rounded-lg transition-colors ${theme === 'dark' ? 'bg-offwhite/5 border border-offwhite/20 hover:bg-offwhite/10' : 'bg-charcoal/5 border border-charcoal/20 hover:bg-charcoal/10'}`}>
+                       <div className={`font-heading ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Services</div>
+                       <div className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Manage pricing</div>
                      </Link>
-                     <Link to={user?.role === 'owner' ? '/owner/reports' : user?.role === 'partner' ? '/partner/reports' : '/superadmin/reports'} className="block p-4 bg-offwhite/5 border border-offwhite/20 rounded-lg hover:bg-offwhite/10 transition-colors">
-                       <div className="text-offwhite font-heading">View Reports</div>
-                       <div className="text-offwhite/50 text-sm">Analytics and insights</div>
+                     <Link to={user?.role === 'owner' ? '/owner/reports' : user?.role === 'partner' ? '/partner/reports' : '/superadmin/reports'} className={`block p-4 rounded-lg transition-colors ${theme === 'dark' ? 'bg-offwhite/5 border border-offwhite/20 hover:bg-offwhite/10' : 'bg-charcoal/5 border border-charcoal/20 hover:bg-charcoal/10'}`}>
+                       <div className={`font-heading ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>View Reports</div>
+                       <div className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Analytics and insights</div>
                      </Link>
                    </div>
                 </div>
@@ -358,9 +355,9 @@ export default function SuperAdmin() {
           )}
 
           {activeTab === 'staff' && (
-            <div className="bg-offwhite/5 border border-gold/20 rounded-xl p-6">
+            <div className={`border rounded-xl p-6 ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="font-heading text-xl text-offwhite">Staff Management</h2>
+                <h2 className={`font-heading text-xl ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Staff Management</h2>
                 <Link to="/superadmin/staff/new" className="px-4 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors">
                   + Add Staff
                 </Link>
@@ -368,7 +365,7 @@ export default function SuperAdmin() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="text-offwhite/50 text-sm border-b border-offwhite/10">
+                    <tr className={`text-sm border-b ${theme === 'dark' ? 'text-offwhite/50 border-offwhite/10' : 'text-charcoal/50 border-charcoal/10'}`}>
                       <th className="text-left py-3 px-4">Name</th>
                       <th className="text-left py-3 px-4">Role</th>
                       <th className="text-left py-3 px-4">Phone</th>
@@ -379,20 +376,20 @@ export default function SuperAdmin() {
                   </thead>
                   <tbody>
                     {staff.map((member) => (
-                      <tr key={member.id} className="border-b border-offwhite/5 hover:bg-offwhite/5">
-                        <td className="py-3 px-4 text-offwhite font-medium">{member.full_name}</td>
+                      <tr key={member.id} className={`border-b ${theme === 'dark' ? 'border-offwhite/5 hover:bg-offwhite/5' : 'border-charcoal/5 hover:bg-charcoal/5'}`}>
+                        <td className={`py-3 px-4 font-medium ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{member.full_name}</td>
                         <td className="py-3 px-4">
                           <span className={`px-2 py-1 text-xs rounded ${
                             member.role === 'technician' ? 'bg-blue-500/20 text-blue-400' :
                             member.role === 'cashier' ? 'bg-green-500/20 text-green-400' :
                             member.role === 'admin' ? 'bg-purple-500/20 text-purple-400' :
-                            'bg-offwhite/10 text-offwhite/60'
+                            theme === 'dark' ? 'bg-offwhite/10 text-offwhite/60' : 'bg-charcoal/10 text-charcoal/60'
                           }`}>
                             {member.role}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-offwhite/60">{member.phone}</td>
-                        <td className="py-3 px-4 text-offwhite/60">{member.email || 'N/A'}</td>
+                        <td className={`py-3 px-4 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>{member.phone}</td>
+                        <td className={`py-3 px-4 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>{member.email || 'N/A'}</td>
                         <td className="py-3 px-4">
                           <span className="px-2 py-1 text-xs rounded bg-green-500/20 text-green-400">Active</span>
                         </td>
@@ -410,7 +407,7 @@ export default function SuperAdmin() {
                     ))}
                     {staff.length === 0 && (
                       <tr>
-                        <td colSpan="6" className="py-8 text-center text-offwhite/40">No staff members found</td>
+                        <td colSpan="6" className={`py-8 text-center ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No staff members found</td>
                       </tr>
                     )}
                   </tbody>

@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import Sidebar from './Sidebar'
+import clsx from 'clsx'
 
 const getDateRange = (period) => {
   const now = new Date()
@@ -82,8 +84,8 @@ const analyzePeriod = async (period) => {
     const { count } = await supabase
       .from('appointments')
       .select('*', { count: 'exact', head: true })
-     .eq('customer_id', profileId)
-       .lt('checked_in_at', range.end)
+      .eq('customer_id', profileId)
+      .lt('checked_in_at', range.end)
     
     if (count <= 1) {
       newCount++
@@ -108,13 +110,13 @@ const analyzePeriod = async (period) => {
     }
   }
   
-       const { count: cancelledToday } = await supabase
-         .from('appointments')
-         .select('*', { count: 'exact', head: true })
-         .eq('status', 'cancelled')
-         .gte('checked_in_at', range.start)
-         .lt('checked_in_at', range.end)
-  
+  const { count: cancelledToday } = await supabase
+    .from('appointments')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'cancelled')
+    .gte('checked_in_at', range.start)
+    .lt('checked_in_at', range.end)
+
   cancelledCount = cancelledToday || 0
   
   const avgServiceTime = completedCount > 0 ? Math.round(totalDuration / completedCount) : 0
@@ -280,7 +282,7 @@ const COLORS = {
   regular: '#C5A059'
 }
 
-const DonutChart = ({ data, size = 180 }) => {
+const DonutChart = ({ data, size = 180, theme }) => {
   const chartData = [
     { name: 'New', value: data.new },
     { name: 'Regular', value: data.regular }
@@ -288,9 +290,9 @@ const DonutChart = ({ data, size = 180 }) => {
   
   if (data.total === 0) {
     return (
-      <div className="h-40 flex items-center justify-center text-offwhite/30 text-sm">
-        No data
-      </div>
+      <div className="h-40 flex items-center justify-center text-secondary text-sm">
+      No data
+    </div>
     )
   }
   
@@ -311,49 +313,49 @@ const DonutChart = ({ data, size = 180 }) => {
           ))}
         </Pie>
         <Tooltip 
-          contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059' }}
-          labelStyle={{ color: '#fff' }}
+          contentStyle={{ backgroundColor: 'var(--card-bg)', border: '1px solid #C5A059', color: 'var(--text-primary)' }}
+          labelStyle={{ color: 'var(--text-primary)' }}
         />
       </PieChart>
     </ResponsiveContainer>
   )
 }
 
-const MetricColumn = ({ label, data, isCurrent, showRevenue }) => {
+const MetricColumn = ({ label, data, isCurrent, showRevenue, theme }) => {
   const opacity = isCurrent ? 1 : 0.6
   
   return (
-    <div className="rounded-3xl border border-gold/20 bg-[#0F0F10] p-6 text-center transition duration-300 hover:-translate-y-0.5">
-      <div className="flex flex-col items-center gap-2 pb-4 border-b border-gold/10">
+    <div className="rounded-3xl border border-card bg-secondary p-6 text-center transition duration-300 hover:-translate-y-0.5" style={{ opacity: opacity }}>
+      <div className="flex flex-col items-center gap-2 pb-4 border-b border-light">
         <span className="font-heading text-base text-gold">{label}</span>
-        <span className="text-offwhite/50 text-sm">{data.total || 0} guests</span>
+        <span className="text-secondary text-sm">{data.total || 0} guests</span>
       </div>
       <div className="grid gap-4 py-6 text-left sm:grid-cols-2">
         <div>
-          <div className="text-offwhite/40 text-xs uppercase tracking-[0.18em] mb-1">New Customers</div>
-          <div className="font-heading text-2xl text-[#D4D4D4]">{data.new}</div>
+          <div className="text-secondary text-xs uppercase tracking-[0.18em] mb-1">New Customers</div>
+          <div className="font-heading text-2xl" style={{ color: '#D4D4D4' }}>{data.new}</div>
         </div>
         <div>
-          <div className="text-offwhite/40 text-xs uppercase tracking-[0.18em] mb-1">Regular Customers</div>
+          <div className="text-secondary text-xs uppercase tracking-[0.18em] mb-1">Regular Customers</div>
           <div className="font-heading text-2xl text-gold">{data.regular}</div>
         </div>
         <div>
-          <div className="text-offwhite/40 text-xs uppercase tracking-[0.18em] mb-1">Avg Service</div>
-          <div className="font-heading text-xl text-offwhite/80">{data.avgServiceTime || 0} min</div>
+          <div className="text-secondary text-xs uppercase tracking-[0.18em] mb-1">Avg Service</div>
+          <div className="font-heading text-xl text-primary">{data.avgServiceTime || 0} min</div>
         </div>
         <div>
-          <div className="text-offwhite/40 text-xs uppercase tracking-[0.18em] mb-1">Cancellations</div>
+          <div className="text-secondary text-xs uppercase tracking-[0.18em] mb-1">Cancellations</div>
           <div className="font-heading text-xl text-red-400">{data.cancelled || 0}</div>
         </div>
         {showRevenue && (
           <div className="sm:col-span-2">
-            <div className="text-offwhite/40 text-xs uppercase tracking-[0.18em] mb-1">Revenue Estimate</div>
+            <div className="text-secondary text-xs uppercase tracking-[0.18em] mb-1">Revenue Estimate</div>
             <div className="font-heading text-2xl text-gold">${data.revenue?.toLocaleString() || 0}</div>
           </div>
         )}
       </div>
       <div className="py-2">
-        <DonutChart data={data} size={150} />
+        <DonutChart data={data} size={150} theme={theme} />
       </div>
     </div>
   )
@@ -361,6 +363,7 @@ const MetricColumn = ({ label, data, isCurrent, showRevenue }) => {
 
 export default function AdminReports() {
   const { user } = useAuth()
+  const { theme } = useTheme()
   const isAdmin = ['super_admin', 'owner', 'partner'].includes(user?.role)
   const [activeTab, setActiveTab] = useState('weekly')
   const [loading, setLoading] = useState(true)
@@ -457,8 +460,8 @@ export default function AdminReports() {
         const { count } = await supabase
           .from('appointments')
           .select('*', { count: 'exact', head: true })
-     .eq('customer_id', profileId)
-       .lt('checked_in_at', range.end)
+          .eq('customer_id', profileId)
+          .lt('checked_in_at', range.end)
         
         if (count <= 1) {
           newCount++
@@ -563,7 +566,7 @@ export default function AdminReports() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
         <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -573,13 +576,13 @@ export default function AdminReports() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
         <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-heading text-2xl sm:text-3xl text-gold">Reports & Insights</h1>
-            <p className="text-offwhite/60 mt-1">Actionable business analytics for bookings, revenue, and team performance.</p>
+            <p className="text-primary/80 mt-1">Actionable business analytics for bookings, revenue, and team performance.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <button
@@ -592,20 +595,21 @@ export default function AdminReports() {
           </div>
         </div>
 
-        <div className="bg-offwhite/5 border border-gold/20 rounded-2xl p-6 sm:p-8">
+        <div className="bg-secondary border border-card rounded-2xl p-6 sm:p-8">
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              <span className="text-sm font-heading text-offwhite/60 uppercase tracking-wider">View Period:</span>
-              <div className="flex gap-2" style={{ borderBottom: '1px solid rgba(197, 160, 89, 0.2)' }}>
+              <span className="text-sm font-heading text-secondary uppercase tracking-wider">View Period:</span>
+              <div className="flex gap-2 border-b border-light">
                 {['weekly', 'monthly', 'custom'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-3 text-sm font-semibold uppercase tracking-[0.08em] transition-all duration-300 ${
+                    className={clsx(
+                      "px-4 py-3 text-sm font-semibold uppercase tracking-[0.08em] transition-all duration-300",
                       activeTab === tab
                         ? 'text-gold border-b-2 border-gold'
-                        : 'text-offwhite/50 border-b-2 border-transparent hover:text-offwhite/70'
-                    }`}
+                        : 'text-secondary border-b-2 border-transparent hover:text-primary'
+                    )}
                   >
                     {tab === 'weekly' && 'Weekly'}
                     {tab === 'monthly' && 'Monthly'}
@@ -618,21 +622,21 @@ export default function AdminReports() {
             {activeTab === 'custom' && (
               <div className="mt-6 flex flex-col sm:flex-row gap-4 items-start sm:items-end">
                 <div className="flex-1">
-                  <label className="block text-xs font-heading text-offwhite/60 uppercase tracking-wider mb-2">From Date</label>
+                  <label className="block text-xs font-heading text-secondary uppercase tracking-wider mb-2">From Date</label>
                   <input
                     type="date"
                     value={customFromDate}
                     onChange={(e) => setCustomFromDate(e.target.value)}
-                    className="w-full bg-[#0F0F10] border border-gold/20 rounded-lg px-4 py-2 text-offwhite text-sm focus:outline-none focus:border-gold/50 transition"
+                    className="w-full bg-input border border-input rounded-lg px-4 py-2 text-primary text-sm focus:outline-none focus:border-gold/50 transition"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs font-heading text-offwhite/60 uppercase tracking-wider mb-2">To Date</label>
+                  <label className="block text-xs font-heading text-secondary uppercase tracking-wider mb-2">To Date</label>
                   <input
                     type="date"
                     value={customToDate}
                     onChange={(e) => setCustomToDate(e.target.value)}
-                    className="w-full bg-[#0F0F10] border border-gold/20 rounded-lg px-4 py-2 text-offwhite text-sm focus:outline-none focus:border-gold/50 transition"
+                    className="w-full bg-input border border-input rounded-lg px-4 py-2 text-primary text-sm focus:outline-none focus:border-gold/50 transition"
                   />
                 </div>
                 <button
@@ -654,21 +658,22 @@ export default function AdminReports() {
                   data={metric.data}
                   isCurrent={metric.isCurrent}
                   showRevenue={isAdmin}
+                  theme={theme}
                 />
               ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {activeTab !== 'custom' ? (
-                <div className="bg-[#0F0F10]/50 border border-gold/10 rounded-xl p-4 sm:p-6">
+                <div className="bg-secondary/50 border border-card rounded-xl p-4 sm:p-6">
                   <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6">{tabCharts.title} Comparison</h3>
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={tabCharts.comparisonData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
-                      <XAxis dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
-                      <YAxis stroke="#888" tick={{ fill: '#888', fontSize: 12 }} />
+                      <XAxis dataKey="name" stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
+                      <YAxis stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
                       <Tooltip 
-                        contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 12 }}
-                        labelStyle={{ color: '#fff' }}
+                        contentStyle={{ backgroundColor: 'var(--card-bg)', border: '1px solid #C5A059', fontSize: 12 }}
+                        labelStyle={{ color: 'var(--text-primary)' }}
                       />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
                       {activeTab === 'weekly' ? (
@@ -687,20 +692,22 @@ export default function AdminReports() {
                 </div>
               ) : null}
 
-              <div className={`bg-[#0F0F10]/50 border border-gold/10 rounded-xl p-4 sm:p-6 ${activeTab === 'custom' ? 'lg:col-span-2' : ''}`}>
+              <div className={clsx(
+                "bg-secondary/50 border border-card rounded-xl p-4 sm:p-6",
+                activeTab === 'custom' ? 'lg:col-span-2' : ''
+              )}
+              >
                 <h3 className="font-heading text-lg sm:text-xl text-gold mb-4 sm:mb-6">Popular Services</h3>
                 {chartServiceData.length === 0 ? (
-                  <div className="h-64 flex items-center justify-center text-offwhite/40">
-                    No service data
-                  </div>
+                  <div className="h-64 flex items-center justify-center text-secondary">No service data</div>
                 ) : (
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={chartServiceData} layout="vertical" margin={{ top: 20, right: 10, left: 50, bottom: 5 }}>
-                      <XAxis type="number" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} />
-                      <YAxis type="category" dataKey="name" stroke="#888" tick={{ fill: '#888', fontSize: 10 }} width={40} />
+                      <XAxis type="number" stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
+                      <YAxis type="category" dataKey="name" stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} width={40} />
                       <Tooltip 
-                        contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #C5A059', fontSize: 12 }}
-                        labelStyle={{ color: '#fff' }}
+                        contentStyle={{ backgroundColor: 'var(--card-bg)', border: '1px solid #C5A059', fontSize: 12 }}
+                        labelStyle={{ color: 'var(--text-primary)' }}
                       />
                       <Bar dataKey="count" name="Bookings" fill="#C5A059" />
                     </BarChart>

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { CATEGORIES } from '../data/servicesData'
 import { getAvailableRefreshments, isRefreshmentAvailable } from '../services/inventoryService'
 import RefreshmentSelect from './RefreshmentSelect'
+import WaiverModal from './WaiverModal'
 
 const Sparkle = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -98,8 +99,8 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
   }
 
   return (
-    <div className="min-h-screen bg-charcoal/95 flex items-center justify-center p-4 sm:p-8">
-      <div className="w-full max-w-3xl animate-fade-in">
+    <div className="min-h-screen bg-charcoal/95 flex items-center justify-center p-4 sm:p-8 animate-fade-in">
+      <div className="w-full max-w-3xl">
         <button
           onClick={onBack}
           className="absolute top-6 left-6 text-offwhite/50 hover:text-offwhite transition-colors z-10"
@@ -253,24 +254,36 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
               className="px-3 py-2 text-sm"
             />
 
-            <button
-              onClick={() => {
-                onSelect({ services: selectedServices, addOns: selectedAddOnDetails, refreshmentPref })
-              }}
-              className="w-full py-3 bg-gold text-charcoal font-heading rounded-lg hover:bg-gold/90 transition-colors"
-            >
-              Confirm
-            </button>
           </div>
         )}
 
         <p className="text-center text-offwhite/30 text-sm mt-6">Times are approximate to ensure couture quality.</p>
+        
+        {selectedServices.length > 0 && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-in">
+            <button
+              type="button"
+              onClick={onBack}
+              className="min-w-[120px] px-5 py-3 rounded-full border border-offwhite/20 text-offwhite text-sm font-heading uppercase tracking-[0.24em] hover:border-gold hover:text-gold transition-all"
+            >
+              CANCEL
+            </button>
+            <button
+              onClick={() => {
+                onSelect({ services: selectedServices, addOns: selectedAddOnDetails, refreshmentPref })
+              }}
+              className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all"
+            >
+              CONFIRM
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-const RegistrationModal = ({ phone, onClose, onComplete }) => {
+const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
   const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -323,6 +336,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
          .single()
       
       let profileId
+      let finalProfile
       
       if (profileSearchError && profileSearchError.code !== 'PGRST116') {
         throw profileSearchError
@@ -330,6 +344,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
       
       if (existingProfile) {
         profileId = existingProfile.id
+        finalProfile = existingProfile
       } else {
          const { data: profile, error: insertError } = await supabase
            .from('profiles')
@@ -348,6 +363,7 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
           throw insertError
         }
         profileId = profile.id
+        finalProfile = profile
       }
 
       const allNames = selectedServices.map((s) => s.name).join(', ')
@@ -370,7 +386,14 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
         throw appointmentError
       }
 
-      setSuccess(true)
+      // Capture details for the waiver before completing the appointment block
+      // Pass the newly created profile data back up to the parent component to trigger the waiver
+      onCompleteWaiverTrigger({
+        id: profileId,
+        full_name: finalProfile.full_name,
+        phone: finalProfile.phone,
+        refreshmentPref: safeRefreshmentPref
+      });
     } catch (err) {
       console.error('Registration error:', err)
       setError(err.message || 'Something went wrong')
@@ -381,9 +404,9 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-charcoal flex items-center justify-center p-8 relative overflow-hidden">
+      <div className="min-h-screen bg-charcoal flex items-center justify-center p-8 relative overflow-hidden animate-fade-in">
         <Sparkle />
-        <div className="relative z-10 text-center animate-fade-in">
+        <div className="relative z-10 text-center">
           <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-8">
             <svg className="w-12 h-12 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
@@ -396,6 +419,14 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
               Your <span className="text-gold">{refreshmentPref}</span> is being prepared
             </p>
           )}
+          <div className="mt-8 animate-fade-in">
+            <button
+              onClick={() => { window.location.href = '/' }}
+              className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all"
+            >
+              RETURN HOME
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -414,8 +445,8 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
   }
 
   return (
-    <div className="min-h-screen bg-charcoal/95 flex items-center justify-center p-8">
-      <div className="w-full max-w-md animate-fade-in">
+      <div className="min-h-screen bg-charcoal/95 flex items-center justify-center p-8 animate-fade-in">
+        <div className="w-full max-w-md">
         <button
           onClick={onClose}
           className="absolute top-6 right-6 text-offwhite/50 hover:text-offwhite transition-colors"
@@ -521,13 +552,23 @@ const RegistrationModal = ({ phone, onClose, onComplete }) => {
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading || !fullName || !email || !nailGoal || selectedServices.length === 0}
-            className="w-full py-4 bg-gold text-charcoal font-heading text-lg tracking-wider hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Creating Profile...' : 'Join the Club'}
-          </button>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-in">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="min-w-[120px] px-5 py-3 rounded-full border border-offwhite/20 text-offwhite text-sm font-heading uppercase tracking-[0.24em] hover:border-gold hover:text-gold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              CANCEL
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !fullName || !email || !nailGoal || selectedServices.length === 0}
+              className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'CREATING...' : 'JOIN CLUB'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -551,6 +592,16 @@ export default function CheckIn({ onNavigate }) {
   const [selectedServices, setSelectedServices] = useState([])
   const [selectedAddOns, setSelectedAddOns] = useState([])
   const [services, setServices] = useState([])
+  // Waiver modal state
+  const [showWaiver, setShowWaiver] = useState(false)
+  const [waiverCustomerName, setWaiverCustomerName] = useState('')
+  const [waiverCustomerPhone, setWaiverCustomerPhone] = useState('')
+  // Post-waiver success for new users
+  const [newUserSuccess, setNewUserSuccess] = useState(false)
+  const [newUserDetails, setNewUserDetails] = useState({
+    fullName: '',
+    refreshmentPref: ''
+  })
 
   useEffect(() => {
     getServices().then(setServices).catch(() => {})
@@ -576,12 +627,45 @@ export default function CheckIn({ onNavigate }) {
     try {
       const response = await processCheckIn(phone)
       setResult(response)
+      
+      // Set up the waiver modal data
+      const cleanPhone = phone.replace(/\D/g, '')
+      setWaiverCustomerPhone(cleanPhone)
+      
+      if (response.isNew) {
+        // New user: Do NOT show waiver yet. Let them register their profile first!
+        setShowWaiver(false)
+      } else {
+        // Existing user: They have a profile, go straight to waiver
+        setWaiverCustomerName(response.name || '')
+        setShowWaiver(true)
+      }
     } catch (err) {
       console.error('Check-in error:', err)
       setError(err.message || 'Something went wrong')
     } finally {
       setLoading(false)
     }
+  }
+  
+  // New function to trigger waiver after registration
+  const handleCompleteWaiverTrigger = (profileData) => {
+    // Update result to include the new profile
+    setResult(prev => ({
+      ...prev,
+      profile: profileData,
+      name: profileData.full_name
+    }))
+    // Set waiver details
+    setWaiverCustomerName(profileData.full_name)
+    setWaiverCustomerPhone(profileData.phone)
+    // Set new user success details
+    setNewUserDetails({
+      fullName: profileData.full_name,
+      refreshmentPref: profileData.refreshmentPref || ''
+    })
+    // Show the waiver modal
+    setShowWaiver(true)
   }
 
   const handleExistingUserServiceSelect = async (payload) => {
@@ -615,11 +699,120 @@ export default function CheckIn({ onNavigate }) {
     setShowServiceSelection(false)
   }
 
+  // Handle saving the waiver to the database safely 
+  const handleSaveWaiver = async (waiverData) => { 
+    setLoading(true) 
+    setError(null) 
+    try { 
+      // Safely parse out the profile details returned from processCheckIn 
+      const profileId = result?.profile?.id || result?.appointment?.customer_id || null; 
+      const profileName = result?.profile?.full_name || result?.name || waiverCustomerName || 'Walk-In Customer'; 
+      const profilePhone = result?.profile?.phone || waiverCustomerPhone; 
+
+      const payload = { 
+        profile_id: profileId, 
+        customer_phone: profilePhone, 
+        customer_name: profileName, 
+        agreed_to_terms: true, 
+        signature_image: waiverData.signature_image 
+      }; 
+      
+      console.log("Submitting Waiver Payload:", payload); 
+
+      // Save the waiver to the database 
+      const { error: insertError } = await supabase 
+        .from('customer_waivers') 
+        .insert([payload]) 
+
+      if (insertError) { 
+        console.error("Waiver DB Save Error:", insertError); 
+        throw insertError; 
+      } 
+
+      console.log("Waiver successfully attached to Profile ID:", profileId); 
+      
+      // Hide the waiver modal
+      setShowWaiver(false) 
+      
+      // If this was a new user, show the success screen!
+      if (result?.isNew) {
+        setNewUserSuccess(true)
+      }
+      
+    } catch (err) { 
+      console.error('Error saving waiver:', err) 
+      setError('Failed to save waiver securely. Please try again.') 
+    } finally { 
+      setLoading(false) 
+    } 
+  }
+
   const formatDisplay = (num) => {
     if (num.length === 0) return 'Enter phone number'
     if (num.length <= 3) return `(${num}) `
     if (num.length <= 6) return `(${num.slice(0, 3)}) ${num.slice(3)}`
     return `(${num.slice(0, 3)}) ${num.slice(3, 6)}-${num.slice(6)}`
+  }
+
+  // Show waiver modal first if needed
+  if (showWaiver) {
+    return (
+      <WaiverModal
+        customerName={waiverCustomerName}
+        customerPhone={waiverCustomerPhone}
+        onConfirm={handleSaveWaiver}
+        onCancel={() => {
+          // Reset everything when canceling
+          setShowWaiver(false)
+          setLoading(false)
+          setPhone('')
+          setResult(null)
+          setError(null)
+          setSelectedServices([])
+          setSelectedAddOns([])
+          onNavigate('home') // Go back home
+        }}
+      />
+    )
+  }
+
+  // Show new user success after waiver
+  if (newUserSuccess) {
+    return (
+      <div className="min-h-screen bg-charcoal flex items-center justify-center p-8 relative overflow-hidden animate-fade-in">
+        <Sparkle />
+        <div className="relative z-10 text-center">
+          <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-8">
+            <svg className="w-12 h-12 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+            </svg>
+          </div>
+          <h2 className="font-heading text-4xl text-gold mb-4 tracking-wide">Welcome to the Club</h2>
+          <p className="font-heading text-2xl text-offwhite mb-6">{newUserDetails.fullName}</p>
+          {newUserDetails.refreshmentPref && (
+            <p className="text-xl text-offwhite/70">
+              Your <span className="text-gold">{newUserDetails.refreshmentPref}</span> is being prepared
+            </p>
+          )}
+          <div className="mt-8 animate-fade-in">
+            <button
+              onClick={() => {
+                setNewUserSuccess(false)
+                setPhone('')
+                setResult(null)
+                setSelectedServices([])
+                setSelectedAddOns([])
+                setShowServiceSelection(false)
+                navigate('/')
+              }}
+              className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all"
+            >
+              RETURN HOME
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (showServiceSelection) {
@@ -645,8 +838,8 @@ export default function CheckIn({ onNavigate }) {
     const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
 
     return (
-      <div className="min-h-screen bg-charcoal flex flex-col items-center justify-center p-4 sm:p-8">
-        <div className="text-center animate-fade-in max-w-md w-full">
+      <div className="min-h-screen bg-charcoal flex flex-col items-center justify-center p-4 sm:p-8 animate-fade-in">
+        <div className="text-center max-w-md w-full">
           <div className="w-20 h-20 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -720,14 +913,25 @@ export default function CheckIn({ onNavigate }) {
             <div className="mb-6 text-offwhite/40 text-sm">No add-ons available</div>
           )}
 
-          <button
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-in">
+            <button
+              type="button"
+              onClick={() => {
+                setPhone(''); setResult(null); setSelectedServices([]); setSelectedAddOns([]); setShowServiceSelection(false); onNavigate('home')
+              }}
+              className="min-w-[120px] px-5 py-3 rounded-full border border-offwhite/20 text-offwhite text-sm font-heading uppercase tracking-[0.24em] hover:border-gold hover:text-gold transition-all"
+            >
+              CANCEL
+            </button>
+            <button
               onClick={() => {
                 setPhone(''); setResult(null); setSelectedServices([]); setSelectedAddOns([]); setShowServiceSelection(false)
               }}
-              className="px-8 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 transition-all w-full max-w-xs"
+              className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all"
             >
               CONFIRM
             </button>
+          </div>
         </div>
       </div>
     )
@@ -741,9 +945,7 @@ export default function CheckIn({ onNavigate }) {
           setPhone('')
           setResult(null)
         }}
-        onComplete={() => {
-          navigate('/')
-        }}
+        onCompleteWaiverTrigger={handleCompleteWaiverTrigger}
       />
     )
   }

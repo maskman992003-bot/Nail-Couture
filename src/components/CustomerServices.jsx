@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '../utils/routes';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 import { getServices } from '../services/services';
@@ -10,6 +11,7 @@ import Sidebar from './Sidebar';
 export default function CustomerServices() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
@@ -58,12 +60,12 @@ export default function CustomerServices() {
     : sortedCategories.filter((category) => category === activeCategory);
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-5xl mx-auto">
         <div className="border-b border-gold/10 pb-6 mb-6">
           <h1 className="font-heading text-3xl text-gold tracking-wide">Services & Pricing</h1>
-          <p className="text-offwhite/60 text-sm mt-2">
+          <p className={theme === 'dark' ? 'text-offwhite/60 text-sm mt-2' : 'text-charcoal/60 text-sm mt-2'}>
             Browse our menu of nail couture services, durations, and pricing.
           </p>
         </div>
@@ -74,7 +76,7 @@ export default function CustomerServices() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search services or categories..."
-            className="w-full px-4 py-3 bg-offwhite/5 border border-offwhite/10 text-offwhite rounded-xl focus:border-gold focus:outline-none text-sm placeholder-offwhite/30"
+            className={theme === 'dark' ? 'w-full px-4 py-3 bg-offwhite/5 border border-offwhite/10 text-offwhite rounded-xl focus:border-gold focus:outline-none text-sm placeholder-offwhite/30' : 'w-full px-4 py-3 bg-charcoal/5 border border-charcoal/10 text-charcoal rounded-xl focus:border-gold focus:outline-none text-sm placeholder-charcoal/30'}
           />
         </div>
 
@@ -90,7 +92,7 @@ export default function CustomerServices() {
               className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 ${
                 activeCategory === category
                   ? 'bg-gold text-charcoal'
-                  : 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
+                  : theme === 'dark' ? 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold' : 'border border-gold/30 text-charcoal/60 hover:border-gold hover:text-gold'
               }`}
             >
               {category}
@@ -103,8 +105,8 @@ export default function CustomerServices() {
             <div className="text-gold animate-pulse tracking-widest text-sm">LOADING SERVICES...</div>
           </div>
         ) : displayCategories.length === 0 ? (
-          <div className="text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-2xl">
-            <p className="text-offwhite/40">No services found.</p>
+          <div className={theme === 'dark' ? 'text-center py-16 bg-offwhite/5 border border-offwhite/10 rounded-2xl' : 'text-center py-16 bg-charcoal/5 border border-charcoal/10 rounded-2xl'}>
+            <p className={theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}>No services found.</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -113,16 +115,16 @@ export default function CustomerServices() {
               return (
                 <div
                   key={category}
-                  className="rounded-2xl border border-gold/20 bg-offwhite/5 overflow-hidden"
+                  className={theme === 'dark' ? 'rounded-2xl border border-gold/20 bg-offwhite/5 overflow-hidden' : 'rounded-2xl border border-gold/20 bg-charcoal/5 overflow-hidden'}
                 >
                   <button
                     type="button"
                     onClick={() => setExpandedCategory(isOpen ? null : category)}
-                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition-colors"
+                    className={theme === 'dark' ? 'w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition-colors' : 'w-full flex items-center justify-between px-5 py-4 hover:bg-gold/5 transition-colors'}
                   >
                     <div className="flex items-center gap-3">
-                      <h2 className="font-heading text-xl text-offwhite">{category}</h2>
-                      <span className="text-offwhite/40 text-sm">({groupedServices[category].length})</span>
+                      <h2 className={theme === 'dark' ? 'font-heading text-xl text-offwhite' : 'font-heading text-xl text-charcoal'}>{category}</h2>
+                      <span className={theme === 'dark' ? 'text-offwhite/40 text-sm' : 'text-charcoal/40 text-sm'}>({groupedServices[category].length})</span>
                     </div>
                     <svg
                       className={`w-5 h-5 text-gold transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
@@ -138,19 +140,19 @@ export default function CustomerServices() {
                       {groupedServices[category].map((service) => (
                         <div
                           key={service.id}
-                          className="bg-[#0B0B0C]/60 border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all"
+                          className={theme === 'dark' ? 'bg-[#0B0B0C]/60 border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all' : 'bg-white border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all'}
                         >
                           <div className="flex justify-between items-start gap-3 mb-2">
-                            <h3 className="font-heading text-lg text-offwhite">{service.name}</h3>
+                            <h3 className={theme === 'dark' ? 'font-heading text-lg text-offwhite' : 'font-heading text-lg text-charcoal'}>{service.name}</h3>
                             <span className="text-gold font-heading text-xl shrink-0">
                               ${Number(service.price || 0).toFixed(0)}
                             </span>
                           </div>
                           {service.description && (
-                            <p className="text-offwhite/50 text-sm mb-4">{service.description}</p>
+                            <p className={theme === 'dark' ? 'text-offwhite/50 text-sm mb-4' : 'text-charcoal/50 text-sm mb-4'}>{service.description}</p>
                           )}
                           <div className="flex items-center justify-between gap-3">
-                            <span className="text-offwhite/40 text-sm">
+                            <span className={theme === 'dark' ? 'text-offwhite/40 text-sm' : 'text-charcoal/40 text-sm'}>
                               ~{service.duration_minutes || 0} min
                             </span>
                             {CUSTOMER_ONLINE_BOOKING && (
@@ -176,7 +178,7 @@ export default function CustomerServices() {
           <div className="mt-10 text-center">
             <div className="bg-gold/10 border border-gold/30 rounded-2xl p-8">
               <h3 className="font-heading text-2xl text-gold mb-2">Ready to Book?</h3>
-              <p className="text-offwhite/60 mb-6">Schedule your next visit from your customer portal.</p>
+              <p className={theme === 'dark' ? 'text-offwhite/60 mb-6' : 'text-charcoal/60 mb-6'}>Schedule your next visit from your customer portal.</p>
               <Link
                 to="/customer/book"
                 className="inline-block px-8 py-3 bg-gold text-charcoal hover:bg-gold/90 font-heading text-sm rounded-xl transition-colors"

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getHomePath, isStaffRole } from '../utils/routes';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function ClientLogin() {
   const [phone, setPhone] = useState('');
@@ -14,7 +15,24 @@ export default function ClientLogin() {
   const [pinError, setPinError] = useState('');
   const [pinLoading, setPinLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { user, login } = useAuth();
+  const { theme } = useTheme();
+
+  const cardClass = theme === 'dark'
+    ? 'bg-[#111] border border-gold/20 rounded-2xl p-8 shadow-xl'
+    : 'bg-white border border-gold/30 rounded-2xl p-8 shadow-xl';
+
+  const inputClass = theme === 'dark'
+    ? 'w-full px-4 py-3 rounded-lg bg-offwhite/10 border border-offwhite/20 text-offwhite placeholder-offwhite/30 focus:outline-none focus:border-gold transition-colors'
+    : 'w-full px-4 py-3 rounded-lg bg-charcoal/5 border border-charcoal/10 text-charcoal placeholder-charcoal/30 focus:outline-none focus:border-gold transition-colors';
+
+  const labelClass = `text-xs tracking-wider uppercase block mb-2 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`;
+
+  const btnPrimaryClass = 'w-full py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all disabled:opacity-50 shadow-[0_0_40px_rgba(197,160,89,0.18)]';
+
+  const subtitleClass = theme === 'dark' ? 'text-offwhite/60 mt-2' : 'text-charcoal/60 mt-2';
+
+  const linkMutedClass = theme === 'dark' ? 'text-offwhite/50 hover:text-offwhite' : 'text-charcoal/50 hover:text-charcoal';
 
   const handlePinDigit = async (digit) => {
     if (pinInput.length < 4 && /^\d$/.test(digit)) {
@@ -113,20 +131,20 @@ export default function ClientLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-offwhite flex items-center justify-center px-4">
+    <div className={`min-h-screen flex items-center justify-center px-4 ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
       <div className="w-full max-w-md">
-        <div className="bg-white border border-charcoal/10 p-8">
+        <div className={cardClass}>
           <div className="text-center mb-8">
             <Link to="/" className="block">
               <img src="/NC.jpg" alt="Nail Couture" className="h-28 w-auto mx-auto" />
             </Link>
-            <p className="text-charcoal/60 mt-2">Client Portal Login</p>
+            <p className={subtitleClass}>Client Portal Login</p>
           </div>
 
           {step === 'phone' && (
             <form onSubmit={handleSubmit}>
               <div className="mb-6">
-                <label className="text-xs text-charcoal/50 tracking-wider uppercase block mb-2">
+                <label className={labelClass}>
                   Phone Number
                 </label>
                 <input
@@ -137,15 +155,15 @@ export default function ClientLogin() {
                     setError('');
                   }}
                   placeholder="Enter your phone number"
-                  className="w-full p-3 border border-charcoal/10 focus:border-gold focus:outline-none"
+                  className={inputClass}
                 />
-                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+                {error && <p className={theme === 'dark' ? 'text-red-400 text-sm mt-2' : 'text-red-500 text-sm mt-2'}>{error}</p>}
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gold text-charcoal py-3 font-heading tracking-wider hover:bg-gold/90 transition-colors disabled:opacity-50"
+                className={btnPrimaryClass}
               >
                 {loading ? 'Verifying...' : 'Access Portal'}
               </button>
@@ -156,14 +174,14 @@ export default function ClientLogin() {
         {step === 'phone' && (
           <>
             <div className="mt-6 text-center">
-              <span className="text-sm text-charcoal/50">New customer? </span>
+              <span className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>New customer? </span>
               <Link to="/register" className="text-sm text-gold hover:text-gold/80 font-medium">
                 Register here
               </Link>
             </div>
 
             <div className="mt-4 text-center">
-              <Link to="/" className="text-sm text-charcoal/50 hover:text-charcoal">
+              <Link to="/" className={`text-sm ${linkMutedClass}`}>
                 ← Back to Home
               </Link>
             </div>
@@ -172,14 +190,14 @@ export default function ClientLogin() {
       </div>
 
       {step === 'pin' && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-sm h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
-            <div className="p-4 sm:p-6 border-b border-gold/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className={`w-full max-w-sm flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-2xl overflow-hidden mx-0 sm:mx-4 border shadow-2xl ${theme === 'dark' ? 'bg-[#1a1a1a] border-gold/20' : 'bg-white border-gold/30'}`}>
+            <div className={`p-4 sm:p-6 border-b ${theme === 'dark' ? 'border-gold/10' : 'border-gold/20'}`}>
               <div className="text-center mb-2">
-                <h3 className="font-heading text-2xl text-white mb-2">
+                <h3 className={`font-heading text-2xl mb-2 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>
                   {profile?.full_name ? `Hello, ${profile.full_name.split(' ')[0]}` : 'Enter PIN'}
                 </h3>
-                <p className="text-white/50 text-sm">Enter your 4-digit PIN</p>
+                <p className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Enter your 4-digit PIN</p>
               </div>
             </div>
 
@@ -189,10 +207,10 @@ export default function ClientLogin() {
                   key={i}
                   className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
                     pinLoading 
-                      ? 'bg-white/30 animate-pulse' 
+                      ? `${theme === 'dark' ? 'bg-white/30' : 'bg-charcoal/30'} animate-pulse` 
                       : pinInput[i - 1] 
-                        ? 'bg-gold scale-110 shadow-[0_0_12px_rgba(212,175,55,0.5)]' 
-                        : 'bg-white/30'
+                        ? 'bg-gold scale-110 shadow-[0_0_12px_rgba(197,160,89,0.5)]' 
+                        : theme === 'dark' ? 'bg-white/30' : 'bg-charcoal/30'
                   }`}
                 />
               ))}
@@ -211,7 +229,7 @@ export default function ClientLogin() {
                       key={idx}
                       type="button"
                       onClick={handlePinBackspace}
-                      className="h-16 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                      className={`h-16 flex items-center justify-center transition-colors ${theme === 'dark' ? 'text-white/60 hover:text-white' : 'text-charcoal/60 hover:text-charcoal'}`}
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" />
@@ -224,7 +242,7 @@ export default function ClientLogin() {
                     key={idx}
                     type="button"
                     onClick={() => handlePinDigit(key)}
-                    className="h-16 rounded-full bg-white/10 text-white text-2xl font-light hover:bg-white/20 active:bg-white/30 transition-all active:scale-95"
+                    className={`h-16 rounded-full text-2xl font-light transition-all active:scale-95 ${theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20 active:bg-white/30' : 'bg-charcoal/10 text-charcoal hover:bg-charcoal/20 active:bg-charcoal/30'}`}
                   >
                     {key}
                   </button>
@@ -236,7 +254,7 @@ export default function ClientLogin() {
               <button
                 type="button"
                 onClick={handlePinCancel}
-                className="w-full py-4 text-white/60 hover:text-white text-sm transition-colors"
+                className={`w-full py-4 text-sm transition-colors ${theme === 'dark' ? 'text-white/60 hover:text-white' : 'text-charcoal/60 hover:text-charcoal'}`}
               >
                 Cancel
               </button>

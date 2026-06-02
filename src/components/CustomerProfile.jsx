@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '../utils/routes';
 import { isRefreshmentAvailable } from '../services/inventoryService';
 import { useAvailableRefreshments } from '../hooks/useAvailableRefreshments';
@@ -11,6 +12,7 @@ import Sidebar from './Sidebar';
 export default function CustomerProfile() {
   const navigate = useNavigate();
   const { user, login } = useAuth();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -140,7 +142,7 @@ export default function CustomerProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
         <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse tracking-widest text-sm">LOADING ACCOUNT PROFILE...</div>
@@ -150,27 +152,26 @@ export default function CustomerProfile() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
       <Sidebar />
-      <style>{`.profile-section select, .profile-section option { background: #1a1a1a; color: #fff; }`}</style>
       
       <div className="profile-section p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-3xl mx-auto">
         <div className="border-b border-gold/10 pb-6 mb-8">
           <h1 className="font-heading text-3xl text-gold tracking-wide">My Profile</h1>
-          <p className="text-xs text-offwhite/40 mt-1">Manage personal luxury configurations and verification PIN codes</p>
+          <p className={theme === 'dark' ? 'text-xs text-offwhite/40 mt-1' : 'text-xs text-charcoal/40 mt-1'}>Manage personal luxury configurations and verification PIN codes</p>
         </div>
 
         {profile && (
           <div className="space-y-6">
-            <div className="bg-offwhite/5 border border-white/5 rounded-2xl p-6">
+            <div className={theme === 'dark' ? 'bg-offwhite/5 border border-white/5 rounded-2xl p-6' : 'bg-charcoal/5 border border-charcoal/5 rounded-2xl p-6'}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-white/5">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-gold/10 border border-gold/20 flex items-center justify-center font-heading text-gold text-xl uppercase">
                     {(profile.full_name || '??').split(' ').map(n => n[0]).join('').slice(0, 2)}
                   </div>
                   <div>
-                    <h2 className="text-offwhite font-medium text-lg">{profile.full_name}</h2>
-                    <p className="text-offwhite/40 text-xs mt-0.5">{profile.phone}</p>
+                    <h2 className={theme === 'dark' ? 'text-offwhite font-medium text-lg' : 'text-charcoal font-medium text-lg'}>{profile.full_name}</h2>
+                    <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-0.5' : 'text-charcoal/40 text-xs mt-0.5'}>{profile.phone}</p>
                   </div>
                 </div>
                 {!editing && (
@@ -186,23 +187,23 @@ export default function CustomerProfile() {
               {editing ? (
                 <form onSubmit={handleUpdateProfile} className="space-y-5">
                   <div>
-                    <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Full Name</label>
+                    <label className={theme === 'dark' ? 'text-offwhite/50 text-xs uppercase tracking-wider block mb-2' : 'text-charcoal/50 text-xs uppercase tracking-wider block mb-2'}>Full Name</label>
                     <input
                       type="text"
                       value={form.full_name}
                       onChange={e => setForm({ ...form, full_name: e.target.value })}
-                      className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm"
+                      className={theme === 'dark' ? 'w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm' : 'w-full p-3 bg-charcoal/10 border border-charcoal/20 text-charcoal focus:border-gold focus:outline-none rounded-lg text-sm'}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Email</label>
+                    <label className={theme === 'dark' ? 'text-offwhite/50 text-xs uppercase tracking-wider block mb-2' : 'text-charcoal/50 text-xs uppercase tracking-wider block mb-2'}>Email</label>
                     <input
                       type="email"
                       value={form.email}
                       onChange={e => setForm({ ...form, email: e.target.value })}
-                      className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm"
+                      className={theme === 'dark' ? 'w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm' : 'w-full p-3 bg-charcoal/10 border border-charcoal/20 text-charcoal focus:border-gold focus:outline-none rounded-lg text-sm'}
                       placeholder="name@example.com"
                     />
                   </div>
@@ -219,11 +220,11 @@ export default function CustomerProfile() {
                   />
 
                   <div>
-                    <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Nail Philosophy Goal</label>
+                    <label className={theme === 'dark' ? 'text-offwhite/50 text-xs uppercase tracking-wider block mb-2' : 'text-charcoal/50 text-xs uppercase tracking-wider block mb-2'}>Nail Philosophy Goal</label>
                     <select
                       value={form.nail_goal}
                       onChange={e => setForm({ ...form, nail_goal: e.target.value })}
-                      className="w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm"
+                      className={theme === 'dark' ? 'w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm' : 'w-full p-3 bg-charcoal/10 border border-charcoal/20 text-charcoal focus:border-gold focus:outline-none rounded-lg text-sm'}
                     >
                       <option value="">Unset</option>
                       <option value="Healthy Natural Nails">Healthy Natural Nails</option>
@@ -236,7 +237,7 @@ export default function CustomerProfile() {
                     <button
                       type="button"
                       onClick={() => { setEditing(false); setForm({ full_name: profile.full_name, email: profile.email || '', refreshment_pref: profile.refreshment_pref || '', nail_goal: profile.nail_goal || '' }); }}
-                      className="flex-1 py-3 bg-charcoal border border-white/10 text-offwhite text-sm rounded-xl hover:bg-white/5 transition-colors"
+                      className={theme === 'dark' ? 'flex-1 py-3 bg-charcoal border border-white/10 text-offwhite text-sm rounded-xl hover:bg-white/5 transition-colors' : 'flex-1 py-3 bg-charcoal border border-charcoal/10 text-charcoal text-sm rounded-xl hover:bg-charcoal/10 transition-colors'}
                     >
                       Cancel
                     </button>
@@ -252,45 +253,45 @@ export default function CustomerProfile() {
               ) : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Full name</span>
-                      <span className="text-sm text-offwhite font-medium">{profile.full_name || 'Not set'}</span>
+                    <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
+                      <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Full name</span>
+                      <span className={theme === 'dark' ? 'text-sm text-offwhite font-medium' : 'text-sm text-charcoal font-medium'}>{profile.full_name || 'Not set'}</span>
                     </div>
-                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Phone</span>
-                      <span className="text-sm text-offwhite font-medium">{profile.phone || 'Not set'}</span>
+                    <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
+                      <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Phone</span>
+                      <span className={theme === 'dark' ? 'text-sm text-offwhite font-medium' : 'text-sm text-charcoal font-medium'}>{profile.phone || 'Not set'}</span>
                     </div>
-                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Email</span>
-                      <span className="text-sm text-offwhite font-medium">{profile.email || 'Not set'}</span>
+                    <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
+                      <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Email</span>
+                      <span className={theme === 'dark' ? 'text-sm text-offwhite font-medium' : 'text-sm text-charcoal font-medium'}>{profile.email || 'Not set'}</span>
                     </div>
-                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Member since</span>
-                      <span className="text-sm text-offwhite font-medium">
+                    <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
+                      <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Member since</span>
+                      <span className={theme === 'dark' ? 'text-sm text-offwhite font-medium' : 'text-sm text-charcoal font-medium'}>
                         {profile.created_at
                           ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
                           : 'Unknown'}
                       </span>
                     </div>
-                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Refreshment preference</span>
-                      <span className="text-sm text-offwhite font-medium">{profile.refreshment_pref || 'None'}</span>
+                    <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
+                      <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Refreshment preference</span>
+                      <span className={theme === 'dark' ? 'text-sm text-offwhite font-medium' : 'text-sm text-charcoal font-medium'}>{profile.refreshment_pref || 'None'}</span>
                     </div>
-                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Nail profile journey</span>
+                    <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
+                      <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Nail profile journey</span>
                       <span className="text-sm text-gold font-heading">{profile.nail_goal || 'Not specified'}</span>
                     </div>
-                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Loyalty tier</span>
+                    <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
+                      <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Loyalty tier</span>
                       <span className="text-sm text-gold font-heading">{profile.tier || 'Silver'}</span>
                     </div>
-                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                      <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Loyalty points</span>
-                      <span className="text-sm text-offwhite font-medium">{profile.loyalty_points ?? 0}</span>
+                    <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
+                      <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Loyalty points</span>
+                      <span className={theme === 'dark' ? 'text-sm text-offwhite font-medium' : 'text-sm text-charcoal font-medium'}>{profile.loyalty_points ?? 0}</span>
                     </div>
                     {profile.referral_code && (
-                      <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl sm:col-span-2">
-                        <span className="text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1">Referral code</span>
+                      <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl sm:col-span-2' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl sm:col-span-2'}>
+                        <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Referral code</span>
                         <span className="text-sm text-gold font-heading tracking-widest">{profile.referral_code}</span>
                       </div>
                     )}
@@ -299,18 +300,18 @@ export default function CustomerProfile() {
               )}
             </div>
 
-            <div className="bg-offwhite/5 border border-white/5 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className={theme === 'dark' ? 'bg-offwhite/5 border border-white/5 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4' : 'bg-charcoal/5 border border-charcoal/5 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'}>
               <div>
-                <h3 className="text-offwhite font-medium text-base flex items-center gap-2">
+                <h3 className={theme === 'dark' ? 'text-offwhite font-medium text-base flex items-center gap-2' : 'text-charcoal font-medium text-base flex items-center gap-2'}>
                   <span>🔒</span> Kiosk Self-Service PIN
                 </h3>
-                <p className="text-xs text-offwhite/40 mt-1 max-w-md">
+                <p className={theme === 'dark' ? 'text-xs text-offwhite/40 mt-1 max-w-md' : 'text-xs text-charcoal/40 mt-1 max-w-md'}>
                   Secure your self-service interactions at salon kiosks. Use a 4-digit numeric code to check in without hassle.
                 </p>
               </div>
               <button
                 onClick={() => { setShowPinForm(true); setPinError(''); setPinSuccess(''); }}
-                className="px-5 py-2.5 bg-white/5 border border-white/10 text-offwhite rounded-xl hover:bg-white/10 transition-colors text-xs font-medium shrink-0"
+                className={theme === 'dark' ? 'px-5 py-2.5 bg-white/5 border border-white/10 text-offwhite rounded-xl hover:bg-white/10 transition-colors text-xs font-medium shrink-0' : 'px-5 py-2.5 bg-charcoal/5 border border-charcoal/10 text-charcoal rounded-xl hover:bg-charcoal/10 transition-colors text-xs font-medium shrink-0'}
               >
                 {profile.pin_code ? 'Update Security PIN' : 'Setup Kiosk PIN'}
               </button>
@@ -320,17 +321,17 @@ export default function CustomerProfile() {
       </div>
 
       {showPinForm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowPinForm(false)}>
-          <div className="w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowPinForm(false)}>
+          <div className={theme === 'dark' ? 'w-full max-w-md flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl' : 'w-full max-w-md flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] bg-white rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl'} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10 shrink-0">
               <div>
                 <h2 className="font-heading text-xl text-gold mb-0">{pinMode === 'change' ? 'Change Kiosk PIN' : 'Set Kiosk PIN'}</h2>
-                <p className="text-offwhite/40 text-xs mt-1">Provide a numeric 4-digit passcode for quick logins</p>
+                <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>Provide a numeric 4-digit passcode for quick logins</p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowPinForm(false)}
-                className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors"
+                className={theme === 'dark' ? 'text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors' : 'text-charcoal/40 hover:text-charcoal text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-charcoal/5 transition-colors'}
               >
                 &times;
               </button>
@@ -339,7 +340,7 @@ export default function CustomerProfile() {
             <form onSubmit={handlePinSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               {pinMode === 'change' && (
                 <div>
-                  <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Current PIN Code</label>
+                  <label className={theme === 'dark' ? 'text-offwhite/50 text-xs uppercase tracking-wider block mb-2' : 'text-charcoal/50 text-xs uppercase tracking-wider block mb-2'}>Current PIN Code</label>
                   <input
                     type="password"
                     inputMode="numeric"
@@ -348,13 +349,13 @@ export default function CustomerProfile() {
                     value={pinForm.current_pin}
                     onChange={e => setPinForm({ ...pinForm, current_pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
                     placeholder="••••"
-                    className="w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl"
+                    className={theme === 'dark' ? 'w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl' : 'w-full p-3 text-charcoal bg-charcoal/10 border border-charcoal/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl'}
                   />
                 </div>
               )}
 
               <div>
-                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">New 4-Digit PIN</label>
+                <label className={theme === 'dark' ? 'text-offwhite/50 text-xs uppercase tracking-wider block mb-2' : 'text-charcoal/50 text-xs uppercase tracking-wider block mb-2'}>New 4-Digit PIN</label>
                 <input
                   type="password"
                   inputMode="numeric"
@@ -363,12 +364,12 @@ export default function CustomerProfile() {
                   value={pinForm.new_pin}
                   onChange={e => setPinForm({ ...pinForm, new_pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
                   placeholder="Enter new PIN"
-                  className="w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl"
+                  className={theme === 'dark' ? 'w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl' : 'w-full p-3 text-charcoal bg-charcoal/10 border border-charcoal/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl'}
                 />
               </div>
 
               <div>
-                <label className="text-offwhite/50 text-xs uppercase tracking-wider block mb-2">Confirm PIN</label>
+                <label className={theme === 'dark' ? 'text-offwhite/50 text-xs uppercase tracking-wider block mb-2' : 'text-charcoal/50 text-xs uppercase tracking-wider block mb-2'}>Confirm PIN</label>
                 <input
                   type="password"
                   inputMode="numeric"
@@ -377,7 +378,7 @@ export default function CustomerProfile() {
                   value={pinForm.confirm_pin}
                   onChange={e => setPinForm({ ...pinForm, confirm_pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
                   placeholder="Confirm new PIN"
-                  className="w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl"
+                  className={theme === 'dark' ? 'w-full p-3 text-offwhite bg-offwhite/10 border border-offwhite/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl' : 'w-full p-3 text-charcoal bg-charcoal/10 border border-charcoal/20 rounded-lg focus:border-gold focus:outline-none tracking-widest text-center text-xl'}
                 />
               </div>
 
@@ -385,7 +386,7 @@ export default function CustomerProfile() {
               {pinSuccess && <p className="text-green-400 text-sm text-center">{pinSuccess}</p>}
 
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowPinForm(false)} className="flex-1 py-3 bg-[#0B0B0C] text-offwhite text-sm rounded-xl hover:bg-white/10 transition-colors">Cancel</button>
+                <button type="button" onClick={() => setShowPinForm(false)} className={theme === 'dark' ? 'flex-1 py-3 bg-[#0B0B0C] text-offwhite text-sm rounded-xl hover:bg-white/10 transition-colors' : 'flex-1 py-3 bg-white text-charcoal text-sm rounded-xl hover:bg-charcoal/10 transition-colors border border-charcoal/20'}>Cancel</button>
                 <button type="submit" disabled={pinLoading} className="flex-1 py-3 bg-gold text-charcoal rounded-xl hover:bg-gold/90 transition-colors font-medium text-sm disabled:opacity-50">
                   {pinLoading ? 'Saving...' : 'Save PIN'}
                 </button>
