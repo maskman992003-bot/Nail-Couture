@@ -81,7 +81,6 @@ export default function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDesktopUserMenu, setShowDesktopUserMenu] = useState(false);
   const [showMobileUserMenu, setShowMobileUserMenu] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(true);
 
   const userPhone = user?.phone;
   const navRef = useRef(null);
@@ -124,41 +123,11 @@ export default function Sidebar() {
     }
   }, [SCROLL_KEY]);
 
-  // Handle the scroll restoration perfectly on mount
-  useEffect(() => {
-    const saved = sessionStorage.getItem(BOTTOM_SCROLL_KEY);
-    if (saved && bottomNavRef.current) {
-      const el = bottomNavRef.current;
-      const originalSmoothness = el.style.scrollBehavior;
-
-      requestAnimationFrame(() => {
-        el.style.scrollBehavior = 'auto';
-        el.scrollLeft = parseInt(saved, 10);
-        el.style.scrollBehavior = originalSmoothness;
-
-        // Release the guard after the layout settles
-        setTimeout(() => setIsNavigating(false), 150);
-      });
-    } else {
-      // No saved position - release guard immediately
-      setIsNavigating(false);
-    }
-  }, [BOTTOM_SCROLL_KEY, navItems]);
-
-  const handleNavScroll = useCallback(() => {
-    if (navRef.current) {
-      sessionStorage.setItem(SCROLL_KEY, navRef.current.scrollTop);
-    }
-  }, [SCROLL_KEY]);
-
   const handleBottomNavScroll = useCallback((e) => {
-    // If we are currently transitioning pages, do not overwrite our pristine saved coordinates!
-    if (isNavigating) return;
-
     if (e.currentTarget) {
       sessionStorage.setItem(BOTTOM_SCROLL_KEY, e.currentTarget.scrollLeft.toString());
     }
-  }, [BOTTOM_SCROLL_KEY, isNavigating]);
+  }, [BOTTOM_SCROLL_KEY]);
 
   const fetchNotifications = useCallback(async () => {
     if (!userPhone) return;
@@ -362,13 +331,12 @@ export default function Sidebar() {
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 shadow-2xl" style={{ backgroundColor: sidebarBg }}>
         <nav className="flex items-center justify-between px-1 py-2 w-full" style={{ borderTop: `1px solid ${borderColor}` }}>
-          <div ref={bottomNavRef} onScroll={handleBottomNavScroll} className="flex-1 min-w-0 flex items-center overflow-x-auto scrollbar-none">
+          <div ref={(el) => { if (el) { bottomNavRef.current = el; const saved = sessionStorage.getItem(BOTTOM_SCROLL_KEY); if (saved && !el.dataset.bsr) { el.dataset.bsr = '1'; el.style.scrollBehavior = 'auto'; el.scrollLeft = parseInt(saved, 10); } } }} onScroll={handleBottomNavScroll} className="flex-1 min-w-0 flex items-center overflow-x-auto scrollbar-none">
             {navItems.map((item) => {
               return (
                 <NavLink
                   key={item.id}
                   to={item.href}
-                  onClick={() => setIsNavigating(true)}
                   className={({ isActive }) => `flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all flex-shrink-0 w-[72px] ${isActive ? 'text-gold' : theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}
                 >
                   <div className="w-5 h-5">{renderIcon(item.icon)}</div>
