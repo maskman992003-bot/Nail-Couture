@@ -340,8 +340,8 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 shadow-2xl" style={{ backgroundColor: sidebarBg }}>
-        <nav className="flex items-center px-1 py-2" style={{ borderTop: `1px solid ${borderColor}` }}>
-          <div ref={bottomNavRef} onScroll={handleBottomNavScroll} className="flex items-center overflow-x-auto scrollbar-none">
+        <nav className="flex items-center justify-between px-1 py-2 w-full" style={{ borderTop: `1px solid ${borderColor}` }}>
+          <div ref={bottomNavRef} onScroll={handleBottomNavScroll} className="flex-1 min-w-0 flex items-center overflow-x-auto scrollbar-none">
             {navItems.map((item) => {
               return (
                 <NavLink
@@ -355,10 +355,10 @@ export default function Sidebar() {
               );
             })}
           </div>
-          <div className="relative flex flex-col items-center flex-1 max-w-[60px] user-menu flex-shrink-0">
+          <div className="relative flex flex-col items-center w-[60px] user-menu flex-shrink-0 border-l border-gold/10 pl-1">
             <button
               onPointerDown={(e) => { setShowUserMenu((v) => !v); }}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 transition-colors rounded-lg mx-1 w-full ${theme === 'dark' ? 'text-offwhite/55 hover:text-gold hover:bg-offwhite/5' : 'text-charcoal/75 hover:text-gold hover:bg-charcoal/5'}`}
+              className={`flex flex-col items-center gap-0.5 px-1 py-1.5 transition-colors rounded-lg w-full ${theme === 'dark' ? 'text-offwhite/55 hover:text-gold hover:bg-offwhite/5' : 'text-charcoal/75 hover:text-gold hover:bg-charcoal/5'}`}
             >
               <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center">
                 <span className="text-[10px] text-gold font-heading">{initials || '?'}</span>
