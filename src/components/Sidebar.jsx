@@ -354,10 +354,16 @@ export default function Sidebar() {
                 </NavLink>
               );
             })}
+            {/* Structural Layout Guard: Ensures scroll engine never shrinks container size */}
+            <div className="w-4 h-full flex-shrink-0" aria-hidden="true" />
           </div>
+          
           <div className="relative flex flex-col items-center w-[60px] user-menu flex-shrink-0 border-l border-gold/10 pl-1">
             <button
-              onPointerDown={(e) => { setShowUserMenu((v) => !v); }}
+              onClick={(e) => { 
+                e.stopPropagation();
+                setShowUserMenu((v) => !v); 
+              }}
               className={`flex flex-col items-center gap-0.5 px-1 py-1.5 transition-colors rounded-lg w-full ${theme === 'dark' ? 'text-offwhite/55 hover:text-gold hover:bg-offwhite/5' : 'text-charcoal/75 hover:text-gold hover:bg-charcoal/5'}`}
             >
               <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center">
@@ -370,7 +376,7 @@ export default function Sidebar() {
               <div
                 className={`absolute bottom-full right-0 mb-2 w-44 rounded-xl border overflow-hidden shadow-2xl z-50 ${theme === 'dark' ? 'bg-[#141414]' : 'bg-white'}`}
                 style={{ borderColor: theme === 'dark' ? 'rgba(197,160,89,0.4)' : 'rgba(197,160,89,0.3)' }}
-                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={() => { navigate(settingsPath); setShowUserMenu(false); }}
@@ -412,11 +418,6 @@ export default function Sidebar() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   Notifications
-                  {unreadCount > 0 && (
-                    <span className="ml-auto min-w-[16px] h-4 flex items-center justify-center rounded-full text-[8px] font-bold text-charcoal" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)' }}>
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
                 </button>
                 <button
                   onClick={() => { setShowLogoutConfirm(true); setShowUserMenu(false); }}
