@@ -81,7 +81,7 @@ export default function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDesktopUserMenu, setShowDesktopUserMenu] = useState(false);
   const [showMobileUserMenu, setShowMobileUserMenu] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(true);
 
   const userPhone = user?.phone;
   const navRef = useRef(null);
@@ -131,16 +131,17 @@ export default function Sidebar() {
       const el = bottomNavRef.current;
       const originalSmoothness = el.style.scrollBehavior;
 
-      setIsNavigating(true);
-
       requestAnimationFrame(() => {
         el.style.scrollBehavior = 'auto';
         el.scrollLeft = parseInt(saved, 10);
         el.style.scrollBehavior = originalSmoothness;
 
         // Release the guard after the layout settles
-        setTimeout(() => setIsNavigating(false), 100);
+        setTimeout(() => setIsNavigating(false), 150);
       });
+    } else {
+      // No saved position - release guard immediately
+      setIsNavigating(false);
     }
   }, [BOTTOM_SCROLL_KEY, navItems]);
 
