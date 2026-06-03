@@ -88,6 +88,34 @@ export default function Sidebar() {
   const SCROLL_KEY = `sidebar_scroll_${user?.role || 'guest'}`;
   const BOTTOM_SCROLL_KEY = `bottom_nav_scroll_${user?.role || 'guest'}`;
 
+  // Fixes Mobile Jitter: Memoize nav items to keep the DOM stable during route changes
+  const navItems = useMemo(() => {
+    if (!user) return [];
+    const actualUserRole = user.role || 'customer';
+    let items = navItemsByRole[actualUserRole] || navItemsByRole.customer;
+
+    const navItemFeatureMappings = {
+      bookings: ['customer.onlineBooking', 'customer.onlineCalendarBooking'],
+      book: ['customer.onlineBooking', 'customer.onlineCalendarBooking'],
+      services: ['customer.staticServiceMenu'],
+      customers: ['management.customerHistory']
+    };
+
+    if (actualUserRole !== 'super_admin') {
+      items = items.filter(item => {
+        const mapping = navItemFeatureMappings[item.id];
+        if (!mapping) return true;
+
+        const flagsToCheck = Array.isArray(mapping) ? mapping : [mapping];
+        return flagsToCheck.some((flag) => {
+          const [featureArea, featureName] = flag.split('.');
+          return featureFlags[featureArea]?.[featureName] === true;
+        });
+      });
+    }
+    return items;
+  }, [user?.role]);
+
   useEffect(() => {
     const saved = sessionStorage.getItem(SCROLL_KEY);
     if (saved && navRef.current) {
@@ -192,35 +220,6 @@ export default function Sidebar() {
     } catch { }
   };
 
-  // Fixes Mobile Jitter: Memoize nav items to keep the DOM stable during route changes
-  const navItems = useMemo(() => {
-    if (!user) return [];
-
-    const actualUserRole = user.role || 'customer';
-    let items = navItemsByRole[actualUserRole] || navItemsByRole.customer;
-
-    // Feature flag mappings for navigation items
-    const navItemFeatureMappings = {
-      bookings: ['customer.onlineBooking', 'customer.onlineCalendarBooking'],
-      book: ['customer.onlineBooking', 'customer.onlineCalendarBooking'],
-      services: ['customer.staticServiceMenu'],
-      customers: ['management.customerHistory']
-    };
-
-    if (actualUserRole !== 'super_admin') {
-      items = items.filter(item => {
-        const mapping = navItemFeatureMappings[item.id];
-        if (!mapping) return true;
-
-        const flagsToCheck = Array.isArray(mapping) ? mapping : [mapping];
-        return flagsToCheck.some((flag) => {
-          const [featureArea, featureName] = flag.split('.');
-          return featureFlags[featureArea]?.[featureName] === true;
-        });
-      });
-    }
-    return items;
-  }, [user?.role]);
   const settingsPath = getSettingsPath(user?.role);
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
   const initials = (user?.full_name || user?.email || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
