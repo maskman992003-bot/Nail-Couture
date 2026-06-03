@@ -97,7 +97,11 @@ export default function Sidebar() {
   useEffect(() => {
     const saved = sessionStorage.getItem(BOTTOM_SCROLL_KEY);
     if (saved && bottomNavRef.current) {
-      bottomNavRef.current.scrollLeft = parseInt(saved, 10);
+      const el = bottomNavRef.current;
+      const originalSmoothness = el.style.scrollBehavior;
+      el.style.scrollBehavior = 'auto';
+      el.scrollLeft = parseInt(saved, 10);
+      el.style.scrollBehavior = originalSmoothness;
     }
   }, [BOTTOM_SCROLL_KEY]);
 
