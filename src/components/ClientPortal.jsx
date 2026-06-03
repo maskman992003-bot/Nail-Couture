@@ -95,7 +95,7 @@ export default function ClientPortal() {
         .select('*, services(name, price, duration_minutes)')
         .eq('customer_id', userId)
         .in('status', ['waiting', 'assigned_pending', 'serving'])
-        .order('check_in_time', { ascending: false });
+        .order('checked_in_at', { ascending: false });
       setAppointments(appointmentsData || []);
     } catch { }
     setLoading(false);
@@ -241,7 +241,7 @@ export default function ClientPortal() {
                   <div>
                     <h3 className={theme === 'dark' ? 'font-heading text-2xl text-offwhite mb-1' : 'font-heading text-2xl text-charcoal mb-1'}>{booking.add_ons || booking.services?.name || 'Service'}</h3>
                     <div className={theme === 'dark' ? 'text-offwhite/50 text-sm' : 'text-charcoal/50 text-sm'}>
-                      {new Date(booking.check_in_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {new Date(booking.check_in_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      {new Date(booking.checked_in_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {new Date(booking.checked_in_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                     </div>
                   </div>
                   <div className="text-right">
@@ -422,7 +422,7 @@ export default function ClientPortal() {
               ) : null}
               <div>
                 <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-1' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-1'}>Date & Time</div>
-                <div className={theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}>{new Date(selectedBooking.check_in_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {new Date(selectedBooking.check_in_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
+                <div className={theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}>{new Date(selectedBooking.checked_in_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {new Date(selectedBooking.checked_in_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
               </div>
               <div>
                 <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-1' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-1'}>Status</div>

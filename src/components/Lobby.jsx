@@ -116,7 +116,7 @@ export default function Lobby() {
                             {appointment.profiles?.full_name || 'Guest'}
                           </h3>
                           <span className="text-offwhite/40 text-sm">
-                            {formatTime(appointment.check_in_time)}
+                            {formatTime(appointment.checked_in_at)}
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-4 text-sm">
