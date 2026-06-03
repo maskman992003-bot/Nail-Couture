@@ -53,7 +53,7 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-charcoal/95 flex items-center justify-center">
+      <div className="min-h-screen bg-primary flex items-center justify-center">
         <div className="text-gold animate-pulse">Loading services...</div>
       </div>
     )
@@ -61,7 +61,7 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
 
   if (error) {
     return (
-      <div className="min-h-screen bg-charcoal/95 flex items-center justify-center">
+      <div className="min-h-screen bg-primary flex items-center justify-center">
         <div className="text-red-400">Error: {error}</div>
       </div>
     )
@@ -99,11 +99,11 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
   }
 
   return (
-    <div className="min-h-screen bg-charcoal/95 flex items-center justify-center p-4 sm:p-8 animate-fade-in">
+    <div className="min-h-screen bg-primary flex items-center justify-center p-4 sm:p-8 animate-fade-in">
       <div className="w-full max-w-3xl">
         <button
           onClick={onBack}
-          className="absolute top-6 left-6 text-offwhite/50 hover:text-offwhite transition-colors z-10"
+          className="absolute top-6 left-6 text-secondary hover:text-primary transition-colors z-10"
         >
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -112,7 +112,7 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
 
         <div className="text-center mb-4">
           <h2 className="font-heading text-3xl text-gold mb-2">Select Your Services</h2>
-          <p className="text-offwhite/60">Choose one or more treatments</p>
+          <p className="text-secondary">Choose one or more treatments</p>
         </div>
 
         <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x w-full px-1 pb-1">
@@ -123,7 +123,7 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
               className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 snap-start ${
                 activeCategory === cat
                   ? 'bg-gold text-charcoal'
-                  : 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
+                  : 'border border-theme text-secondary hover:border-theme hover:text-gold-strong'
               }`}
             >
               {cat}
@@ -133,21 +133,21 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
 
         {services.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-offwhite/40">No services available</p>
+            <p className="text-muted">No services available</p>
           </div>
         ) : (
           <div className="space-y-3">
             {displayCategories.map((category) => {
               const isOpen = displayCategories.length === 1 || expandedCategory === category
               return (
-                <div key={category} className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(197,160,89,0.25)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                <div key={category} className="rounded-xl border border-card bg-secondary overflow-hidden">
                   <button
                     onClick={() => setExpandedCategory(isOpen ? null : category)}
-                    className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/3 transition-colors"
+                    className="w-full flex items-center justify-between px-5 py-3 hover:bg-secondary transition-colors"
                   >
                     <div className="flex items-center gap-2">
                       <h3 className="font-heading text-base text-gold">{category}</h3>
-                      <span className="text-offwhite/30 text-xs">({groupedServices[category].length})</span>
+                      <span className="text-muted text-xs">({groupedServices[category].length})</span>
                     </div>
                     <svg className={`w-4 h-4 text-gold transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -162,12 +162,11 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
                             key={service.id}
                             onClick={() => toggleService(service)}
                             className={`rounded-xl p-4 text-left border transition-all flex items-center gap-3 ${
-                              isSelected ? 'border-2' : 'border-offwhite/10'
-                            }`}
-                            style={{ borderColor: isSelected ? 'rgba(197, 160, 89, 0.6)' : 'rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}
+                              isSelected ? 'border-2 border-theme' : 'border-light'
+                            } bg-secondary`}
                           >
                             <div className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center ${
-                              isSelected ? 'border-gold bg-gold' : 'border-offwhite/30'
+                              isSelected ? 'border-gold bg-gold' : 'border-light'
                             }`}>
                               {isSelected && (
                                 <svg className="w-3 h-3 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,8 +175,8 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
                               )}
                             </div>
                             <div className="flex-1">
-                              <div className="font-heading text-base text-offwhite">{service.name}</div>
-                              <div className="text-offwhite/40 text-xs">{service.duration_minutes} min</div>
+                              <div className="font-heading text-base text-primary">{service.name}</div>
+                              <div className="text-muted text-xs">{service.duration_minutes} min</div>
                             </div>
                             <div className="text-gold font-heading text-lg">${service.price}</div>
                           </button>
@@ -192,13 +191,13 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
         )}
 
         {selectedServices.length > 0 && (
-          <div className="mt-4 rounded-xl border p-4" style={{ borderColor: 'rgba(197,160,89,0.4)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
+          <div className="mt-4 rounded-xl border border-card bg-secondary p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <div className="text-offwhite font-heading">
+                <div className="text-primary font-heading">
                   {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} selected
                 </div>
-                <div className="text-offwhite/50 text-xs">
+                <div className="text-secondary text-xs">
                   {selectedServices.map((s) => s.name).join(', ')}
                 </div>
               </div>
@@ -207,13 +206,13 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
 
             {addOns.length > 0 && (
               <div className="mb-3">
-                <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-2">Add-Ons (Optional)</div>
+                <div className="text-muted text-xs uppercase tracking-widest mb-2">Add-Ons (Optional)</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {addOns.map((addOn) => (
                     <label
                       key={addOn.id}
                       className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                        selectedAddOns.includes(addOn.id) ? 'border-gold bg-gold/10' : 'border-offwhite/10 hover:border-gold/40'
+                        selectedAddOns.includes(addOn.id) ? 'border-theme bg-card' : 'border-light hover:border-theme'
                       }`}
                     >
                       <input
@@ -223,7 +222,7 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
                         className="sr-only"
                       />
                       <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
-                        selectedAddOns.includes(addOn.id) ? 'border-gold bg-gold' : 'border-offwhite/30'
+                        selectedAddOns.includes(addOn.id) ? 'border-gold bg-gold' : 'border-light'
                       }`}>
                         {selectedAddOns.includes(addOn.id) && (
                           <svg className="w-2.5 h-2.5 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,8 +231,8 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
                         )}
                       </div>
                       <div className="flex-1">
-                        <div className="text-offwhite font-heading text-sm">{addOn.name}</div>
-                        <div className="text-offwhite/40 text-xs">+{addOn.duration_minutes} min</div>
+                        <div className="text-primary font-heading text-sm">{addOn.name}</div>
+                        <div className="text-muted text-xs">+{addOn.duration_minutes} min</div>
                       </div>
                       <div className="text-gold font-heading text-sm">+${addOn.price}</div>
                     </label>
@@ -244,7 +243,7 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
 
             <RefreshmentSelect
               label="Refreshment"
-              labelClassName="block text-offwhite/50 text-xs uppercase tracking-wider mb-2"
+              labelClassName="block text-secondary text-xs uppercase tracking-wider mb-2"
               value={refreshmentPref}
               onChange={(e) => setRefreshmentPref(e.target.value)}
               refreshments={refreshmentList}
@@ -257,14 +256,14 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
           </div>
         )}
 
-        <p className="text-center text-offwhite/30 text-sm mt-6">Times are approximate to ensure couture quality.</p>
+        <p className="text-center text-muted text-sm mt-6">Times are approximate to ensure couture quality.</p>
         
         {selectedServices.length > 0 && (
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-in">
             <button
               type="button"
               onClick={onBack}
-              className="min-w-[120px] px-5 py-3 rounded-full border border-offwhite/20 text-offwhite text-sm font-heading uppercase tracking-[0.24em] hover:border-gold hover:text-gold transition-all"
+              className="min-w-[120px] px-5 py-3 rounded-full border border-light text-secondary text-sm font-heading uppercase tracking-[0.24em] hover:border-theme hover:text-gold-strong transition-all"
             >
               CANCEL
             </button>
@@ -404,7 +403,7 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-charcoal flex items-center justify-center p-8 relative overflow-hidden animate-fade-in">
+      <div className="min-h-screen bg-primary flex items-center justify-center p-8 relative overflow-hidden animate-fade-in">
         <Sparkle />
         <div className="relative z-10 text-center">
           <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-8">
@@ -413,9 +412,9 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
             </svg>
           </div>
           <h2 className="font-heading text-4xl text-gold mb-4 tracking-wide">Welcome to the Club</h2>
-          <p className="font-heading text-2xl text-offwhite mb-6">{fullName}</p>
+          <p className="font-heading text-2xl text-primary mb-6">{fullName}</p>
           {refreshmentPref && (
-            <p className="text-xl text-offwhite/70">
+            <p className="text-xl text-secondary">
               Your <span className="text-gold">{refreshmentPref}</span> is being prepared
             </p>
           )}
@@ -445,11 +444,11 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
   }
 
   return (
-      <div className="min-h-screen bg-charcoal/95 flex items-center justify-center p-8 animate-fade-in">
+      <div className="min-h-screen bg-primary flex items-center justify-center p-8 animate-fade-in">
         <div className="w-full max-w-md">
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 text-offwhite/50 hover:text-offwhite transition-colors"
+          className="absolute top-6 right-6 text-secondary hover:text-primary transition-colors"
         >
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -463,52 +462,52 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
             </svg>
           </div>
           <h2 className="font-heading text-3xl text-gold mb-2">Join the Couture Club</h2>
-          <p className="text-offwhite/60">Create your profile to get started</p>
+          <p className="text-secondary">Create your profile to get started</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-offwhite/80 text-sm mb-2">Full Name</label>
+            <label className="block text-secondary text-sm mb-2">Full Name</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite placeholder-offwhite/30 rounded-lg focus:outline-none focus:border-gold transition-colors"
+              className="w-full px-4 py-3 bg-input border border-input text-primary placeholder-text-muted rounded-lg focus:outline-none focus:border-gold transition-colors"
               placeholder="Your name"
               required
             />
           </div>
 
           <div>
-            <label className="block text-offwhite/80 text-sm mb-2">Email</label>
+            <label className="block text-secondary text-sm mb-2">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite placeholder-offwhite/30 rounded-lg focus:outline-none focus:border-gold transition-colors"
+              className="w-full px-4 py-3 bg-input border border-input text-primary placeholder-text-muted rounded-lg focus:outline-none focus:border-gold transition-colors"
               placeholder="your@email.com"
               required
             />
           </div>
 
           <div>
-            <label className="block text-offwhite/80 text-sm mb-2">Nail Goal</label>
+            <label className="block text-secondary text-sm mb-2">Nail Goal</label>
             <select
               value={nailGoal}
               onChange={(e) => setNailGoal(e.target.value)}
-              className="w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:outline-none focus:border-gold transition-colors appearance-none cursor-pointer"
+              className="w-full px-4 py-3 bg-input border border-input text-primary rounded-lg focus:outline-none focus:border-gold transition-colors appearance-none cursor-pointer"
               required
             >
-              <option value="" className="bg-charcoal">Select your nail goal</option>
-              <option value="Healthy Natural Nails" className="bg-charcoal">Healthy Natural Nails</option>
-              <option value="Long Extensions" className="bg-charcoal">Long Extensions</option>
-              <option value="Intricate Art" className="bg-charcoal">Intricate Art</option>
+              <option value="" className="bg-primary">Select your nail goal</option>
+              <option value="Healthy Natural Nails" className="bg-primary">Healthy Natural Nails</option>
+              <option value="Long Extensions" className="bg-primary">Long Extensions</option>
+              <option value="Intricate Art" className="bg-primary">Intricate Art</option>
             </select>
           </div>
 
           <RefreshmentSelect
             label="Refreshment Preference"
-            labelClassName="block text-offwhite/80 text-sm mb-2"
+            labelClassName="block text-secondary text-sm mb-2"
             value={refreshmentPref}
             onChange={(e) => setRefreshmentPref(e.target.value)}
             refreshments={refreshmentList}
@@ -518,14 +517,14 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
-          <div className="bg-offwhite/5 border border-gold/30 rounded-xl p-4">
-            <label className="block text-offwhite/80 text-sm mb-2">Selected Services</label>
+          <div className="bg-secondary border border-theme rounded-xl p-4">
+            <label className="block text-secondary text-sm mb-2">Selected Services</label>
             {selectedServices.length > 0 ? (
               <div>
                 {selectedServices.map((s) => (
                   <div key={s.id} className="flex items-center justify-between">
                     <div>
-                      <div className="text-offwhite font-heading">{s.name}</div>
+                      <div className="text-primary font-heading">{s.name}</div>
                       <div className="text-gold text-sm">${s.price}</div>
                     </div>
                   </div>
@@ -545,7 +544,7 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
               <button
                 type="button"
                 onClick={() => setShowServiceSelection(true)}
-                className="w-full py-3 border border-gold/50 text-gold hover:bg-gold/10 rounded-lg transition-all"
+                className="w-full py-3 border border-theme text-gold-strong hover:bg-card rounded-lg transition-all"
               >
                 Select Services
               </button>
@@ -557,7 +556,7 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="min-w-[120px] px-5 py-3 rounded-full border border-offwhite/20 text-offwhite text-sm font-heading uppercase tracking-[0.24em] hover:border-gold hover:text-gold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="min-w-[120px] px-5 py-3 rounded-full border border-light text-secondary text-sm font-heading uppercase tracking-[0.24em] hover:border-theme hover:text-gold-strong transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               CANCEL
             </button>
@@ -606,6 +605,19 @@ export default function CheckIn({ onNavigate }) {
   useEffect(() => {
     getServices().then(setServices).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!newUserSuccess) return
+    const timer = setTimeout(() => {
+      setNewUserSuccess(false)
+      setPhone('')
+      setResult(null)
+      setSelectedServices([])
+      setSelectedAddOns([])
+      setShowServiceSelection(false)
+    }, 7000)
+    return () => clearTimeout(timer)
+  }, [newUserSuccess])
 
   const handleKeyPress = (key) => {
     if (key === 'del') {
@@ -731,13 +743,11 @@ export default function CheckIn({ onNavigate }) {
 
       console.log("Waiver successfully attached to Profile ID:", profileId); 
       
-      // Hide the waiver modal
-      setShowWaiver(false) 
-      
-      // If this was a new user, show the success screen!
+      // Show success screen first, then hide waiver — prevents intermediate RegistrationModal re-mount
       if (result?.isNew) {
         setNewUserSuccess(true)
       }
+      setShowWaiver(false)
       
     } catch (err) { 
       console.error('Error saving waiver:', err) 
@@ -779,7 +789,7 @@ export default function CheckIn({ onNavigate }) {
   // Show new user success after waiver
   if (newUserSuccess) {
     return (
-      <div className="min-h-screen bg-charcoal flex items-center justify-center p-8 relative overflow-hidden animate-fade-in">
+      <div className="min-h-screen bg-primary flex items-center justify-center p-8 relative overflow-hidden animate-fade-in">
         <Sparkle />
         <div className="relative z-10 text-center">
           <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-8">
@@ -788,9 +798,9 @@ export default function CheckIn({ onNavigate }) {
             </svg>
           </div>
           <h2 className="font-heading text-4xl text-gold mb-4 tracking-wide">Welcome to the Club</h2>
-          <p className="font-heading text-2xl text-offwhite mb-6">{newUserDetails.fullName}</p>
+          <p className="font-heading text-2xl text-primary mb-6">{newUserDetails.fullName}</p>
           {newUserDetails.refreshmentPref && (
-            <p className="text-xl text-offwhite/70">
+            <p className="text-xl text-secondary">
               Your <span className="text-gold">{newUserDetails.refreshmentPref}</span> is being prepared
             </p>
           )}
@@ -838,31 +848,31 @@ export default function CheckIn({ onNavigate }) {
     const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
 
     return (
-      <div className="min-h-screen bg-charcoal flex flex-col items-center justify-center p-4 sm:p-8 animate-fade-in">
+      <div className="min-h-screen bg-primary flex flex-col items-center justify-center p-4 sm:p-8 animate-fade-in">
         <div className="text-center max-w-md w-full">
           <div className="w-20 h-20 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="font-heading text-3xl text-offwhite mb-2">Welcome Back</h2>
+          <h2 className="font-heading text-3xl text-primary mb-2">Welcome Back</h2>
           <p className="text-xl text-gold mb-6">{result.name}</p>
 
           <button
             onClick={() => setShowServiceSelection(true)}
-            className="w-full py-3 border border-gold/50 text-gold hover:bg-gold/10 rounded-xl transition-all mb-6"
+            className="w-full py-3 border border-theme text-gold-strong hover:bg-card rounded-xl transition-all mb-6"
           >
             {selectedServices.length > 0 ? 'Change Services' : 'Select Services'}
           </button>
 
           {selectedServices.length > 0 && (
-            <div className="bg-gold/20 border border-gold/50 rounded-xl p-4 mb-6">
-              <p className="text-offwhite/60 text-sm mb-2">Selected:</p>
+            <div className="bg-secondary border border-theme rounded-xl p-4 mb-6">
+              <p className="text-secondary text-sm mb-2">Selected:</p>
               {selectedServices.map((s) => (
-                <p key={s.id} className="text-offwhite font-heading text-base">{s.name} — ${s.price}</p>
+                <p key={s.id} className="text-primary font-heading text-base">{s.name} — ${s.price}</p>
               ))}
               {selectedAddOnDetails.length > 0 && (
-                <p className="text-offwhite/50 text-sm mt-1">Add-ons: + {selectedAddOnDetails.map((a) => a.name).join(', ')}</p>
+                <p className="text-secondary text-sm mt-1">Add-ons: + {selectedAddOnDetails.map((a) => a.name).join(', ')}</p>
               )}
               <div className="text-gold font-heading text-2xl mt-2">${totalPrice.toFixed(2)}</div>
             </div>
@@ -870,7 +880,7 @@ export default function CheckIn({ onNavigate }) {
 
           {addOns.length > 0 && selectedServices.length > 0 && (
             <div className="mb-6">
-              <p className="text-offwhite/60 text-sm mb-3">Add-Ons (Optional)</p>
+              <p className="text-secondary text-sm mb-3">Add-Ons (Optional)</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {addOns.map((addOn) => {
                   const isSelected = selectedAddOns.some((a) => a.id === addOn.id)
@@ -885,11 +895,11 @@ export default function CheckIn({ onNavigate }) {
                         }
                       }}
                       className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${
-                        isSelected ? 'border-gold bg-gold/10' : 'border-offwhite/10 hover:border-gold/40'
+                        isSelected ? 'border-theme bg-card' : 'border-light hover:border-theme'
                       }`}
                     >
                       <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
-                        isSelected ? 'border-gold bg-gold' : 'border-offwhite/30'
+                        isSelected ? 'border-gold bg-gold' : 'border-light'
                       }`}>
                         {isSelected && (
                           <svg className="w-2.5 h-2.5 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -898,8 +908,8 @@ export default function CheckIn({ onNavigate }) {
                         )}
                       </div>
                       <div className="flex-1">
-                        <div className="text-offwhite font-heading text-sm">{addOn.name}</div>
-                        <div className="text-offwhite/40 text-xs">+{addOn.duration_minutes} min</div>
+                        <div className="text-primary font-heading text-sm">{addOn.name}</div>
+                        <div className="text-muted text-xs">+{addOn.duration_minutes} min</div>
                       </div>
                       <div className="text-gold font-heading text-sm">+${addOn.price}</div>
                     </button>
@@ -910,7 +920,7 @@ export default function CheckIn({ onNavigate }) {
           )}
 
           {addOns.length === 0 && selectedServices.length > 0 && (
-            <div className="mb-6 text-offwhite/40 text-sm">No add-ons available</div>
+            <div className="mb-6 text-muted text-sm">No add-ons available</div>
           )}
 
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-in">
@@ -919,13 +929,17 @@ export default function CheckIn({ onNavigate }) {
               onClick={() => {
                 setPhone(''); setResult(null); setSelectedServices([]); setSelectedAddOns([]); setShowServiceSelection(false); onNavigate('home')
               }}
-              className="min-w-[120px] px-5 py-3 rounded-full border border-offwhite/20 text-offwhite text-sm font-heading uppercase tracking-[0.24em] hover:border-gold hover:text-gold transition-all"
+              className="min-w-[120px] px-5 py-3 rounded-full border border-light text-secondary text-sm font-heading uppercase tracking-[0.24em] hover:border-theme hover:text-gold-strong transition-all"
             >
               CANCEL
             </button>
             <button
               onClick={() => {
-                setPhone(''); setResult(null); setSelectedServices([]); setSelectedAddOns([]); setShowServiceSelection(false)
+                setNewUserDetails({
+                  fullName: result?.name || 'Guest',
+                  refreshmentPref: result?.appointment?.refreshment_pref || ''
+                })
+                setNewUserSuccess(true)
               }}
               className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all"
             >
@@ -951,11 +965,11 @@ export default function CheckIn({ onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-charcoal flex flex-col animate-fade-in">
+    <div className="min-h-screen bg-primary flex flex-col animate-fade-in">
       <div className="p-6">
         <button
           onClick={() => onNavigate('home')}
-          className="text-offwhite/50 hover:text-offwhite transition-colors"
+          className="text-secondary hover:text-primary transition-colors"
         >
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -965,15 +979,15 @@ export default function CheckIn({ onNavigate }) {
 
       <div className="flex-1 flex flex-col items-center justify-center p-8">
         <h1 className="font-heading text-3xl text-gold mb-2 tracking-wide">CHECK IN</h1>
-        <p className="text-offwhite/50 mb-8">Enter your phone number to begin</p>
+        <p className="text-secondary mb-8">Enter your phone number to begin</p>
 
         <div className="w-full max-w-sm mb-8">
           <div className={`text-center text-3xl font-heading py-4 transition-all ${
-            phone.length > 0 ? 'text-offwhite' : 'text-offwhite/30'
+            phone.length > 0 ? 'text-primary' : 'text-muted'
           }`}>
             {formatDisplay(phone)}
           </div>
-          <div className="h-1 bg-offwhite/10 mx-auto w-48 rounded-full overflow-hidden">
+          <div className="h-1 bg-secondary mx-auto w-48 rounded-full overflow-hidden">
             <div 
               className="h-full bg-gold transition-all duration-300"
               style={{ width: `${(phone.length / 10) * 100}%` }}
@@ -992,14 +1006,14 @@ export default function CheckIn({ onNavigate }) {
                   className={`
                     w-20 h-20 rounded-full text-2xl font-heading transition-all
                     ${key === 'del' 
-                      ? 'bg-offwhite/10 text-offwhite hover:bg-offwhite/20' 
+                      ? 'bg-input text-primary hover:bg-card' 
                       : key === 'clear'
-                        ? 'bg-offwhite/10 text-offwhite hover:bg-offwhite/20 text-xs tracking-[0.24em] uppercase'
+                        ? 'bg-input text-primary hover:bg-card text-xs tracking-[0.24em] uppercase'
                         : key === '' 
                           ? 'bg-transparent cursor-default'
                           : phone.length >= 10
-                            ? 'bg-offwhite/5 text-offwhite/20 cursor-not-allowed'
-                            : 'bg-offwhite/10 text-offwhite hover:bg-gold/20 hover:text-gold'
+                            ? 'bg-secondary text-muted cursor-not-allowed'
+                            : 'bg-input text-primary hover:bg-gold/20 hover:text-gold'
                     }
                   `}
                 >
@@ -1024,7 +1038,7 @@ export default function CheckIn({ onNavigate }) {
                 setError(null)
                 onNavigate('home')
               }}
-              className="min-w-[120px] px-5 py-3 rounded-full border border-offwhite/20 text-offwhite text-sm font-heading uppercase tracking-[0.24em] hover:border-gold hover:text-gold transition-all"
+              className="min-w-[120px] px-5 py-3 rounded-full border border-light text-secondary text-sm font-heading uppercase tracking-[0.24em] hover:border-theme hover:text-gold-strong transition-all"
             >
               CANCEL
             </button>

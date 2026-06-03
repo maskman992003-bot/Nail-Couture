@@ -1,7 +1,7 @@
-const OPTION_STYLE = { backgroundColor: '#1a1a1a', color: '#f5f5f0' };
+const OPTION_STYLE = { backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' };
 
 const baseSelectClass =
-  'w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg focus:outline-none focus:border-gold transition-colors appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+  'w-full px-4 py-3 bg-input border border-input text-primary rounded-lg focus:outline-none focus:border-gold transition-colors appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 
 export default function RefreshmentSelect({
   value = '',
@@ -10,7 +10,7 @@ export default function RefreshmentSelect({
   loading = false,
   className = '',
   label,
-  labelClassName = 'block text-offwhite/50 text-xs uppercase tracking-wider mb-2',
+  labelClassName = 'block text-secondary text-xs uppercase tracking-wider mb-2',
   emptyLabel = 'None / No Preference',
   required = false,
   id,
@@ -55,7 +55,7 @@ export default function RefreshmentSelect({
         </p>
       )}
       {!loading && refreshments.length === 0 && (
-        <p className="text-offwhite/40 text-xs mt-1.5">No refreshments are available right now.</p>
+        <p className="text-muted text-xs mt-1.5">No refreshments are available right now.</p>
       )}
     </div>
   );

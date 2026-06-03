@@ -24,15 +24,15 @@ export default function WaiverModal({ customerName, customerPhone, onConfirm, on
 
   return (
     <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-lg max-h-[95vh] bg-charcoal rounded-2xl border border-gold/30 flex flex-col overflow-hidden shadow-2xl animate-fade-in">
-        <div className="p-4 sm:p-6 border-b border-gold/20 flex-shrink-0">
+      <div className="w-full max-w-lg max-h-[95vh] bg-primary rounded-2xl border border-theme flex flex-col overflow-hidden shadow-2xl animate-fade-in">
+        <div className="p-4 sm:p-6 border-b border-card flex-shrink-0">
           <h2 className="font-heading text-2xl text-gold mb-1">NAIL COUTURE</h2>
-          <p className="text-offwhite/70 text-sm">Terms & Conditions and Customer Waiver</p>
-          <p className="text-offwhite/50 text-xs mt-1">Effective Date: June 1, 2026</p>
+          <p className="text-secondary text-sm">Terms & Conditions and Customer Waiver</p>
+          <p className="text-secondary text-xs mt-1">Effective Date: June 1, 2026</p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-          <div className="space-y-3 text-sm text-offwhite/80">
+          <div className="space-y-3 text-sm text-secondary">
             <div>
               <p className="text-gold font-heading mb-1">1. Welcome & Agreement</p>
               <p>Welcome to Nail Couture (“we,” “us,” or “our”), located in Uptown New Orleans, Louisiana. By checking in, booking an appointment, or receiving any service at Nail Couture, you (“Customer,” “you,” or “your”) agree to the following Terms & Conditions and Waiver.</p>
@@ -125,23 +125,23 @@ export default function WaiverModal({ customerName, customerPhone, onConfirm, on
             </div>
           </div>
 
-          <div className="pt-4 border-t border-gold/20">
+          <div className="pt-4 border-t border-card">
             <div className="flex items-start gap-3 mb-4">
               <input
                 type="checkbox"
                 id="agreement"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="mt-1 w-5 h-5 rounded border-offwhite/30 bg-transparent text-gold focus:ring-gold"
+                className="mt-1 w-5 h-5 rounded border-light bg-transparent text-gold focus:ring-gold"
               />
-              <label htmlFor="agreement" className="text-sm text-offwhite/80">
+              <label htmlFor="agreement" className="text-sm text-secondary">
                 I have read, understood, and voluntarily agree to all terms and conditions, health disclosures, and liability waiver.
               </label>
             </div>
 
             <div className="space-y-2">
-              <p className="text-offwhite/70 text-sm font-medium">Please sign below:</p>
-              <div className="border-2 border-offwhite/20 rounded-xl bg-offwhite/5 overflow-hidden">
+              <p className="text-secondary text-sm font-medium">Please sign below:</p>
+              <div className="border-2 border-light rounded-xl bg-secondary overflow-hidden">
                 <SignatureCanvas
                   ref={signaturePadRef}
                   onEnd={handleEnd}
@@ -160,7 +160,7 @@ export default function WaiverModal({ customerName, customerPhone, onConfirm, on
               <button
                 type="button"
                 onClick={clearSignature}
-                className="text-gold/80 hover:text-gold text-sm font-medium transition-colors"
+                className="text-gold-strong/80 hover:text-gold-strong text-sm font-medium transition-colors"
               >
                 Clear Signature
               </button>
@@ -168,12 +168,12 @@ export default function WaiverModal({ customerName, customerPhone, onConfirm, on
           </div>
         </div>
 
-        <div className="p-4 sm:p-6 border-t border-gold/20 flex-shrink-0">
+        <div className="p-4 sm:p-6 border-t border-card flex-shrink-0">
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-5 py-3 rounded-full border border-offwhite/20 text-offwhite text-sm font-heading uppercase tracking-[0.24em] hover:border-gold hover:text-gold transition-all"
+              className="flex-1 px-5 py-3 rounded-full border border-light text-secondary text-sm font-heading uppercase tracking-[0.24em] hover:border-theme hover:text-gold-strong transition-all"
             >
               Cancel
             </button>
