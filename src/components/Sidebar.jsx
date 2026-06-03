@@ -79,7 +79,8 @@ export default function Sidebar() {
   const [notifications, setNotifications] = useState([]);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showDesktopUserMenu, setShowDesktopUserMenu] = useState(false);
+  const [showMobileUserMenu, setShowMobileUserMenu] = useState(false);
 
   const userPhone = user?.phone;
   const navRef = useRef(null);
@@ -152,13 +153,22 @@ export default function Sidebar() {
   }, [userPhone, notifPanelOpen, fetchNotifications]);
 
   useEffect(() => {
-    if (!showUserMenu) return;
+    if (!showDesktopUserMenu) return;
     const closeMenu = (e) => {
-      if (!e.target.closest('.user-menu')) setShowUserMenu(false);
+      if (!e.target.closest('.desktop-user-menu')) setShowDesktopUserMenu(false);
     };
     document.addEventListener('pointerdown', closeMenu);
     return () => document.removeEventListener('pointerdown', closeMenu);
-  }, [showUserMenu]);
+  }, [showDesktopUserMenu]);
+
+  useEffect(() => {
+    if (!showMobileUserMenu) return;
+    const closeMenu = (e) => {
+      if (!e.target.closest('.mobile-user-menu')) setShowMobileUserMenu(false);
+    };
+    document.addEventListener('pointerdown', closeMenu);
+    return () => document.removeEventListener('pointerdown', closeMenu);
+  }, [showMobileUserMenu]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -259,9 +269,9 @@ export default function Sidebar() {
 
         {/* User Menu */}
         <div className="p-4 border-t flex-shrink-0 flex justify-center lg:justify-start" style={{ borderColor }}>
-          <div className="relative user-menu w-full md:flex md:justify-center lg:block">
+          <div className="relative desktop-user-menu w-full md:flex md:justify-center lg:block">
             <button
-              onPointerDown={(e) => { setShowUserMenu((v) => !v); }}
+              onClick={() => { setShowDesktopUserMenu((v) => !v); }}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity w-full md:justify-center lg:justify-start cursor-pointer"
             >
               <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -272,13 +282,13 @@ export default function Sidebar() {
               </div>
             </button>
 
-            {showUserMenu && (
+            {showDesktopUserMenu && (
               <div
                 className={`absolute bottom-16 left-4 md:left-full md:right-auto lg:left-4 md:ml-2 z-[9999] w-48 rounded-xl border shadow-2xl origin-bottom-left transition-all ${theme === 'dark' ? 'bg-[#121214] border-zinc-800/80' : 'bg-white border-gold/20'}`}
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <button
-                  onClick={() => { navigate(settingsPath); setShowUserMenu(false); }}
+                  onClick={() => { navigate(settingsPath); setShowDesktopUserMenu(false); }}
                   className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-sm flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/90' : 'text-charcoal'}`}
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
                 >
@@ -292,7 +302,7 @@ export default function Sidebar() {
                   onClick={(e) => { 
                     e.stopPropagation(); 
                     toggleTheme(); 
-                    setShowUserMenu(false); 
+                    setShowDesktopUserMenu(false); 
                   }}
                   className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/90' : 'text-charcoal'}`}
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
@@ -309,7 +319,7 @@ export default function Sidebar() {
                   {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                 </button>
                 <button
-                  onClick={() => { setNotifPanelOpen(true); setShowUserMenu(false); }}
+                  onClick={() => { setNotifPanelOpen(true); setShowDesktopUserMenu(false); }}
                   className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-sm flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/90' : 'text-charcoal'}`}
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
                 >
@@ -324,7 +334,7 @@ export default function Sidebar() {
                   )}
                 </button>
                 <button
-                  onClick={() => { setShowLogoutConfirm(true); setShowUserMenu(false); }}
+                  onClick={() => { setShowLogoutConfirm(true); setShowDesktopUserMenu(false); }}
                   className="w-full px-4 py-3 text-left text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors text-sm flex items-center gap-2"
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -358,11 +368,11 @@ export default function Sidebar() {
             <div className="w-4 h-full flex-shrink-0" aria-hidden="true" />
           </div>
           
-          <div className="relative flex flex-col items-center w-[60px] user-menu flex-shrink-0 border-l border-gold/10 pl-1">
+          <div className="relative flex flex-col items-center w-[60px] mobile-user-menu flex-shrink-0 border-l border-gold/10 pl-1">
             <button
               onClick={(e) => { 
                 e.stopPropagation();
-                setShowUserMenu((v) => !v); 
+                setShowMobileUserMenu((v) => !v); 
               }}
               className={`flex flex-col items-center gap-0.5 px-1 py-1.5 transition-colors rounded-lg w-full ${theme === 'dark' ? 'text-offwhite/55 hover:text-gold hover:bg-offwhite/5' : 'text-charcoal/75 hover:text-gold hover:bg-charcoal/5'}`}
             >
@@ -372,14 +382,14 @@ export default function Sidebar() {
               <span className={`text-[8px] font-medium truncate max-w-[50px] ${theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}>{displayName}</span>
             </button>
 
-            {showUserMenu && (
+            {showMobileUserMenu && (
               <div
                 className={`absolute bottom-full right-0 mb-2 w-44 rounded-xl border overflow-hidden shadow-2xl z-50 ${theme === 'dark' ? 'bg-[#141414]' : 'bg-white'}`}
                 style={{ borderColor: theme === 'dark' ? 'rgba(197,160,89,0.4)' : 'rgba(197,160,89,0.3)' }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
-                  onClick={() => { navigate(settingsPath); setShowUserMenu(false); }}
+                  onClick={() => { navigate(settingsPath); setShowMobileUserMenu(false); }}
                   className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/90' : 'text-charcoal'}`}
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
                 >
@@ -393,7 +403,7 @@ export default function Sidebar() {
                   onClick={(e) => { 
                     e.stopPropagation(); 
                     toggleTheme(); 
-                    setShowUserMenu(false); 
+                    setShowMobileUserMenu(false); 
                   }}
                   className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
@@ -410,7 +420,7 @@ export default function Sidebar() {
                   {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                 </button>
                 <button
-                  onClick={() => { setNotifPanelOpen(true); setShowUserMenu(false); }}
+                  onClick={() => { setNotifPanelOpen(true); setShowMobileUserMenu(false); }}
                   className={`w-full px-4 py-3 text-left hover:text-gold hover:bg-gold/10 transition-colors text-xs flex items-center gap-2 border-b ${theme === 'dark' ? 'text-offwhite/90' : 'text-charcoal'}`}
                   style={{ borderColor: 'rgba(197,160,89,0.15)' }}
                 >
@@ -420,7 +430,7 @@ export default function Sidebar() {
                   Notifications
                 </button>
                 <button
-                  onClick={() => { setShowLogoutConfirm(true); setShowUserMenu(false); }}
+                  onClick={() => { setShowLogoutConfirm(true); setShowMobileUserMenu(false); }}
                   className="w-full px-4 py-3 text-left text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs flex items-center gap-2"
                 >
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
