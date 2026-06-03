@@ -163,3 +163,16 @@ $$;
 -- facing components are migrated to use get_my_appointments RPC.
 -- Future migration will drop: DROP POLICY IF EXISTS "Allow anon read appointments" ON appointments;
 -- ============================================================
+
+-- ============================================================
+-- CLEANUP: Remove duplicate, misspelled, and dangerous policies
+-- ============================================================
+DROP POLICY IF EXISTS "Allow anon select appointments" ON appointments;
+DROP POLICY IF EXISTS "Allow anon to select appointments" ON appointments;
+DROP POLICY IF EXISTS "Allow anon to update appointments" ON appointments;
+DROP POLICY IF EXISTS "Allow anon to insert appointments" ON appointments;
+DROP POLICY IF EXISTS "Allow authenticated delete appointments" ON appointments;
+DROP POLICY IF EXISTS "Allow authenticated update appointments" ON appointments;
+DROP POLICY IF EXISTS "Authenticated read appointments" ON appointments;
+DROP POLICY IF EXISTS "Authenticated insert appointments" ON appointments;
+DROP POLICY IF EXISTS "Users can view own appointments" ON appointments;
