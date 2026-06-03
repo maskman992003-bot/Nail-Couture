@@ -231,7 +231,7 @@ export default function Sidebar() {
 
         {/* Nav Items */}
         <div className="flex-1 py-4 overflow-hidden">
-          <nav ref={navRef} onScroll={handleNavScroll} className="flex flex-col gap-1 px-0 lg:px-4 overflow-y-auto scrollbar-none">
+          <nav ref={navRef} onScroll={handleNavScroll} className="flex flex-col gap-1 px-0 lg:px-4 overflow-y-auto scrollbar-none h-full">
             {navItems.map((item) => {
               const active = isActive(location.pathname, location.search, item.href);
               return (
@@ -258,7 +258,7 @@ export default function Sidebar() {
         <div className="p-4 border-t flex-shrink-0 flex justify-center lg:justify-start" style={{ borderColor }}>
           <div className="relative user-menu w-full md:flex md:justify-center lg:block">
             <button
-              onPointerDown={(e) => { e.preventDefault(); setShowUserMenu((v) => !v); }}
+              onPointerDown={(e) => { setShowUserMenu((v) => !v); }}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity w-full md:justify-center lg:justify-start cursor-pointer"
             >
               <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -337,23 +337,25 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 shadow-2xl" style={{ backgroundColor: sidebarBg }}>
-        <nav className="flex items-center px-1 py-2 overflow-x-auto scrollbar-none" style={{ borderTop: `1px solid ${borderColor}` }}>
-          {navItems.map((item) => {
-            const active = isActive(location.pathname, location.search, item.href);
-            return (
-              <Link
-                key={item.id}
-                to={item.href}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all flex-shrink-0 w-[72px] ${active ? 'text-gold' : theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}
-              >
-                <div className="w-5 h-5">{renderIcon(item.icon)}</div>
-                <span className="text-[8px] font-medium tracking-wide text-center">{item.label}</span>
-              </Link>
-            );
-          })}
-          <div className="relative flex flex-col items-center flex-1 max-w-[60px] user-menu">
+        <nav className="flex items-center px-1 py-2" style={{ borderTop: `1px solid ${borderColor}` }}>
+          <div className="flex items-center overflow-x-auto scrollbar-none">
+            {navItems.map((item) => {
+              const active = isActive(location.pathname, location.search, item.href);
+              return (
+                <Link
+                  key={item.id}
+                  to={item.href}
+                  className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all flex-shrink-0 w-[72px] ${active ? 'text-gold' : theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}
+                >
+                  <div className="w-5 h-5">{renderIcon(item.icon)}</div>
+                  <span className="text-[8px] font-medium tracking-wide text-center">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+          <div className="relative flex flex-col items-center flex-1 max-w-[60px] user-menu flex-shrink-0">
             <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
+              onPointerDown={(e) => { setShowUserMenu((v) => !v); }}
               className={`flex flex-col items-center gap-0.5 px-2 py-1.5 transition-colors rounded-lg mx-1 w-full ${theme === 'dark' ? 'text-offwhite/55 hover:text-gold hover:bg-offwhite/5' : 'text-charcoal/75 hover:text-gold hover:bg-charcoal/5'}`}
             >
               <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center">
@@ -366,7 +368,7 @@ export default function Sidebar() {
               <div
                 className={`absolute bottom-full right-0 mb-2 w-44 rounded-xl border overflow-hidden shadow-2xl z-50 ${theme === 'dark' ? 'bg-[#141414]' : 'bg-white'}`}
                 style={{ borderColor: theme === 'dark' ? 'rgba(197,160,89,0.4)' : 'rgba(197,160,89,0.3)' }}
-                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={() => { navigate(settingsPath); setShowUserMenu(false); }}
@@ -381,7 +383,6 @@ export default function Sidebar() {
                 </button>
                 <button
                   onClick={(e) => { 
-                    console.log('Sidebar theme toggle clicked!');
                     e.stopPropagation(); 
                     toggleTheme(); 
                     setShowUserMenu(false); 
