@@ -88,11 +88,26 @@ createRoot(document.getElementById('root')).render(
                  <Settings />
                </ProtectedRoute>
              } />
-            <Route path="/superadmin/inventory" element={
-               <ProtectedRoute allowedRoles={['super_admin']}>
-                 <AdminInventory />
-               </ProtectedRoute>
-             } />
+             <Route path="/superadmin/inventory" element={
+                <ProtectedRoute allowedRoles={['super_admin']}>
+                  <AdminInventory />
+                </ProtectedRoute>
+              } />
+              <Route path="/superadmin/schedule" element={
+                <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
+                  <StaffSchedule />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/schedule" element={
+                <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
+                  <StaffSchedule />
+                </ProtectedRoute>
+              } />
+              <Route path="/technician/schedule" element={
+                <ProtectedRoute allowedRoles={['cashier', 'technician']}>
+                  <TechnicianSchedule />
+                </ProtectedRoute>
+              } />
               <Route path="/:role/staff/:id/schedule" element={
                 <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
                   <StaffSchedule />
