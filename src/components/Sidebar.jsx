@@ -322,14 +322,14 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 shadow-2xl" style={{ backgroundColor: sidebarBg }}>
-        <nav className="flex items-center justify-around px-1 py-2" style={{ borderTop: `1px solid ${borderColor}` }}>
+        <nav className="flex items-center px-1 py-2 overflow-x-auto scrollbar-none" style={{ borderTop: `1px solid ${borderColor}` }}>
           {navItems.map((item) => {
             const active = isActive(location.pathname, location.search, item.href);
             return (
               <Link
                 key={item.id}
                 to={item.href}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all flex-1 max-w-[72px] ${active ? 'text-gold' : theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all flex-shrink-0 w-[72px] ${active ? 'text-gold' : theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}
               >
                 <div className="w-5 h-5">{renderIcon(item.icon)}</div>
                 <span className="text-[8px] font-medium tracking-wide text-center">{item.label}</span>
