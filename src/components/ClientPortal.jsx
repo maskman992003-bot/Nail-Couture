@@ -91,11 +91,7 @@ export default function ClientPortal() {
       }
 
       const { data: appointmentsData } = await supabase
-        .from('appointments')
-        .select('*, services(name, price, duration_minutes)')
-        .eq('customer_id', userId)
-        .in('status', ['waiting', 'assigned_pending', 'serving'])
-        .order('checked_in_at', { ascending: false });
+        .rpc('get_my_appointments', { customer_id: userId, status_filter: 'waiting,assigned_pending,serving' })
       setAppointments(appointmentsData || []);
     } catch { }
     setLoading(false);

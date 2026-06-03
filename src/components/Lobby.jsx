@@ -13,15 +13,10 @@ export default function Lobby() {
 
    const fetchLobby = async () => {
      try {
+       const caller = localStorage.getItem('salon_user_data');
+       const phone = caller ? JSON.parse(caller).phone : '';
        const { data, error } = await supabase
-         .from('appointments')
-         .select(`
-           *,
-           profiles!appointments_client_id_fkey(full_name, nail_goal, refreshment_pref),
-           services(name, price, duration_minutes)
-         `)
-         .in('status', ['waiting', 'serving'])
-         .order('checked_in_at', { ascending: true })
+         .rpc('get_appointments', { caller_phone: phone, status_filter: 'waiting,serving' })
 
        if (error) throw error
        setAppointments(data || [])
@@ -113,7 +108,7 @@ export default function Lobby() {
                       <div className="flex-1">
                         <div className="flex items-center gap-4 mb-3">
                           <h3 className="font-heading text-xl text-offwhite">
-                            {appointment.profiles?.full_name || 'Guest'}
+                            {appointment.customer?.full_name || 'Guest'}
                           </h3>
                           <span className="text-offwhite/40 text-sm">
                             {formatTime(appointment.checked_in_at)}
@@ -123,12 +118,12 @@ export default function Lobby() {
                           {appointment.services?.name && (
                             <span className="text-offwhite/60">{appointment.add_ons || appointment.services.name}</span>
                           )}
-                          {appointment.profiles?.nail_goal && (
-                            <span className="text-gold">{appointment.profiles.nail_goal}</span>
+                          {appointment.customer?.nail_goal && (
+                            <span className="text-gold">{appointment.customer.nail_goal}</span>
                           )}
-                          {(appointment.refreshment_choice || appointment.profiles?.refreshment_pref) && (
+                          {(appointment.refreshment_choice || appointment.customer?.refreshment_pref) && (
                             <span className="text-offwhite/60">
-                              {appointment.refreshment_choice || appointment.profiles?.refreshment_pref}
+                              {appointment.refreshment_choice || appointment.customer?.refreshment_pref}
                             </span>
                           )}
                         </div>
@@ -167,7 +162,7 @@ export default function Lobby() {
                       <div className="flex-1">
                         <div className="flex items-center gap-4 mb-3">
                           <h3 className="font-heading text-xl text-offwhite">
-                            {appointment.profiles?.full_name || 'Guest'}
+                            {appointment.customer?.full_name || 'Guest'}
                           </h3>
                           <span className="text-green-400 text-sm">
                             Started {formatTime(appointment.start_time)}
@@ -177,8 +172,8 @@ export default function Lobby() {
                           {appointment.services?.name && (
                             <span className="text-offwhite/60">{appointment.add_ons || appointment.services.name}</span>
                           )}
-                          {appointment.profiles?.nail_goal && (
-                            <span className="text-gold">{appointment.profiles.nail_goal}</span>
+                          {appointment.customer?.nail_goal && (
+                            <span className="text-gold">{appointment.customer.nail_goal}</span>
                           )}
                         </div>
                       </div>

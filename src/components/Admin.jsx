@@ -17,11 +17,11 @@ export default function Admin() {
   const fetchDashboardData = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
+      const caller = localStorage.getItem('salon_user_data');
+      const phone = caller ? JSON.parse(caller).phone : '';
       
       const { data: appointments } = await supabase
-        .from('appointments')
-        .select('*')
-        .gte('checked_in_at', `${today}T00:00:00`);
+        .rpc('get_appointments', { caller_phone: phone, date_from: `${today}T00:00:00` })
 
       if (appointments) {
         setStats({

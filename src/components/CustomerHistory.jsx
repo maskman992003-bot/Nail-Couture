@@ -40,35 +40,31 @@ export default function CustomerHistory() {
     const userId = user?.id;
     if (!userId) { setLoading(false); navigate('/login'); return; }
     try {
-      const [onlineRes, kioskRes, notifRes] = await Promise.all([
-        supabase.from('appointments').select('*').eq('customer_id', userId).eq('booking_type', 'online').order('scheduled_at', { ascending: false }),
-        supabase.from('appointments').select('*').eq('customer_id', userId).eq('booking_type', 'walk_in').order('checked_in_at', { ascending: false }),
+      const [apptsRes, notifRes] = await Promise.all([
+        supabase.rpc('get_my_appointments', { customer_id: userId }),
         supabase.from('notifications').select('*').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(10),
       ]);
-      const onlineList = onlineRes.data || [];
-      const kioskList = kioskRes.data || [];
-      const serviceIds = [...new Set([...onlineList, ...kioskList].map((b) => b.service_id).filter(Boolean))];
+      const allData = apptsRes.data || [];
+      const onlineList = allData.filter(a => a.booking_type === 'online');
+      const kioskList = allData.filter(a => a.booking_type === 'walk_in');
       const techIds = [...new Set([...onlineList, ...kioskList].map((b) => b.technician_id).filter(Boolean))];
       const allAddonNames = [...new Set(kioskList.flatMap((b) => (b.add_ons ? b.add_ons.split(',').map((n) => n.trim()) : [])))];
-      const [servicesRes, techsRes, addOnsRes] = await Promise.all([
-        serviceIds.length ? supabase.from('services').select('id, name, price, duration_minutes, is_addon').in('id', serviceIds) : { data: [] },
+      const [techsRes, addOnsRes] = await Promise.all([
         techIds.length ? supabase.from('profiles').select('id, full_name, role').in('id', techIds) : { data: [] },
-        allAddonNames.length ? supabase.from('services').select('id, name, price, duration_minutes, is_addon').in('name', allAddonNames) : { data: [] },
+        allAddonNames.length ? supabase.from('services').select('id, name, price, duration_minutes').in('name', allAddonNames) : { data: [] },
       ]);
-      const serviceMap = {};
-      (servicesRes.data || []).forEach((s) => { serviceMap[s.id] = s; });
       const techMap = {};
       (techsRes.data || []).forEach((t) => { techMap[t.id] = t; });
       const addOnMap = {};
       (addOnsRes.data || []).forEach((a) => { addOnMap[a.name] = a; });
-      const enrichedOnline = onlineList.map((b) => ({ ...b, service: serviceMap[b.service_id] || null, tech: techMap[b.technician_id] || null, source: 'online' }));
+      const enrichedOnline = onlineList.map((b) => ({ ...b, service: b.services, tech: techMap[b.technician_id] || (b.technician || null), source: 'online' }));
       const enrichedKiosk = kioskList.map((b) => {
         const addonNames = b.add_ons ? b.add_ons.split(',').map((n) => n.trim()) : [];
         const addonDetails = addonNames.map((n) => addOnMap[n]).filter(Boolean);
         return {
           ...b,
-          service: serviceMap[b.service_id] || null,
-          tech: techMap[b.technician_id] || null,
+          service: b.services,
+          tech: techMap[b.technician_id] || (b.technician || null),
           addonDetails,
           source: 'kiosk',
         };
@@ -111,9 +107,8 @@ export default function CustomerHistory() {
     const appointmentDate = booking.scheduled_at || booking.checked_in_at;
     const dateStr = appointmentDate ? new Date(appointmentDate).toLocaleDateString() : 'Walk-in';
     const timeStr = appointmentDate ? new Date(appointmentDate).toLocaleTimeString() : '';
-    const basePrice = booking.service?.price || booking.final_price || booking.price || 0;
     const addOnTotal = (booking.addonDetails || []).reduce((sum, a) => sum + (a.price || 0), 0);
-    const totalPrice = basePrice + addOnTotal;
+    const totalPrice = booking.final_price || (booking.service?.price || 0) + addOnTotal;
     const addOnLines = (booking.addonDetails || []).map((a) => `  + ${a.name}: $${a.price}`).join('\n');
     const receiptContent = `
   NAIL COUTURE - RECEIPT

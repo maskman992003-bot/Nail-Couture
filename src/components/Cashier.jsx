@@ -27,13 +27,11 @@ export default function Cashier() {
   const fetchData = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
+      const caller = localStorage.getItem('salon_user_data');
+      const phone = caller ? JSON.parse(caller).phone : '';
       
       const { data: appointments } = await supabase
-        .from('appointments')
-        .select('*, services(name, price), customer:profiles!appointments_client_id_fkey(full_name)')
-        .in('status', ['serving', 'completed'])
-        .gte('checked_in_at', `${today}T00:00:00`)
-        .order('checked_in_at', { ascending: false });
+        .rpc('get_appointments', { caller_phone: phone, status_filter: 'serving,completed', date_from: `${today}T00:00:00` })
 
       if (appointments) {
         setRecentCheckouts(appointments || []);

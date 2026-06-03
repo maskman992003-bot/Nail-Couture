@@ -554,16 +554,18 @@ export default function AdminLobby() {
     return () => supabase.removeChannel(channel)
   }, [])
 
+  const getCallerPhone = () => {
+    const d = localStorage.getItem('salon_user_data');
+    return d ? JSON.parse(d).phone : '';
+  };
+
   const fetchAppointments = useCallback(async () => {
     if (process.env.NODE_ENV === 'development') console.log('Fetching waiting appointments...')
-    const { data, error, status } = await supabase
-      .from('appointments')
-      .select('*, customer:profiles!appointments_client_id_fkey(full_name, phone, refreshment_pref, nail_goal), services(name, price, duration_minutes)')
-      .eq('status', 'waiting')
-      .order('checked_in_at', { ascending: true })
+    const { data, error } = await supabase
+      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'waiting' })
 
     if (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error fetching waiting:', error, 'Status:', status)
+      if (process.env.NODE_ENV === 'development') console.error('Error fetching waiting:', error)
     } else {
       setLobbyAppointments(data || [])
     }
@@ -571,20 +573,14 @@ export default function AdminLobby() {
 
   const fetchServingAppointments = useCallback(async () => {
     const { data, error } = await supabase
-      .from('appointments')
-      .select('*, customer:profiles!appointments_client_id_fkey(full_name, phone), technician:profiles!technician_id(full_name), services(name, price)')
-      .eq('status', 'serving')
-      .order('start_time', { ascending: true })
+      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'serving' })
 
     if (!error) setServingAppointments(data || [])
   }, [])
 
   const fetchPendingAppointments = useCallback(async () => {
     const { data, error } = await supabase
-      .from('appointments')
-      .select('*, customer:profiles!appointments_client_id_fkey(full_name), services(name)')
-      .eq('status', 'assigned_pending')
-      .order('checked_in_at', { ascending: true })
+      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'assigned_pending' })
 
     if (!error) setPendingAppointments(data || [])
   }, [])
@@ -602,12 +598,13 @@ export default function AdminLobby() {
   const fetchTodayTotal = useCallback(async () => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const { count } = await supabase
-      .from('appointments')
-      .select('id', { count: 'exact', head: true })
-      .in('status', ['serving', 'completed'])
-      .gte('checked_in_at', today.toISOString())
-    setTodayTotal(count || 0)
+    const { data } = await supabase
+      .rpc('get_appointments_count', {
+        caller_phone: getCallerPhone(),
+        status_filter: 'serving,completed',
+        date_from: today.toISOString(),
+      })
+    setTodayTotal(data || 0)
   }, [])
 
   const decrementRefreshmentInventory = async (refreshmentName) => {

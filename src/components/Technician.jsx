@@ -41,12 +41,11 @@ export default function Technician() {
   const fetchMyAppointments = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
+      const caller = localStorage.getItem('salon_user_data');
+      const phone = caller ? JSON.parse(caller).phone : '';
       
       const { data: appointments } = await supabase
-        .from('appointments')
-        .select('*, services(name, price, duration_minutes), customer:profiles!appointments_client_id_fkey(full_name, phone, nail_goal)')
-        .gte('checked_in_at', `${today}T00:00:00`)
-        .order('checked_in_at', { ascending: true });
+        .rpc('get_appointments', { caller_phone: phone, date_from: `${today}T00:00:00` })
 
       if (appointments) {
         const serving = appointments.find(a => a.status === 'serving');

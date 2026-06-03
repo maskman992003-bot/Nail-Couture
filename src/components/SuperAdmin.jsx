@@ -39,17 +39,14 @@ export default function SuperAdmin() {
   const fetchData = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
+      const caller = localStorage.getItem('salon_user_data');
+      const phone = caller ? JSON.parse(caller).phone : '';
       
       const [apptsRes, waitingRes, staffRes] = await Promise.all([
         supabase
-          .from('appointments')
-          .select('*, services(name, price), customer:profiles!appointments_client_id_fkey(full_name), technician:profiles!technician_id(full_name)')
-          .gte('checked_in_at', `${today}T00:00:00`)
-          .order('checked_in_at', { ascending: false }),
+          .rpc('get_appointments', { caller_phone: phone, date_from: `${today}T00:00:00` }),
         supabase
-          .from('appointments')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'waiting'),
+          .rpc('get_appointments_count', { caller_phone: phone, status_filter: 'waiting' }),
         supabase
           .from('profiles')
           .select('*')
@@ -64,7 +61,7 @@ export default function SuperAdmin() {
       
       const appointments = apptsRes.data;
       const staffData = staffRes.data;
-      const waitingCount = waitingRes.count || 0;
+      const waitingCount = typeof waitingRes.data === 'object' ? (waitingRes.data?.count || 0) : 0;
 
       if (appointments) {
         const completed = appointments.filter(a => a.status === 'completed');

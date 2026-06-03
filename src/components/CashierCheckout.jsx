@@ -154,11 +154,10 @@ export default function CashierCheckout() {
   const navigate = useNavigate();
 
   const fetchServingAppointments = async () => {
+    const caller = localStorage.getItem('salon_user_data');
+    const phone = caller ? JSON.parse(caller).phone : '';
     const { data, error } = await supabase
-      .from('appointments')
-      .select('*, customer:profiles!appointments_client_id_fkey(full_name), services(name, price)')
-      .eq('status', 'serving')
-      .order('start_time_new', { ascending: true });
+      .rpc('get_appointments', { caller_phone: phone, status_filter: 'serving' })
 
     if (error) {
       console.error('Error fetching serving:', error);
