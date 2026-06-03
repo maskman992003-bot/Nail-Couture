@@ -385,7 +385,7 @@ export default function Sidebar() {
 
             {showMobileUserMenu && (
               <div
-                className={`absolute bottom-full right-0 mb-2 w-44 rounded-xl border overflow-hidden shadow-2xl z-50 ${theme === 'dark' ? 'bg-[#141414]' : 'bg-white'}`}
+                className={`absolute bottom-[60px] right-2 w-44 rounded-xl border overflow-hidden shadow-2xl z-[9999] ${theme === 'dark' ? 'bg-[#141414]' : 'bg-white'}`}
                 style={{ borderColor: theme === 'dark' ? 'rgba(197,160,89,0.4)' : 'rgba(197,160,89,0.3)' }}
                 onClick={(e) => e.stopPropagation()}
               >
