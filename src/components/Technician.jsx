@@ -45,7 +45,7 @@ export default function Technician() {
       const phone = caller ? JSON.parse(caller).phone : '';
       
       const { data: appointments } = await supabase
-        .rpc('get_appointments', { caller_phone: phone, date_from: `${today}T00:00:00` })
+        .rpc('get_appointments', { caller_phone: phone, date_from: `${today}T00:00:00`, order_asc: true })
 
       if (appointments) {
         const serving = appointments.find(a => a.status === 'serving');

@@ -562,7 +562,7 @@ export default function AdminLobby() {
   const fetchAppointments = useCallback(async () => {
     if (process.env.NODE_ENV === 'development') console.log('Fetching waiting appointments...')
     const { data, error } = await supabase
-      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'waiting' })
+      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'waiting', order_asc: true })
 
     if (error) {
       if (process.env.NODE_ENV === 'development') console.error('Error fetching waiting:', error)
@@ -573,14 +573,14 @@ export default function AdminLobby() {
 
   const fetchServingAppointments = useCallback(async () => {
     const { data, error } = await supabase
-      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'serving' })
+      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'serving', order_asc: true })
 
     if (!error) setServingAppointments(data || [])
   }, [])
 
   const fetchPendingAppointments = useCallback(async () => {
     const { data, error } = await supabase
-      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'assigned_pending' })
+      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'assigned_pending', order_asc: true })
 
     if (!error) setPendingAppointments(data || [])
   }, [])

@@ -16,7 +16,7 @@ export default function Lobby() {
        const caller = localStorage.getItem('salon_user_data');
        const phone = caller ? JSON.parse(caller).phone : '';
        const { data, error } = await supabase
-         .rpc('get_appointments', { caller_phone: phone, status_filter: 'waiting,serving' })
+         .rpc('get_appointments', { caller_phone: phone, status_filter: 'waiting,serving', order_asc: true })
 
        if (error) throw error
        setAppointments(data || [])
