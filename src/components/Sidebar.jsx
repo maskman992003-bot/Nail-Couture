@@ -2,7 +2,7 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { featureFlags } from '../constants/featureFlags';
 import { getSettingsPath } from '../utils/routes';
 import { modalBtnPrimary, modalBtnSecondary } from './AppModal';
@@ -100,11 +100,15 @@ export default function Sidebar() {
     if (saved && bottomNavRef.current) {
       const el = bottomNavRef.current;
       const originalSmoothness = el.style.scrollBehavior;
-      el.style.scrollBehavior = 'auto';
-      el.scrollLeft = parseInt(saved, 10);
-      el.style.scrollBehavior = originalSmoothness;
+
+      // Delay position lock briefly to allow memoized items to safely mount
+      requestAnimationFrame(() => {
+        el.style.scrollBehavior = 'auto';
+        el.scrollLeft = parseInt(saved, 10);
+        el.style.scrollBehavior = originalSmoothness;
+      });
     }
-  }, [BOTTOM_SCROLL_KEY]);
+  }, [BOTTOM_SCROLL_KEY, navItems]);
 
   const handleNavScroll = useCallback(() => {
     if (navRef.current) {
@@ -188,12 +192,13 @@ export default function Sidebar() {
     } catch { }
   };
 
-    if (!user) return null;
+  // Fixes Mobile Jitter: Memoize nav items to keep the DOM stable during route changes
+  const navItems = useMemo(() => {
+    if (!user) return [];
 
-    // ALWAYS use the actual user role from the database, never the URL-derived session role
     const actualUserRole = user.role || 'customer';
-    let navItems = navItemsByRole[actualUserRole] || navItemsByRole.customer;
-    
+    let items = navItemsByRole[actualUserRole] || navItemsByRole.customer;
+
     // Feature flag mappings for navigation items
     const navItemFeatureMappings = {
       bookings: ['customer.onlineBooking', 'customer.onlineCalendarBooking'],
@@ -201,24 +206,21 @@ export default function Sidebar() {
       services: ['customer.staticServiceMenu'],
       customers: ['management.customerHistory']
     };
-    
-    // Filter navigation items based on feature flags
-    // Only super_admin sees all features regardless of flags (for system management)
+
     if (actualUserRole !== 'super_admin') {
-      navItems = navItems.filter(item => {
+      items = items.filter(item => {
         const mapping = navItemFeatureMappings[item.id];
-        if (!mapping) {
-          return true;
-        }
+        if (!mapping) return true;
 
         const flagsToCheck = Array.isArray(mapping) ? mapping : [mapping];
         return flagsToCheck.some((flag) => {
           const [featureArea, featureName] = flag.split('.');
-          const featureFlag = featureFlags[featureArea]?.[featureName];
-          return featureFlag === true;
+          return featureFlags[featureArea]?.[featureName] === true;
         });
       });
     }
+    return items;
+  }, [user?.role]);
   const settingsPath = getSettingsPath(user?.role);
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
   const initials = (user?.full_name || user?.email || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
