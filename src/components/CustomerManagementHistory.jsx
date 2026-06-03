@@ -236,7 +236,7 @@ export default function CustomerManagementHistory() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Name, Phone or Email"
+                  placeholder="    Name, Phone or Email"
                   value={searchTerm}
                   onChange={handleSearchChange}
                   className="w-full px-4 py-3 bg-input border-input border rounded-xl text-primary placeholder-text-muted focus:border-gold focus:ring-2 focus:ring-gold/20 focus:outline-none"
