@@ -197,11 +197,13 @@ export default function CashierCheckout() {
         status: 'completed',
         notes,
       }),
-      supabase.from('appointments').update({
-        status: 'completed',
-        final_price: amount,
-        start_time_new: new Date().toISOString(),
-      }).eq('id', appointmentId),
+      supabase.rpc('update_appointment', {
+        caller_phone: user?.phone,
+        appointment_id: appointmentId,
+        p_status: 'completed',
+        p_final_price: amount,
+        p_start_time: new Date().toISOString(),
+      }),
       // Log refreshment consumption if applicable
       appt?.customer?.refreshment_pref && 
         logInventoryUsageByRefreshmentName(

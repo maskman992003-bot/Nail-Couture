@@ -251,10 +251,13 @@ export default function AdminBookings() {
     setEditError('');
     const newScheduled = new Date(`${editDate}T${editTime}:00`).toISOString();
     try {
-      const updates = { scheduled_at: newScheduled };
-      if (editServiceId) updates.service_id = editServiceId;
-      if (editTechId) updates.technician_id = editTechId;
-      const { error } = await supabase.from('appointments').update(updates).eq('id', editingBooking.id);
+      const { error } = await supabase.rpc('update_appointment', {
+        caller_phone: user?.phone,
+        appointment_id: editingBooking.id,
+        p_scheduled_at: newScheduled,
+        p_service_id: editServiceId || null,
+        p_technician_id: editTechId || null,
+      });
       if (error) throw error;
       const newService = services.find(s => s.id === editServiceId);
       const newTech = technicians.find(t => t.id === editTechId);
@@ -329,10 +332,9 @@ const { error } = await supabase.from('appointments').insert({
     if (!cancelTarget) return;
     setCancelling(true);
     try {
-      const updates = { status: 'cancelled' };
-      const { error } = await supabase.from('appointments').update(updates).eq('id', cancelTarget.id);
+      const { error } = await supabase.rpc('cancel_appointment', { caller_phone: user?.phone, appointment_id: cancelTarget.id });
       if (error) throw error;
-      setBookings((prev) => prev.map((b) => (b.id === cancelTarget.id ? { ...b, ...updates } : b)));
+      setBookings((prev) => prev.map((b) => (b.id === cancelTarget.id ? { ...b, status: 'cancelled' } : b)));
       setCancelTarget(null);
       setCancelNote('');
     } catch (err) { console.error('Error cancelling:', err); }
@@ -342,10 +344,9 @@ const { error } = await supabase.from('appointments').insert({
   const reactivateBooking = async (booking) => {
     setReactivatingId(booking.id);
     try {
-      const updates = { status: 'confirmed' };
-      const { error } = await supabase.from('appointments').update(updates).eq('id', booking.id);
+      const { error } = await supabase.rpc('update_appointment', { caller_phone: user?.phone, appointment_id: booking.id, p_status: 'confirmed' });
       if (error) throw error;
-      setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, ...updates } : b)));
+      setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, status: 'confirmed' } : b)));
     } catch (err) { console.error('Error reactivating:', err); }
     finally { setReactivatingId(null); }
   };
@@ -355,7 +356,7 @@ const { error } = await supabase.from('appointments').insert({
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const { error } = await supabase.from('appointments').delete().eq('id', deleteTarget.id);
+      const { error } = await supabase.rpc('delete_appointment', { caller_phone: user?.phone, appointment_id: deleteTarget.id });
       if (error) throw error;
       setBookings((prev) => prev.filter((b) => b.id !== deleteTarget.id));
       setDeleteTarget(null);

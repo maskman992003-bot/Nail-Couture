@@ -653,23 +653,39 @@ export default function AdminLobby() {
       }
     }
 
-    await supabase.from('appointments').update(updates).eq('id', appointmentId)
+    await supabase.rpc('update_appointment', {
+      caller_phone: user?.phone,
+      appointment_id: appointmentId,
+      p_status: updates.status || null,
+      p_technician_id: updates.technician_id || null,
+      p_start_time: updates.start_time || null,
+      p_final_price: updates.final_price || null,
+    })
     await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchTodayTotal()])
     setUpdating(null)
   }
 
   const handleEditSave = async (appointmentId, updates) => {
     const { nail_goal, ...apptUpdates } = updates
-    await supabase
-      .from('appointments')
-      .update(apptUpdates)
-      .eq('id', appointmentId)
+    await supabase.rpc('update_appointment', {
+      caller_phone: user?.phone,
+      appointment_id: appointmentId,
+      p_service_id: apptUpdates.service_id || null,
+      p_add_ons: apptUpdates.add_ons || null,
+      p_final_price: apptUpdates.final_price || null,
+      p_refreshment_pref: apptUpdates.refreshment_pref || null,
+      p_technician_id: apptUpdates.technician_id || null,
+      p_status: apptUpdates.status || null,
+      p_notes: apptUpdates.notes || null,
+    })
     
     if (nail_goal && editingAppointment?.customer_id) {
-      await supabase
-        .from('profiles')
-        .update({ nail_goal })
-        .eq('id', editingAppointment.customer_id)
+      await supabase.rpc('update_profile_field', {
+        caller_phone: user?.phone,
+        profile_id: editingAppointment.customer_id,
+        field_name: 'nail_goal',
+        field_value: nail_goal,
+      })
     }
     
     await Promise.all([fetchAppointments(), fetchServingAppointments()])
@@ -678,10 +694,7 @@ export default function AdminLobby() {
 
   const cancelAppointment = async (appointment) => {
     setUpdating(appointment.id)
-    await supabase
-      .from('appointments')
-      .update({ status: 'cancelled' })
-      .eq('id', appointment.id)
+    await supabase.rpc('cancel_appointment', { caller_phone: user?.phone, appointment_id: appointment.id })
     
     setNotification({ message: `Cancelled: ${cancelReason}`, name: appointment.customer?.full_name })
     setTimeout(() => setNotification(null), 3000)
@@ -705,13 +718,12 @@ export default function AdminLobby() {
 
     if (dropTargetId === LOBBY_DROP_ID && isReallocation) {
       setUpdating(appointmentId)
-      await supabase
-        .from('appointments')
-        .update({
-          status: 'waiting',
-          technician_id: null
-        })
-        .eq('id', appointmentId)
+      await supabase.rpc('update_appointment', {
+        caller_phone: user?.phone,
+        appointment_id: appointmentId,
+        p_status: 'waiting',
+        p_technician_id: null,
+      })
 
       setNotification({ message: 'Returned to waiting', name: pendingAppointment.customer?.full_name })
       setTimeout(() => setNotification(null), 3000)
@@ -751,13 +763,12 @@ export default function AdminLobby() {
     }
 
     setUpdating(appointmentId)
-    const { error } = await supabase
-      .from('appointments')
-      .update({
-        technician_id: technicianId,
-        status: 'assigned_pending'
-      })
-      .eq('id', appointmentId)
+    const { error } = await supabase.rpc('update_appointment', {
+      caller_phone: user?.phone,
+      appointment_id: appointmentId,
+      p_technician_id: technicianId,
+      p_status: 'assigned_pending',
+    })
 
     if (error) {
       setNotification({ message: 'Assignment failed', name: error.message })
@@ -778,13 +789,12 @@ export default function AdminLobby() {
 
   const acceptAssignment = async (appointmentId, techId) => {
     setUpdating(appointmentId)
-    const { error } = await supabase
-      .from('appointments')
-      .update({
-        status: 'serving',
-        start_time: new Date().toISOString()
-      })
-      .eq('id', appointmentId)
+    const { error } = await supabase.rpc('update_appointment', {
+      caller_phone: user?.phone,
+      appointment_id: appointmentId,
+      p_status: 'serving',
+      p_start_time: new Date().toISOString(),
+    })
     
     if (error) {
       setUpdating(null)

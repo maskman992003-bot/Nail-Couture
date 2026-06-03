@@ -93,7 +93,7 @@ export default function CustomerHistory() {
   const cancelBooking = useCallback(async (booking) => {
     setUpdatingId(booking.id);
     try {
-      const { error } = await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', booking.id);
+      const { error } = await supabase.rpc('cancel_my_appointment', { caller_phone: user?.phone, appointment_id: booking.id });
       if (error) throw error;
       setBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, status: 'cancelled' } : b));
     } catch (err) {

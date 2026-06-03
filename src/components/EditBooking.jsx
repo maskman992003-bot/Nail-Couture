@@ -162,14 +162,15 @@ export default function EditBooking() {
       return addOn?.name;
     }).filter(Boolean)].join(', ');
     try {
-      const { error } = await supabase.from('appointments').update({
-        service_id: selectedServices[0]?.id || null,
-        add_ons: allNames || null,
-        final_price: totalPrice,
-        technician_id: selectedTech?.staff_id || null,
-        scheduled_at: newScheduled.toISOString(),
-        notes: notes || null,
-      }).eq('id', bookingId);
+      const { error } = await supabase.rpc('update_my_appointment', {
+        caller_phone: user?.phone,
+        appointment_id: bookingId,
+        p_service_id: selectedServices[0]?.id || null,
+        p_add_ons: allNames || null,
+        p_final_price: totalPrice,
+        p_scheduled_at: newScheduled.toISOString(),
+        p_notes: notes || null,
+      });
       if (error) throw error;
 
       const userId = user?.id;

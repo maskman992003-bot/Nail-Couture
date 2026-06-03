@@ -71,7 +71,9 @@ export default function Technician() {
   const markComplete = async (appointment) => {
     try {
       const price = appointment.final_price ?? (appointment.services?.price || 0);
-      await supabase.from('appointments').update({ status: 'completed', start_time: new Date().toISOString(), final_price: price }).eq('id', appointment.id);
+      const caller = localStorage.getItem('salon_user_data');
+      const phone = caller ? JSON.parse(caller).phone : '';
+      await supabase.rpc('complete_appointment', { caller_phone: phone, appointment_id: appointment.id, p_final_price: price });
       const earnedPoints = Math.floor(price);
       if (earnedPoints > 0 && appointment.customer_id) {
         await supabase.rpc('award_loyalty_points', { p_profile_id: appointment.customer_id, p_points: earnedPoints }).catch(() => {});

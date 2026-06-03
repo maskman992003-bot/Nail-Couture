@@ -3,6 +3,28 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import ScrollSelect from './ScrollSelect';
+
+const MONTHS = [
+  { value: '', label: 'Month' },
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
+
+const DAYS = Array.from({ length: 31 }, (_, i) => ({
+  value: String(i + 1).padStart(2, '0'),
+  label: String(i + 1).padStart(2, '0'),
+}));
 
 const Sparkle = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -29,6 +51,8 @@ export default function ClientRegister() {
     full_name: '',
     phone: '',
     email: '',
+    birthday_month: '',
+    birthday_day: '',
     referral_code: urlReferralCode
   });
   const [loading, setLoading] = useState(false);
@@ -66,7 +90,7 @@ export default function ClientRegister() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.full_name || !formData.phone || !formData.email) {
+    if (!formData.full_name || !formData.phone || !formData.email || !formData.birthday_month || !formData.birthday_day) {
       setError('Please fill in all fields');
       return;
     }
@@ -115,12 +139,17 @@ export default function ClientRegister() {
         }
       }
 
+      const birthday = formData.birthday_month && formData.birthday_day
+        ? `${formData.birthday_month}-${formData.birthday_day}`
+        : null;
+
       const { data, error: insertError } = await supabase
         .from('profiles')
         .insert({
           full_name: formData.full_name,
           phone: cleanPhone,
           email: formData.email,
+          birthday,
 
           role: 'customer',
           referral_code: generateReferralCode(formData.full_name),
@@ -233,6 +262,30 @@ export default function ClientRegister() {
                 placeholder="Enter your email"
                 className={inputClass}
               />
+            </div>
+
+            <div className="mb-4">
+              <label className={labelClass}>
+                Birthday
+              </label>
+              <div className="flex gap-3">
+                <ScrollSelect
+                  value={formData.birthday_month}
+                  onChange={(v) => setFormData({ ...formData, birthday_month: v })}
+                  options={MONTHS}
+                  placeholder="Month"
+                  className="flex-1"
+                  theme={theme}
+                />
+                <ScrollSelect
+                  value={formData.birthday_day}
+                  onChange={(v) => setFormData({ ...formData, birthday_day: v })}
+                  options={DAYS}
+                  placeholder="Day"
+                  className="flex-1"
+                  theme={theme}
+                />
+              </div>
             </div>
 
             <div className="mb-6">

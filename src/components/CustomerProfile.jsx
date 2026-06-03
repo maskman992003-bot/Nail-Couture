@@ -8,6 +8,34 @@ import { isRefreshmentAvailable } from '../services/inventoryService';
 import { useAvailableRefreshments } from '../hooks/useAvailableRefreshments';
 import RefreshmentSelect from './RefreshmentSelect';
 import Sidebar from './Sidebar';
+import ScrollSelect from './ScrollSelect';
+
+const MONTHS = [
+  { value: '', label: 'Month' },
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
+
+const DAYS = Array.from({ length: 31 }, (_, i) => ({
+  value: String(i + 1).padStart(2, '0'),
+  label: String(i + 1).padStart(2, '0'),
+}));
+
+const isValidDate = (month, day) => {
+  if (!month || !day) return false;
+  const date = new Date(2000, parseInt(month) - 1, parseInt(day));
+  return date.getMonth() === parseInt(month) - 1 && date.getDate() === parseInt(day);
+};
 
 export default function CustomerProfile() {
   const navigate = useNavigate();
@@ -19,6 +47,9 @@ export default function CustomerProfile() {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const { refreshments, loading: refreshmentsLoading } = useAvailableRefreshments();
+  const [birthdayMonth, setBirthdayMonth] = useState('');
+  const [birthdayDay, setBirthdayDay] = useState('');
+  const [error, setError] = useState('');
   const [showPinForm, setShowPinForm] = useState(false);
   const [pinMode, setPinMode] = useState('set');
   const [pinForm, setPinForm] = useState({ current_pin: '', new_pin: '', confirm_pin: '' });
@@ -47,6 +78,9 @@ export default function CustomerProfile() {
       console.error('Error fetching profile:', error);
     } else if (data) {
       setProfile(data);
+      const bd = data.birthday || '';
+      setBirthdayMonth(bd ? bd.split('-')[0] : '');
+      setBirthdayDay(bd ? bd.split('-')[1] : '');
       setForm({
         full_name: data.full_name || '',
         email: data.email || '',
@@ -67,6 +101,13 @@ export default function CustomerProfile() {
       ? (form.refreshment_pref || null)
       : null;
     
+    if (!birthdayMonth || !birthdayDay || !isValidDate(birthdayMonth, birthdayDay)) {
+      setError('Please select a valid birthday');
+      setSaving(false);
+      return;
+    }
+    const birthday = `${birthdayMonth}-${birthdayDay}`;
+
     const { data, error } = await supabase
       .from('profiles')
       .update({
@@ -74,6 +115,7 @@ export default function CustomerProfile() {
         email: form.email.trim() || null,
         refreshment_pref: refreshmentPref,
         nail_goal: form.nail_goal || null,
+        birthday,
       })
       .eq('id', profile.id)
       .select()
@@ -176,7 +218,7 @@ export default function CustomerProfile() {
                 </div>
                 {!editing && (
                   <button
-                    onClick={() => setEditing(true)}
+                    onClick={() => { setEditing(true); setError(''); }}
                     className="px-4 py-2 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-xs font-medium"
                   >
                     Edit Profile Details
@@ -233,10 +275,41 @@ export default function CustomerProfile() {
                     </select>
                   </div>
 
+                  <div>
+                    <label className={theme === 'dark' ? 'text-offwhite/50 text-xs uppercase tracking-wider block mb-2' : 'text-charcoal/50 text-xs uppercase tracking-wider block mb-2'}>Birthday</label>
+                    <div className="flex gap-3">
+                      <ScrollSelect
+                        value={birthdayMonth}
+                        onChange={setBirthdayMonth}
+                        options={MONTHS}
+                        placeholder="Month"
+                        className="flex-1"
+                        theme={theme}
+                      />
+                      <ScrollSelect
+                        value={birthdayDay}
+                        onChange={setBirthdayDay}
+                        options={DAYS}
+                        placeholder="Day"
+                        className="flex-1"
+                        theme={theme}
+                      />
+                    </div>
+                  </div>
+
+                  {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+
                   <div className="flex gap-3 pt-2">
                     <button
                       type="button"
-                      onClick={() => { setEditing(false); setForm({ full_name: profile.full_name, email: profile.email || '', refreshment_pref: profile.refreshment_pref || '', nail_goal: profile.nail_goal || '' }); }}
+                      onClick={() => {
+                        setEditing(false);
+                        setError('');
+                        const bd = profile.birthday || '';
+                        setBirthdayMonth(bd ? bd.split('-')[0] : '');
+                        setBirthdayDay(bd ? bd.split('-')[1] : '');
+                        setForm({ full_name: profile.full_name, email: profile.email || '', refreshment_pref: profile.refreshment_pref || '', nail_goal: profile.nail_goal || '' });
+                      }}
                       className={theme === 'dark' ? 'flex-1 py-3 bg-charcoal border border-white/10 text-offwhite text-sm rounded-xl hover:bg-white/5 transition-colors' : 'flex-1 py-3 bg-charcoal border border-charcoal/10 text-charcoal text-sm rounded-xl hover:bg-charcoal/10 transition-colors'}
                     >
                       Cancel
@@ -280,6 +353,14 @@ export default function CustomerProfile() {
                     <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
                       <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Nail profile journey</span>
                       <span className="text-sm text-gold font-heading">{profile.nail_goal || 'Not specified'}</span>
+                    </div>
+                    <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
+                      <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Birthday</span>
+                      <span className={theme === 'dark' ? 'text-sm text-offwhite font-medium' : 'text-sm text-charcoal font-medium'}>
+                        {profile.birthday
+                          ? new Date(`2000-${profile.birthday}`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+                          : 'Not set'}
+                      </span>
                     </div>
                     <div className={theme === 'dark' ? 'p-4 bg-white/[0.02] border border-white/5 rounded-xl' : 'p-4 bg-charcoal/[0.02] border border-charcoal/5 rounded-xl'}>
                       <span className={theme === 'dark' ? 'text-[10px] uppercase tracking-wider text-offwhite/30 block mb-1' : 'text-[10px] uppercase tracking-wider text-charcoal/30 block mb-1'}>Loyalty tier</span>

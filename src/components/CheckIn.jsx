@@ -7,6 +7,28 @@ import { CATEGORIES } from '../data/servicesData'
 import { getAvailableRefreshments, isRefreshmentAvailable } from '../services/inventoryService'
 import RefreshmentSelect from './RefreshmentSelect'
 import WaiverModal from './WaiverModal'
+import ScrollSelect from './ScrollSelect'
+
+const MONTHS = [
+  { value: '', label: 'Month' },
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
+
+const DAYS = Array.from({ length: 31 }, (_, i) => ({
+  value: String(i + 1).padStart(2, '0'),
+  label: String(i + 1).padStart(2, '0'),
+}));
 
 const Sparkle = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -287,6 +309,8 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [nailGoal, setNailGoal] = useState('')
+  const [birthdayMonth, setBirthdayMonth] = useState('')
+  const [birthdayDay, setBirthdayDay] = useState('')
   const [refreshmentList, setRefreshmentList] = useState([])
   const [refreshmentsLoading, setRefreshmentsLoading] = useState(true)
   const [refreshmentPref, setRefreshmentPref] = useState('')
@@ -318,7 +342,7 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!fullName || !email || !nailGoal || selectedServices.length === 0) return
+    if (!fullName || !email || !nailGoal || !birthdayMonth || !birthdayDay || selectedServices.length === 0) return
     
     setLoading(true)
     setError(null)
@@ -345,6 +369,7 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
         profileId = existingProfile.id
         finalProfile = existingProfile
       } else {
+         const birthday = birthdayMonth && birthdayDay ? `${birthdayMonth}-${birthdayDay}` : null
          const { data: profile, error: insertError } = await supabase
            .from('profiles')
            .insert({
@@ -352,7 +377,8 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
              email: email,
              phone: cleanPhone,
              nail_goal: nailGoal,
-             refreshment_pref: safeRefreshmentPref
+             refreshment_pref: safeRefreshmentPref,
+             birthday
            })
            .select()
            .single()
@@ -503,6 +529,26 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
               <option value="Long Extensions" className="bg-primary">Long Extensions</option>
               <option value="Intricate Art" className="bg-primary">Intricate Art</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-secondary text-sm mb-2">Birthday</label>
+            <div className="flex gap-3">
+              <ScrollSelect
+                value={birthdayMonth}
+                onChange={setBirthdayMonth}
+                options={MONTHS}
+                placeholder="Month"
+                className="flex-1"
+              />
+              <ScrollSelect
+                value={birthdayDay}
+                onChange={setBirthdayDay}
+                options={DAYS}
+                placeholder="Day"
+                className="flex-1"
+              />
+            </div>
           </div>
 
           <RefreshmentSelect
@@ -691,12 +737,14 @@ export default function CheckIn({ onNavigate }) {
       const safeRefreshmentPref = isRefreshmentAvailable(refreshmentPref, availableRefreshments)
         ? (refreshmentPref || null)
         : null
-      await supabase.from('appointments').update({
-        service_id: services[0]?.id || null,
-        add_ons: allNames || null,
-        final_price: totalPrice,
-        refreshment_pref: safeRefreshmentPref
-      }).eq('id', result.appointment.id)
+      await supabase.rpc('update_my_appointment', {
+        caller_phone: phone,
+        appointment_id: result.appointment.id,
+        p_service_id: services[0]?.id || null,
+        p_add_ons: allNames || null,
+        p_final_price: totalPrice,
+        p_refreshment_pref: safeRefreshmentPref,
+      })
       setSelectedServices(services)
       setSelectedAddOns(addOns)
       setShowServiceSelection(false)

@@ -31,15 +31,12 @@ export default function Lobby() {
     console.log('Starting service for:', appointment.id, appointment.status)
     setUpdating(appointment.id)
     try {
+      const caller = localStorage.getItem('salon_user_data');
+      const phone = caller ? JSON.parse(caller).phone : '';
       const result = await supabase
-        .from('appointments')
-        .update({ 
-          status: 'serving',
-          start_time: new Date().toISOString()
-        })
-        .eq('id', appointment.id)
+        .rpc('start_appointment', { caller_phone: phone, appointment_id: appointment.id })
 
-      console.log('Update result:', result)
+      console.log('Start result:', result)
       if (result.error) {
         console.error('Supabase error:', result.error)
         alert('Error: ' + result.error.message)
