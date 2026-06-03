@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
 import AppModal, {
   modalLabelClass,
@@ -14,17 +15,10 @@ import AppModal, {
   modalCardClass,
 } from './AppModal';
 
-const statusConfig = {
-  confirmed: { label: 'Confirmed', color: 'bg-blue-900/50 text-blue-300 border-blue-700/50', dot: 'bg-blue-400' },
-  waiting: { label: 'Lobby', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50', dot: 'bg-yellow-400' },
-  serving: { label: 'In Chair', color: 'bg-green-900/50 text-green-300 border-green-700/50', dot: 'bg-green-400' },
-  completed: { label: 'Completed', color: 'bg-green-800/40 text-green-300 border-green-700/30', dot: 'bg-green-400' },
-  cancelled: { label: 'Cancelled', color: 'bg-red-900/50 text-red-300 border-red-700/50', dot: 'bg-red-500' },
-  missed: { label: 'Missed', color: 'bg-gray-900/50 text-gray-400 border-gray-600/50', dot: 'bg-gray-500' },
-};
 const statusOrder = ['confirmed', 'waiting', 'serving', 'completed', 'cancelled', 'missed'];
 
 function DatePicker({ value, onChange }) {
+  const { theme } = useTheme();
   const today = new Date();
   const [selYear, setSelYear] = useState(() => value ? new Date(value + 'T00:00:00').getFullYear() : today.getFullYear());
   const [selMonth, setSelMonth] = useState(() => value ? new Date(value + 'T00:00:00').getMonth() : today.getMonth());
@@ -43,30 +37,30 @@ function DatePicker({ value, onChange }) {
     <div className="flex flex-col sm:flex-row items-center gap-2">
       <div className="flex items-center gap-1">
         <div className="flex flex-col items-center">
-          <div className="text-offwhite/30 text-[9px] uppercase tracking-widest mb-1">Month</div>
+          <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-[9px] uppercase tracking-widest mb-1`}>Month</div>
           <div className="relative">
-            <select value={selMonth} onChange={(e) => setSelMonth(parseInt(e.target.value))} className="appearance-none w-16 p-2 rounded-lg text-center font-heading text-xs cursor-pointer pr-6" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.3)' }}>
-              {months.map((m, i) => <option key={m} value={i} style={{ backgroundColor: '#111' }}>{m}</option>)}
+            <select value={selMonth} onChange={(e) => setSelMonth(parseInt(e.target.value))} className="appearance-none w-16 p-2 rounded-lg text-center font-heading text-xs cursor-pointer pr-6" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.3)' }}>
+              {months.map((m, i) => <option key={m} value={i} style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>{m}</option>)}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-1 flex items-center"><svg className="w-3 h-3 text-offwhite/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
+            <div className="pointer-events-none absolute inset-y-0 right-1 flex items-center"><svg className={`w-3 h-3 ${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
           </div>
         </div>
         <div className="flex flex-col items-center">
-          <div className="text-offwhite/30 text-[9px] uppercase tracking-widest mb-1">Day</div>
+          <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-[9px] uppercase tracking-widest mb-1`}>Day</div>
           <div className="relative">
-            <select value={selDay} onChange={(e) => setSelDay(parseInt(e.target.value))} className="appearance-none w-14 p-2 rounded-lg text-center font-heading text-xs cursor-pointer pr-6" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.3)' }}>
-              {days.map(d => <option key={d} value={d} style={{ backgroundColor: '#111' }}>{d}</option>)}
+            <select value={selDay} onChange={(e) => setSelDay(parseInt(e.target.value))} className="appearance-none w-14 p-2 rounded-lg text-center font-heading text-xs cursor-pointer pr-6" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.3)' }}>
+              {days.map(d => <option key={d} value={d} style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>{d}</option>)}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-1 flex items-center"><svg className="w-3 h-3 text-offwhite/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
+            <div className="pointer-events-none absolute inset-y-0 right-1 flex items-center"><svg className={`w-3 h-3 ${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
           </div>
         </div>
         <div className="flex flex-col items-center">
-          <div className="text-offwhite/30 text-[9px] uppercase tracking-widest mb-1">Year</div>
+          <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-[9px] uppercase tracking-widest mb-1`}>Year</div>
           <div className="relative">
-            <select value={selYear} onChange={(e) => setSelYear(parseInt(e.target.value))} className="appearance-none w-16 p-2 rounded-lg text-center font-heading text-xs cursor-pointer pr-6" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.3)' }}>
-              {years.map(y => <option key={y} value={y} style={{ backgroundColor: '#111' }}>{y}</option>)}
+            <select value={selYear} onChange={(e) => setSelYear(parseInt(e.target.value))} className="appearance-none w-16 p-2 rounded-lg text-center font-heading text-xs cursor-pointer pr-6" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.3)' }}>
+              {years.map(y => <option key={y} value={y} style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>{y}</option>)}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-1 flex items-center"><svg className="w-3 h-3 text-offwhite/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
+            <div className="pointer-events-none absolute inset-y-0 right-1 flex items-center"><svg className={`w-3 h-3 ${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
           </div>
         </div>
       </div>
@@ -76,6 +70,7 @@ function DatePicker({ value, onChange }) {
 }
 
 function TimePicker({ value, onChange }) {
+  const { theme } = useTheme();
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
   const minutes = ['00', '15', '30', '45'];
   const [period, setPeriod] = useState(() => {
@@ -106,27 +101,27 @@ function TimePicker({ value, onChange }) {
     <div className="flex flex-col sm:flex-row items-center gap-2">
       <div className="flex items-center gap-1">
         <div className="flex flex-col items-center">
-          <div className="text-offwhite/30 text-[9px] uppercase tracking-widest mb-1">Hour</div>
+          <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-[9px] uppercase tracking-widest mb-1`}>Hour</div>
           <div className="relative">
-            <select value={selHour} onChange={(e) => setSelHour(parseInt(e.target.value))} className="appearance-none w-14 p-2 rounded-lg text-center font-heading text-sm cursor-pointer pr-6" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.3)' }}>
-              {hours.map(h => <option key={h} value={h} style={{ backgroundColor: '#111' }}>{h}</option>)}
+            <select value={selHour} onChange={(e) => setSelHour(parseInt(e.target.value))} className="appearance-none w-14 p-2 rounded-lg text-center font-heading text-sm cursor-pointer pr-6" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.3)' }}>
+              {hours.map(h => <option key={h} value={h} style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>{h}</option>)}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-1 flex items-center"><svg className="w-3 h-3 text-offwhite/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
+            <div className="pointer-events-none absolute inset-y-0 right-1 flex items-center"><svg className={`w-3 h-3 ${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
           </div>
         </div>
-        <div className="text-offwhite text-2xl font-heading mt-4">:</div>
+        <div className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'} text-2xl font-heading mt-4`}>:</div>
         <div className="flex flex-col items-center">
-          <div className="text-offwhite/30 text-[9px] uppercase tracking-widest mb-1">Min</div>
+          <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-[9px] uppercase tracking-widest mb-1`}>Min</div>
           <div className="relative">
-            <select value={selMin} onChange={(e) => setSelMin(e.target.value)} className="appearance-none w-14 p-2 rounded-lg text-center font-heading text-sm cursor-pointer pr-6" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.3)' }}>
-              {minutes.map(m => <option key={m} value={m} style={{ backgroundColor: '#111' }}>{m}</option>)}
+            <select value={selMin} onChange={(e) => setSelMin(e.target.value)} className="appearance-none w-14 p-2 rounded-lg text-center font-heading text-sm cursor-pointer pr-6" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.3)' }}>
+              {minutes.map(m => <option key={m} value={m} style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>{m}</option>)}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-1 flex items-center"><svg className="w-3 h-3 text-offwhite/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
+            <div className="pointer-events-none absolute inset-y-0 right-1 flex items-center"><svg className={`w-3 h-3 ${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
           </div>
         </div>
         <div className="flex flex-col mt-4">
           {['AM', 'PM'].map(p => (
-            <div key={p} onClick={() => setPeriod(p)} className="px-3 py-1 text-xs font-heading cursor-pointer rounded-md text-center transition-colors mb-1" style={{ backgroundColor: period === p ? 'rgba(197,160,89,0.2)' : 'rgba(255,255,255,0.05)', color: period === p ? '#c5a059' : 'rgba(255,255,255,0.4)', border: period === p ? '1px solid rgba(197,160,89,0.4)' : '1px solid transparent' }}>{p}</div>
+            <div key={p} onClick={() => setPeriod(p)} className="px-3 py-1 text-xs font-heading cursor-pointer rounded-md text-center transition-colors mb-1" style={{ backgroundColor: period === p ? 'rgba(197,160,89,0.2)' : theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', color: period === p ? '#c5a059' : theme === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', border: period === p ? '1px solid rgba(197,160,89,0.4)' : '1px solid transparent' }}>{p}</div>
           ))}
         </div>
       </div>
@@ -138,6 +133,7 @@ function TimePicker({ value, onChange }) {
 export default function AdminBookings() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -165,6 +161,15 @@ export default function AdminBookings() {
   const [deleting, setDeleting] = useState(false);
   const [reactivatingId, setReactivatingId] = useState(null);
   const [historyBooking, setHistoryBooking] = useState(null);
+
+  const statusConfig = {
+    confirmed: { label: 'Confirmed', color: theme === 'dark' ? 'bg-blue-900/50 text-blue-300 border-blue-700/50' : 'bg-blue-100 text-blue-800 border-blue-300', dot: 'bg-blue-400' },
+    waiting: { label: 'Lobby', color: theme === 'dark' ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' : 'bg-yellow-100 text-yellow-800 border-yellow-300', dot: 'bg-yellow-400' },
+    serving: { label: 'In Chair', color: theme === 'dark' ? 'bg-green-900/50 text-green-300 border-green-700/50' : 'bg-green-100 text-green-800 border-green-300', dot: 'bg-green-400' },
+    completed: { label: 'Completed', color: theme === 'dark' ? 'bg-green-800/40 text-green-300 border-green-700/30' : 'bg-green-100 text-green-800 border-green-300', dot: 'bg-green-400' },
+    cancelled: { label: 'Cancelled', color: theme === 'dark' ? 'bg-red-900/50 text-red-300 border-red-700/50' : 'bg-red-100 text-red-800 border-red-300', dot: 'bg-red-500' },
+    missed: { label: 'Missed', color: theme === 'dark' ? 'bg-gray-900/50 text-gray-400 border-gray-600/50' : 'bg-gray-100 text-gray-600 border-gray-300', dot: 'bg-gray-500' },
+  };
 
     const fetchLookups = async () => {
       const [techsRes, svcsRes] = await Promise.all([
@@ -465,7 +470,7 @@ const { error } = await supabase.from('appointments').insert({
 
   const renderBadge = (booking) => (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-      booking.booking_type === 'online' ? 'bg-gold/20 text-gold border-gold/40' : 'bg-yellow-900/30 text-yellow-300 border-yellow-700/40'
+      booking.booking_type === 'online' ? 'bg-gold/20 text-gold border-gold/40' : theme === 'dark' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700/40' : 'bg-yellow-100 text-yellow-800 border-yellow-300'
     }`}>
       <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${booking.booking_type === 'online' ? 'bg-gold' : 'bg-yellow-400'}`} />
       {booking.booking_type === 'online' ? 'Online' : 'Walk-in'}
@@ -490,7 +495,7 @@ const { error } = await supabase.from('appointments').insert({
 
   if (loading && bookings.length === 0) {
     return (
-      <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
         <Sidebar />
         <div className="flex items-center justify-center py-20"><div className="text-gold animate-pulse">Loading...</div></div>
       </div>
@@ -498,21 +503,21 @@ const { error } = await supabase.from('appointments').insert({
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0B0C] text-white transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
-        <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: 'rgba(197,160,89,0.1)' }}>
+        <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: theme === 'dark' ? 'rgba(197,160,89,0.1)' : 'rgba(197,160,89,0.2)' }}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="font-heading text-3xl text-gold">Booking Management</h1>
-              <p className="text-offwhite/60 text-sm mt-1">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+              <p className={`${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'} text-sm mt-1`}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={() => fetchBookings(true)} className="px-4 py-2 bg-offwhite/10 text-offwhite/80 rounded-lg hover:bg-offwhite/20 text-sm border border-offwhite/10 flex items-center gap-2">
+              <button onClick={() => fetchBookings(true)} className={`px-4 py-2 ${theme === 'dark' ? 'bg-offwhite/10 text-offwhite/80 hover:bg-offwhite/20 border-offwhite/10' : 'bg-charcoal/10 text-charcoal/80 hover:bg-charcoal/20 border-charcoal/10'} rounded-lg text-sm border flex items-center gap-2`}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 Refresh
               </button>
-              <button onClick={exportCSV} className="px-4 py-2 bg-offwhite/10 text-offwhite/80 rounded-lg hover:bg-offwhite/20 text-sm border border-offwhite/10 flex items-center gap-2">
+              <button onClick={exportCSV} className={`px-4 py-2 ${theme === 'dark' ? 'bg-offwhite/10 text-offwhite/80 hover:bg-offwhite/20 border-offwhite/10' : 'bg-charcoal/10 text-charcoal/80 hover:bg-charcoal/20 border-charcoal/10'} rounded-lg text-sm border flex items-center gap-2`}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 Export CSV
               </button>
@@ -526,37 +531,37 @@ const { error } = await supabase.from('appointments').insert({
 
         <div className="px-4 sm:px-6 lg:px-8 pt-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="rounded-xl p-4 border" style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(197,160,89,0.15)' }}>
-              <div className="text-offwhite/40 text-xs mb-1">Total Bookings</div>
+            <div className="rounded-xl p-4 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor: theme === 'dark' ? 'rgba(197,160,89,0.15)' : 'rgba(197,160,89,0.2)' }}>
+              <div className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'} text-xs mb-1`}>Total Bookings</div>
               <div className="text-2xl font-heading text-gold">{bookings.length}</div>
             </div>
-            <div className="rounded-xl p-4 border" style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(197,160,89,0.15)' }}>
-              <div className="text-offwhite/40 text-xs mb-1">Upcoming</div>
+            <div className="rounded-xl p-4 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor: theme === 'dark' ? 'rgba(197,160,89,0.15)' : 'rgba(197,160,89,0.2)' }}>
+              <div className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'} text-xs mb-1`}>Upcoming</div>
               <div className="text-2xl font-heading text-yellow-400">{tabCounts.confirmed + tabCounts.waiting + tabCounts.serving}</div>
             </div>
-            <div className="rounded-xl p-4 border" style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(197,160,89,0.15)' }}>
-              <div className="text-offwhite/40 text-xs mb-1">Today's Revenue</div>
+            <div className="rounded-xl p-4 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor: theme === 'dark' ? 'rgba(197,160,89,0.15)' : 'rgba(197,160,89,0.2)' }}>
+              <div className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'} text-xs mb-1`}>Today's Revenue</div>
               <div className="text-2xl font-heading text-green-400">${todayRevenue.toFixed(0)}</div>
             </div>
-            <div className="rounded-xl p-4 border" style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(197,160,89,0.15)' }}>
-              <div className="text-offwhite/40 text-xs mb-1">Completed</div>
-              <div className="text-2xl font-heading text-offwhite">{tabCounts.completed || 0}</div>
+            <div className="rounded-xl p-4 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor: theme === 'dark' ? 'rgba(197,160,89,0.15)' : 'rgba(197,160,89,0.2)' }}>
+              <div className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'} text-xs mb-1`}>Completed</div>
+              <div className={`text-2xl font-heading ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{tabCounts.completed || 0}</div>
             </div>
           </div>
 
           <div className="flex flex-col md:flex-row gap-3 mb-4">
             <div className="flex-1">
-              <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search by name, service, or phone..." className="w-full p-3 bg-offwhite/10 border border-offwhite/10 text-offwhite placeholder-offwhite/30 rounded-lg focus:border-gold focus:outline-none text-sm" />
+              <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search by name, service, or phone..." className={`w-full p-3 ${theme === 'dark' ? 'bg-offwhite/10 border-offwhite/10 text-offwhite placeholder-offwhite/30' : 'bg-charcoal/10 border-charcoal/10 text-charcoal placeholder-charcoal/30'} rounded-lg border focus:border-gold focus:outline-none text-sm`} />
             </div>
-            <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="px-4 py-3 border rounded-lg text-sm focus:border-gold focus:outline-none cursor-pointer" style={{ backgroundColor: '#111', borderColor: 'rgba(197,160,89,0.3)', color: '#f0d78c' }}>
-              <option value="today" style={{ backgroundColor: '#111', color: '#f0d78c' }}>Today</option>
-              <option value="tomorrow" style={{ backgroundColor: '#111', color: '#f0d78c' }}>Tomorrow</option>
-              <option value="week" style={{ backgroundColor: '#111', color: '#f0d78c' }}>This Week</option>
-              <option value="month" style={{ backgroundColor: '#111', color: '#f0d78c' }}>This Month</option>
+            <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="px-4 py-3 border rounded-lg text-sm focus:border-gold focus:outline-none cursor-pointer" style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff', borderColor: 'rgba(197,160,89,0.3)', color: '#f0d78c' }}>
+              <option value="today" style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff', color: '#f0d78c' }}>Today</option>
+              <option value="tomorrow" style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff', color: '#f0d78c' }}>Tomorrow</option>
+              <option value="week" style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff', color: '#f0d78c' }}>This Week</option>
+              <option value="month" style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff', color: '#f0d78c' }}>This Month</option>
             </select>
           </div>
 
-          <div className="rounded-xl p-1 flex gap-1 overflow-x-auto mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(197,160,89,0.1)' }}>
+          <div className="rounded-xl p-1 flex gap-1 overflow-x-auto mb-4" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme === 'dark' ? 'rgba(197,160,89,0.1)' : 'rgba(197,160,89,0.2)'}` }}>
             {[
               { key: 'all', label: 'All', count: tabCounts.confirmed + tabCounts.waiting + tabCounts.serving + tabCounts.completed + tabCounts.cancelled + tabCounts.missed },
               { key: 'confirmed', label: 'Confirmed', count: tabCounts.confirmed },
@@ -564,7 +569,7 @@ const { error } = await supabase.from('appointments').insert({
               { key: 'serving', label: 'In Chair', count: tabCounts.serving },
               { key: 'completed', label: 'Completed', count: tabCounts.completed },
             ].map(({ key, label, count }) => (
-              <button key={key} onClick={() => setStatusTab(key)} className="min-w-[100px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap" style={statusTab === key ? { background: 'linear-gradient(135deg, #c5a059, #f0d78c)', color: '#0B0B0C' } : { color: 'rgba(255,255,255,0.4)' }}>
+              <button key={key} onClick={() => setStatusTab(key)} className="min-w-[100px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap" style={statusTab === key ? { background: 'linear-gradient(135deg, #c5a059, #f0d78c)', color: theme === 'dark' ? '#0B0B0C' : '#111' } : { color: theme === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>
                 {label} {count > 0 && `(${count})`}
               </button>
             ))}
@@ -588,13 +593,13 @@ const { error } = await supabase.from('appointments').insert({
                   const cfg = statusConfig[booking.status] || {};
                   const apptTime = booking.scheduled_at ? new Date(booking.scheduled_at) : null;
                   return (
-                    <div key={booking.id} className="min-w-0 rounded-xl p-5 border transition-all hover:border-gold/40" style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(197,160,89,0.2)' }}>
+                    <div key={booking.id} className="min-w-0 rounded-xl p-5 border transition-all hover:border-gold/40" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)', borderColor: theme === 'dark' ? 'rgba(197,160,89,0.2)' : 'rgba(197,160,89,0.25)' }}>
                       <div className="flex flex-col lg:flex-row lg:items-start gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="min-w-0">
-                              <div className="text-offwhite font-heading text-lg">{booking.customer?.full_name || 'Guest'}</div>
-                              <div className="text-offwhite/40 text-sm">{booking.customer?.phone || 'No phone'}</div>
+                              <div className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'} font-heading text-lg`}>{booking.customer?.full_name || 'Guest'}</div>
+                              <div className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'} text-sm`}>{booking.customer?.phone || 'No phone'}</div>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               {renderBadge(booking)}
@@ -603,36 +608,36 @@ const { error } = await supabase.from('appointments').insert({
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 text-sm">
                             <div>
-                              <div className="text-offwhite/30 text-[10px] uppercase tracking-widest mb-0.5">Service</div>
+                              <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-[10px] uppercase tracking-widest mb-0.5`}>Service</div>
                               <div className="text-gold font-heading">{booking.service?.name || '—'}</div>
                             </div>
                             <div>
-                              <div className="text-offwhite/30 text-[10px] uppercase tracking-widest mb-0.5">Price</div>
-                              <div className="text-offwhite font-heading">${booking.final_price || booking.service?.price || 0}</div>
+                              <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-[10px] uppercase tracking-widest mb-0.5`}>Price</div>
+                              <div className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'} font-heading`}>${booking.final_price || booking.service?.price || 0}</div>
                             </div>
                             <div>
-                              <div className="text-offwhite/30 text-[10px] uppercase tracking-widest mb-0.5">Date & Time</div>
-                              <div className="text-offwhite font-heading text-xs">
+                              <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-[10px] uppercase tracking-widest mb-0.5`}>Date & Time</div>
+                              <div className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'} font-heading text-xs`}>
                                 {apptTime ? `${apptTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${apptTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : '—'}
                               </div>
                             </div>
                             <div>
-                              <div className="text-offwhite/30 text-[10px] uppercase tracking-widest mb-0.5">Technician</div>
-                              <div className="text-offwhite font-heading text-xs">{booking.tech?.full_name || 'Unassigned'}</div>
+                              <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-[10px] uppercase tracking-widest mb-0.5`}>Technician</div>
+                              <div className={`${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'} font-heading text-xs`}>{booking.tech?.full_name || 'Unassigned'}</div>
                             </div>
                           </div>
-                          {booking.customer?.nail_goal && <div className="text-offwhite/30 text-xs italic mt-2">Goal: {booking.customer.nail_goal}</div>}
+                          {booking.customer?.nail_goal && <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-xs italic mt-2`}>Goal: {booking.customer.nail_goal}</div>}
                         </div>
                         <div className="flex flex-col gap-2 lg:items-end lg:flex-shrink-0 lg:w-44">
                           <div className="flex flex-wrap gap-2 lg:justify-end">
-                            <button onClick={() => openHistory(booking)} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-offwhite/50 hover:text-gold hover:border-gold/50 transition-all" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>History</button>
+                            <button onClick={() => openHistory(booking)} className={`px-3 py-1.5 text-xs font-medium rounded-lg border ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'} hover:text-gold hover:border-gold/50 transition-all`} style={{ borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>History</button>
                             {!['completed', 'cancelled', 'missed'].includes(booking.status) && (
                               <>
-                                <button onClick={() => openEdit(booking)} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-offwhite/60 hover:text-gold hover:border-gold/50 transition-all" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>Edit</button>
-                                <button onClick={() => openCancel(booking)} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-red-400 hover:bg-red-900/20 hover:border-red-500/50 transition-all" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>Cancel</button>
+                                <button onClick={() => openEdit(booking)} className={`px-3 py-1.5 text-xs font-medium rounded-lg border ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'} hover:text-gold hover:border-gold/50 transition-all`} style={{ borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>Edit</button>
+                                <button onClick={() => openCancel(booking)} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-red-400 hover:bg-red-900/20 hover:border-red-500/50 transition-all" style={{ borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>Cancel</button>
                               </>
                             )}
-                            <button onClick={() => confirmDelete(booking)} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-red-400/60 hover:text-red-400 hover:border-red-500/50 transition-all" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>Delete</button>
+                            <button onClick={() => confirmDelete(booking)} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-red-400/60 hover:text-red-400 hover:border-red-500/50 transition-all" style={{ borderColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}>Delete</button>
                           </div>
                         </div>
                       </div>
@@ -646,19 +651,19 @@ const { error } = await supabase.from('appointments').insert({
           {sortedPast.length > 0 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-px flex-1 bg-offwhite/10" />
-                <h2 className="text-offwhite/40 font-heading text-base flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-offwhite/30" />
+                <div className={`h-px flex-1 ${theme === 'dark' ? 'bg-offwhite/10' : 'bg-charcoal/10'}`} />
+                <h2 className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'} font-heading text-base flex items-center gap-2`}>
+                  <span className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-offwhite/30' : 'bg-charcoal/30'}`} />
                   Past ({sortedPast.length})
                   {dateRange !== 'all' && (
-                    <span className="text-offwhite/20 text-xs ml-1">({
+                    <span className={`${theme === 'dark' ? 'text-offwhite/20' : 'text-charcoal/20'} text-xs ml-1`}>({
                       dateRange === 'today' ? 'Today' :
                       dateRange === 'tomorrow' ? 'Tomorrow' :
                       dateRange === 'week' ? 'This Week' : 'This Month'
                     })</span>
                   )}
                 </h2>
-                <div className="h-px flex-1 bg-offwhite/10" />
+                <div className={`h-px flex-1 ${theme === 'dark' ? 'bg-offwhite/10' : 'bg-charcoal/10'}`} />
               </div>
               <div className="space-y-3">
                 {sortedPast.map((booking) => {
@@ -666,13 +671,13 @@ const { error } = await supabase.from('appointments').insert({
                   const apptTime = booking.scheduled_at ? new Date(booking.scheduled_at) : null;
                   const isReactivating = reactivatingId === booking.id;
                   return (
-                    <div key={booking.id} className="min-w-0 rounded-xl p-5 border opacity-75" style={{ backgroundColor: 'rgba(255,255,255,0.015)', borderColor: 'rgba(255,255,255,0.05)' }}>
+                    <div key={booking.id} className="min-w-0 rounded-xl p-5 border opacity-75" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.01)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
                       <div className="flex flex-col lg:flex-row lg:items-start gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="min-w-0">
-                              <div className="text-offwhite/60 font-heading text-base">{booking.customer?.full_name || 'Guest'}</div>
-                              <div className="text-offwhite/40 text-sm">{booking.customer?.phone || 'No phone'}</div>
+                              <div className={`${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'} font-heading text-base`}>{booking.customer?.full_name || 'Guest'}</div>
+                              <div className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'} text-sm`}>{booking.customer?.phone || 'No phone'}</div>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               {renderBadge(booking)}
@@ -680,10 +685,10 @@ const { error } = await supabase.from('appointments').insert({
                             </div>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 text-sm">
-                            <div><div className="text-offwhite/20 text-[10px] uppercase tracking-widest mb-0.5">Service</div><div className="text-offwhite/50 font-heading text-sm">{booking.service?.name || '—'}</div></div>
-                            <div><div className="text-offwhite/20 text-[10px] uppercase tracking-widest mb-0.5">Price</div><div className="text-offwhite/50 font-heading text-sm">${booking.final_price || booking.service?.price || 0}</div></div>
-                            <div><div className="text-offwhite/20 text-[10px] uppercase tracking-widest mb-0.5">Date & Time</div><div className="text-offwhite/50 font-heading text-xs">{apptTime ? `${apptTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${apptTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : '—'}</div></div>
-                            <div><div className="text-offwhite/20 text-[10px] uppercase tracking-widest mb-0.5">Technician</div><div className="text-offwhite/50 font-heading text-xs">{booking.tech?.full_name || 'Unassigned'}</div></div>
+                            <div><div className={`${theme === 'dark' ? 'text-offwhite/20' : 'text-charcoal/20'} text-[10px] uppercase tracking-widest mb-0.5`}>Service</div><div className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'} font-heading text-sm`}>{booking.service?.name || '—'}</div></div>
+                            <div><div className={`${theme === 'dark' ? 'text-offwhite/20' : 'text-charcoal/20'} text-[10px] uppercase tracking-widest mb-0.5`}>Price</div><div className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'} font-heading text-sm`}>${booking.final_price || booking.service?.price || 0}</div></div>
+                            <div><div className={`${theme === 'dark' ? 'text-offwhite/20' : 'text-charcoal/20'} text-[10px] uppercase tracking-widest mb-0.5`}>Date & Time</div><div className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'} font-heading text-xs`}>{apptTime ? `${apptTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${apptTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : '—'}</div></div>
+                            <div><div className={`${theme === 'dark' ? 'text-offwhite/20' : 'text-charcoal/20'} text-[10px] uppercase tracking-widest mb-0.5`}>Technician</div><div className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'} font-heading text-xs`}>{booking.tech?.full_name || 'Unassigned'}</div></div>
                           </div>
                           {booking.status === 'cancelled' && booking.cancelled_at && (
                             <div className="text-red-400/40 text-xs mt-2">
@@ -696,13 +701,13 @@ const { error } = await supabase.from('appointments').insert({
                           )}
                         </div>
                         <div className="flex flex-col gap-2 lg:items-end lg:flex-shrink-0 lg:w-44">
-                          <button onClick={() => openHistory(booking)} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-offwhite/40 hover:text-gold hover:border-gold/30 transition-all" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>View History</button>
+                          <button onClick={() => openHistory(booking)} className={`px-3 py-1.5 text-xs font-medium rounded-lg border ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'} hover:text-gold hover:border-gold/30 transition-all`} style={{ borderColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}>View History</button>
                           {booking.status === 'cancelled' && (
-                            <button onClick={() => reactivateBooking(booking)} disabled={isReactivating} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-blue-400 hover:bg-blue-900/20 hover:border-blue-500/50 transition-all disabled:opacity-30" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                            <button onClick={() => reactivateBooking(booking)} disabled={isReactivating} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-blue-400 hover:bg-blue-900/20 hover:border-blue-500/50 transition-all disabled:opacity-30" style={{ borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
                               {isReactivating ? '...' : 'Reactivate'}
                             </button>
                           )}
-                          <button onClick={() => confirmDelete(booking)} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-red-400/60 hover:text-red-400 hover:border-red-500/50 transition-all" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>Delete</button>
+                          <button onClick={() => confirmDelete(booking)} className="px-3 py-1.5 text-xs font-medium rounded-lg border text-red-400/60 hover:text-red-400 hover:border-red-500/50 transition-all" style={{ borderColor: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}>Delete</button>
                         </div>
                       </div>
                     </div>
@@ -713,10 +718,10 @@ const { error } = await supabase.from('appointments').insert({
           )}
 
           {sortedUpcoming.length === 0 && sortedPast.length === 0 && (
-            <div className="rounded-xl p-12 text-center mt-4" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="text-offwhite/30 text-4xl mb-4">&#128197;</div>
-              <h2 className="font-heading text-2xl text-offwhite mb-2">No Bookings Found</h2>
-              <p className="text-offwhite/50 text-sm">No appointments match your current filters.</p>
+            <div className="rounded-xl p-12 text-center mt-4" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)', border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
+              <div className={`${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'} text-4xl mb-4`}>&#128197;</div>
+              <h2 className={`font-heading text-2xl ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'} mb-2`}>No Bookings Found</h2>
+              <p className={`${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'} text-sm`}>No appointments match your current filters.</p>
             </div>
           )}
         </div>
