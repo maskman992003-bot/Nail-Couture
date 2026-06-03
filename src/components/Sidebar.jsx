@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { featureFlags } from '../constants/featureFlags';
 import { getSettingsPath } from '../utils/routes';
 import { modalBtnPrimary, modalBtnSecondary } from './AppModal';
@@ -97,6 +97,21 @@ export default function Sidebar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const userPhone = user?.phone;
+  const navRef = useRef(null);
+  const SCROLL_KEY = `sidebar_scroll_${user?.role || 'guest'}`;
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SCROLL_KEY);
+    if (saved && navRef.current) {
+      navRef.current.scrollTop = parseInt(saved, 10);
+    }
+  }, [SCROLL_KEY]);
+
+  const handleNavScroll = useCallback(() => {
+    if (navRef.current) {
+      sessionStorage.setItem(SCROLL_KEY, navRef.current.scrollTop);
+    }
+  }, [SCROLL_KEY]);
 
   const fetchNotifications = useCallback(async () => {
     if (!userPhone) return;
@@ -137,8 +152,8 @@ export default function Sidebar() {
     const closeMenu = (e) => {
       if (!e.target.closest('.user-menu')) setShowUserMenu(false);
     };
-    document.addEventListener('click', closeMenu);
-    return () => document.removeEventListener('click', closeMenu);
+    document.addEventListener('pointerdown', closeMenu);
+    return () => document.removeEventListener('pointerdown', closeMenu);
   }, [showUserMenu]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
@@ -216,7 +231,7 @@ export default function Sidebar() {
 
         {/* Nav Items */}
         <div className="flex-1 py-4 overflow-hidden">
-          <nav className="flex flex-col gap-1 px-0 lg:px-4 overflow-y-auto scrollbar-none">
+          <nav ref={navRef} onScroll={handleNavScroll} className="flex flex-col gap-1 px-0 lg:px-4 overflow-y-auto scrollbar-none">
             {navItems.map((item) => {
               const active = isActive(location.pathname, location.search, item.href);
               return (
@@ -243,8 +258,8 @@ export default function Sidebar() {
         <div className="p-4 border-t flex-shrink-0 flex justify-center lg:justify-start" style={{ borderColor }}>
           <div className="relative user-menu w-full md:flex md:justify-center lg:block">
             <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity w-full md:justify-center lg:justify-start"
+              onPointerDown={(e) => { e.preventDefault(); setShowUserMenu((v) => !v); }}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity w-full md:justify-center lg:justify-start cursor-pointer"
             >
               <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-gold text-xs lg:text-sm font-heading">{initials || '?'}</span>
@@ -256,8 +271,8 @@ export default function Sidebar() {
 
             {showUserMenu && (
               <div
-                className={`absolute bottom-16 left-4 md:left-full md:right-auto lg:left-4 md:ml-2 z-50 w-48 rounded-xl border shadow-2xl origin-bottom-left transition-all ${theme === 'dark' ? 'bg-[#121214] border-zinc-800/80' : 'bg-white border-gold/20'}`}
-                onClick={(e) => e.stopPropagation()}
+                className={`absolute bottom-16 left-4 md:left-full md:right-auto lg:left-4 md:ml-2 z-[9999] w-48 rounded-xl border shadow-2xl origin-bottom-left transition-all ${theme === 'dark' ? 'bg-[#121214] border-zinc-800/80' : 'bg-white border-gold/20'}`}
+                onPointerDown={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={() => { navigate(settingsPath); setShowUserMenu(false); }}
