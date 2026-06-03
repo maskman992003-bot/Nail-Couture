@@ -123,6 +123,12 @@ export default function Sidebar() {
     }
   }, [SCROLL_KEY]);
 
+  const handleNavScroll = useCallback(() => {
+    if (navRef.current) {
+      sessionStorage.setItem(SCROLL_KEY, navRef.current.scrollTop);
+    }
+  }, [SCROLL_KEY]);
+
   const handleBottomNavScroll = useCallback((e) => {
     if (e.currentTarget) {
       sessionStorage.setItem(BOTTOM_SCROLL_KEY, e.currentTarget.scrollLeft.toString());
