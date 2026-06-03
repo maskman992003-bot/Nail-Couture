@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
@@ -72,24 +72,9 @@ function renderIcon(iconPath) {
   );
 }
 
-function isActive(pathname, search, href) {
-  if (href.includes('?')) {
-    const basePath = href.split('?')[0];
-    if (pathname !== basePath && pathname !== basePath + '/') return false;
-    const params = new URLSearchParams(href.split('?')[1]);
-    const currentParams = new URLSearchParams(search);
-    for (const [key, value] of params) {
-      if (currentParams.get(key) !== value) return false;
-    }
-    return true;
-  }
-  return pathname === href || pathname === href + '/';
-}
-
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const location = useLocation();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
@@ -98,7 +83,9 @@ export default function Sidebar() {
 
   const userPhone = user?.phone;
   const navRef = useRef(null);
+  const bottomNavRef = useRef(null);
   const SCROLL_KEY = `sidebar_scroll_${user?.role || 'guest'}`;
+  const BOTTOM_SCROLL_KEY = `bottom_nav_scroll_${user?.role || 'guest'}`;
 
   useEffect(() => {
     const saved = sessionStorage.getItem(SCROLL_KEY);
@@ -107,11 +94,24 @@ export default function Sidebar() {
     }
   }, [SCROLL_KEY]);
 
+  useEffect(() => {
+    const saved = sessionStorage.getItem(BOTTOM_SCROLL_KEY);
+    if (saved && bottomNavRef.current) {
+      bottomNavRef.current.scrollLeft = parseInt(saved, 10);
+    }
+  }, [BOTTOM_SCROLL_KEY]);
+
   const handleNavScroll = useCallback(() => {
     if (navRef.current) {
       sessionStorage.setItem(SCROLL_KEY, navRef.current.scrollTop);
     }
   }, [SCROLL_KEY]);
+
+  const handleBottomNavScroll = useCallback(() => {
+    if (bottomNavRef.current) {
+      sessionStorage.setItem(BOTTOM_SCROLL_KEY, bottomNavRef.current.scrollLeft);
+    }
+  }, [BOTTOM_SCROLL_KEY]);
 
   const fetchNotifications = useCallback(async () => {
     if (!userPhone) return;
@@ -233,13 +233,12 @@ export default function Sidebar() {
         <div className="flex-1 py-4 overflow-hidden">
           <nav ref={navRef} onScroll={handleNavScroll} className="flex flex-col gap-1 px-0 lg:px-4 overflow-y-auto scrollbar-none h-full">
             {navItems.map((item) => {
-              const active = isActive(location.pathname, location.search, item.href);
               return (
-                <Link
+                <NavLink
                   key={item.id}
                   to={item.href}
-                  className={`relative flex items-center gap-3 px-0 lg:px-3 py-3 transition-all md:justify-center lg:justify-start ${
-                    active
+                  className={({ isActive }) => `relative flex items-center gap-3 px-0 lg:px-3 py-3 transition-all md:justify-center lg:justify-start ${
+                    isActive
                       ? 'text-gold bg-gold/10 md:mx-1 lg:mx-0 rounded-xl lg:rounded-xl'
                       : `${theme === 'dark' ? 'text-offwhite/50 hover:text-offwhite/90 hover:bg-offwhite/5' : 'text-charcoal/70 hover:text-charcoal hover:bg-charcoal/5'} md:mx-1 lg:mx-0 rounded-xl lg:rounded-xl`
                   }`}
@@ -248,7 +247,7 @@ export default function Sidebar() {
                     {renderIcon(item.icon)}
                   </div>
                   <span className="text-sm font-medium tracking-wide hidden lg:inline whitespace-nowrap">{item.label}</span>
-                </Link>
+                </NavLink>
               );
             })}
           </nav>
@@ -338,18 +337,17 @@ export default function Sidebar() {
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 shadow-2xl" style={{ backgroundColor: sidebarBg }}>
         <nav className="flex items-center px-1 py-2" style={{ borderTop: `1px solid ${borderColor}` }}>
-          <div className="flex items-center overflow-x-auto scrollbar-none">
+          <div ref={bottomNavRef} onScroll={handleBottomNavScroll} className="flex items-center overflow-x-auto scrollbar-none">
             {navItems.map((item) => {
-              const active = isActive(location.pathname, location.search, item.href);
               return (
-                <Link
+                <NavLink
                   key={item.id}
                   to={item.href}
-                  className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all flex-shrink-0 w-[72px] ${active ? 'text-gold' : theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}
+                  className={({ isActive }) => `flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all flex-shrink-0 w-[72px] ${isActive ? 'text-gold' : theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}
                 >
                   <div className="w-5 h-5">{renderIcon(item.icon)}</div>
                   <span className="text-[8px] font-medium tracking-wide text-center">{item.label}</span>
-                </Link>
+                </NavLink>
               );
             })}
           </div>
