@@ -1,12 +1,16 @@
--- Migration 019: Fix missing authenticated SELECT policy on appointments
--- Issue: 012_comprehensive_fix.sql dropped "Authenticated manage appointments"
--- (FOR ALL) and replaced with only UPDATE/DELETE, omitting SELECT for authenticated users.
--- This breaks all admin/owner/cashier/technician dashboards that query appointments.
+-- Migration 019: Fix missing SELECT policy on appointments for anon role
+-- Issue: 012_comprehensive_fix.sql dropped the old permissive policy and omitted
+-- SELECT for anon users. The app uses custom localStorage auth (no Supabase Auth
+-- sessions), so auth.role() is always 'anon', never 'authenticated'.
 
--- Add SELECT policy for authenticated users on appointments
-CREATE POLICY "Authenticated read appointments"
-  ON appointments FOR SELECT TO authenticated USING (true);
+-- Drop if exists from prior attempts to avoid conflicts
+DROP POLICY IF EXISTS "Allow anon read appointments" ON appointments;
+DROP POLICY IF EXISTS "Allow anon insert appointments" ON appointments;
 
--- Ensure authenticated users can also INSERT (was also omitted)
-CREATE POLICY "Authenticated insert appointments"
-  ON appointments FOR INSERT TO authenticated WITH CHECK (true);
+-- Add SELECT policy for anon users on appointments
+CREATE POLICY "Allow anon read appointments"
+  ON appointments FOR SELECT TO anon USING (true);
+
+-- Ensure anon users can also INSERT (was missing in some migration states)
+CREATE POLICY "Allow anon insert appointments"
+  ON appointments FOR INSERT TO anon WITH CHECK (true);
