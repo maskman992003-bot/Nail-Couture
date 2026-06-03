@@ -26,7 +26,7 @@ export default function Footer({ onNavigate }) {
           <h4 className="text-gold text-sm tracking-wider mb-4">CONNECT</h4>
           <div className="space-y-3">
             <a 
-              href="https://instagram.com/nailcouture" 
+              href="https://www.instagram.com/nailcouturenola?igsh=MWRsYzR5c3dnaGVpbw%3D%3D&utm_source=qr" 
               target="_blank" 
               rel="noopener noreferrer"
               className={`flex items-center gap-2 hover:text-gold transition-colors text-sm ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}

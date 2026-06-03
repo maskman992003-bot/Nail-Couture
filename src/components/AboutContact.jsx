@@ -71,7 +71,7 @@ export default function AboutContact() {
                 <div>
                   <div className="text-sm text-charcoal/50 tracking-wider uppercase mb-2">Instagram</div>
                   <a 
-                    href="https://instagram.com/nailcouture" 
+                    href="https://www.instagram.com/nailcouturenola?igsh=MWRsYzR5c3dnaGVpbw%3D%3D&utm_source=qr" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-gold hover:text-gold/80 transition-colors"
