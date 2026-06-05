@@ -152,12 +152,17 @@ export function computeQueueStats(myAppointments) {
     ? Math.round(durations.reduce((s, m) => s + m, 0) / durations.length)
     : null;
 
+  const nextService = nextUp
+    ? (nextUp.add_ons || nextUp.services?.name || 'Service')
+    : null;
+
   return {
     completedToday: completed.length,
     pendingCount: pending.length,
     revenueToday,
     avgServiceMinutes,
     nextClient: nextUp,
+    nextClientService: nextService,
     currentAppointment: serving,
     pendingAssignments: pending,
   };
@@ -165,6 +170,7 @@ export function computeQueueStats(myAppointments) {
 
 export function computeWeekStats(weekAppointments) {
   const byDay = Array(7).fill(0);
+  const byDayCompleted = Array(7).fill(0);
   const today = new Date();
   const weekStart = new Date(today);
   weekStart.setDate(today.getDate() - today.getDay());
@@ -172,19 +178,28 @@ export function computeWeekStats(weekAppointments) {
 
   let completed = 0;
   let scheduled = 0;
+  let weekRevenue = 0;
 
   for (const appt of weekAppointments) {
     scheduled += 1;
-    if (appt.status === 'completed') completed += 1;
+    if (appt.status === 'completed') {
+      completed += 1;
+      const price = Number(appt.final_price ?? 0);
+      if (Number.isFinite(price)) weekRevenue += price;
+    }
     if (appt.appointment_time) {
       const d = new Date(appt.appointment_time);
       const dayIndex = Math.floor((d - weekStart) / 86400000);
-      if (dayIndex >= 0 && dayIndex < 7) byDay[dayIndex] += 1;
+      if (dayIndex >= 0 && dayIndex < 7) {
+        byDay[dayIndex] += 1;
+        if (appt.status === 'completed') byDayCompleted[dayIndex] += 1;
+      }
     }
   }
 
   const max = Math.max(...byDay, 1);
-  return { byDay, max, completed, scheduled };
+  const completionRate = scheduled > 0 ? Math.round((completed / scheduled) * 100) : null;
+  return { byDay, byDayCompleted, max, completed, scheduled, weekRevenue, completionRate };
 }
 
 export async function decrementRefreshmentInventory(refreshmentName) {
