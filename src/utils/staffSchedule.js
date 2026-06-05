@@ -1,7 +1,8 @@
 import { supabase } from '../lib/supabase';
 
-/** Normalize shift rows from either get_staff_schedule RPC signature */
-export function normalizeShift(row) {
+export const SCHEDULABLE_ROLES = ['admin', 'cashier', 'technician'];
+
+/** Normalize shift rows from either get_staff_schedule RPC signature */export function normalizeShift(row) {
   if (!row) return null;
   return {
     id: row.id || row.shift_id,
@@ -34,28 +35,44 @@ export function normalizeTimeOffRequest(row) {
   };
 }
 
-export async function fetchStaffShifts(staffId, startDate, endDate) {
-  const params = { p_start_date: startDate, p_end_date: endDate };
-  if (staffId) {
-    params.p_employee_id = staffId;
-    params.p_staff_id = staffId;
-  }
+export async function fetchSchedulableStaff() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, role, phone, created_at')
+    .in('role', SCHEDULABLE_ROLES)
+    .order('full_name');
+  if (error) throw error;
+  return data || [];
+}
 
-  const { data, error } = await supabase.rpc('get_staff_schedule', params);
+/**
+ * PostgREST cannot resolve overloaded get_staff_schedule signatures.
+ * Always target the 4-arg overload (p_employee_id + p_staff_id).
+ */
+export async function fetchStaffShifts(staffId, startDate, endDate) {
+  const { data, error } = await supabase.rpc('get_staff_schedule', {
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_employee_id: staffId || null,
+    p_staff_id: staffId || null,
+  });
   if (error) throw error;
   return (data || []).map(normalizeShift).filter(Boolean);
 }
 
+/**
+ * PostgREST cannot resolve overloaded get_time_off_requests signatures.
+ * Use the 2-arg overload when filtering by staff; otherwise call with no args.
+ */
 export async function fetchTimeOffRequests({ status = null, staffId = null } = {}) {
-  const params = {};
-  if (status) params.p_status = status;
-  if (staffId) params.p_staff_id = staffId;
+  const rpcCall = staffId
+    ? supabase.rpc('get_time_off_requests', { p_status: status, p_staff_id: staffId })
+    : supabase.rpc('get_time_off_requests');
 
-  const { data, error } = await supabase.rpc('get_time_off_requests', params);
+  const { data, error } = await rpcCall;
   if (error) throw error;
   return (data || []).map(normalizeTimeOffRequest).filter(Boolean);
 }
-
 export async function submitTimeOffRequest(staffId, startDate, endDate, reason) {
   const { error } = await supabase.rpc('create_time_off_request', {
     p_staff_id: staffId,
@@ -77,12 +94,10 @@ export async function reviewTimeOffRequest(requestId, status, reviewedBy) {
 
 export async function fetchTechnicianAppointments(staffId, startDate, endDate) {
   const { data, error } = await supabase.rpc('get_technician_appointments', {
-    p_employee_id: staffId,
     p_staff_id: staffId,
     p_start_date: startDate,
     p_end_date: endDate,
-  });
-  if (error) throw error;
+  });  if (error) throw error;
   return (data || []).map((row) => ({
     id: row.id || row.appointment_id,
     customer_name: row.customer_name,

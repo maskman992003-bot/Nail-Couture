@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { STAFF_SHIFTS } from '../constants/featureFlags';
 import {
+  fetchSchedulableStaff,
   fetchStaffShifts,
   fetchTimeOffRequests,
   reviewTimeOffRequest,
@@ -341,6 +342,7 @@ export default function StaffSchedule() {
   const [dayCustomStart, setDayCustomStart] = useState('09:00');
   const [dayCustomEnd, setDayCustomEnd] = useState('17:00');
   const [showDayCustomModal, setShowDayCustomModal] = useState(false);
+  const [fetchError, setFetchError] = useState('');
 
   const monthRange = useMemo(() => getMonthRange(viewYear, viewMonth), [viewYear, viewMonth]);
   const monthGrid = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
@@ -386,21 +388,36 @@ export default function StaffSchedule() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setFetchError('');
+    const { start, end } = monthRange;
+
     try {
-      const { start, end } = monthRange;
-      const [staffRes, shiftsData, torData] = await Promise.all([
-        supabase.from('profiles').select('*').in('role', ['admin', 'cashier', 'technician']).order('full_name'),
-        fetchStaffShifts(selectedStaffId, start, end),
-        fetchTimeOffRequests(),
-      ]);
-      if (staffRes.data) setStaff(staffRes.data);
+      const staffData = await fetchSchedulableStaff();
+      setStaff(staffData);
+    } catch (err) {
+      console.error('Error fetching staff:', err);
+      setFetchError('Could not load team members');
+      setStaff([]);
+    }
+
+    try {
+      const shiftsData = await fetchStaffShifts(selectedStaffId, start, end);
       setShifts(shiftsData);
+    } catch (err) {
+      console.error('Error fetching shifts:', err);
+      setFetchError((prev) => prev || 'Could not load shifts');
+      setShifts([]);
+    }
+
+    try {
+      const torData = await fetchTimeOffRequests();
       setTimeOffRequests(torData);
     } catch (err) {
-      console.error('Error fetching schedule data:', err);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching time-off requests:', err);
+      setTimeOffRequests([]);
     }
+
+    setLoading(false);
   }, [monthRange, selectedStaffId]);
 
   useEffect(() => {
@@ -613,6 +630,9 @@ export default function StaffSchedule() {
             <p className="text-xs text-secondary mt-1">
               Build a weekly pattern once, then apply it to the whole month
             </p>
+            {fetchError && (
+              <p className="text-xs text-red-400 mt-2">{fetchError}</p>
+            )}
           </div>
           <div className="flex items-center gap-2 bg-secondary rounded-xl p-1 border border-light w-full sm:w-auto">
             <button
