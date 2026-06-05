@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
 import clsx from 'clsx';
 import { getCustomersPath } from '../utils/routes';
-import { fetchCustomerStats, fetchCustomerReceipts, fetchReferralInfo } from '../utils/customerStats';
+import { fetchCustomerStats, fetchCustomerReceipts, fetchReferralInfo, fetchCustomerVisitHistory } from '../utils/customerStats';
 import { getTierInfo } from '../utils/loyaltyTier';
 import {
   parseProfilePreferences,
@@ -32,11 +32,23 @@ import {
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
+  { id: 'history', label: 'History' },
   { id: 'timeline', label: 'Timeline' },
   { id: 'notes', label: 'Notes' },
   { id: 'loyalty', label: 'Loyalty' },
   { id: 'photos', label: 'Photos' },
 ];
+
+const VISIT_STATUS = {
+  waiting: { label: 'Waiting', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' },
+  assigned_pending: { label: 'Assigned', color: 'bg-blue-900/50 text-blue-300 border-blue-700/50' },
+  serving: { label: 'In Chair', color: 'bg-green-900/50 text-green-300 border-green-700/50' },
+  completed: { label: 'Completed', color: 'bg-green-800/40 text-green-300 border-green-700/30' },
+  cancelled: { label: 'Cancelled', color: 'bg-red-900/50 text-red-300 border-red-700/50' },
+  pending: { label: 'Pending', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' },
+  confirmed: { label: 'Confirmed', color: 'bg-blue-900/50 text-blue-300 border-blue-700/50' },
+  in_progress: { label: 'In Progress', color: 'bg-green-900/50 text-green-300 border-green-700/50' },
+};
 
 const TIMELINE_ICONS = {
   visit: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
@@ -52,6 +64,47 @@ function formatDate(d) {
   return new Date(d).toLocaleString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function visitDate(appointment) {
+  return appointment.checked_in_at || appointment.scheduled_at || appointment.created_at;
+}
+
+async function enrichVisits(rawVisits, customerId) {
+  const allAddonNames = [...new Set(rawVisits.flatMap((v) => (v.add_ons ? v.add_ons.split(',').map((n) => n.trim()) : [])))];
+  const [addOnResult, paymentsResult] = await Promise.all([
+    allAddonNames.length
+      ? supabase.from('services').select('id, name, price, duration_minutes').in('name', allAddonNames)
+      : Promise.resolve({ data: [] }),
+    customerId
+      ? supabase
+        .from('payment_transactions')
+        .select('appointment_id, discount_amount, discount_type, payment_method, final_amount, amount')
+        .eq('customer_id', customerId)
+        .eq('status', 'completed')
+      : Promise.resolve({ data: [] }),
+  ]);
+  const addOnMap = {};
+  (addOnResult.data || []).forEach((a) => { addOnMap[a.name] = a; });
+  const paymentMap = {};
+  (paymentsResult.data || []).forEach((p) => {
+    if (p.appointment_id) paymentMap[p.appointment_id] = p;
+  });
+
+  return rawVisits.map((v) => {
+    const addonNames = v.add_ons ? v.add_ons.split(',').map((n) => n.trim()) : [];
+    const addonDetails = addonNames.map((n) => addOnMap[n]).filter(Boolean);
+    const addOnTotal = addonDetails.reduce((sum, a) => sum + (a.price || 0), 0);
+    const payment = paymentMap[v.id];
+    const totalPrice = v.final_price ?? payment?.final_amount ?? ((v.services?.price || 0) + addOnTotal);
+    return {
+      ...v,
+      addonDetails,
+      payment,
+      totalPrice,
+      visitAt: visitDate(v),
+    };
   });
 }
 
@@ -71,6 +124,8 @@ export default function StaffCustomerDetail() {
   const [notesAvailable, setNotesAvailable] = useState(true);
   const [loyaltyHistory, setLoyaltyHistory] = useState([]);
   const [photos, setPhotos] = useState([]);
+  const [visits, setVisits] = useState([]);
+  const [expandedVisitId, setExpandedVisitId] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
@@ -110,13 +165,25 @@ export default function StaffCustomerDetail() {
       refreshment_pref: profileData.refreshment_pref || '',
     });
 
-    const [statsData, referral, receiptRows, timelineData, notesData, loyaltyData] = await Promise.all([
-      fetchCustomerStats(customerId),
+    const [
+      statsData,
+      referral,
+      receiptRows,
+      timelineData,
+      notesData,
+      loyaltyData,
+      visitRows,
+    ] = await Promise.all([
+      fetchCustomerStats(customerId, profileData.phone),
       fetchReferralInfo(profileData),
       fetchCustomerReceipts(customerId, 10),
       fetchCustomerTimeline(customerId, profileData.phone),
       fetchStaffNotes(customerId),
       fetchLoyaltyHistory(customerId, 25),
+      fetchCustomerVisitHistory(customerId, profileData.phone, { includeOnline: true }).catch((err) => {
+        console.error('Failed to load visit history:', err);
+        return [];
+      }),
     ]);
 
     setStats(statsData);
@@ -127,6 +194,7 @@ export default function StaffCustomerDetail() {
     setNotesAvailable(notesData.available);
     setLoyaltyHistory(loyaltyData.rows);
     setPhotos(timelineData.events.filter((e) => e.type === 'photo'));
+    setVisits(await enrichVisits(visitRows, customerId));
   }, [customerId, navigate, user?.role]);
 
   useEffect(() => {
@@ -410,6 +478,110 @@ export default function StaffCustomerDetail() {
           </div>
         )}
 
+        {activeTab === 'history' && (
+          <Section title="Visit history">
+            {visits.length === 0 ? (
+              <p className="text-secondary text-center py-8">No visits recorded yet</p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-secondary text-sm mb-4">{visits.length} visit{visits.length !== 1 ? 's' : ''} total</p>
+                {visits.map((visit) => {
+                  const statusCfg = VISIT_STATUS[visit.status];
+                  const isExpanded = expandedVisitId === visit.id;
+                  const serviceName = visit.services?.name || visit.add_ons || 'Service';
+                  return (
+                    <div key={visit.id} className="bg-secondary rounded-lg border border-light overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedVisitId(isExpanded ? null : visit.id)}
+                        className="w-full flex items-start justify-between gap-3 p-4 text-left hover:bg-gold/5 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="text-primary font-medium">{serviceName}</div>
+                          <div className="text-secondary text-sm mt-0.5">
+                            {formatDate(visit.visitAt)}
+                            {visit.technicians?.full_name && ` · ${visit.technicians.full_name}`}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-gold font-heading">${Number(visit.totalPrice).toFixed(2)}</span>
+                          <span className={clsx('px-2 py-0.5 text-[10px] rounded-full border uppercase tracking-wider', statusCfg?.color || 'text-secondary border-light')}>
+                            {statusCfg?.label || visit.status}
+                          </span>
+                          <svg
+                            className={clsx('w-4 h-4 text-secondary transition-transform', isExpanded && 'rotate-180')}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </button>
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-0 border-t border-light space-y-3">
+                          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm pt-3">
+                            <DetailRow label="Service" value={visit.services?.name || '—'} />
+                            {visit.services?.duration_minutes && (
+                              <DetailRow label="Duration" value={`${visit.services.duration_minutes} min`} />
+                            )}
+                            <DetailRow label="Technician" value={visit.technicians?.full_name || 'Unassigned'} />
+                            <DetailRow
+                              label="Booking type"
+                              value={visit.booking_type === 'online' ? 'Online' : 'Walk-in'}
+                            />
+                            <DetailRow label="Check-in" value={formatDate(visit.checked_in_at)} />
+                            {visit.scheduled_at && visit.scheduled_at !== visit.checked_in_at && (
+                              <DetailRow label="Scheduled" value={formatDate(visit.scheduled_at)} />
+                            )}
+                          </dl>
+                          {visit.addonDetails?.length > 0 && (
+                            <div>
+                              <div className="text-secondary text-xs uppercase tracking-widest mb-2">Add-ons</div>
+                              <div className="space-y-1">
+                                {visit.addonDetails.map((addon) => (
+                                  <div key={addon.id} className="flex justify-between text-sm">
+                                    <span className="text-primary">+ {addon.name}</span>
+                                    <span className="text-gold">${Number(addon.price || 0).toFixed(2)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {visit.add_ons && !visit.services?.name && (
+                            <DetailRow label="Services" value={visit.add_ons} />
+                          )}
+                          <div className="flex justify-between items-center pt-2 border-t border-light">
+                            <span className="text-secondary text-sm">Total</span>
+                            <span className="text-gold font-heading text-lg">${Number(visit.totalPrice).toFixed(2)}</span>
+                          </div>
+                          {visit.payment?.discount_amount > 0 && (
+                            <div className="p-3 bg-gold/5 border border-gold/20 rounded-lg text-sm">
+                              <div className="text-gold">Discount: ${Number(visit.payment.discount_amount).toFixed(2)}</div>
+                              {visit.payment.discount_type && (
+                                <div className="text-secondary text-xs mt-1">Type: {visit.payment.discount_type}</div>
+                              )}
+                              {visit.payment.payment_method && (
+                                <div className="text-secondary text-xs">Paid via: {visit.payment.payment_method}</div>
+                              )}
+                            </div>
+                          )}
+                          {visit.notes && (
+                            <div>
+                              <div className="text-secondary text-xs uppercase tracking-widest mb-1">Visit notes</div>
+                              <p className="text-primary text-sm">{visit.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Section>
+        )}
+
         {activeTab === 'timeline' && (
           <Section title="Full activity timeline">
             {timeline.length === 0 ? (
@@ -622,6 +794,15 @@ function Row({ label, value }) {
     <div className="flex justify-between gap-4">
       <dt className="text-secondary">{label}</dt>
       <dd className="text-primary text-right">{value}</dd>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }) {
+  return (
+    <div>
+      <dt className="text-secondary text-xs uppercase tracking-widest">{label}</dt>
+      <dd className="text-primary mt-0.5">{value}</dd>
     </div>
   );
 }

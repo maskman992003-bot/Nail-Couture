@@ -13,9 +13,9 @@ export async function fetchCustomerTimeline(customerId, phone) {
     supabase
       .from('appointments')
       .select(`
-        id, status, final_price, discount_amount, discount_reason, checked_in_at, scheduled_at, created_at, add_ons, notes,
+        id, status, final_price, checked_in_at, scheduled_at, created_at, add_ons, notes,
         services:appointments_service_id_fkey(name),
-        technicians:profiles!appointments_technician_id_fkey(full_name)
+        technicians:profiles!appointments_technician_id_fkey!left(full_name)
       `)
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false })

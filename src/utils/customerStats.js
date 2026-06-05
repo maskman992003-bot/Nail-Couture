@@ -27,7 +27,7 @@ export async function fetchCustomerVisitHistory(customerId, phone, { includeOnli
       id, status, booking_type, final_price, checked_in_at, scheduled_at, created_at,
       service_id, technician_id, add_ons, notes,
       services:appointments_service_id_fkey(id, name, price, duration_minutes),
-      technicians:profiles!appointments_technician_id_fkey(id, full_name, role)
+      technicians:profiles!appointments_technician_id_fkey!left(id, full_name, role)
     `)
     .in('customer_id', customerIds);
 
@@ -35,7 +35,7 @@ export async function fetchCustomerVisitHistory(customerId, phone, { includeOnli
     query = query.or('booking_type.eq.walk_in,booking_type.is.null');
   }
 
-  const { data, error } = await query.order('checked_in_at', { ascending: false });
+  const { data, error } = await query.order('created_at', { ascending: false });
   if (error) throw error;
   return data || [];
 }
