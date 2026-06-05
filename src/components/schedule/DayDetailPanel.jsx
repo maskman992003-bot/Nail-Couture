@@ -1,6 +1,7 @@
 import {
   DAY_LABELS_FULL,
   SHIFT_TYPES,
+  SHIFT_COLORS,
 } from '../../utils/scheduleUtils';
 import useFocusTrap from '../../hooks/useFocusTrap';
 import ShiftChip from './ShiftChip';
@@ -20,7 +21,7 @@ function formatDayHeader(selectedDay) {
   };
 }
 
-function AppointmentsSection({ appointments, loading, mode }) {
+function AppointmentsSection({ appointments, loading, error, mode }) {
   const isRead = mode === 'read';
 
   return (
@@ -30,6 +31,8 @@ function AppointmentsSection({ appointments, loading, mode }) {
       </p>
       {loading ? (
         <p className="text-sm text-secondary animate-pulse">Loading appointments…</p>
+      ) : error ? (
+        <p className="text-sm text-red-400">{error}</p>
       ) : appointments.length === 0 ? (
         <p className="text-sm text-secondary italic">
           {isRead ? 'No appointments on this day' : 'No appointments'}
@@ -76,6 +79,7 @@ function DayDetailContent({
   shifts,
   appointments,
   appointmentsLoading,
+  appointmentsError,
   onClose,
   onDeleteShift,
   onAddShift,
@@ -134,7 +138,7 @@ function DayDetailContent({
                   key={t.value}
                   type="button"
                   onClick={() => onAddShift(dateStr, t.value)}
-                  className="px-2 py-2.5 rounded-lg text-[10px] sm:text-xs font-medium border border-light text-secondary hover:border-gold/30 hover:text-gold transition-all"
+                  className={`px-2 py-2.5 rounded-lg text-[10px] sm:text-xs font-medium border transition-all hover:opacity-90 ${SHIFT_COLORS[t.value]}`}
                 >
                   {t.label}
                 </button>
@@ -150,10 +154,11 @@ function DayDetailContent({
           </div>
         )}
 
-        {(isRead || appointmentsLoading || appointments.length > 0) && (
+        {(isRead || appointmentsLoading || appointmentsError || appointments.length > 0) && (
           <AppointmentsSection
             appointments={appointments}
             loading={appointmentsLoading}
+            error={appointmentsError}
             mode={mode}
           />
         )}
@@ -168,6 +173,7 @@ export default function DayDetailPanel({
   shifts = [],
   appointments = [],
   appointmentsLoading = false,
+  appointmentsError = '',
   open = true,
   asModal = false,
   onClose,
@@ -187,6 +193,7 @@ export default function DayDetailPanel({
       shifts={shifts}
       appointments={appointments}
       appointmentsLoading={appointmentsLoading}
+      appointmentsError={appointmentsError}
       onClose={onClose}
       onDeleteShift={onDeleteShift}
       onAddShift={onAddShift}

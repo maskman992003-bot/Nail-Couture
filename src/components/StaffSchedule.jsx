@@ -72,6 +72,7 @@ export default function StaffSchedule() {
   const [dayCustomEnd, setDayCustomEnd] = useState('17:00');
   const [showDayCustomModal, setShowDayCustomModal] = useState(false);
   const [dayDetailLoading, setDayDetailLoading] = useState(false);
+  const [dayDetailApptError, setDayDetailApptError] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showApplyConfirm, setShowApplyConfirm] = useState(false);
   const [fetchError, setFetchError] = useState('');
@@ -294,7 +295,7 @@ export default function StaffSchedule() {
     return [];
   };
 
-  const needsApplyConfirm = () => replaceExisting && bulkTarget !== 'selected';
+  const needsApplyConfirm = () => bulkTarget === 'all' || (replaceExisting && bulkTarget !== 'selected');
 
   const requestApplyPattern = () => {
     setApplyError('');
@@ -411,6 +412,7 @@ export default function StaffSchedule() {
     if (!selectedMember) return;
     setSelectedDay(dateStr);
     setDayDetailAppts([]);
+    setDayDetailApptError('');
     setDayDetailLoading(true);
     setDayCustomStart('09:00');
     setDayCustomEnd('17:00');
@@ -424,6 +426,7 @@ export default function StaffSchedule() {
       setDayDetailAppts(data || []);
     } catch (err) {
       console.error('Error loading day appointments:', err);
+      setDayDetailApptError('Could not load appointments for this day');
     } finally {
       setDayDetailLoading(false);
     }
@@ -479,6 +482,7 @@ export default function StaffSchedule() {
     shifts: selectedDayShifts,
     appointments: dayDetailAppts,
     appointmentsLoading: dayDetailLoading,
+    appointmentsError: dayDetailApptError,
     onClose: closeDayDetail,
     onDeleteShift: deleteShift,
     onAddShift: addShiftToDay,
