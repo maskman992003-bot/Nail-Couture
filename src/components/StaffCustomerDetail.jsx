@@ -137,9 +137,21 @@ export default function StaffCustomerDetail() {
   const [photoType, setPhotoType] = useState('after');
   const [photoUploading, setPhotoUploading] = useState(false);
   const [editForm, setEditForm] = useState(null);
+  const [editingProfile, setEditingProfile] = useState(false);
 
   const canEdit = canEditCustomerProfile(user?.role);
   const canAdjust = canAdjustLoyalty(user?.role);
+
+  const resetEditForm = useCallback((profileData) => {
+    setEditForm({
+      full_name: profileData.full_name || '',
+      email: profileData.email || '',
+      phone: profileData.phone || '',
+      birthday: profileData.birthday || '',
+      nail_goal: profileData.nail_goal || '',
+      refreshment_pref: profileData.refreshment_pref || '',
+    });
+  }, []);
 
   const loadData = useCallback(async () => {
     if (!customerId) return;
@@ -156,14 +168,8 @@ export default function StaffCustomerDetail() {
     }
 
     setProfile(profileData);
-    setEditForm({
-      full_name: profileData.full_name || '',
-      email: profileData.email || '',
-      phone: profileData.phone || '',
-      birthday: profileData.birthday || '',
-      nail_goal: profileData.nail_goal || '',
-      refreshment_pref: profileData.refreshment_pref || '',
-    });
+    resetEditForm(profileData);
+    setEditingProfile(false);
 
     const [
       statsData,
@@ -195,7 +201,7 @@ export default function StaffCustomerDetail() {
     setLoyaltyHistory(loyaltyData.rows);
     setPhotos(timelineData.events.filter((e) => e.type === 'photo'));
     setVisits(await enrichVisits(visitRows, customerId));
-  }, [customerId, navigate, user?.role]);
+  }, [customerId, navigate, user?.role, resetEditForm]);
 
   useEffect(() => {
     if (!user) {
@@ -209,6 +215,17 @@ export default function StaffCustomerDetail() {
     setLoading(true);
     loadData().finally(() => setLoading(false));
   }, [user, loadData, navigate]);
+
+  const handleStartEditProfile = () => {
+    if (!canEdit || !profile) return;
+    resetEditForm(profile);
+    setEditingProfile(true);
+  };
+
+  const handleCancelEditProfile = () => {
+    if (profile) resetEditForm(profile);
+    setEditingProfile(false);
+  };
 
   const handleSaveProfile = async () => {
     if (!canEdit || !editForm) return;
@@ -233,6 +250,7 @@ export default function StaffCustomerDetail() {
     }
     setSaveMsg('Saved');
     setProfile((p) => ({ ...p, ...editForm }));
+    setEditingProfile(false);
     setTimeout(() => setSaveMsg(''), 2500);
   };
 
@@ -407,7 +425,7 @@ export default function StaffCustomerDetail() {
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Section title="Contact & preferences">
-              {canEdit && editForm ? (
+              {canEdit && editingProfile && editForm ? (
                 <div className="space-y-3">
                   <Field label="Name" value={editForm.full_name} onChange={(v) => setEditForm({ ...editForm, full_name: v })} />
                   <Field label="Email" value={editForm.email} onChange={(v) => setEditForm({ ...editForm, email: v })} />
@@ -415,30 +433,55 @@ export default function StaffCustomerDetail() {
                   <Field label="Birthday (MM-DD)" value={editForm.birthday} onChange={(v) => setEditForm({ ...editForm, birthday: v })} />
                   <Field label="Drink preference" value={editForm.refreshment_pref} onChange={(v) => setEditForm({ ...editForm, refreshment_pref: v })} />
                   <Field label="Nail goal" value={editForm.nail_goal} onChange={(v) => setEditForm({ ...editForm, nail_goal: v })} />
-                  <button
-                    type="button"
-                    onClick={handleSaveProfile}
-                    disabled={saving}
-                    className="mt-2 px-4 py-2 bg-gold text-charcoal rounded-lg text-sm font-semibold disabled:opacity-50"
-                  >
-                    {saving ? 'Saving…' : 'Save changes'}
-                  </button>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveProfile}
+                      disabled={saving}
+                      className="px-4 py-2 bg-gold text-charcoal rounded-lg text-sm font-semibold disabled:opacity-50"
+                    >
+                      {saving ? 'Saving…' : 'Save changes'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelEditProfile}
+                      disabled={saving}
+                      className="px-4 py-2 border border-light text-secondary rounded-lg text-sm font-semibold hover:text-primary disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <dl className="space-y-2 text-sm">
-                  <Row label="Drink" value={profile.refreshment_pref || '—'} />
-                  <Row label="Nail goal" value={profile.nail_goal || '—'} />
-                  <Row label="Shape" value={labelForOption(NAIL_SHAPES, prefs.nail_shape)} />
-                  <Row label="Length" value={labelForOption(NAIL_LENGTHS, prefs.nail_length)} />
-                  <Row label="Finish" value={labelForOption(NAIL_FINISHES, prefs.nail_finish)} />
-                  <Row label="Visit time" value={labelForOption(VISIT_TIME_OPTIONS, prefs.preferred_visit_time)} />
-                  {prefs.allergies && (
-                    <div className="mt-3 p-3 bg-red-900/20 border border-red-700/40 rounded-lg">
-                      <dt className="text-red-300 text-xs uppercase tracking-widest mb-1">Allergies / sensitivities</dt>
-                      <dd className="text-primary">{prefs.allergies}</dd>
-                    </div>
+                <>
+                  <dl className="space-y-2 text-sm">
+                    <Row label="Name" value={profile.full_name || '—'} />
+                    <Row label="Email" value={profile.email || '—'} />
+                    <Row label="Phone" value={profile.phone || '—'} />
+                    <Row label="Birthday" value={profile.birthday || '—'} />
+                    <Row label="Drink" value={profile.refreshment_pref || '—'} />
+                    <Row label="Nail goal" value={profile.nail_goal || '—'} />
+                    <Row label="Shape" value={labelForOption(NAIL_SHAPES, prefs.nail_shape)} />
+                    <Row label="Length" value={labelForOption(NAIL_LENGTHS, prefs.nail_length)} />
+                    <Row label="Finish" value={labelForOption(NAIL_FINISHES, prefs.nail_finish)} />
+                    <Row label="Visit time" value={labelForOption(VISIT_TIME_OPTIONS, prefs.preferred_visit_time)} />
+                    {prefs.allergies && (
+                      <div className="mt-3 p-3 bg-red-900/20 border border-red-700/40 rounded-lg">
+                        <dt className="text-red-300 text-xs uppercase tracking-widest mb-1">Allergies / sensitivities</dt>
+                        <dd className="text-primary">{prefs.allergies}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={handleStartEditProfile}
+                      className="mt-4 px-4 py-2 bg-gold text-charcoal rounded-lg text-sm font-semibold"
+                    >
+                      Edit
+                    </button>
                   )}
-                </dl>
+                </>
               )}
             </Section>
 
