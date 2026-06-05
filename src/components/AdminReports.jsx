@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
@@ -67,12 +68,35 @@ const getAppointmentsData = async (startDate, endDate) => {
   return data || []
 }
 
-const analyzePeriod = async (period) => {
+const getPaymentTransactionsData = async (startDate, endDate) => {
+  const endExclusive = new Date(endDate)
+  endExclusive.setDate(endExclusive.getDate() + 1)
+
+  const { data } = await supabase
+    .from('payment_transactions')
+    .select(`
+      id,
+      final_amount,
+      amount,
+      customer_id,
+      created_at,
+      status,
+      services:service_id ( id, name, price, duration_minutes )
+    `)
+    .eq('status', 'completed')
+    .gte('created_at', startDate)
+    .lt('created_at', endExclusive.toISOString())
+
+  return data || []
+}
+
+const analyzePeriod = async (period, { preferPayments = false } = {}) => {
   const range = getDateRange(period)
   const appointments = await getAppointmentsData(range.start, range.end)
+  const payments = preferPayments ? await getPaymentTransactionsData(range.start, range.end) : []
   
-  if (appointments.length === 0) {
-    return { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0 }
+  if (appointments.length === 0 && payments.length === 0) {
+    return { new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0, paymentCount: 0 }
   }
 
   const profileIds = [...new Set(appointments.map(a => a.customer_id))]
@@ -100,13 +124,25 @@ const analyzePeriod = async (period) => {
   let completedCount = 0
   let cancelledCount = 0
   
-  for (const appt of appointments) {
-    if (appt.services) {
-      serviceCounts[appt.services.name] = (serviceCounts[appt.services.name] || 0) + 1
-      const price = appt.final_price || appt.services.price
-      totalRevenue += price
-      totalDuration += appt.services.duration_minutes || 0
-      if (appt.status === 'completed') completedCount++
+  if (preferPayments && payments.length > 0) {
+    for (const payment of payments) {
+      const svc = payment.services
+      if (svc?.name) {
+        serviceCounts[svc.name] = (serviceCounts[svc.name] || 0) + 1
+        totalDuration += svc.duration_minutes || 0
+      }
+      totalRevenue += Number(payment.final_amount ?? payment.amount ?? 0)
+      completedCount++
+    }
+  } else {
+    for (const appt of appointments) {
+      if (appt.services) {
+        serviceCounts[appt.services.name] = (serviceCounts[appt.services.name] || 0) + 1
+        const price = appt.final_price || appt.services.price
+        totalRevenue += price
+        totalDuration += appt.services.duration_minutes || 0
+        if (appt.status === 'completed') completedCount++
+      }
     }
   }
   
@@ -128,7 +164,8 @@ const analyzePeriod = async (period) => {
     revenue: totalRevenue,
     serviceCounts,
     avgServiceTime,
-    cancelled: cancelledCount
+    cancelled: cancelledCount,
+    paymentCount: preferPayments ? payments.length : completedCount,
   }
 }
 
@@ -321,7 +358,7 @@ const DonutChart = ({ data, size = 180, theme }) => {
   )
 }
 
-const MetricColumn = ({ label, data, isCurrent, showRevenue, theme }) => {
+const MetricColumn = ({ label, data, isCurrent, showRevenue, paymentBasedRevenue, theme }) => {
   const opacity = isCurrent ? 1 : 0.6
   
   return (
@@ -349,7 +386,9 @@ const MetricColumn = ({ label, data, isCurrent, showRevenue, theme }) => {
         </div>
         {showRevenue && (
           <div className="sm:col-span-2">
-            <div className="text-secondary text-xs uppercase tracking-[0.18em] mb-1">Revenue Estimate</div>
+            <div className="text-secondary text-xs uppercase tracking-[0.18em] mb-1">
+              {paymentBasedRevenue ? 'Revenue (Payments)' : 'Revenue Estimate'}
+            </div>
             <div className="font-heading text-2xl text-gold">${data.revenue?.toLocaleString() || 0}</div>
           </div>
         )}
@@ -364,6 +403,9 @@ const MetricColumn = ({ label, data, isCurrent, showRevenue, theme }) => {
 export default function AdminReports() {
   const { user } = useAuth()
   const { theme } = useTheme()
+  const location = useLocation()
+  const isCashierView = user?.role === 'cashier' || location.pathname.startsWith('/cashier/reports')
+  const preferPayments = isCashierView
   const isAdmin = ['super_admin', 'owner', 'partner'].includes(user?.role)
   const [activeTab, setActiveTab] = useState('weekly')
   const [loading, setLoading] = useState(true)
@@ -379,16 +421,17 @@ export default function AdminReports() {
   const [exporting, setExporting] = useState(false)
 
   const fetchInsights = useCallback(async () => {
+    const opts = { preferPayments }
     const [lastWeek, thisWeek, lastMonth, thisMonth] = await Promise.all([
-      analyzePeriod('lastWeek'),
-      analyzePeriod('thisWeek'),
-      analyzePeriod('lastMonth'),
-      analyzePeriod('thisMonth')
+      analyzePeriod('lastWeek', opts),
+      analyzePeriod('thisWeek', opts),
+      analyzePeriod('lastMonth', opts),
+      analyzePeriod('thisMonth', opts)
     ])
     
     setPeriodData({ lastWeek, thisWeek, lastMonth, thisMonth })
     setLoading(false)
-  }, [])
+  }, [preferPayments])
 
   useEffect(() => {
     fetchInsights()
@@ -445,9 +488,10 @@ export default function AdminReports() {
 
     try {
       const appointments = await getAppointmentsData(range.start, range.end)
+      const payments = preferPayments ? await getPaymentTransactionsData(range.start, range.end) : []
       
-      if (appointments.length === 0) {
-        setCustomData({ new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0 })
+      if (appointments.length === 0 && payments.length === 0) {
+        setCustomData({ new: 0, regular: 0, total: 0, revenue: 0, serviceCounts: {}, avgServiceTime: 0, cancelled: 0, paymentCount: 0 })
         return
       }
 
@@ -479,10 +523,30 @@ export default function AdminReports() {
       for (const appt of appointments) {
         if (appt.services) {
           serviceCounts[appt.services.name] = (serviceCounts[appt.services.name] || 0) + 1
-          const price = appt.final_price || appt.services.price
-          totalRevenue += price
           totalDuration += appt.services.duration_minutes || 0
           if (appt.status === 'completed') completedCount++
+        }
+      }
+
+      if (preferPayments && payments.length > 0) {
+        totalRevenue = 0
+        completedCount = 0
+        Object.keys(serviceCounts).forEach((k) => { serviceCounts[k] = 0 })
+        for (const payment of payments) {
+          const svc = payment.services
+          if (svc?.name) {
+            serviceCounts[svc.name] = (serviceCounts[svc.name] || 0) + 1
+            totalDuration += svc.duration_minutes || 0
+          }
+          totalRevenue += Number(payment.final_amount ?? payment.amount ?? 0)
+          completedCount++
+        }
+      } else {
+        for (const appt of appointments) {
+          if (appt.services) {
+            const price = appt.final_price || appt.services.price
+            totalRevenue += price
+          }
         }
       }
       
@@ -503,7 +567,8 @@ export default function AdminReports() {
         revenue: totalRevenue,
         serviceCounts,
         avgServiceTime,
-        cancelled: cancelledCount
+        cancelled: cancelledCount,
+        paymentCount: preferPayments ? payments.length : completedCount,
       })
     } catch (err) {
       console.error('Error fetching custom data:', err)
@@ -581,8 +646,14 @@ export default function AdminReports() {
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
         <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="font-heading text-2xl sm:text-3xl text-gold">Reports & Insights</h1>
-            <p className="text-primary/80 mt-1">Actionable business analytics for bookings, revenue, and team performance.</p>
+            <h1 className="font-heading text-2xl sm:text-3xl text-gold">
+              {isCashierView ? 'Daily Reports' : 'Reports & Insights'}
+            </h1>
+            <p className="text-primary/80 mt-1">
+              {isCashierView
+                ? 'Salon-wide payment totals and transaction summaries from checkout.'
+                : 'Actionable business analytics for bookings, revenue, and team performance.'}
+            </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <button
@@ -657,7 +728,8 @@ export default function AdminReports() {
                   label={metric.label}
                   data={metric.data}
                   isCurrent={metric.isCurrent}
-                  showRevenue={isAdmin}
+                  showRevenue={isAdmin || isCashierView}
+                  paymentBasedRevenue={preferPayments}
                   theme={theme}
                 />
               ))}

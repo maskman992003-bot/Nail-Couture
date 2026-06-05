@@ -135,7 +135,7 @@ export default function TechnicianProductUsage({
         <p className="text-yellow-400 text-xs mt-1">Only {maxQty} in stock</p>
       )}
       {msg && (
-        <p className={clsx('text-xs mt-1', msg.includes('Failed') || msg.includes('stock') ? 'text-red-400' : 'text-green-400')}>
+        <p className={clsx('text-xs mt-1', msg.includes('logged') ? 'text-green-400' : 'text-red-400')}>
           {msg}
         </p>
       )}

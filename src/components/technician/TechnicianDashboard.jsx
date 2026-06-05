@@ -93,7 +93,7 @@ export default function TechnicianDashboard({
         </div>
       )}
 
-      <div className="p-4 md:p-6 lg:p-8 pb-28 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-light">
           <div>
             <h1 className="font-heading text-3xl text-gold-strong">Hello, {firstName}</h1>
@@ -186,19 +186,6 @@ export default function TechnicianDashboard({
             </div>
           )}
 
-          {stats.currentAppointment && (
-            <div className="lg:hidden fixed bottom-20 left-4 right-4 z-40">
-              <button
-                type="button"
-                onClick={() => markComplete(stats.currentAppointment)}
-                disabled={actionId === stats.currentAppointment.id}
-                className="w-full py-4 min-h-[52px] bg-gold text-charcoal font-heading text-lg rounded-xl shadow-lg disabled:opacity-70"
-              >
-                {actionId === stats.currentAppointment.id ? 'Completing…' : 'Complete Service'}
-              </button>
-            </div>
-          )}
-
           <TechnicianQueue
             pendingAssignments={stats.pendingAssignments}
             actionId={actionId}
@@ -214,7 +201,7 @@ export default function TechnicianDashboard({
       <AppModal
         open={!!priceConfirmAppt}
         onClose={cancelPriceConfirm}
-        title="Complete without price?"
+        title="Send without price?"
         maxWidth="max-w-md"
         footer={
           <>
@@ -227,7 +214,7 @@ export default function TechnicianDashboard({
               disabled={actionId === priceConfirmAppt?.id}
               className={modalBtnPrimary}
             >
-              {actionId === priceConfirmAppt?.id ? 'Completing…' : 'Complete anyway'}
+              {actionId === priceConfirmAppt?.id ? 'Sending…' : 'Send anyway'}
             </button>
           </>
         }

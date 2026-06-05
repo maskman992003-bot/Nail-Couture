@@ -8,7 +8,6 @@ import {
   fetchWeekAppointments,
   computeQueueStats,
   computeWeekStats,
-  decrementRefreshmentInventory,
   notifyNewAssignment,
 } from '../utils/technicianQueue';
 import { toggleChecklistItem } from '../utils/serviceChecklist';
@@ -116,27 +115,23 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     }
   }, [refetch, showToast, callerPhoneFallback]);
 
-  const doComplete = useCallback(async (appointment, price) => {
+  const doSendToCheckout = useCallback(async (appointment, price) => {
     setActionId(appointment.id);
     try {
       const phone = getCallerPhone(callerPhoneFallback);
-      const { error } = await supabase.rpc('complete_appointment', {
+      const { error } = await supabase.rpc('send_to_checkout', {
         caller_phone: phone,
         appointment_id: appointment.id,
         p_final_price: price,
       });
-      if (error) throw error;
-
-      if (appointment.customer?.refreshment_pref) {
-        await decrementRefreshmentInventory(
-          appointment.customer.refreshment_pref,
-          phone,
-          appointment.id,
-          appointment.customer_id
-        );
+      if (error) {
+        if (error.message?.includes('send_to_checkout') || error.code === '42883') {
+          throw new Error('Checkout workflow unavailable. Run sql/031_cashier_workflow.sql in Supabase.');
+        }
+        throw error;
       }
 
-      showToast(`Completed: ${appointment.customer?.full_name || 'Client'}`);
+      showToast(`Sent to checkout: ${appointment.customer?.full_name || 'Client'}`);
       setPostComplete({
         customerId: appointment.customer_id || appointment.customer?.id || null,
         customerName: appointment.customer?.full_name || 'Client',
@@ -145,8 +140,8 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       });
       await refetch(true);
     } catch (err) {
-      console.error('Error completing appointment:', err);
-      showToast(err.message || 'Failed to complete service', 'error');
+      console.error('Error sending to checkout:', err);
+      showToast(err.message || 'Failed to send to checkout', 'error');
     } finally {
       setActionId(null);
     }
@@ -158,15 +153,15 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       setPriceConfirmAppt(appointment);
       return;
     }
-    await doComplete(appointment, price);
-  }, [doComplete]);
+    await doSendToCheckout(appointment, price);
+  }, [doSendToCheckout]);
 
   const confirmCompleteWithoutPrice = useCallback(async () => {
     if (!priceConfirmAppt) return;
     const appt = priceConfirmAppt;
     setPriceConfirmAppt(null);
-    await doComplete(appt, null);
-  }, [priceConfirmAppt, doComplete]);
+    await doSendToCheckout(appt, null);
+  }, [priceConfirmAppt, doSendToCheckout]);
 
   const cancelPriceConfirm = useCallback(() => setPriceConfirmAppt(null), []);
 

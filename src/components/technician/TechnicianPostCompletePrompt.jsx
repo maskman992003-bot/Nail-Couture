@@ -86,9 +86,9 @@ export default function TechnicianPostCompletePrompt({ data, onDismiss, userRole
     <div className="bg-card border-2 border-gold/40 rounded-xl p-5 shadow-lg">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h3 className="font-heading text-lg text-gold-strong">Service complete</h3>
+          <h3 className="font-heading text-lg text-gold-strong">Sent to checkout</h3>
           <p className="text-secondary text-sm mt-1">
-            {data.customerName} — add a visit note or photo? (optional)
+            {data.customerName} — cashier will settle payment. Add a visit note or photo? (optional)
           </p>
         </div>
         <button

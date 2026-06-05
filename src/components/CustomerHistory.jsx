@@ -11,6 +11,7 @@ const statusConfigDark = {
   waiting: { label: 'Waiting', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50', dot: 'bg-yellow-400' },
   assigned_pending: { label: 'Assigned', color: 'bg-blue-900/50 text-blue-300 border-blue-700/50', dot: 'bg-blue-400' },
   serving: { label: 'In Chair', color: 'bg-green-900/50 text-green-300 border-green-700/50', dot: 'bg-green-400' },
+  ready_for_checkout: { label: 'At Checkout', color: 'bg-amber-900/50 text-amber-300 border-amber-700/50', dot: 'bg-amber-400' },
   completed: { label: 'Completed', color: 'bg-green-800/40 text-green-300 border-green-700/30', dot: 'bg-green-400' },
   cancelled: { label: 'Cancelled', color: 'bg-red-900/50 text-red-300 border-red-700/50', dot: 'bg-red-500' },
 };
@@ -19,6 +20,7 @@ const statusConfigLight = {
   waiting: { label: 'Waiting', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', dot: 'bg-yellow-400' },
   assigned_pending: { label: 'Assigned', color: 'bg-blue-100 text-blue-800 border-blue-300', dot: 'bg-blue-400' },
   serving: { label: 'In Chair', color: 'bg-green-100 text-green-800 border-green-300', dot: 'bg-green-400' },
+  ready_for_checkout: { label: 'At Checkout', color: 'bg-amber-100 text-amber-800 border-amber-300', dot: 'bg-amber-400' },
   completed: { label: 'Completed', color: 'bg-green-100 text-green-800 border-green-300', dot: 'bg-green-400' },
   cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800 border-red-300', dot: 'bg-red-500' },
 };
@@ -28,6 +30,7 @@ const tabs = [
   { key: 'waiting', label: 'Waiting' },
   { key: 'assigned_pending', label: 'Assigned' },
   { key: 'serving', label: 'In Chair' },
+  { key: 'ready_for_checkout', label: 'At Checkout' },
   { key: 'completed', label: 'Completed' },
   { key: 'cancelled', label: 'Cancelled' },
 ];
@@ -153,8 +156,8 @@ export default function CustomerHistory() {
 
   const filteredBookings = activeTab === 'all' ? bookings : bookings.filter((b) => b.status === activeTab);
   const activeStatuses = CUSTOMER_ONLINE_BOOKING
-    ? ['pending', 'confirmed', 'in_progress', 'waiting', 'assigned_pending', 'serving']
-    : ['waiting', 'assigned_pending', 'serving'];
+    ? ['pending', 'confirmed', 'in_progress', 'waiting', 'assigned_pending', 'serving', 'ready_for_checkout']
+    : ['waiting', 'assigned_pending', 'serving', 'ready_for_checkout'];
   const activeBookings = bookings.filter((b) => activeStatuses.includes(b.status));
   const pastBookings = bookings.filter((b) => ['completed', 'cancelled'].includes(b.status));
 

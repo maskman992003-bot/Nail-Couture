@@ -346,19 +346,21 @@ export default function TechnicianInChairPanel({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={() => onComplete(appointment)}
-        disabled={actionId === appointment.id}
-        className={clsx(
-          'mt-6 w-full py-4 font-heading text-xl rounded-xl transition-colors hidden lg:block',
-          actionId === appointment.id
-            ? 'bg-gold/50 text-charcoal cursor-wait'
-            : 'bg-gold text-charcoal hover:bg-gold/90'
-        )}
-      >
-        {actionId === appointment.id ? 'Completing…' : 'Complete Service ✓'}
-      </button>
+      <div className="sticky bottom-20 z-10 mt-6 pt-2 lg:static lg:bottom-auto lg:pt-0">
+        <button
+          type="button"
+          onClick={() => onComplete(appointment)}
+          disabled={actionId === appointment.id}
+          className={clsx(
+            'w-full py-4 min-h-[52px] font-heading text-lg lg:text-xl rounded-xl transition-colors shadow-lg lg:shadow-none',
+            actionId === appointment.id
+              ? 'bg-gold/50 text-charcoal cursor-wait'
+              : 'bg-gold text-charcoal hover:bg-gold/90'
+          )}
+        >
+          {actionId === appointment.id ? 'Sending…' : 'Send to Checkout ✓'}
+        </button>
+      </div>
 
       {showWaiver && (
         <WaiverModal

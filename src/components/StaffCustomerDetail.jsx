@@ -43,6 +43,7 @@ const VISIT_STATUS = {
   waiting: { label: 'Waiting', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' },
   assigned_pending: { label: 'Assigned', color: 'bg-blue-900/50 text-blue-300 border-blue-700/50' },
   serving: { label: 'In Chair', color: 'bg-green-900/50 text-green-300 border-green-700/50' },
+  ready_for_checkout: { label: 'At Checkout', color: 'bg-amber-900/50 text-amber-300 border-amber-700/50' },
   completed: { label: 'Completed', color: 'bg-green-800/40 text-green-300 border-green-700/30' },
   cancelled: { label: 'Cancelled', color: 'bg-red-900/50 text-red-300 border-red-700/50' },
   pending: { label: 'Pending', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' },

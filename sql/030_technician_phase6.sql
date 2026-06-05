@@ -73,6 +73,11 @@ END;
 $$;
 
 -- Extend update_appointment with metadata (checklist progress)
+-- DROP the 11-param overload from 029; CREATE OR REPLACE cannot remove an added parameter.
+DROP FUNCTION IF EXISTS update_appointment(
+  TEXT, UUID, TEXT, BIGINT, TEXT, NUMERIC, TEXT, UUID, TIMESTAMPTZ, TIMESTAMPTZ, TEXT
+);
+
 CREATE OR REPLACE FUNCTION update_appointment(
   caller_phone TEXT,
   appointment_id UUID,
@@ -168,7 +173,7 @@ DECLARE
   appt_technician_id UUID;
   appt_status TEXT;
   current_qty INT;
-  item_name TEXT;
+  v_item_name TEXT;
   log_reason TEXT;
   result JSONB;
 BEGIN
@@ -199,15 +204,15 @@ BEGIN
     END IF;
   END IF;
 
-  SELECT quantity, item_name INTO current_qty, item_name
-  FROM inventory WHERE id = p_inventory_id;
+  SELECT i.quantity, i.item_name INTO current_qty, v_item_name
+  FROM inventory i WHERE i.id = p_inventory_id;
 
-  IF item_name IS NULL THEN
+  IF v_item_name IS NULL THEN
     RAISE EXCEPTION 'Inventory item not found.';
   END IF;
 
   IF current_qty + p_quantity_changed < 0 THEN
-    RAISE EXCEPTION 'Insufficient stock for %.', item_name;
+    RAISE EXCEPTION 'Insufficient stock for %.', v_item_name;
   END IF;
 
   log_reason := COALESCE(p_reason, p_log_type);
@@ -224,7 +229,7 @@ BEGIN
 
   SELECT jsonb_build_object(
     'success', true,
-    'item_name', item_name,
+    'item_name', v_item_name,
     'new_quantity', current_qty + p_quantity_changed
   ) INTO result;
   RETURN result;

@@ -15,7 +15,7 @@ import AppModal, {
   modalCardClass,
 } from './AppModal';
 
-const statusOrder = ['confirmed', 'waiting', 'serving', 'completed', 'cancelled', 'missed'];
+const statusOrder = ['confirmed', 'waiting', 'serving', 'ready_for_checkout', 'completed', 'cancelled', 'missed'];
 
 function DatePicker({ value, onChange }) {
   const { theme } = useTheme();
@@ -166,6 +166,7 @@ export default function AdminBookings() {
     confirmed: { label: 'Confirmed', color: theme === 'dark' ? 'bg-blue-900/50 text-blue-300 border-blue-700/50' : 'bg-blue-100 text-blue-800 border-blue-300', dot: 'bg-blue-400' },
     waiting: { label: 'Lobby', color: theme === 'dark' ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' : 'bg-yellow-100 text-yellow-800 border-yellow-300', dot: 'bg-yellow-400' },
     serving: { label: 'In Chair', color: theme === 'dark' ? 'bg-green-900/50 text-green-300 border-green-700/50' : 'bg-green-100 text-green-800 border-green-300', dot: 'bg-green-400' },
+    ready_for_checkout: { label: 'At Checkout', color: theme === 'dark' ? 'bg-amber-900/50 text-amber-300 border-amber-700/50' : 'bg-amber-100 text-amber-800 border-amber-300', dot: 'bg-amber-400' },
     completed: { label: 'Completed', color: theme === 'dark' ? 'bg-green-800/40 text-green-300 border-green-700/30' : 'bg-green-100 text-green-800 border-green-300', dot: 'bg-green-400' },
     cancelled: { label: 'Cancelled', color: theme === 'dark' ? 'bg-red-900/50 text-red-300 border-red-700/50' : 'bg-red-100 text-red-800 border-red-300', dot: 'bg-red-500' },
     missed: { label: 'Missed', color: theme === 'dark' ? 'bg-gray-900/50 text-gray-400 border-gray-600/50' : 'bg-gray-100 text-gray-600 border-gray-300', dot: 'bg-gray-500' },
@@ -416,7 +417,7 @@ const { error } = await supabase.from('appointments').insert({
     return null;
   };
 
-  const allUpcoming = bookings.filter(b => ['confirmed', 'waiting', 'serving'].includes(b.status));
+  const allUpcoming = bookings.filter(b => ['confirmed', 'waiting', 'serving', 'ready_for_checkout'].includes(b.status));
   const upcomingFiltered = allUpcoming.filter(b => matchesSearch(b) && (statusTab === 'all' || b.status === statusTab));
   const sortedUpcoming = [...upcomingFiltered].sort((a, b) => {
     const aT = new Date(a.scheduled_at || 0).getTime();
@@ -568,6 +569,7 @@ const { error } = await supabase.from('appointments').insert({
               { key: 'confirmed', label: 'Confirmed', count: tabCounts.confirmed },
               { key: 'waiting', label: 'Lobby', count: tabCounts.waiting },
               { key: 'serving', label: 'In Chair', count: tabCounts.serving },
+              { key: 'ready_for_checkout', label: 'Checkout', count: tabCounts.ready_for_checkout },
               { key: 'completed', label: 'Completed', count: tabCounts.completed },
             ].map(({ key, label, count }) => (
               <button key={key} onClick={() => setStatusTab(key)} className="min-w-[100px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap" style={statusTab === key ? { background: 'linear-gradient(135deg, #c5a059, #f0d78c)', color: theme === 'dark' ? '#0B0B0C' : '#111' } : { color: theme === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>

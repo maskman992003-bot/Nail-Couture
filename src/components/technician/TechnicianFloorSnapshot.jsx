@@ -8,6 +8,7 @@ const STATUS_BADGE = {
   waiting: 'bg-yellow-400/15 text-yellow-400 border-yellow-400/30',
   assigned_pending: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
   serving: 'bg-green-400/15 text-green-400 border-green-400/30',
+  ready_for_checkout: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
 };
 
 export default function TechnicianFloorSnapshot({
@@ -22,6 +23,7 @@ export default function TechnicianFloorSnapshot({
 
   const waiting = floorAppointments.filter((a) => a.status === 'waiting');
   const serving = floorAppointments.filter((a) => a.status === 'serving');
+  const checkoutReady = floorAppointments.filter((a) => a.status === 'ready_for_checkout');
   const myAssigned = floorAppointments.filter(
     (a) => a.status === 'assigned_pending' && a.technician_id === technicianId
   );
@@ -83,7 +85,7 @@ export default function TechnicianFloorSnapshot({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div className="text-center p-3 bg-secondary rounded-lg">
           <div className="text-2xl font-heading text-yellow-400">{waiting.length}</div>
           <div className="text-muted text-xs">Waiting</div>
@@ -91,6 +93,10 @@ export default function TechnicianFloorSnapshot({
         <div className="text-center p-3 bg-secondary rounded-lg">
           <div className="text-2xl font-heading text-green-400">{serving.length}</div>
           <div className="text-muted text-xs">In Chair</div>
+        </div>
+        <div className="text-center p-3 bg-secondary rounded-lg">
+          <div className="text-2xl font-heading text-amber-400">{checkoutReady.length}</div>
+          <div className="text-muted text-xs">Checkout</div>
         </div>
         <div className="text-center p-3 bg-secondary rounded-lg">
           <div className="text-2xl font-heading text-blue-400">{assignedElsewhere.length + myAssigned.length}</div>
@@ -145,6 +151,7 @@ export default function TechnicianFloorSnapshot({
                   )}>
                     {appt.status === 'waiting' ? (waitPos ? `#${waitPos}` : 'Waiting') :
                      appt.status === 'serving' ? 'Serving' :
+                     appt.status === 'ready_for_checkout' ? 'Checkout' :
                      isMine ? 'Yours' : 'Assigned'}
                   </span>
                 </div>

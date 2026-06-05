@@ -75,7 +75,7 @@ const DraggablePendingCustomer = ({ appointment, children }) => {
   )
 }
 
-const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, isOnBreak, updating, onAccept, onComplete, wiggle, activeDragId, theme }) => {
+const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, isOnBreak, updating, onAccept, onSendToCheckout, wiggle, activeDragId, theme }) => {
   const isDraggingThisPending = activeDragId && pendingCustomer && String(pendingCustomer.id) === String(activeDragId)
   const dropDisabled = isBusy || isPending || isOnBreak || isDraggingThisPending
   const { isOver, setNodeRef } = useDroppable({
@@ -132,11 +132,11 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
           <div className="mb-2">{activeCustomer.customer?.full_name || 'Customer'}</div>
           <div className={activeCustomerDetailClass}>{activeCustomer.add_ons || activeCustomer.services?.name}</div>
           <button
-            onClick={() => onComplete(activeCustomer.id)}
+            onClick={() => onSendToCheckout(activeCustomer.id)}
             disabled={updating === activeCustomer.id}
             className="mt-3 w-full py-2 bg-gold text-charcoal font-heading text-sm hover:bg-gold/90 disabled:opacity-50 rounded-lg"
           >
-            {updating === activeCustomer.id ? 'Completing...' : 'Mark Completed'}
+            {updating === activeCustomer.id ? 'Sending...' : 'Send to Checkout'}
           </button>
         </div>
       ) : showAcceptButton ? (
@@ -519,6 +519,7 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
 export default function AdminLobby() {
   const [lobbyAppointments, setLobbyAppointments] = useState([])
   const [servingAppointments, setServingAppointments] = useState([])
+  const [checkoutReadyAppointments, setCheckoutReadyAppointments] = useState([])
   const [pendingAppointments, setPendingAppointments] = useState([])
   const [technicians, setTechnicians] = useState([])
   const [loading, setLoading] = useState(true)
@@ -547,7 +548,7 @@ export default function AdminLobby() {
 
   useEffect(() => {
     const init = async () => {
-      await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
+      await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
       setLoading(false)
     }
     init()
@@ -556,7 +557,7 @@ export default function AdminLobby() {
     const channel = supabase
       .channel('floor-manager')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, async () => {
-        await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
+        await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, async () => {
         await fetchTechnicians()
@@ -590,6 +591,13 @@ export default function AdminLobby() {
     if (!error) setServingAppointments(data || [])
   }, [])
 
+  const fetchCheckoutReadyAppointments = useCallback(async () => {
+    const { data, error } = await supabase
+      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'ready_for_checkout', order_asc: true })
+
+    if (!error) setCheckoutReadyAppointments(data || [])
+  }, [])
+
   const fetchPendingAppointments = useCallback(async () => {
     const { data, error } = await supabase
       .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'assigned_pending', order_asc: true })
@@ -613,7 +621,7 @@ export default function AdminLobby() {
     const { data } = await supabase
       .rpc('get_appointments_count', {
         caller_phone: getCallerPhone(),
-        status_filter: 'serving,completed',
+        status_filter: 'completed',
         date_from: today.toISOString(),
       })
     setTodayTotal(data || 0)
@@ -653,18 +661,6 @@ export default function AdminLobby() {
     if (techId) updates.technician_id = techId
     if (status === 'serving') updates.start_time = new Date().toISOString()
     
-    if (status === 'completed') {
-      const appt = servingAppointments.find(a => a.id === appointmentId)
-      if (appt) {
-        if (appt.final_price == null && appt.services?.price) updates.final_price = appt.services.price
-        setNotification({ message: 'Service Complete!', name: appt?.customer?.full_name })
-        if (appt.customer?.refreshment_pref) {
-          await decrementRefreshmentInventory(appt.customer.refreshment_pref);
-        }
-        setTimeout(() => setNotification(null), 3000)
-      }
-    }
-
     await supabase.rpc('update_appointment', {
       caller_phone: user?.phone,
       appointment_id: appointmentId,
@@ -673,7 +669,31 @@ export default function AdminLobby() {
       p_start_time: updates.start_time || null,
       p_final_price: updates.final_price || null,
     })
-    await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchTodayTotal()])
+    await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchTodayTotal()])
+    setUpdating(null)
+  }
+
+  const sendToCheckout = async (appointmentId) => {
+    setUpdating(appointmentId)
+    const appt = servingAppointments.find(a => a.id === appointmentId)
+    const estimatedPrice = appt?.final_price ?? appt?.services?.price ?? null
+
+    const { error } = await supabase.rpc('send_to_checkout', {
+      caller_phone: user?.phone,
+      appointment_id: appointmentId,
+      p_final_price: estimatedPrice,
+    })
+
+    if (error) {
+      if (process.env.NODE_ENV === 'development') console.error('send_to_checkout:', error)
+      setUpdating(null)
+      return
+    }
+
+    setNotification({ message: 'Sent to Checkout', name: appt?.customer?.full_name })
+    setTimeout(() => setNotification(null), 3000)
+
+    await Promise.all([fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchTechnicians()])
     setUpdating(null)
   }
 
@@ -824,7 +844,7 @@ export default function AdminLobby() {
       return
     }
     
-    await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchPendingAppointments(), fetchTechnicians()])
+    await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians()])
     setUpdating(null)
   }
 
@@ -881,7 +901,43 @@ export default function AdminLobby() {
                   </div>
                 </LobbyWaitingDropZone>
 
-                <h2 className="font-heading text-xl text-gold mt-8 mb-4">Currently Serving ({servingAppointments.length})</h2>
+                <h2 className="font-heading text-xl text-gold mt-8 mb-4 flex items-center gap-2">
+                  <span className="w-3 h-3 bg-amber-400 rounded-full"></span>
+                  Ready for Checkout ({checkoutReadyAppointments.length})
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                  {checkoutReadyAppointments.map(appointment => (
+                    <div key={appointment.id} className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className={`font-heading text-lg ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{appointment.customer?.full_name || 'Guest'}</h3>
+                          {appointment.technician && (
+                            <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>with {appointment.technician.full_name}</span>
+                          )}
+                        </div>
+                        <span className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400">Awaiting payment</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-sm items-center">
+                        {appointment.services && <span className="text-gold font-heading">{appointment.services.name}</span>}
+                        <span className="text-amber-400 font-medium">
+                          ${getAppointmentTotalPrice(appointment, services).toFixed(2)}
+                        </span>
+                      </div>
+                      {appointment.checkout_ready_at && (
+                        <div className={`text-xs mt-2 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>
+                          Ready since: {formatTime(appointment.checkout_ready_at)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {checkoutReadyAppointments.length === 0 && (
+                    <div className={`col-span-1 sm:col-span-2 text-center py-8 border rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-offwhite/10' : 'bg-charcoal/5 border-charcoal/10'}`}>
+                      <p className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No clients waiting at checkout</p>
+                    </div>
+                  )}
+                </div>
+
+                <h2 className="font-heading text-xl text-gold mb-4">Currently Serving ({servingAppointments.length})</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {servingAppointments.map(appointment => (
                     <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
@@ -914,6 +970,14 @@ export default function AdminLobby() {
                           Started: {formatTime(appointment.start_time)}
                         </div>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => sendToCheckout(appointment.id)}
+                        disabled={updating === appointment.id}
+                        className="mt-3 w-full py-2 bg-gold text-charcoal font-heading text-sm hover:bg-gold/90 disabled:opacity-50 rounded-lg"
+                      >
+                        {updating === appointment.id ? 'Sending...' : 'Send to Checkout'}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -942,7 +1006,7 @@ export default function AdminLobby() {
                         wiggle={String(wiggleTechId) === String(tech.id)}
                         updating={updating}
                         onAccept={acceptAssignment}
-                        onComplete={(id) => updateStatus(id, 'completed')}
+                        onSendToCheckout={sendToCheckout}
                         activeDragId={activeId}
                         theme={theme}
                       />

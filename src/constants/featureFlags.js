@@ -82,3 +82,4 @@ export const LIVE_FLOOR_TRACKER = featureFlags.customer.liveFloorTracker;
 export const TECHNICIAN_LIVE_FLOOR = featureFlags.staff.technicianLiveFloor;
 export const ADVANCED_REPORTING = featureFlags.staff.advancedReporting;
 export const MANAGEMENT_CUSTOMER_HISTORY = featureFlags.management.customerHistory;
+export const CASHIER_CHECKOUT = featureFlags.staff.cashierCheckout;

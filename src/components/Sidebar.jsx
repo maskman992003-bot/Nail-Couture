@@ -55,6 +55,7 @@ const navItemsByRole = {
     { id: 'schedule', label: 'Schedule', href: '/cashier/schedule', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { id: 'checkout', label: 'Checkout', href: '/cashier/checkout', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     { id: 'customers', label: 'Customers', href: '/cashier/customers', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v3' },
+    { id: 'reports', label: 'Reports', href: '/cashier/reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
   ],
   technician: [
     { id: 'home', label: 'Home', href: '/technician', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -89,9 +90,11 @@ export default function Sidebar() {
   const [showDesktopUserMenu, setShowDesktopUserMenu] = useState(false);
   const [showMobileUserMenu, setShowMobileUserMenu] = useState(false);
   const [pendingAssignments, setPendingAssignments] = useState(0);
+  const [checkoutQueueCount, setCheckoutQueueCount] = useState(0);
 
   const userPhone = user?.phone;
   const isTechnician = user?.role === 'technician';
+  const isCashier = user?.role === 'cashier';
   const navRef = useRef(null);
   const bottomNavRef = useRef(null);
   const SCROLL_KEY = `sidebar_scroll_${user?.role || 'guest'}`;
@@ -107,7 +110,9 @@ export default function Sidebar() {
       bookings: ['customer.onlineBooking', 'customer.onlineCalendarBooking'],
       book: ['customer.onlineBooking', 'customer.onlineCalendarBooking'],
       services: ['customer.staticServiceMenu'],
-      customers: ['management.customerHistory']
+      customers: ['management.customerHistory'],
+      checkout: ['staff.cashierCheckout'],
+      reports: ['staff.reportingBasic'],
     };
 
     if (actualUserRole !== 'super_admin') {
@@ -173,6 +178,17 @@ export default function Sidebar() {
     setPendingAssignments(count);
   }, [isTechnician, user?.id, userPhone]);
 
+  const refreshCheckoutQueue = useCallback(async () => {
+    if (!isCashier || !userPhone) return;
+    try {
+      const { data, error } = await supabase.rpc('get_appointments', {
+        caller_phone: userPhone,
+        status_filter: 'ready_for_checkout',
+      });
+      if (!error) setCheckoutQueueCount((data || []).length);
+    } catch { /* ignore */ }
+  }, [isCashier, userPhone]);
+
   useEffect(() => {
     if (!isTechnician || !user?.id || !userPhone) {
       setPendingAssignments(0);
@@ -199,6 +215,33 @@ export default function Sidebar() {
       clearInterval(poll);
     };
   }, [isTechnician, user?.id, userPhone, refreshPendingAssignments]);
+
+  useEffect(() => {
+    if (!isCashier || !userPhone) {
+      setCheckoutQueueCount(0);
+      return;
+    }
+
+    refreshCheckoutQueue();
+
+    const channel = supabase
+      .channel('sidebar-cashier-checkout')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
+        refreshCheckoutQueue();
+      })
+      .subscribe();
+
+    const poll = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshCheckoutQueue();
+      }
+    }, 30000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(poll);
+    };
+  }, [isCashier, userPhone, refreshCheckoutQueue]);
 
   useEffect(() => {
     if (!userPhone || !notifPanelOpen) return;
@@ -290,6 +333,9 @@ export default function Sidebar() {
           <nav ref={navRef} onScroll={handleNavScroll} className="flex flex-col gap-1 px-0 lg:px-4 overflow-y-auto scrollbar-none h-full">
             {navItems.map((item) => {
               const showAssignmentBadge = isTechnician && item.id === 'home' && pendingAssignments > 0;
+              const showCheckoutBadge = isCashier && item.id === 'checkout' && checkoutQueueCount > 0;
+              const badgeCount = showCheckoutBadge ? checkoutQueueCount : pendingAssignments;
+              const showBadge = showAssignmentBadge || showCheckoutBadge;
               return (
                 <NavLink
                   key={item.id}
@@ -302,9 +348,9 @@ export default function Sidebar() {
                 >
                   <div className="relative w-5 h-5 flex items-center justify-center flex-shrink-0">
                     {renderIcon(item.icon)}
-                    {showAssignmentBadge && (
+                    {showBadge && (
                       <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[8px] font-bold text-charcoal px-1" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)' }}>
-                        {pendingAssignments > 9 ? '9+' : pendingAssignments}
+                        {badgeCount > 9 ? '9+' : badgeCount}
                       </span>
                     )}
                   </div>
@@ -402,6 +448,9 @@ export default function Sidebar() {
           <div ref={(el) => { if (el) { bottomNavRef.current = el; const saved = sessionStorage.getItem(BOTTOM_SCROLL_KEY); if (saved && !el.dataset.bsr) { el.dataset.bsr = '1'; el.style.scrollBehavior = 'auto'; el.scrollLeft = parseInt(saved, 10); } } }} onScroll={handleBottomNavScroll} className="flex-1 min-w-0 flex items-center overflow-x-auto scrollbar-none">
             {navItems.map((item) => {
               const showAssignmentBadge = isTechnician && item.id === 'home' && pendingAssignments > 0;
+              const showCheckoutBadge = isCashier && item.id === 'checkout' && checkoutQueueCount > 0;
+              const badgeCount = showCheckoutBadge ? checkoutQueueCount : pendingAssignments;
+              const showBadge = showAssignmentBadge || showCheckoutBadge;
               return (
                 <NavLink
                   key={item.id}
@@ -410,9 +459,9 @@ export default function Sidebar() {
                 >
                   <div className="relative w-5 h-5">
                     {renderIcon(item.icon)}
-                    {showAssignmentBadge && (
+                    {showBadge && (
                       <span className="absolute -top-1 -right-1 min-w-[14px] h-3.5 flex items-center justify-center rounded-full text-[7px] font-bold text-charcoal px-0.5" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)' }}>
-                        {pendingAssignments > 9 ? '9+' : pendingAssignments}
+                        {badgeCount > 9 ? '9+' : badgeCount}
                       </span>
                     )}
                   </div>
