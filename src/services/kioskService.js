@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { logInventoryUsage } from '../utils/inventoryUsage'
 
 export async function processCheckIn(phoneNumber, checkedInBy = null) {
   const cleanPhone = phoneNumber.replace(/\D/g, '')
@@ -31,8 +32,39 @@ export async function processCheckIn(phoneNumber, checkedInBy = null) {
   }
 }
 
-export async function logInventoryUsageByRefreshmentName(refreshmentName, quantityChanged, appointmentId, customerId, reason) {
+export async function logInventoryUsageByRefreshmentName(refreshmentName, quantityChanged, appointmentId, customerId, reason, callerPhone) {
   if (!refreshmentName) return;
+
+  let phone = callerPhone;
+  if (!phone) {
+    try {
+      const stored = localStorage.getItem('salon_user_data');
+      if (stored) phone = JSON.parse(stored).phone;
+    } catch { /* ignore */ }
+  }
+
+  if (phone) {
+    const { data: items } = await supabase
+      .from('inventory')
+      .select('id')
+      .eq('item_name', refreshmentName)
+      .eq('category', 'refreshment')
+      .limit(1);
+
+    if (items?.[0]) {
+      const result = await logInventoryUsage(phone, {
+        inventoryId: items[0].id,
+        quantityChanged,
+        appointmentId,
+        customerId,
+        reason,
+        logType: 'usage',
+      });
+      if (result.success) return;
+    }
+  }
+
+  // Fallback: log-only insert if RPC not yet migrated
   const { data: inventoryItems, error: inventoryError } = await supabase
     .from('inventory')
     .select('id')

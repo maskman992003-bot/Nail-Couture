@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import clsx from 'clsx';
+import { featureFlags } from '../../constants/featureFlags';
 import { computeWaitPositions } from '../../utils/technicianQueue';
+import TechnicianFloorGrid from './TechnicianFloorGrid';
 
 const STATUS_BADGE = {
   waiting: 'bg-yellow-400/15 text-yellow-400 border-yellow-400/30',
@@ -9,10 +12,14 @@ const STATUS_BADGE = {
 
 export default function TechnicianFloorSnapshot({
   floorAppointments,
+  floorTechnicians = [],
   technicianId,
   newAssignmentIds = [],
   onBreak = false,
 }) {
+  const [view, setView] = useState('grid');
+  const showGrid = featureFlags.staff.technicianLiveFloor && floorTechnicians.length > 0;
+
   const waiting = floorAppointments.filter((a) => a.status === 'waiting');
   const serving = floorAppointments.filter((a) => a.status === 'serving');
   const myAssigned = floorAppointments.filter(
@@ -43,6 +50,30 @@ export default function TechnicianFloorSnapshot({
           )}
         </div>
         <div className="flex items-center gap-2">
+          {showGrid && (
+            <div className="flex rounded-lg border border-light overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setView('grid')}
+                className={clsx(
+                  'px-2.5 py-1 text-xs',
+                  view === 'grid' ? 'bg-gold/20 text-gold-strong' : 'text-secondary hover:text-primary'
+                )}
+              >
+                Grid
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('list')}
+                className={clsx(
+                  'px-2.5 py-1 text-xs',
+                  view === 'list' ? 'bg-gold/20 text-gold-strong' : 'text-secondary hover:text-primary'
+                )}
+              >
+                List
+              </button>
+            </div>
+          )}
           {onBreak && (
             <span className="px-2 py-0.5 text-xs bg-yellow-400/15 text-yellow-400 border border-yellow-400/30 rounded-full">
               On break
@@ -67,53 +98,61 @@ export default function TechnicianFloorSnapshot({
         </div>
       </div>
 
-      <div className="space-y-2 max-h-48 overflow-y-auto">
-        {sorted.length === 0 ? (
-          <p className="text-muted text-sm text-center py-4">Floor is quiet right now</p>
-        ) : (
-          sorted.slice(0, 10).map((appt) => {
-            const isMine = appt.status === 'assigned_pending' && appt.technician_id === technicianId;
-            const isNew = newAssignmentIds.includes(appt.id);
-            const waitPos = waitPositions.get(appt.id);
+      {showGrid && view === 'grid' ? (
+        <TechnicianFloorGrid
+          technicians={floorTechnicians}
+          floorAppointments={floorAppointments}
+          currentTechnicianId={technicianId}
+        />
+      ) : (
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {sorted.length === 0 ? (
+            <p className="text-muted text-sm text-center py-4">Floor is quiet right now</p>
+          ) : (
+            sorted.slice(0, 10).map((appt) => {
+              const isMine = appt.status === 'assigned_pending' && appt.technician_id === technicianId;
+              const isNew = newAssignmentIds.includes(appt.id);
+              const waitPos = waitPositions.get(appt.id);
 
-            return (
-              <div
-                key={appt.id}
-                className={clsx(
-                  'flex items-center justify-between p-3 rounded-lg text-sm',
-                  isMine
-                    ? 'bg-gold/15 border border-gold/40'
-                    : 'bg-secondary'
-                )}
-              >
-                <div className="min-w-0">
-                  <div className="text-primary font-medium truncate flex items-center gap-2">
-                    {appt.customer?.full_name || 'Guest'}
-                    {isNew && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gold text-charcoal rounded uppercase">
-                        New
-                      </span>
-                    )}
+              return (
+                <div
+                  key={appt.id}
+                  className={clsx(
+                    'flex items-center justify-between p-3 rounded-lg text-sm',
+                    isMine
+                      ? 'bg-gold/15 border border-gold/40'
+                      : 'bg-secondary'
+                  )}
+                >
+                  <div className="min-w-0">
+                    <div className="text-primary font-medium truncate flex items-center gap-2">
+                      {appt.customer?.full_name || 'Guest'}
+                      {isNew && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gold text-charcoal rounded uppercase">
+                          New
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-secondary text-xs truncate">
+                      {appt.services?.name || appt.add_ons || 'Service'}
+                      {appt.technician?.full_name && ` · ${appt.technician.full_name}`}
+                      {waitPos != null && ` · #${waitPos} in queue`}
+                    </div>
                   </div>
-                  <div className="text-secondary text-xs truncate">
-                    {appt.services?.name || appt.add_ons || 'Service'}
-                    {appt.technician?.full_name && ` · ${appt.technician.full_name}`}
-                    {waitPos != null && ` · #${waitPos} in queue`}
-                  </div>
+                  <span className={clsx(
+                    'px-2 py-0.5 text-xs border rounded shrink-0 ml-2',
+                    isMine ? 'bg-gold/30 text-gold-strong border-gold/50' : (STATUS_BADGE[appt.status] || 'bg-secondary text-secondary border-light')
+                  )}>
+                    {appt.status === 'waiting' ? (waitPos ? `#${waitPos}` : 'Waiting') :
+                     appt.status === 'serving' ? 'Serving' :
+                     isMine ? 'Yours' : 'Assigned'}
+                  </span>
                 </div>
-                <span className={clsx(
-                  'px-2 py-0.5 text-xs border rounded shrink-0 ml-2',
-                  isMine ? 'bg-gold/30 text-gold-strong border-gold/50' : (STATUS_BADGE[appt.status] || 'bg-secondary text-secondary border-light')
-                )}>
-                  {appt.status === 'waiting' ? (waitPos ? `#${waitPos}` : 'Waiting') :
-                   appt.status === 'serving' ? 'Serving' :
-                   isMine ? 'Yours' : 'Assigned'}
-                </span>
-              </div>
-            );
-          })
-        )}
-      </div>
+              );
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 }

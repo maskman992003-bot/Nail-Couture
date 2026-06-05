@@ -33,6 +33,7 @@ export const featureFlags = {
     // Phase 2 (Active)
     staffShifts: true,              // Manage work schedules (Phase 2)
     timeOffRequests: true,          // Request time off (Phase 2)
+    technicianLiveFloor: true,      // Read-only technician grid on dashboard (Phase 6)
     inventoryAutomation: false,     // Auto-low stock alerts (Phase 2/3)
     advancedReporting: false,       // Custom reports, analytics (Phase 3)
     employeeManagement: false,      // Add/remove staff, roles (Phase 3)
@@ -78,5 +79,6 @@ export const STAFF_SHIFTS = featureFlags.staff.staffShifts;
 export const TIME_OFF_REQUESTS = featureFlags.staff.timeOffRequests;
 export const INVENTORY_AUTOMATION = featureFlags.operations.autoReorder;
 export const LIVE_FLOOR_TRACKER = featureFlags.customer.liveFloorTracker;
+export const TECHNICIAN_LIVE_FLOOR = featureFlags.staff.technicianLiveFloor;
 export const ADVANCED_REPORTING = featureFlags.staff.advancedReporting;
 export const MANAGEMENT_CUSTOMER_HISTORY = featureFlags.management.customerHistory;

@@ -12,12 +12,16 @@ import { supabase } from '../../lib/supabase';
 import { getAppointmentServiceLabels } from '../../utils/appointmentServices';
 import WaiverModal from '../WaiverModal';
 import TechnicianServiceEditor from './TechnicianServiceEditor';
+import TechnicianServiceChecklist from './TechnicianServiceChecklist';
+import TechnicianProductUsage from './TechnicianProductUsage';
 
 export default function TechnicianInChairPanel({
   appointment,
   actionId,
   onComplete,
   onUpdateServices,
+  onToggleChecklistItem,
+  onLogProductUsage,
   userRole,
 }) {
   const { user } = useAuth();
@@ -304,6 +308,22 @@ export default function TechnicianInChairPanel({
           >
             Full client profile →
           </Link>
+
+          {onToggleChecklistItem && (
+            <TechnicianServiceChecklist
+              appointment={appointment}
+              onToggleItem={(itemId, completed) => onToggleChecklistItem(appointment, itemId, completed)}
+              saving={isUpdating}
+            />
+          )}
+
+          {onLogProductUsage && (
+            <TechnicianProductUsage
+              appointment={appointment}
+              onLogUsage={(payload) => onLogProductUsage(appointment, payload)}
+              saving={isUpdating}
+            />
+          )}
         </div>
 
         {/* Desktop: client brief column */}

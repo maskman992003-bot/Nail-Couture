@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { fetchTechnicianAppointments } from './staffSchedule';
+import { logRefreshmentUsage } from './inventoryUsage';
 
 export function getCallerPhone(fallbackPhone) {
   try {
@@ -69,6 +70,17 @@ export async function fetchMyQueue(technicianId, callerPhone) {
   });
   if (error) throw error;
   return filterMyQueueForToday(data || []);
+}
+
+export async function fetchFloorTechnicians() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, preferences')
+    .eq('role', 'technician')
+    .order('full_name');
+
+  if (error) return [];
+  return data || [];
 }
 
 export async function fetchFloorSnapshot(callerPhone) {
@@ -212,22 +224,10 @@ export function computeWeekStats(weekAppointments) {
   return { byDay, byDayCompleted, max, completed, scheduled, weekRevenue, completionRate };
 }
 
-export async function decrementRefreshmentInventory(refreshmentName) {
-  if (!refreshmentName) return;
+export async function decrementRefreshmentInventory(refreshmentName, callerPhone, appointmentId, customerId) {
+  if (!refreshmentName || !callerPhone) return;
   try {
-    const { data: item, error } = await supabase
-      .from('inventory')
-      .select('id, quantity')
-      .eq('item_name', refreshmentName)
-      .eq('category', 'refreshment')
-      .maybeSingle();
-
-    if (error || !item || item.quantity <= 0) return;
-
-    await supabase
-      .from('inventory')
-      .update({ quantity: item.quantity - 1 })
-      .eq('id', item.id);
+    await logRefreshmentUsage(callerPhone, refreshmentName, appointmentId, customerId);
   } catch {
     // Non-blocking inventory update
   }

@@ -12,6 +12,7 @@ import AppModal, {
   modalBtnPrimary,
   modalBtnDanger,
 } from './AppModal';
+import { linesToChecklist, checklistToLines } from '../utils/serviceChecklist';
 
 export default function AdminServices() {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export default function AdminServices() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', });
+  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', checklistLines: '' });
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,7 +67,7 @@ export default function AdminServices() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '' });
+    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '', checklistLines: '' });
     setShowForm(true);
   };
 
@@ -77,6 +78,7 @@ export default function AdminServices() {
       price: String(svc.price || ''),
       duration_minutes: String(svc.duration_minutes || ''),
       category: svc.category || categories[0]?.name || '',
+      checklistLines: checklistToLines(svc.metadata?.checklist),
     });
     setShowForm(true);
   };
@@ -91,6 +93,7 @@ export default function AdminServices() {
       price: parseFloat(form.price),
       duration_minutes: parseInt(form.duration_minutes) || 0,
       category: form.category,
+      metadata: { checklist: linesToChecklist(form.checklistLines) },
     };
     let result;
     if (editing) {
@@ -316,6 +319,16 @@ export default function AdminServices() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
+                  </div>
+                  <div>
+                    <label className={modalLabelClass}>Checklist steps (one per line)</label>
+                    <textarea
+                      value={form.checklistLines}
+                      onChange={(e) => setForm({ ...form, checklistLines: e.target.value })}
+                      className={`${modalInputClass} min-h-[80px] resize-y`}
+                      placeholder={'Sanitize station\nPrep cuticles\nApply base coat'}
+                    />
+                    <p className="text-muted text-xs mt-1">Shown to technicians during in-chair service.</p>
                   </div>
                 </div>
               </AppModal>

@@ -30,6 +30,9 @@ export default function TechnicianDashboard({
   markComplete,
   declineAssignment,
   updateServingServices,
+  updateChecklistItem,
+  logProductUsage,
+  floorTechnicians,
   dismissToast,
   dismissPostComplete,
   dismissNewAssignment,
@@ -143,6 +146,8 @@ export default function TechnicianDashboard({
               actionId={actionId}
               onComplete={markComplete}
               onUpdateServices={updateServingServices}
+              onToggleChecklistItem={updateChecklistItem}
+              onLogProductUsage={logProductUsage}
               userRole={user?.role}
             />
           )}
@@ -157,6 +162,7 @@ export default function TechnicianDashboard({
 
           <TechnicianFloorSnapshot
             floorAppointments={floorAppointments}
+            floorTechnicians={floorTechnicians}
             technicianId={user?.id}
             newAssignmentIds={newAssignmentIds}
             onBreak={onBreak}

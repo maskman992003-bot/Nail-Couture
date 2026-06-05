@@ -4,16 +4,20 @@ import {
   getCallerPhone,
   fetchMyQueue,
   fetchFloorSnapshot,
+  fetchFloorTechnicians,
   fetchWeekAppointments,
   computeQueueStats,
   computeWeekStats,
   decrementRefreshmentInventory,
   notifyNewAssignment,
 } from '../utils/technicianQueue';
+import { toggleChecklistItem } from '../utils/serviceChecklist';
+import { logInventoryUsage } from '../utils/inventoryUsage';
 
 export function useTechnicianQueue(technicianId, callerPhoneFallback) {
   const [myAppointments, setMyAppointments] = useState([]);
   const [floorAppointments, setFloorAppointments] = useState([]);
+  const [floorTechnicians, setFloorTechnicians] = useState([]);
   const [weekAppointments, setWeekAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -37,9 +41,10 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     if (!silent) setRefreshing(true);
     const phone = getCallerPhone(callerPhoneFallback);
     try {
-      const [mineResult, floorResult, weekResult] = await Promise.allSettled([
+      const [mineResult, floorResult, techResult, weekResult] = await Promise.allSettled([
         fetchMyQueue(technicianId, phone),
         fetchFloorSnapshot(phone),
+        fetchFloorTechnicians(),
         fetchWeekAppointments(technicianId),
       ]);
 
@@ -64,6 +69,9 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       }
       if (floorResult.status === 'fulfilled') {
         setFloorAppointments(floorResult.value);
+      }
+      if (techResult.status === 'fulfilled') {
+        setFloorTechnicians(techResult.value);
       }
       if (weekResult.status === 'fulfilled') {
         setWeekAppointments(weekResult.value);
@@ -120,7 +128,12 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       if (error) throw error;
 
       if (appointment.customer?.refreshment_pref) {
-        await decrementRefreshmentInventory(appointment.customer.refreshment_pref);
+        await decrementRefreshmentInventory(
+          appointment.customer.refreshment_pref,
+          phone,
+          appointment.id,
+          appointment.customer_id
+        );
       }
 
       showToast(`Completed: ${appointment.customer?.full_name || 'Client'}`);
@@ -182,6 +195,52 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     }
   }, [refetch, showToast, callerPhoneFallback]);
 
+  const updateChecklistItem = useCallback(async (appointment, itemId, completed) => {
+    setActionId(appointment.id);
+    try {
+      const phone = getCallerPhone(callerPhoneFallback);
+      const newMetadata = toggleChecklistItem(appointment.metadata, itemId, completed);
+      const { error } = await supabase.rpc('update_appointment', {
+        caller_phone: phone,
+        appointment_id: appointment.id,
+        p_metadata: newMetadata,
+      });
+      if (error) throw error;
+      await refetch(true);
+      return { success: true };
+    } catch (err) {
+      console.error('Error updating checklist:', err);
+      showToast(err.message || 'Failed to update checklist', 'error');
+      return { success: false, error: err.message };
+    } finally {
+      setActionId(null);
+    }
+  }, [refetch, showToast, callerPhoneFallback]);
+
+  const logProductUsage = useCallback(async (appointment, { inventoryId, quantity, logType }) => {
+    setActionId(appointment.id);
+    try {
+      const phone = getCallerPhone(callerPhoneFallback);
+      const result = await logInventoryUsage(phone, {
+        inventoryId,
+        quantityChanged: -Math.abs(quantity),
+        appointmentId: appointment.id,
+        customerId: appointment.customer_id,
+        reason: logType === 'waste' ? 'Waste during service' : 'Used during service',
+        logType,
+      });
+      if (!result.success) throw new Error(result.error);
+      showToast(logType === 'waste' ? 'Waste logged' : 'Usage logged');
+      return result;
+    } catch (err) {
+      console.error('Error logging usage:', err);
+      showToast(err.message || 'Failed to log usage', 'error');
+      return { success: false, error: err.message };
+    } finally {
+      setActionId(null);
+    }
+  }, [showToast, callerPhoneFallback]);
+
   const declineAssignment = useCallback(async (appointment, reason = '') => {
     setActionId(appointment.id);
     try {
@@ -212,6 +271,9 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
         refetch(true);
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
+        fetchFloorTechnicians().then(setFloorTechnicians).catch(() => {});
+      })
       .subscribe();
 
     const poll = setInterval(() => refetch(true), 30000);
@@ -239,6 +301,7 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
   return {
     myAppointments,
     floorAppointments,
+    floorTechnicians,
     stats,
     weekStats,
     loading,
@@ -256,6 +319,8 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     dismissPostComplete,
     declineAssignment,
     updateServingServices,
+    updateChecklistItem,
+    logProductUsage,
     priceConfirmAppt,
     confirmCompleteWithoutPrice,
     cancelPriceConfirm,
