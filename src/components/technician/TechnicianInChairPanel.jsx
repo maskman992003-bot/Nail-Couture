@@ -9,12 +9,15 @@ import { fetchStaffNotes, addStaffNote } from '../../utils/staffCustomerNotes';
 import { uploadVisitPhoto } from '../../utils/staffCustomerTimeline';
 import { canUploadVisitPhotos } from '../../utils/staffCustomerAccess';
 import { supabase } from '../../lib/supabase';
+import { getAppointmentServiceLabels } from '../../utils/appointmentServices';
 import WaiverModal from '../WaiverModal';
+import TechnicianServiceEditor from './TechnicianServiceEditor';
 
 export default function TechnicianInChairPanel({
   appointment,
   actionId,
   onComplete,
+  onUpdateServices,
   userRole,
 }) {
   const { user } = useAuth();
@@ -30,7 +33,11 @@ export default function TechnicianInChairPanel({
   const [photoMsg, setPhotoMsg] = useState('');
   const [showWaiver, setShowWaiver] = useState(false);
   const [waiverSaving, setWaiverSaving] = useState(false);
+  const [showServiceEditor, setShowServiceEditor] = useState(false);
   const photoInputRef = useRef(null);
+
+  const serviceLabels = getAppointmentServiceLabels(appointment);
+  const isUpdating = actionId === appointment.id;
 
   const customer = appointment.customer || {};
   const prefs = parseProfilePreferences(customer.preferences);
@@ -256,10 +263,36 @@ export default function TechnicianInChairPanel({
           >
             {customer.full_name || 'Customer'}
           </Link>
-          <p className="text-secondary mt-1">
-            {appointment.add_ons || appointment.services?.name || 'Service'}
-            {duration ? ` (~${duration} min)` : ''}
-          </p>
+          <div className="mt-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {serviceLabels.map((label) => (
+                <span
+                  key={label}
+                  className="px-2 py-1 text-xs bg-secondary border border-light rounded-lg text-primary"
+                >
+                  {label}
+                </span>
+              ))}
+              {duration && (
+                <span className="text-secondary text-xs">~{duration} min</span>
+              )}
+            </div>
+            {appointment.final_price != null && (
+              <p className="text-gold-strong text-sm mt-1.5">
+                Est. ${Number(appointment.final_price).toFixed(2)}
+              </p>
+            )}
+            {onUpdateServices && (
+              <button
+                type="button"
+                onClick={() => setShowServiceEditor(true)}
+                disabled={isUpdating}
+                className="mt-2 text-xs px-3 py-1.5 min-h-[36px] bg-gold/15 text-gold-strong border border-gold/30 rounded-lg hover:bg-gold/25 disabled:opacity-50"
+              >
+                Change services
+              </button>
+            )}
+          </div>
 
           {customer.nail_goal && (
             <p className="text-gold-strong/80 text-sm mt-2">Goal: {customer.nail_goal}</p>
@@ -313,6 +346,16 @@ export default function TechnicianInChairPanel({
           customerPhone={customer.phone || ''}
           onConfirm={handleSaveWaiver}
           onCancel={() => setShowWaiver(false)}
+        />
+      )}
+
+      {onUpdateServices && (
+        <TechnicianServiceEditor
+          open={showServiceEditor}
+          onClose={() => setShowServiceEditor(false)}
+          appointment={appointment}
+          onSave={onUpdateServices}
+          saving={isUpdating}
         />
       )}
     </div>

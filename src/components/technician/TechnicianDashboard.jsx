@@ -29,6 +29,7 @@ export default function TechnicianDashboard({
   acceptAssignment,
   markComplete,
   declineAssignment,
+  updateServingServices,
   dismissToast,
   dismissPostComplete,
   dismissNewAssignment,
@@ -141,6 +142,7 @@ export default function TechnicianDashboard({
               appointment={stats.currentAppointment}
               actionId={actionId}
               onComplete={markComplete}
+              onUpdateServices={updateServingServices}
               userRole={user?.role}
             />
           )}

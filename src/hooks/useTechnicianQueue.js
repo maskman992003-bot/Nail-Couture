@@ -157,6 +157,31 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
 
   const cancelPriceConfirm = useCallback(() => setPriceConfirmAppt(null), []);
 
+  const updateServingServices = useCallback(async (appointment, { service_id, add_ons, final_price }) => {
+    setActionId(appointment.id);
+    try {
+      const phone = getCallerPhone(callerPhoneFallback);
+      const { error } = await supabase.rpc('update_appointment', {
+        caller_phone: phone,
+        appointment_id: appointment.id,
+        p_service_id: service_id ?? null,
+        p_add_ons: add_ons ?? null,
+        p_final_price: final_price ?? null,
+      });
+      if (error) throw error;
+      showToast('Services updated');
+      await refetch(true);
+      return { success: true };
+    } catch (err) {
+      console.error('Error updating services:', err);
+      const message = err.message || 'Failed to update services';
+      showToast(message, 'error');
+      return { success: false, error: message };
+    } finally {
+      setActionId(null);
+    }
+  }, [refetch, showToast, callerPhoneFallback]);
+
   const declineAssignment = useCallback(async (appointment, reason = '') => {
     setActionId(appointment.id);
     try {
@@ -230,6 +255,7 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     clearNewAssignments,
     dismissPostComplete,
     declineAssignment,
+    updateServingServices,
     priceConfirmAppt,
     confirmCompleteWithoutPrice,
     cancelPriceConfirm,
