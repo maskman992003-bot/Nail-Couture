@@ -14,6 +14,13 @@ function normalizeUser(profile) {
     nail_goal: profile.nail_goal || '',
     refreshment_pref: profile.refreshment_pref || '',
     phone: profile.phone || '',
+    birthday: profile.birthday || '',
+    loyalty_points: profile.loyalty_points ?? 0,
+    referral_code: profile.referral_code || '',
+    avatar_url: profile.avatar_url || '',
+    sms_reminders: profile.sms_reminders !== false,
+    email_promotions: profile.email_promotions !== false,
+    preferred_contact: profile.preferred_contact || 'phone',
     role,
     is_staff: isStaffRole(role),
   };

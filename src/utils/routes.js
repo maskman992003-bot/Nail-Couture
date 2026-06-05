@@ -30,3 +30,37 @@ export function getSettingsPath(role) {
     default: return '/customer/profile';
   }
 }
+
+export function getCustomersPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/customers';
+    case 'owner': return '/owner/customers';
+    case 'partner': return '/partner/customers';
+    case 'admin': return '/admin/customers';
+    case 'cashier': return '/cashier/customers';
+    case 'technician': return '/technician/customers';
+    default: return '/portal';
+  }
+}
+
+export function getCustomerDetailPath(role, customerId) {
+  return `${getCustomersPath(role)}/${customerId}`;
+}
+
+export function getMySchedulePath(role) {
+  switch (role) {
+    case 'cashier': return '/cashier/schedule';
+    case 'technician': return '/technician/schedule';
+    default: return '/technician/schedule';
+  }
+}
+
+export function getStaffPlannerPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/schedule';
+    case 'owner': return '/owner/schedule';
+    case 'partner': return '/partner/schedule';
+    case 'admin': return '/admin/schedule';
+    default: return `/${role}/staff/schedule`;
+  }
+}

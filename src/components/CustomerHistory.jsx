@@ -4,14 +4,23 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
+import { fetchCustomerVisitHistory } from '../utils/customerStats';
 import Sidebar from './Sidebar';
 
-const statusConfig = {
+const statusConfigDark = {
   waiting: { label: 'Waiting', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50', dot: 'bg-yellow-400' },
   assigned_pending: { label: 'Assigned', color: 'bg-blue-900/50 text-blue-300 border-blue-700/50', dot: 'bg-blue-400' },
   serving: { label: 'In Chair', color: 'bg-green-900/50 text-green-300 border-green-700/50', dot: 'bg-green-400' },
   completed: { label: 'Completed', color: 'bg-green-800/40 text-green-300 border-green-700/30', dot: 'bg-green-400' },
   cancelled: { label: 'Cancelled', color: 'bg-red-900/50 text-red-300 border-red-700/50', dot: 'bg-red-500' },
+};
+
+const statusConfigLight = {
+  waiting: { label: 'Waiting', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', dot: 'bg-yellow-400' },
+  assigned_pending: { label: 'Assigned', color: 'bg-blue-100 text-blue-800 border-blue-300', dot: 'bg-blue-400' },
+  serving: { label: 'In Chair', color: 'bg-green-100 text-green-800 border-green-300', dot: 'bg-green-400' },
+  completed: { label: 'Completed', color: 'bg-green-100 text-green-800 border-green-300', dot: 'bg-green-400' },
+  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800 border-red-300', dot: 'bg-red-500' },
 };
 
 const tabs = [
@@ -22,6 +31,8 @@ const tabs = [
   { key: 'completed', label: 'Completed' },
   { key: 'cancelled', label: 'Cancelled' },
 ];
+
+const isWalkIn = (appointment) => !appointment.booking_type || appointment.booking_type === 'walk_in';
 
 export default function CustomerHistory() {
   const navigate = useNavigate();
@@ -40,45 +51,47 @@ export default function CustomerHistory() {
     const userId = user?.id;
     if (!userId) { setLoading(false); navigate('/login'); return; }
     try {
-      const [apptsRes, notifRes] = await Promise.all([
-        supabase.rpc('get_my_appointments', { customer_id: userId }),
+      const [allData, notifRes] = await Promise.all([
+        fetchCustomerVisitHistory(userId, user?.phone, { includeOnline: CUSTOMER_ONLINE_BOOKING }),
         supabase.from('notifications').select('*').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(10),
       ]);
-      const allData = apptsRes.data || [];
-      const onlineList = allData.filter(a => a.booking_type === 'online');
-      const kioskList = allData.filter(a => a.booking_type === 'walk_in');
-      const techIds = [...new Set([...onlineList, ...kioskList].map((b) => b.technician_id).filter(Boolean))];
+      const onlineList = CUSTOMER_ONLINE_BOOKING ? allData.filter((a) => a.booking_type === 'online') : [];
+      const kioskList = CUSTOMER_ONLINE_BOOKING ? allData.filter(isWalkIn) : allData;
       const allAddonNames = [...new Set(kioskList.flatMap((b) => (b.add_ons ? b.add_ons.split(',').map((n) => n.trim()) : [])))];
-      const [techsRes, addOnsRes] = await Promise.all([
-        techIds.length ? supabase.from('profiles').select('id, full_name, role').in('id', techIds) : { data: [] },
-        allAddonNames.length ? supabase.from('services').select('id, name, price, duration_minutes').in('name', allAddonNames) : { data: [] },
-      ]);
-      const techMap = {};
-      (techsRes.data || []).forEach((t) => { techMap[t.id] = t; });
+      const { data: addOnRows } = allAddonNames.length
+        ? await supabase.from('services').select('id, name, price, duration_minutes').in('name', allAddonNames)
+        : { data: [] };
       const addOnMap = {};
-      (addOnsRes.data || []).forEach((a) => { addOnMap[a.name] = a; });
-      const enrichedOnline = onlineList.map((b) => ({ ...b, service: b.services, tech: techMap[b.technician_id] || (b.technician || null), source: 'online' }));
+      (addOnRows || []).forEach((a) => { addOnMap[a.name] = a; });
+      const enrichedOnline = onlineList.map((b) => ({
+        ...b,
+        service: b.services,
+        tech: b.technicians || null,
+        source: 'online',
+      }));
       const enrichedKiosk = kioskList.map((b) => {
         const addonNames = b.add_ons ? b.add_ons.split(',').map((n) => n.trim()) : [];
         const addonDetails = addonNames.map((n) => addOnMap[n]).filter(Boolean);
         return {
           ...b,
           service: b.services,
-          tech: techMap[b.technician_id] || (b.technician || null),
+          tech: b.technicians || null,
           addonDetails,
           source: 'kiosk',
         };
       });
       const combined = [...enrichedOnline, ...enrichedKiosk].sort((a, b) => {
-        const dateA = new Date(a.scheduled_at || a.checked_in_at);
-        const dateB = new Date(b.scheduled_at || b.checked_in_at);
+        const dateA = new Date(a.checked_in_at || a.scheduled_at || a.created_at);
+        const dateB = new Date(b.checked_in_at || b.scheduled_at || b.created_at);
         return dateB - dateA;
       });
       setBookings(combined);
       setNotifications(notifRes.data || []);
-    } catch { }
+    } catch (err) {
+      console.error('Error loading visit history:', err);
+    }
     setLoading(false);
-  }, [navigate]);
+  }, [navigate, user?.id, user?.phone]);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -104,8 +117,8 @@ export default function CustomerHistory() {
   }, []);
 
   const generateReceipt = (booking) => {
-    const appointmentDate = booking.scheduled_at || booking.checked_in_at;
-    const dateStr = appointmentDate ? new Date(appointmentDate).toLocaleDateString() : 'Walk-in';
+    const appointmentDate = booking.checked_in_at || booking.scheduled_at;
+    const dateStr = appointmentDate ? new Date(appointmentDate).toLocaleDateString() : 'Salon check-in';
     const timeStr = appointmentDate ? new Date(appointmentDate).toLocaleTimeString() : '';
     const addOnTotal = (booking.addonDetails || []).reduce((sum, a) => sum + (a.price || 0), 0);
     const totalPrice = booking.final_price || (booking.service?.price || 0) + addOnTotal;
@@ -139,15 +152,26 @@ export default function CustomerHistory() {
   }, {});
 
   const filteredBookings = activeTab === 'all' ? bookings : bookings.filter((b) => b.status === activeTab);
-  const activeBookings = bookings.filter((b) => ['pending', 'confirmed', 'in_progress', 'waiting', 'assigned_pending', 'serving'].includes(b.status));
+  const activeStatuses = CUSTOMER_ONLINE_BOOKING
+    ? ['pending', 'confirmed', 'in_progress', 'waiting', 'assigned_pending', 'serving']
+    : ['waiting', 'assigned_pending', 'serving'];
+  const activeBookings = bookings.filter((b) => activeStatuses.includes(b.status));
   const pastBookings = bookings.filter((b) => ['completed', 'cancelled'].includes(b.status));
+
+  const statusConfig = theme === 'dark' ? statusConfigDark : statusConfigLight;
+  const modalBg = theme === 'dark' ? '#1a1a1a' : '#ffffff';
+  const labelMuted = theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40';
+  const textPrimary = theme === 'dark' ? 'text-offwhite' : 'text-charcoal';
+  const textSecondary = theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50';
+  const textHeading = theme === 'dark' ? 'text-offwhite font-heading' : 'text-charcoal font-heading';
+  const closeBtn = theme === 'dark' ? 'text-offwhite/40 hover:text-gold' : 'text-charcoal/40 hover:text-gold';
 
   const renderCard = (booking) => {
     const cfg = statusConfig[booking.status];
     const isUpdating = updatingId === booking.id;
     const isWaiting = booking.status === 'waiting';
     const canCancel = booking.source === 'online' && ['waiting', 'assigned_pending'].includes(booking.status);
-    const appointmentDate = booking.scheduled_at || booking.checked_in_at;
+    const appointmentDate = booking.checked_in_at || booking.scheduled_at;
     const addOnTotal = (booking.addonDetails || []).reduce((sum, a) => sum + (a.price || 0), 0);
     const totalPrice = booking.final_price || (booking.service?.price || 0) + addOnTotal;
 
@@ -177,12 +201,14 @@ export default function CustomerHistory() {
         </div>
 
         <div className={theme === 'dark' ? 'text-offwhite/50 text-sm mb-1' : 'text-charcoal/50 text-sm mb-1'}>
-          {appointmentDate ? `${new Date(appointmentDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${new Date(appointmentDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : 'Walk-in Appointment'}
+          {appointmentDate
+            ? `${new Date(appointmentDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${new Date(appointmentDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
+            : (CUSTOMER_ONLINE_BOOKING ? 'Walk-in Appointment' : 'Salon check-in')}
         </div>
         <div className="text-gold font-heading text-lg">${totalPrice.toFixed(2)}</div>
 
         <div className="flex items-center gap-2 mt-3 flex-wrap">
-          {isWaiting && (
+          {CUSTOMER_ONLINE_BOOKING && isWaiting && (
             <Link
               to={`/customer/edit/${booking.id}`}
               onClick={(e) => e.stopPropagation()}
@@ -235,10 +261,14 @@ export default function CustomerHistory() {
             <div className="flex items-center gap-3 mb-2">
               <Link to="/portal" className={theme === 'dark' ? 'text-offwhite/40 hover:text-gold text-sm' : 'text-charcoal/40 hover:text-gold text-sm'}>Home</Link>
               <span className={theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}>/</span>
-              <span className="text-gold font-heading text-sm">My Bookings</span>
+              <span className="text-gold font-heading text-sm">{CUSTOMER_ONLINE_BOOKING ? 'My Bookings' : 'Visit History'}</span>
             </div>
-            <h1 className="font-heading text-4xl text-gold">My Bookings</h1>
-            <p className={theme === 'dark' ? 'text-offwhite/50 text-sm mt-1' : 'text-charcoal/50 text-sm mt-1'}>Track your appointments and stay updated</p>
+            <h1 className="font-heading text-4xl text-gold">{CUSTOMER_ONLINE_BOOKING ? 'My Bookings' : 'Visit History'}</h1>
+            <p className={theme === 'dark' ? 'text-offwhite/50 text-sm mt-1' : 'text-charcoal/50 text-sm mt-1'}>
+              {CUSTOMER_ONLINE_BOOKING
+                ? 'Track your appointments and stay updated'
+                : 'Your salon check-ins and completed visits'}
+            </p>
           </div>
 
           {notifications.length > 0 && (
@@ -275,23 +305,31 @@ export default function CustomerHistory() {
           {filteredBookings.length === 0 ? (
             <div className="rounded-2xl p-12 border-2 text-center" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#fdf8f0' }}>
               <div className={theme === 'dark' ? 'text-offwhite/30 text-5xl mb-4' : 'text-charcoal/30 text-5xl mb-4'}>&#128340;</div>
-              <h3 className={theme === 'dark' ? 'font-heading text-2xl text-offwhite mb-3' : 'font-heading text-2xl text-charcoal mb-3'}>No Bookings Found</h3>
-              <p className={theme === 'dark' ? 'text-offwhite/50 mb-8 max-w-sm mx-auto' : 'text-charcoal/50 mb-8 max-w-sm mx-auto'}>No bookings match your current filter.</p>
+              <h3 className={theme === 'dark' ? 'font-heading text-2xl text-offwhite mb-3' : 'font-heading text-2xl text-charcoal mb-3'}>
+                {CUSTOMER_ONLINE_BOOKING ? 'No Bookings Found' : 'No Visits Yet'}
+              </h3>
+              <p className={theme === 'dark' ? 'text-offwhite/50 mb-8 max-w-sm mx-auto' : 'text-charcoal/50 mb-8 max-w-sm mx-auto'}>
+                {CUSTOMER_ONLINE_BOOKING
+                  ? 'No bookings match your current filter.'
+                  : 'Check in at the salon kiosk to start building your visit history.'}
+              </p>
               {CUSTOMER_ONLINE_BOOKING ? (
                 <Link to="/customer/book" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
                   Book Now
                 </Link>
               ) : (
-                <a href="/about#contact" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
-                  Contact Support
-                </a>
+                <Link to="/check-in" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
+                  Check In at Salon
+                </Link>
               )}
             </div>
           ) : (
             <>
               {activeTab === 'all' && activeBookings.length > 0 && (
                 <div>
-                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-4' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-4'}>Upcoming & Active</div>
+                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-4' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-4'}>
+                    {CUSTOMER_ONLINE_BOOKING ? 'Upcoming & Active' : 'Current Visit'}
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {activeBookings.map(renderCard)}
                   </div>
@@ -314,32 +352,32 @@ export default function CustomerHistory() {
           )}
 
           {confirmCancel && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
-              <div className="w-full max-w-sm flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197,160,89,0.4)' }}>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <div className="w-full max-w-sm flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ backgroundColor: modalBg, borderColor: 'rgba(197,160,89,0.4)' }}>
                 <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
                   <div>
-                    <div className="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${theme === 'dark' ? 'bg-red-900/30' : 'bg-red-100'}`}>
                       <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
                     </div>
-                    <h3 className="font-heading text-2xl text-offwhite mb-2">Cancel Booking?</h3>
-                    <p className="text-offwhite/50 text-sm">Are you sure you want to cancel this booking?</p>
+                    <h3 className={`font-heading text-2xl mb-2 ${textPrimary}`}>Cancel Booking?</h3>
+                    <p className={`${textSecondary} text-sm`}>Are you sure you want to cancel this booking?</p>
                   </div>
-                  <button onClick={() => setConfirmCancel(null)} className="text-offwhite/40 hover:text-offwhite text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5">&times;</button>
+                  <button onClick={() => setConfirmCancel(null)} className={`${closeBtn} text-2xl w-8 h-8 flex items-center justify-center rounded-lg ${theme === 'dark' ? 'hover:bg-white/5' : 'hover:bg-charcoal/5'}`}>&times;</button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                  <p className="text-offwhite/50 text-sm">
-                    Are you sure you want to cancel your <span className="text-offwhite font-medium">{confirmCancel.service?.name}</span> appointment on{' '}
-                    <span className="text-offwhite">
+                  <p className={`${textSecondary} text-sm`}>
+                    Are you sure you want to cancel your <span className={`${textPrimary} font-medium`}>{confirmCancel.service?.name}</span> appointment on{' '}
+                    <span className={textPrimary}>
                       {new Date(confirmCancel.scheduled_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     </span>?
                   </p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 p-4 sm:p-6 pt-0">
                   <button
                     onClick={() => setConfirmCancel(null)}
-                    className="flex-1 py-3 bg-offwhite/10 text-offwhite rounded-lg hover:bg-offwhite/20 transition-colors font-medium"
+                    className={`flex-1 py-3 rounded-lg transition-colors font-medium ${theme === 'dark' ? 'bg-offwhite/10 text-offwhite hover:bg-offwhite/20' : 'bg-charcoal/10 text-charcoal hover:bg-charcoal/20'}`}
                   >
                     Keep Booking
                   </button>
@@ -360,49 +398,45 @@ export default function CustomerHistory() {
 
           {showDetailModal && selectedDetailBooking && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowDetailModal(false)}>
-              <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] bg-[#1a1a1a] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl">
+              <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ backgroundColor: modalBg }}>
                 <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
-                  <h2 className="font-heading text-2xl text-gold">Appointment Details</h2>
-                  <button onClick={() => setShowDetailModal(false)} className="text-offwhite/40 hover:text-gold text-xl leading-none">&times;</button>
+                  <h2 className="font-heading text-2xl text-gold">{CUSTOMER_ONLINE_BOOKING ? 'Appointment Details' : 'Visit Details'}</h2>
+                  <button onClick={() => setShowDetailModal(false)} className={`${closeBtn} text-xl leading-none`}>&times;</button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                   <div>
-                    <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Services</div>
-                    <div className="text-offwhite font-heading text-lg">{selectedDetailBooking.add_ons || selectedDetailBooking.service?.name || 'N/A'}</div>
+                    <div className={`${labelMuted} text-xs uppercase tracking-widest mb-1`}>Services</div>
+                    <div className={`${textHeading} text-lg`}>{selectedDetailBooking.add_ons || selectedDetailBooking.service?.name || 'N/A'}</div>
                     {(selectedDetailBooking.addonDetails || []).map((a) => (
-                      <div key={a.id} className="text-offwhite/40 text-xs ml-2">+ {a.name} (${a.price})</div>
+                      <div key={a.id} className={`${labelMuted} text-xs ml-2`}>+ {a.name} (${a.price})</div>
                     ))}
                   </div>
                   <div>
-                    <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Total Price</div>
-                    <div className="text-gold font-heading text-xl">${(selectedDetailBooking.final_price || (selectedDetailBooking.service?.price || 0) + (selectedDetailBooking.addonDetails || []).reduce((s, a) => s + (a.price || 0), 0))}</div>
+                    <div className={`${labelMuted} text-xs uppercase tracking-widest mb-1`}>Total Price</div>
+                    <div className="text-gold font-heading text-xl">${(selectedDetailBooking.final_price || (selectedDetailBooking.service?.price || 0) + (selectedDetailBooking.addonDetails || []).reduce((s, a) => s + (a.price || 0), 0)).toFixed(2)}</div>
                   </div>
                   <div>
-                    <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Date & Time</div>
-                    <div className="text-offwhite">{selectedDetailBooking.scheduled_at || selectedDetailBooking.checked_in_at ? new Date(selectedDetailBooking.scheduled_at || selectedDetailBooking.checked_in_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' at ' + new Date(selectedDetailBooking.scheduled_at || selectedDetailBooking.checked_in_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'Walk-in'}</div>
+                    <div className={`${labelMuted} text-xs uppercase tracking-widest mb-1`}>Date & Time</div>
+                    <div className={textPrimary}>{selectedDetailBooking.checked_in_at || selectedDetailBooking.scheduled_at ? new Date(selectedDetailBooking.checked_in_at || selectedDetailBooking.scheduled_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' at ' + new Date(selectedDetailBooking.checked_in_at || selectedDetailBooking.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : (CUSTOMER_ONLINE_BOOKING ? 'Walk-in' : 'Salon check-in')}</div>
                   </div>
                   <div>
-                    <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Duration</div>
-                    <div className="text-offwhite">{selectedDetailBooking.service?.duration_minutes || '—'} min</div>
+                    <div className={`${labelMuted} text-xs uppercase tracking-widest mb-1`}>Duration</div>
+                    <div className={textPrimary}>{selectedDetailBooking.service?.duration_minutes || '—'} min</div>
                   </div>
                   {selectedDetailBooking.tech?.full_name && (
                     <div>
-                      <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Technician</div>
-                      <div className="text-offwhite">{selectedDetailBooking.tech.full_name}</div>
+                      <div className={`${labelMuted} text-xs uppercase tracking-widest mb-1`}>Technician</div>
+                      <div className={textPrimary}>{selectedDetailBooking.tech.full_name}</div>
                     </div>
                   )}
                   <div>
-                    <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Status</div>
+                    <div className={`${labelMuted} text-xs uppercase tracking-widest mb-1`}>Status</div>
                     <span className={`px-3 py-1 text-xs border rounded-full ${statusConfig[selectedDetailBooking.status]?.color || ''}`}>{statusConfig[selectedDetailBooking.status]?.label || selectedDetailBooking.status}</span>
                   </div>
-                  {selectedDetailBooking.cancelled_at && (
-                    <div>
-                      <div className="text-offwhite/40 text-xs uppercase tracking-widest mb-1">Cancelled On</div>
-                      <div className="text-offwhite/70">{new Date(selectedDetailBooking.cancelled_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
-                    </div>
-                  )}
                 </div>
-                <button onClick={() => setShowDetailModal(false)} className="mt-8 w-full py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90 transition-colors">Close</button>
+                <div className="p-4 sm:p-6 pt-0">
+                  <button onClick={() => setShowDetailModal(false)} className="w-full py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90 transition-colors">Close</button>
+                </div>
               </div>
             </div>
           )}

@@ -76,7 +76,11 @@ export default function Technician() {
       await supabase.rpc('complete_appointment', { caller_phone: phone, appointment_id: appointment.id, p_final_price: price });
       const earnedPoints = Math.floor(price);
       if (earnedPoints > 0 && appointment.customer_id) {
-        await supabase.rpc('award_loyalty_points', { p_profile_id: appointment.customer_id, p_points: earnedPoints }).catch(() => {});
+        await supabase.rpc('award_loyalty_points', {
+          p_profile_id: appointment.customer_id,
+          p_points: earnedPoints,
+          p_description: `Visit reward — $${earnedPoints} spent`,
+        }).catch(() => {});
       }
       fetchMyAppointments();
     } catch { }

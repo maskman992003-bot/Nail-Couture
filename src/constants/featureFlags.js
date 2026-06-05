@@ -30,9 +30,9 @@ export const featureFlags = {
     inventoryBasic: true,           // View stock levels
     reportingBasic: true,           // Basic sales reports
     
-    // Phase 2 (Future)
-    staffShifts: false,             // Manage work schedules (Phase 2)
-    timeOffRequests: false,         // Request time off (Phase 2)
+    // Phase 2 (Active)
+    staffShifts: true,              // Manage work schedules (Phase 2)
+    timeOffRequests: true,          // Request time off (Phase 2)
     inventoryAutomation: false,     // Auto-low stock alerts (Phase 2/3)
     advancedReporting: false,       // Custom reports, analytics (Phase 3)
     employeeManagement: false,      // Add/remove staff, roles (Phase 3)

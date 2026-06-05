@@ -5,9 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 import { getHomePath } from '../utils/routes';
-import { isRefreshmentAvailable } from '../services/inventoryService';
-import { useAvailableRefreshments } from '../hooks/useAvailableRefreshments';
-import RefreshmentSelect from './RefreshmentSelect';
+import { getTierInfo, tierDetails, generateReferralCode } from '../utils/loyaltyTier';
+import { getProfileInitials } from '../utils/avatarUpload';
 import Sidebar from './Sidebar';
 
 const statusColors = {
@@ -26,40 +25,15 @@ const statusLabels = {
   cancelled: 'Cancelled',
 };
 
-const getTierInfo = (points) => {
-  if (points >= 1000) {
-    return { name: 'Diamond', color: 'text-cyan-400', benefit: '20% off + VIP priority + free premium service', nextTier: null, nextThreshold: null, progress: 100 };
-  }
-  if (points >= 500) {
-    return { name: 'Platinum', color: 'text-gray-300', benefit: '15% off + priority booking + free refreshment', nextTier: 'Diamond', nextThreshold: 1000, progress: ((points - 500) / 500) * 100 };
-  }
-  if (points >= 100) {
-    return { name: 'Gold', color: 'text-gold', benefit: '10% off + free refreshment', nextTier: 'Platinum', nextThreshold: 500, progress: ((points - 100) / 400) * 100 };
-  }
-  return { name: 'Silver', color: 'text-gray-400', benefit: '5% off all services', nextTier: 'Gold', nextThreshold: 100, progress: (points / 100) * 100 };
-};
-
-const tierDetails = {
-  Silver: { points: 0, next: 100, reward: 'Gold status (10% off + free refreshment)' },
-  Gold: { points: 100, next: 500, reward: 'Platinum status (15% off + priority booking + free refreshment)' },
-  Platinum: { points: 500, next: 1000, reward: 'Diamond status (20% off + VIP priority + free premium service)' },
-  Diamond: { points: 1000, next: null, reward: 'Maximum tier — enjoy all premium perks!' },
-};
-
 export default function ClientPortal() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [editForm, setEditForm] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [confirmationCode, setConfirmationCode] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showEarningModal, setShowEarningModal] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
-  const { refreshments, loading: refreshmentsLoading } = useAvailableRefreshments();
   const { user, loading: authLoading } = useAuth();
   const { theme } = useTheme();
 
@@ -83,9 +57,7 @@ export default function ClientPortal() {
       setProfile(profileData);
 
       if (!profileData.referral_code) {
-        const cleanName = (profileData.full_name || 'USER').replace(/\s+/g, '').toUpperCase().slice(0, 4);
-        const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const newCode = `${cleanName}${random}`;
+        const newCode = generateReferralCode(profileData.full_name);
         await supabase.from('profiles').update({ referral_code: newCode }).eq('id', profileData.id);
         setProfile({ ...profileData, referral_code: newCode });
       }
@@ -96,40 +68,6 @@ export default function ClientPortal() {
     } catch { }
     setLoading(false);
   }, [navigate]);
-
-  const startEditProfile = () => {
-    setEditForm({ full_name: profile.full_name || '', email: profile.email || '', phone: profile.phone || '', nail_goal: profile.nail_goal || '', refreshment_pref: profile.refreshment_pref || '' });
-    setEditingProfile(true);
-  };
-
-  const saveProfile = async () => {
-    setSaving(true);
-    const refreshmentPref = isRefreshmentAvailable(editForm.refreshment_pref, refreshments)
-      ? (editForm.refreshment_pref || null)
-      : null;
-    const { data } = await supabase.from('profiles').update({
-      full_name: editForm.full_name,
-      email: editForm.email,
-      phone: editForm.phone.replace(/\D/g, ''),
-      nail_goal: editForm.nail_goal || null,
-      refreshment_pref: refreshmentPref,
-    }).eq('id', profile.id).select();
-    if (data && data[0]) setProfile(data[0]);
-    setEditingProfile(false);
-    setSaving(false);
-  };
-
-  const generateConfirmationCode = () => Math.random().toString(36).substring(2, 8).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
-
-  const handleRedeem = async (pointsCost, rewardName) => {
-    if ((profile.loyalty_points || 0) < pointsCost) return;
-    const newPoints = (profile.loyalty_points || 0) - pointsCost;
-    const { error } = await supabase.from('profiles').update({ loyalty_points: newPoints }).eq('id', profile.id);
-    if (!error) {
-      setConfirmationCode({ code: generateConfirmationCode(), reward: rewardName, points: pointsCost });
-      setProfile({ ...profile, loyalty_points: newPoints });
-    }
-  };
 
   const handleCopyReferral = () => {
     if (!profile?.referral_code) return;
@@ -181,9 +119,13 @@ export default function ClientPortal() {
           >
             <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-3' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-3'}>Membership Card — tap to learn more</div>
             <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)' }}>
-                <span className="text-charcoal font-heading text-xl font-bold">{profile.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
-              </div>
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.full_name} className="w-16 h-16 rounded-full object-cover border-2 border-gold/40" style={{ boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)' }} />
+              ) : (
+                <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)' }}>
+                  <span className="text-charcoal font-heading text-xl font-bold">{getProfileInitials(profile.full_name)}</span>
+                </div>
+              )}
             </div>
             <div className={`font-heading text-3xl mb-1 ${tier.color}`}>{tier.name} Member</div>
             <div className="text-5xl font-heading text-gold mb-3">{profile.loyalty_points || 0}</div>
@@ -264,97 +206,17 @@ export default function ClientPortal() {
             </div>
           )}
 
-          <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#ffffff' }}>
-            <div className="flex items-center justify-between mb-6">
-              <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest' : 'text-charcoal/40 text-xs uppercase tracking-widest'}>Your Profile</div>
-              {!editingProfile && (
-                <button onClick={startEditProfile} className="px-4 py-2 text-gold text-sm hover:underline transition-colors">
-                  Edit
-                </button>
-              )}
-            </div>
-            {editingProfile ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs mb-2' : 'text-charcoal/40 text-xs mb-2'}>Full Name</div>
-                  <input type="text" value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} className={theme === 'dark' ? 'w-full p-3 text-offwhite border border-offwhite/10 rounded-lg focus:border-gold focus:outline-none bg-transparent' : 'w-full p-3 text-charcoal border border-charcoal/10 rounded-lg focus:border-gold focus:outline-none bg-transparent'} />
-                </div>
-                <div>
-                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs mb-2' : 'text-charcoal/40 text-xs mb-2'}>Email</div>
-                  <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className={theme === 'dark' ? 'w-full p-3 text-offwhite border border-offwhite/10 rounded-lg focus:border-gold focus:outline-none bg-transparent' : 'w-full p-3 text-charcoal border border-charcoal/10 rounded-lg focus:border-gold focus:outline-none bg-transparent'} />
-                </div>
-                <div>
-                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs mb-2' : 'text-charcoal/40 text-xs mb-2'}>Phone</div>
-                  <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className={theme === 'dark' ? 'w-full p-3 text-offwhite border border-offwhite/10 rounded-lg focus:border-gold focus:outline-none bg-transparent' : 'w-full p-3 text-charcoal border border-charcoal/10 rounded-lg focus:border-gold focus:outline-none bg-transparent'} />
-                </div>
-                <RefreshmentSelect
-                  label="Refreshment Preference"
-                  labelClassName={theme === 'dark' ? 'text-offwhite/40 text-xs mb-2' : 'text-charcoal/40 text-xs mb-2'}
-                  value={editForm.refreshment_pref || ''}
-                  onChange={(e) => setEditForm({ ...editForm, refreshment_pref: e.target.value })}
-                  refreshments={refreshments}
-                  loading={refreshmentsLoading}
-                  showUnavailableNote
-                  emptyLabel="None"
-                  className={theme === 'dark' ? 'p-3 bg-transparent border-offwhite/10' : 'p-3 bg-transparent border-charcoal/10'}
-                />
-                <div className="flex items-end gap-3">
-                  <button onClick={saveProfile} disabled={saving} className="px-6 py-3 bg-gold text-charcoal font-heading text-sm rounded-lg hover:bg-gold/90 disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>
-                  <button onClick={() => { setEditingProfile(false); setEditForm({}); }} className={theme === 'dark' ? 'px-6 py-3 border border-offwhite/10 text-offwhite/60 text-sm rounded-lg hover:border-gold/30' : 'px-6 py-3 border border-charcoal/10 text-charcoal/60 text-sm rounded-lg hover:border-gold/30'}>Cancel</button>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div>
-                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs mb-2' : 'text-charcoal/40 text-xs mb-2'}>Name</div>
-                  <div className={theme === 'dark' ? 'text-offwhite font-heading text-lg' : 'text-charcoal font-heading text-lg'}>{profile.full_name || 'Not set'}</div>
-                </div>
-                <div>
-                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs mb-2' : 'text-charcoal/40 text-xs mb-2'}>Email</div>
-                  <div className={theme === 'dark' ? 'text-offwhite font-heading text-lg' : 'text-charcoal font-heading text-lg'}>{profile.email || 'Not set'}</div>
-                </div>
-                <div>
-                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs mb-2' : 'text-charcoal/40 text-xs mb-2'}>Phone</div>
-                  <div className={theme === 'dark' ? 'text-offwhite font-heading text-lg' : 'text-charcoal font-heading text-lg'}>{profile.phone || 'Not set'}</div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {confirmationCode && (
-            <div className="rounded-2xl p-8 border-2 text-center" style={{ borderColor: 'rgba(197, 160, 89, 0.5)', background: theme === 'dark' ? 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #1a1a1a 100%)' : 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #ffffff 100%)' }}>
-              <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-3' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-3'}>Your Redemption Code</div>
-              <div className="font-heading text-4xl text-gold tracking-widest mb-3">{confirmationCode.code}</div>
-              <div className={theme === 'dark' ? 'text-offwhite/60 text-lg' : 'text-charcoal/60 text-lg'}>{confirmationCode.reward}</div>
-              <button onClick={() => setConfirmationCode(null)} className="mt-6 px-6 py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90">Got It</button>
-            </div>
-          )}
-
-          <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#ffffff' }}>
-            <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-6' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-6'}>Rewards</div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-xl p-5 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(18,18,18,0.02)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(18,18,18,0.05)' }}>
-                <div className={theme === 'dark' ? 'text-offwhite font-heading text-base mb-1' : 'text-charcoal font-heading text-base mb-1'}>Free Basic Nail Art</div>
-                <div className={theme === 'dark' ? 'text-offwhite/40 text-sm mb-4' : 'text-charcoal/40 text-sm mb-4'}>100 points</div>
-                <button onClick={() => handleRedeem(100, 'Free Basic Nail Art')} disabled={(profile.loyalty_points || 0) < 100} className="w-full py-2 text-sm rounded-lg border-2 transition-colors disabled:opacity-30" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', color: '#c5a059' }}>
-                  Redeem
-                </button>
-              </div>
-              <div className="rounded-xl p-5 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(18,18,18,0.02)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(18,18,18,0.05)' }}>
-                <div className={theme === 'dark' ? 'text-offwhite font-heading text-base mb-1' : 'text-charcoal font-heading text-base mb-1'}>Free Refreshment</div>
-                <div className={theme === 'dark' ? 'text-offwhite/40 text-sm mb-4' : 'text-charcoal/40 text-sm mb-4'}>200 points</div>
-                <button onClick={() => handleRedeem(200, 'Free Refreshment')} disabled={(profile.loyalty_points || 0) < 200} className="w-full py-2 text-sm rounded-lg border-2 transition-colors disabled:opacity-30" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', color: '#c5a059' }}>
-                  Redeem
-                </button>
-              </div>
-              <div className="rounded-xl p-5 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(18,18,18,0.02)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(18,18,18,0.05)' }}>
-                <div className={theme === 'dark' ? 'text-offwhite font-heading text-base mb-1' : 'text-charcoal font-heading text-base mb-1'}>$25 Voucher</div>
-                <div className={theme === 'dark' ? 'text-offwhite/40 text-sm mb-4' : 'text-charcoal/40 text-sm mb-4'}>500 points</div>
-                <button onClick={() => handleRedeem(500, '$25 Voucher')} disabled={(profile.loyalty_points || 0) < 500} className="w-full py-2 text-sm rounded-lg border-2 transition-colors disabled:opacity-30" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', color: '#c5a059' }}>
-                  Redeem
-                </button>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Link to="/customer/profile" className="rounded-2xl p-6 border hover:border-gold/40 transition-colors" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#ffffff' }}>
+              <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-2' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-2'}>Account</div>
+              <div className="text-gold font-heading text-lg">My Profile →</div>
+              <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-2' : 'text-charcoal/40 text-xs mt-2'}>Preferences, visit stats, security PIN</p>
+            </Link>
+            <Link to="/customer/loyalty" className="rounded-2xl p-6 border hover:border-gold/40 transition-colors" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#ffffff' }}>
+              <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-2' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-2'}>Rewards</div>
+              <div className="text-gold font-heading text-lg">Redeem Points →</div>
+              <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-2' : 'text-charcoal/40 text-xs mt-2'}>Browse and redeem loyalty rewards</p>
+            </Link>
           </div>
 
           {showEarningModal && (

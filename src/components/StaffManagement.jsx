@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { STAFF_SHIFTS } from '../constants/featureFlags';
 import Sidebar from './Sidebar';
 import AppModal, {
   modalLabelClass,
@@ -218,7 +219,7 @@ export default function StaffManagement() {
                     Registered {member.created_at ? new Date(member.created_at).toLocaleDateString() : '—'}
                   </span>
                   <div className="flex items-center gap-3">
-                    {member.role !== 'owner' && (
+                    {STAFF_SHIFTS && member.role !== 'owner' && (
                       <Link
                         to={`/${user.role}/staff/schedule?staff=${member.id}`}
                         className="text-gold text-xs font-medium hover:underline flex items-center gap-1"

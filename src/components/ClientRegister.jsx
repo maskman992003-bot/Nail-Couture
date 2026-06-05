@@ -132,10 +132,17 @@ export default function ClientRegister() {
         if (referrer) {
           referredById = referrer.id;
           initialPoints = 50;
-          await supabase
-            .from('profiles')
-            .update({ loyalty_points: (referrer.loyalty_points || 0) + 50 })
-            .eq('id', referrer.id);
+          await supabase.rpc('award_loyalty_points', {
+            p_profile_id: referrer.id,
+            p_points: 50,
+            p_description: 'Referral bonus — friend signed up',
+            p_type: 'referral_bonus',
+          }).catch(() => {
+            supabase
+              .from('profiles')
+              .update({ loyalty_points: (referrer.loyalty_points || 0) + 50 })
+              .eq('id', referrer.id);
+          });
         }
       }
 

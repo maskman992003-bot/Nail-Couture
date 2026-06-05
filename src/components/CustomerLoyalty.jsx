@@ -3,36 +3,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { getTierInfo } from '../utils/loyaltyTier';
+import { LOYALTY_REWARDS, fetchLoyaltyHistory, redeemLoyaltyReward, formatTransactionType } from '../utils/loyaltyTransactions';
+import { getProfileInitials } from '../utils/avatarUpload';
 import Sidebar from './Sidebar';
-
-const getTierInfo = (points) => {
-  if (points >= 1000) {
-    return { name: 'Diamond', color: 'text-cyan-400', benefit: '20% off + VIP priority + free premium service', nextTier: null, nextThreshold: null, progress: 100 };
-  }
-  if (points >= 500) {
-    return { name: 'Platinum', color: 'text-gray-300', benefit: '15% off + priority booking + free refreshment', nextTier: 'Diamond', nextThreshold: 1000, progress: ((points - 500) / 500) * 100 };
-  }
-  if (points >= 100) {
-    return { name: 'Gold', color: 'text-gold', benefit: '10% off + free refreshment', nextTier: 'Platinum', nextThreshold: 500, progress: ((points - 100) / 400) * 100 };
-  }
-  return { name: 'Silver', color: 'text-gray-400', benefit: '5% off all services', nextTier: 'Gold', nextThreshold: 100, progress: (points / 100) * 100 };
-};
-
-const tierDetails = {
-  Silver: { points: 0, next: 100, reward: 'Gold status (10% off + free refreshment)' },
-  Gold: { points: 100, next: 500, reward: 'Platinum status (15% off + priority booking + free refreshment)' },
-  Platinum: { points: 500, next: 1000, reward: 'Diamond status (20% off + VIP priority + free premium service)' },
-  Diamond: { points: 1000, next: null, reward: 'Maximum tier — enjoy all premium perks!' },
-};
 
 export default function CustomerLoyalty() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [confirmationCode, setConfirmationCode] = useState(null);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [loyaltyHistory, setLoyaltyHistory] = useState({ rows: [], available: false });
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemError, setRedeemError] = useState('');
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -45,8 +31,12 @@ export default function CustomerLoyalty() {
     if (!userId) { navigate('/login'); return; }
 
     try {
-      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      const [{ data }, history] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).single(),
+        fetchLoyaltyHistory(userId),
+      ]);
       if (data) setProfile(data);
+      setLoyaltyHistory(history);
     } catch (err) {
       console.error('Error fetching profile:', err);
     } finally {
@@ -54,16 +44,27 @@ export default function CustomerLoyalty() {
     }
   };
 
-  const generateConfirmationCode = () => Math.random().toString(36).substring(2, 8).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
-
   const handleRedeem = async (pointsCost, rewardName) => {
-    if (!profile || (profile.loyalty_points || 0) < pointsCost) return;
-    const newPoints = profile.loyalty_points - pointsCost;
-    const { error } = await supabase.from('profiles').update({ loyalty_points: newPoints }).eq('id', profile.id);
-    if (!error) {
-      setConfirmationCode({ code: generateConfirmationCode(), reward: rewardName, points: pointsCost });
-      setProfile({ ...profile, loyalty_points: newPoints });
+    if (!profile || (profile.loyalty_points || 0) < pointsCost || redeeming) return;
+    setRedeeming(true);
+    setRedeemError('');
+
+    const result = await redeemLoyaltyReward(profile.id, pointsCost, rewardName);
+    if (result.success) {
+      const updated = { ...profile, loyalty_points: result.new_balance };
+      setProfile(updated);
+      if (user) login({ ...user, loyalty_points: result.new_balance });
+      setConfirmationCode({
+        code: result.redemption_code,
+        reward: result.reward,
+        points: result.points_cost,
+      });
+      const history = await fetchLoyaltyHistory(profile.id);
+      setLoyaltyHistory(history);
+    } else {
+      setRedeemError(result.error || 'Redemption failed');
     }
+    setRedeeming(false);
   };
 
   const handleCopyReferral = () => {
@@ -117,9 +118,13 @@ export default function CustomerLoyalty() {
           <div className="rounded-2xl p-8 border-2 text-center" style={{ background: theme === 'dark' ? 'linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, rgba(26, 26, 26, 1) 100%)' : 'linear-gradient(135deg, rgba(197, 160, 89, 0.08) 0%, rgba(255, 255, 255, 1) 100%)', borderColor: 'rgba(197, 160, 89, 0.4)' }}>
             <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-3' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-3'}>Membership Card</div>
             <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)' }}>
-                <span className="text-charcoal font-heading text-xl font-bold">{profile.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
-              </div>
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.full_name} className="w-16 h-16 rounded-full object-cover border-2 border-gold/40" style={{ boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)' }} />
+              ) : (
+                <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 20px rgba(197, 160, 89, 0.3)' }}>
+                  <span className="text-charcoal font-heading text-xl font-bold">{getProfileInitials(profile.full_name)}</span>
+                </div>
+              )}
             </div>
             <div className={`font-heading text-3xl mb-1 ${tier.color}`}>{tier.name} Member</div>
             <div className="text-5xl font-heading text-gold mb-3">{profile.loyalty_points || 0}</div>
@@ -196,30 +201,48 @@ export default function CustomerLoyalty() {
 
           <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>
             <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-6' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-6'}>Redeem Rewards</div>
+            {redeemError && <p className="text-red-400 text-sm text-center mb-4">{redeemError}</p>}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-xl p-5 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(18,18,18,0.02)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(18,18,18,0.05)' }}>
-                <div className={theme === 'dark' ? 'text-offwhite font-heading text-base mb-1' : 'text-charcoal font-heading text-base mb-1'}>Free Basic Nail Art</div>
-                <div className={theme === 'dark' ? 'text-offwhite/40 text-sm mb-4' : 'text-charcoal/40 text-sm mb-4'}>100 points</div>
-                <button onClick={() => handleRedeem(100, 'Free Basic Nail Art')} disabled={(profile.loyalty_points || 0) < 100} className="w-full py-2 text-sm rounded-lg border-2 transition-colors disabled:opacity-30" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', color: '#c5a059' }}>
-                  Redeem
-                </button>
-              </div>
-              <div className="rounded-xl p-5 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(18,18,18,0.02)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(18,18,18,0.05)' }}>
-                <div className={theme === 'dark' ? 'text-offwhite font-heading text-base mb-1' : 'text-charcoal font-heading text-base mb-1'}>Free Refreshment</div>
-                <div className={theme === 'dark' ? 'text-offwhite/40 text-sm mb-4' : 'text-charcoal/40 text-sm mb-4'}>200 points</div>
-                <button onClick={() => handleRedeem(200, 'Free Refreshment')} disabled={(profile.loyalty_points || 0) < 200} className="w-full py-2 text-sm rounded-lg border-2 transition-colors disabled:opacity-30" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', color: '#c5a059' }}>
-                  Redeem
-                </button>
-              </div>
-              <div className="rounded-xl p-5 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(18,18,18,0.02)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(18,18,18,0.05)' }}>
-                <div className={theme === 'dark' ? 'text-offwhite font-heading text-base mb-1' : 'text-charcoal font-heading text-base mb-1'}>$25 Voucher</div>
-                <div className={theme === 'dark' ? 'text-offwhite/40 text-sm mb-4' : 'text-charcoal/40 text-sm mb-4'}>500 points</div>
-                <button onClick={() => handleRedeem(500, '$25 Voucher')} disabled={(profile.loyalty_points || 0) < 500} className="w-full py-2 text-sm rounded-lg border-2 transition-colors disabled:opacity-30" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', color: '#c5a059' }}>
-                  Redeem
-                </button>
-              </div>
+              {LOYALTY_REWARDS.map((reward) => (
+                <div key={reward.id} className="rounded-xl p-5 border" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(18,18,18,0.02)', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(18,18,18,0.05)' }}>
+                  <div className={theme === 'dark' ? 'text-offwhite font-heading text-base mb-1' : 'text-charcoal font-heading text-base mb-1'}>{reward.name}</div>
+                  <div className={theme === 'dark' ? 'text-offwhite/40 text-sm mb-4' : 'text-charcoal/40 text-sm mb-4'}>{reward.points} points</div>
+                  <button
+                    onClick={() => handleRedeem(reward.points, reward.name)}
+                    disabled={(profile.loyalty_points || 0) < reward.points || redeeming}
+                    className="w-full py-2 text-sm rounded-lg border-2 transition-colors disabled:opacity-30"
+                    style={{ borderColor: 'rgba(197, 160, 89, 0.4)', color: '#c5a059' }}
+                  >
+                    {redeeming ? 'Processing…' : 'Redeem'}
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
+
+          {loyaltyHistory.available && loyaltyHistory.rows.length > 0 && (
+            <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>
+              <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-6' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-6'}>Points History</div>
+              <div className="space-y-3">
+                {loyaltyHistory.rows.map((tx) => (
+                  <div key={tx.id} className={`flex justify-between items-start py-3 border-b last:border-0 ${theme === 'dark' ? 'border-white/5' : 'border-charcoal/5'}`}>
+                    <div>
+                      <div className={theme === 'dark' ? 'text-offwhite font-medium text-sm' : 'text-charcoal font-medium text-sm'}>
+                        {tx.description || formatTransactionType(tx.transaction_type)}
+                      </div>
+                      <div className={theme === 'dark' ? 'text-offwhite/40 text-xs' : 'text-charcoal/40 text-xs'}>
+                        {new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {tx.redemption_code && ` · ${tx.redemption_code}`}
+                      </div>
+                    </div>
+                    <span className={`font-heading text-sm ${tx.points >= 0 ? 'text-green-500' : 'text-red-400'}`}>
+                      {tx.points >= 0 ? '+' : ''}{tx.points}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {confirmationCode && (
             <div className="rounded-2xl p-8 border-2 text-center" style={{ borderColor: 'rgba(197, 160, 89, 0.5)', background: theme === 'dark' ? 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #1a1a1a 100%)' : 'linear-gradient(135deg, rgba(197, 160, 89, 0.1) 0%, #ffffff 100%)' }}>

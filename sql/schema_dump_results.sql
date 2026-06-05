@@ -1,0 +1,121 @@
+-- ============================================================
+-- LIVE SCHEMA ANALYSIS (derived from schema_dump_results_Full.sql)
+-- Generated: 2026-06-05
+-- Raw dump: sql/schema_dump_results_Full.sql
+-- ============================================================
+
+-- PHASE 0: COMPLETE — live Supabase schema confirmed.
+
+-- ------------------------------------------------------------
+-- PUBLIC TABLES (14)
+-- ------------------------------------------------------------
+-- appointment_status_history
+-- appointments
+-- customer_waivers
+-- inventory
+-- inventory_logs
+-- notifications
+-- online_bookings_archived
+-- payment_transactions
+-- profiles
+-- service_categories
+-- services
+-- shifts
+-- staff_schedules
+-- time_off_requests
+
+-- ------------------------------------------------------------
+-- profiles (13 columns) — customer identity + loyalty
+-- ------------------------------------------------------------
+-- id              uuid PK
+-- full_name       text
+-- loyalty_points  int4 default 0
+-- tier            text default 'Silver'
+-- refreshment_pref text
+-- created_at      timestamptz
+-- email           text
+-- nail_goal       text
+-- role            user_role default 'customer'
+-- phone           text (unique)
+-- referral_code   text
+-- referral_by     uuid FK → profiles.id
+-- pin             text          ← LIVE COLUMN (NOT pin_code)
+-- birthday        text          ← MM-DD format
+
+-- ------------------------------------------------------------
+-- appointments (16 columns)
+-- ------------------------------------------------------------
+-- id, customer_id, service_id, status, checked_in_at, start_time,
+-- technician_id, final_price, notes, add_ons, booking_type (default walk_in),
+-- scheduled_at, created_at, checked_in_by, start_time_new, refreshment_pref
+--
+-- status allowed: confirmed, waiting, serving, completed, cancelled,
+--                 missed, assigned_pending (+ legacy pending in 2nd check)
+
+-- ------------------------------------------------------------
+-- payment_transactions (13 columns)
+-- ------------------------------------------------------------
+-- id, appointment_id, customer_id, technician_id, cashier_id, service_id,
+-- amount, discount_amount, discount_type, final_amount, payment_method,
+-- status, notes, created_at
+--
+-- RLS: Allow anon read payment_transactions (qual: true) — readable via anon key
+
+-- ------------------------------------------------------------
+-- notifications (9 columns)
+-- ------------------------------------------------------------
+-- id, profile_id, reference_id, body, is_read, created_at,
+-- recipient_id (NOT target_user_id), title, type (default 'system')
+--
+-- App uses recipient_id ✓  |  fallback body || message in UI ✓
+
+-- ------------------------------------------------------------
+-- customer_waivers (7 columns)
+-- ------------------------------------------------------------
+-- id, customer_phone, customer_name, agreed_to_terms, signature_image,
+-- signed_at, profile_id
+--
+-- RLS "Customers can view own waivers": auth.uid() = profile_id
+-- ⚠ App uses custom phone/PIN auth (auth.uid() is null) — use profile_id
+--   filter in queries or RPC; anon "Allow all operations" policy also exists
+
+-- ------------------------------------------------------------
+-- user_role enum
+-- ------------------------------------------------------------
+-- super_admin, owner, partner, admin, cashier, technician, customer
+
+-- ------------------------------------------------------------
+-- CUSTOMER RPCs (relevant to profile)
+-- ------------------------------------------------------------
+-- get_my_appointments(customer_id, status_filter?)
+-- get_my_notifications(p_phone)
+-- cancel_my_appointment
+-- update_my_appointment
+-- mark_my_notifications_read / mark_notification_read
+-- award_loyalty_points
+-- update_profile_field (staff only)
+
+-- ------------------------------------------------------------
+-- CODE FIXES REQUIRED (schema-confirmed)
+-- ------------------------------------------------------------
+-- 1. CustomerProfile.jsx uses pin_code → change to pin
+-- 2. Compute tier from loyalty_points; don't trust stale profiles.tier
+-- 3. Visit stats: filter appointments.booking_type = 'walk_in'
+-- 4. No online booking CTAs (featureFlags: CUSTOMER_ONLINE_BOOKING = false)
+-- 5. Receipt history: query payment_transactions WHERE customer_id = user.id
+-- 6. Waiver history: query customer_waivers WHERE profile_id = user.id
+
+-- ------------------------------------------------------------
+-- SAFE TO BUILD IN PROFILE (no new schema needed)
+-- ------------------------------------------------------------
+-- • Walk-in visit stats (appointments + payment_transactions)
+-- • Loyalty tier progress (profiles.loyalty_points)
+-- • Referral code share (profiles.referral_code, referral_by)
+-- • Notifications list (notifications.recipient_id)
+-- • Waiver last-signed date (customer_waivers.profile_id)
+-- • Payment/receipt history (payment_transactions.customer_id)
+-- • Preferences edit (profiles fields above)
+--
+-- PHASE 2 MIGRATION — APPLIED (Supabase: Success, no rows returned)
+--   sql/023_add_profile_preferences.sql
+-- profiles.preferences JSONB — nail_shape, nail_length, nail_finish, allergies

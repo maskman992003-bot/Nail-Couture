@@ -12,6 +12,7 @@ import CustomerLoyalty from './components/CustomerLoyalty.jsx'
 import CustomerProfile from './components/CustomerProfile.jsx'
 import CustomerServices from './components/CustomerServices.jsx'
 import CustomerManagementHistory from './components/CustomerManagementHistory.jsx'
+import StaffCustomerDetail from './components/StaffCustomerDetail.jsx'
 import EditBooking from './components/EditBooking.jsx'
 import SuperAdmin from './components/SuperAdmin.jsx'
 import Admin from './components/Admin.jsx'
@@ -108,6 +109,21 @@ createRoot(document.getElementById('root')).render(
                   <TechnicianSchedule />
                 </ProtectedRoute>
               } />
+              <Route path="/cashier/schedule" element={
+                <ProtectedRoute allowedRoles={['cashier', 'technician']}>
+                  <TechnicianSchedule />
+                </ProtectedRoute>
+              } />
+              <Route path="/owner/schedule" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <StaffSchedule />
+                </ProtectedRoute>
+              } />
+              <Route path="/partner/schedule" element={
+                <ProtectedRoute allowedRoles={['partner']}>
+                  <StaffSchedule />
+                </ProtectedRoute>
+              } />
               <Route path="/:role/staff/:id/schedule" element={
                 <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner', 'admin']}>
                   <StaffSchedule />
@@ -121,6 +137,11 @@ createRoot(document.getElementById('root')).render(
               <Route path="/superadmin/customers" element={
                 <ProtectedRoute allowedRoles={['super_admin']}>
                   <CustomerManagementHistory />
+                </ProtectedRoute>
+              } />
+              <Route path="/superadmin/customers/:id" element={
+                <ProtectedRoute allowedRoles={['super_admin']}>
+                  <StaffCustomerDetail />
                 </ProtectedRoute>
               } />
             
@@ -176,6 +197,11 @@ createRoot(document.getElementById('root')).render(
                   <CustomerManagementHistory />
                 </ProtectedRoute>
               } />
+              <Route path="/owner/customers/:id" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <StaffCustomerDetail />
+                </ProtectedRoute>
+              } />
             
               {/* Partner Routes */}
              <Route path="/partner" element={
@@ -201,6 +227,11 @@ createRoot(document.getElementById('root')).render(
               <Route path="/partner/customers" element={
                 <ProtectedRoute allowedRoles={['partner']}>
                   <CustomerManagementHistory />
+                </ProtectedRoute>
+              } />
+              <Route path="/partner/customers/:id" element={
+                <ProtectedRoute allowedRoles={['partner']}>
+                  <StaffCustomerDetail />
                 </ProtectedRoute>
               } />
               <Route path="/partner/staff" element={
@@ -257,6 +288,16 @@ createRoot(document.getElementById('root')).render(
                  <Settings />
                </ProtectedRoute>
              } />
+             <Route path="/admin/customers" element={
+               <ProtectedRoute allowedRoles={['admin']}>
+                 <CustomerManagementHistory />
+               </ProtectedRoute>
+             } />
+             <Route path="/admin/customers/:id" element={
+               <ProtectedRoute allowedRoles={['admin']}>
+                 <StaffCustomerDetail />
+               </ProtectedRoute>
+             } />
 
             <Route path="/cashier" element={
               <ProtectedRoute allowedRoles={['cashier']}>
@@ -283,6 +324,16 @@ createRoot(document.getElementById('root')).render(
                 <Settings />
               </ProtectedRoute>
             } />
+            <Route path="/cashier/customers" element={
+              <ProtectedRoute allowedRoles={['cashier']}>
+                <CustomerManagementHistory />
+              </ProtectedRoute>
+            } />
+            <Route path="/cashier/customers/:id" element={
+              <ProtectedRoute allowedRoles={['cashier']}>
+                <StaffCustomerDetail />
+              </ProtectedRoute>
+            } />
 
             <Route path="/technician" element={
               <ProtectedRoute allowedRoles={['technician']}>
@@ -294,7 +345,16 @@ createRoot(document.getElementById('root')).render(
                 <Settings />
               </ProtectedRoute>
             } />
-
+            <Route path="/technician/customers" element={
+              <ProtectedRoute allowedRoles={['technician']}>
+                <CustomerManagementHistory />
+              </ProtectedRoute>
+            } />
+            <Route path="/technician/customers/:id" element={
+              <ProtectedRoute allowedRoles={['technician']}>
+                <StaffCustomerDetail />
+              </ProtectedRoute>
+            } />
 
             <Route path="/portal" element={
               <ProtectedRoute allowedRoles={['customer']}>

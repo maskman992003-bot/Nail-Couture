@@ -3,6 +3,12 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { STAFF_SHIFTS } from '../constants/featureFlags';
+import {
+  fetchStaffShifts,
+  fetchTimeOffRequests,
+  reviewTimeOffRequest,
+} from '../utils/staffSchedule';
 import Sidebar from './Sidebar';
 import {
   SHIFT_TYPES,
@@ -349,6 +355,10 @@ export default function StaffSchedule() {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
+    if (!STAFF_SHIFTS) {
+      navigate('/portal');
+      return;
+    }
     if (!['admin', 'super_admin', 'owner', 'partner'].includes(user.role)) {
       navigate('/portal');
     }
@@ -378,14 +388,14 @@ export default function StaffSchedule() {
     setLoading(true);
     try {
       const { start, end } = monthRange;
-      const [staffRes, shiftsRes, torRes] = await Promise.all([
+      const [staffRes, shiftsData, torData] = await Promise.all([
         supabase.from('profiles').select('*').in('role', ['admin', 'cashier', 'technician']).order('full_name'),
-        supabase.rpc('get_staff_schedule', { p_start_date: start, p_end_date: end, p_employee_id: selectedStaffId }),
-        supabase.rpc('get_time_off_requests', { p_status: null }),
+        fetchStaffShifts(selectedStaffId, start, end),
+        fetchTimeOffRequests(),
       ]);
       if (staffRes.data) setStaff(staffRes.data);
-      if (shiftsRes.data) setShifts(shiftsRes.data);
-      if (torRes.data) setTimeOffRequests(torRes.data);
+      setShifts(shiftsData);
+      setTimeOffRequests(torData);
     } catch (err) {
       console.error('Error fetching schedule data:', err);
     } finally {
@@ -575,11 +585,7 @@ export default function StaffSchedule() {
   };
 
   const handleReviewTimeOff = async (requestId, status) => {
-    await supabase.rpc('review_time_off_request', {
-      p_request_id: requestId,
-      p_status: status,
-      p_reviewed_by: user.id,
-    });
+    await reviewTimeOffRequest(requestId, status, user.id);
     await fetchData();
   };
 
@@ -982,7 +988,7 @@ export default function StaffSchedule() {
             ) : (
               timeOffRequests.map((r) => (
                 <div
-                  key={r.request_id || r.id}
+                  key={r.id}
                   className={`rounded-2xl p-5 bg-secondary ${r.status === 'pending' ? 'border border-gold/30' : 'border border-light'}`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -1009,8 +1015,8 @@ export default function StaffSchedule() {
                       </span>
                       {r.status === 'pending' && (
                         <div className="flex gap-2">
-                          <button onClick={() => handleReviewTimeOff(r.request_id || r.id, 'approved')} className="px-4 py-2 bg-green-500/15 text-green-400 border border-green-500/20 rounded-xl text-sm hover:bg-green-500/25">Approve</button>
-                          <button onClick={() => handleReviewTimeOff(r.request_id || r.id, 'rejected')} className="px-4 py-2 bg-red-500/15 text-red-400 border border-red-500/20 rounded-xl text-sm hover:bg-red-500/25">Reject</button>
+                          <button onClick={() => handleReviewTimeOff(r.id, 'approved')} className="px-4 py-2 bg-green-500/15 text-green-400 border border-green-500/20 rounded-xl text-sm hover:bg-green-500/25">Approve</button>
+                          <button onClick={() => handleReviewTimeOff(r.id, 'rejected')} className="px-4 py-2 bg-red-500/15 text-red-400 border border-red-500/20 rounded-xl text-sm hover:bg-red-500/25">Reject</button>
                         </div>
                       )}
                     </div>

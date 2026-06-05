@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
-import CustomerWaiverHistory from './CustomerWaiverHistory';
 import clsx from 'clsx';
+import { getCustomerDetailPath } from '../utils/routes';
+import { canAccessStaffCrm } from '../utils/staffCustomerAccess';
 
 const statusConfig = {
   waiting: { label: 'Waiting', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50', dot: 'bg-yellow-400' },
@@ -18,7 +18,6 @@ const statusConfig = {
 export default function CustomerManagementHistory() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,7 +27,6 @@ export default function CustomerManagementHistory() {
   const [customEndDate, setCustomEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   const isVisitInTimeFrame = (visitDateString, filterType, startDate, endDate) => {
     if (!visitDateString) return false;
@@ -64,8 +62,7 @@ export default function CustomerManagementHistory() {
       return;
     }
     const normalizedRole = user.role.toString().trim().toLowerCase();
-    const managementRoles = ['super_admin', 'owner', 'partner'];
-    if (!managementRoles.includes(normalizedRole)) {
+    if (!canAccessStaffCrm(normalizedRole)) {
       setLoading(false);
       navigate('/portal');
       return;
@@ -130,7 +127,6 @@ export default function CustomerManagementHistory() {
       });
 
       const customersArray = Array.from(customerMap.values())
-        .filter(customer => customer.visits.length > 0)
         .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
       setCustomers(customersArray);
@@ -331,8 +327,15 @@ export default function CustomerManagementHistory() {
         {sortedCustomers.length > 0 && (
           <div className="space-y-4">
             {paginatedCustomers.map((customer) => (
-              <div key={customer.id} className="border-b border-light pb-4 last:border-0">
-                <div className="flex items-center justify-between mb-2 cursor-pointer hover:bg-gold/5 transition-colors duration-200 p-3 rounded-xl" onClick={() => setSelectedCustomer(selectedCustomer === customer.id ? null : customer.id)}>
+              <div
+                key={customer.id}
+                role="button"
+                tabIndex={0}
+                className="border-b border-light pb-4 last:border-0 cursor-pointer hover:bg-gold/5 transition-colors duration-200 p-3 rounded-xl"
+                onClick={() => navigate(getCustomerDetailPath(user?.role, customer.id))}
+                onKeyDown={(e) => e.key === 'Enter' && navigate(getCustomerDetailPath(user?.role, customer.id))}
+              >
+                <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
@@ -345,67 +348,18 @@ export default function CustomerManagementHistory() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="text-primary font-heading">{customer.totalVisits}</div>
-                    <div className="text-primary/80 text-sm ml-2">Visits</div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="text-gold font-heading">${customer.totalSpent.toFixed(2)}</div>
-                    <div className="text-primary/80 text-sm ml-2">Total Spent</div>
-                  </div>
-                  <div className="text-right">
-                    {selectedCustomer === customer.id ? (
-                      <svg className="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-                {selectedCustomer === customer.id && (
-                  <div className="mt-4 p-4 bg-secondary rounded-xl border-card border">
-                    <div className="mb-3">
-                      <div className="text-primary font-heading text-lg">Visit History</div>
+                  <div className="hidden sm:flex items-center space-x-6">
+                    <div className="text-center">
+                      <div className="text-primary font-heading">{customer.totalVisits}</div>
+                      <div className="text-primary/80 text-xs">Visits</div>
                     </div>
-                    {customer.visits.length === 0 ? (
-                      <p className="text-secondary text-center py-4">No visit history available</p>
-                    ) : (
-                      <div className="space-y-2 mb-6">
-                        {customer.visits
-                          .sort((a, b) => new Date(b.date) - new Date(a.date))
-                          .map((visit) => (
-                            <div key={visit.id} className="p-3 bg-secondary rounded-lg border border-light mb-2">
-                              <div className="flex items-start justify-between mb-1">
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-primary font-heading">{visit.serviceSummary}</div>
-                                  <div className="text-primary/80 text-sm">Technician: {visit.technician.name}</div>
-                                  <div className="text-primary/80 text-sm">
-                                    {new Date(visit.date).toLocaleString('en-US', {
-                                      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-                                      hour: '2-digit', minute: '2-digit'
-                                    })}
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-gold-strong font-heading">${visit.finalPrice.toFixed(2)}</div>
-                                  {visit.discount.amount !== 0 && (
-                                    <div className="text-secondary text-xs mt-1">
-                                      Discount: -${visit.discount.amount} ({visit.discount.reason})<br />
-                                      Authorized by: Staff ID {visit.discount.authorizedBy || 'Unknown'}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                    <CustomerWaiverHistory profileId={customer.id} customerPhone={customer.phone} />
+                    <div className="text-center">
+                      <div className="text-gold font-heading">${customer.totalSpent.toFixed(2)}</div>
+                      <div className="text-primary/80 text-xs">Spent</div>
+                    </div>
                   </div>
-                )}
+                  <div className="text-gold text-sm whitespace-nowrap">View profile →</div>
+                </div>
               </div>
             ))}
           </div>
