@@ -200,13 +200,13 @@ export default function TechnicianInChairPanel({
                 <span className={clsx(
                   'text-xs px-2 py-1 rounded border',
                   isOverdue
-                    ? 'bg-red-100 text-red-800 border-red-300'
-                    : 'bg-green-100 text-green-800 border-green-300'
+                    ? 'bg-red-400/15 text-red-400 border-red-400/30'
+                    : 'bg-green-400/15 text-green-400 border-green-400/30'
                 )}>
                   {elapsed}{duration ? ` / ${duration}m` : ''}
                 </span>
               )}
-              <span className="px-2 py-1 text-xs bg-green-100 text-green-800 border border-green-300 rounded">
+              <span className="px-2 py-1 text-xs bg-green-400/15 text-green-400 border border-green-400/30 rounded">
                 Serving
               </span>
             </div>

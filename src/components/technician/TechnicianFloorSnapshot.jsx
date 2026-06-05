@@ -2,9 +2,9 @@ import clsx from 'clsx';
 import { computeWaitPositions } from '../../utils/technicianQueue';
 
 const STATUS_BADGE = {
-  waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  assigned_pending: 'bg-blue-100 text-blue-800 border-blue-300',
-  serving: 'bg-green-100 text-green-800 border-green-300',
+  waiting: 'bg-yellow-400/15 text-yellow-400 border-yellow-400/30',
+  assigned_pending: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
+  serving: 'bg-green-400/15 text-green-400 border-green-400/30',
 };
 
 export default function TechnicianFloorSnapshot({
@@ -95,7 +95,7 @@ export default function TechnicianFloorSnapshot({
                 </div>
                 <span className={clsx(
                   'px-2 py-0.5 text-xs border rounded shrink-0 ml-2',
-                  isMine ? 'bg-gold/30 text-charcoal border-gold/50' : (STATUS_BADGE[appt.status] || 'bg-gray-100 text-gray-800')
+                  isMine ? 'bg-gold/30 text-gold-strong border-gold/50' : (STATUS_BADGE[appt.status] || 'bg-secondary text-secondary border-light')
                 )}>
                   {appt.status === 'waiting' ? (waitPos ? `#${waitPos}` : 'Waiting') :
                    appt.status === 'serving' ? 'Serving' :
