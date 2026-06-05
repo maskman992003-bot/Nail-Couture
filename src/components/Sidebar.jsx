@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { featureFlags } from '../constants/featureFlags';
 import { getSettingsPath, getMySchedulePath, getStaffPlannerPath } from '../utils/routes';
+import { fetchPendingAssignmentCount } from '../utils/technicianQueue';
 import { modalBtnPrimary, modalBtnSecondary } from './AppModal';
 
 const navItemsByRole = {
@@ -87,8 +88,10 @@ export default function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDesktopUserMenu, setShowDesktopUserMenu] = useState(false);
   const [showMobileUserMenu, setShowMobileUserMenu] = useState(false);
+  const [pendingAssignments, setPendingAssignments] = useState(0);
 
   const userPhone = user?.phone;
+  const isTechnician = user?.role === 'technician';
   const navRef = useRef(null);
   const bottomNavRef = useRef(null);
   const SCROLL_KEY = `sidebar_scroll_${user?.role || 'guest'}`;
@@ -163,6 +166,39 @@ export default function Sidebar() {
       setNotifications(data || []);
     } catch { }
   }, [userPhone]);
+
+  const refreshPendingAssignments = useCallback(async () => {
+    if (!isTechnician || !user?.id || !userPhone) return;
+    const count = await fetchPendingAssignmentCount(user.id, userPhone);
+    setPendingAssignments(count);
+  }, [isTechnician, user?.id, userPhone]);
+
+  useEffect(() => {
+    if (!isTechnician || !user?.id || !userPhone) {
+      setPendingAssignments(0);
+      return;
+    }
+
+    refreshPendingAssignments();
+
+    const channel = supabase
+      .channel('sidebar-technician-assignments')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
+        refreshPendingAssignments();
+      })
+      .subscribe();
+
+    const poll = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshPendingAssignments();
+      }
+    }, 30000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(poll);
+    };
+  }, [isTechnician, user?.id, userPhone, refreshPendingAssignments]);
 
   useEffect(() => {
     if (!userPhone || !notifPanelOpen) return;
@@ -253,6 +289,7 @@ export default function Sidebar() {
         <div className="flex-1 py-4 overflow-hidden">
           <nav ref={navRef} onScroll={handleNavScroll} className="flex flex-col gap-1 px-0 lg:px-4 overflow-y-auto scrollbar-none h-full">
             {navItems.map((item) => {
+              const showAssignmentBadge = isTechnician && item.id === 'home' && pendingAssignments > 0;
               return (
                 <NavLink
                   key={item.id}
@@ -263,8 +300,13 @@ export default function Sidebar() {
                       : `${theme === 'dark' ? 'text-offwhite/50 hover:text-offwhite/90 hover:bg-offwhite/5' : 'text-charcoal/70 hover:text-charcoal hover:bg-charcoal/5'} md:mx-1 lg:mx-0 rounded-xl lg:rounded-xl`
                   }`}
                 >
-                  <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                  <div className="relative w-5 h-5 flex items-center justify-center flex-shrink-0">
                     {renderIcon(item.icon)}
+                    {showAssignmentBadge && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[8px] font-bold text-charcoal px-1" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)' }}>
+                        {pendingAssignments > 9 ? '9+' : pendingAssignments}
+                      </span>
+                    )}
                   </div>
                   <span className="text-sm font-medium tracking-wide hidden lg:inline whitespace-nowrap">{item.label}</span>
                 </NavLink>
@@ -359,13 +401,21 @@ export default function Sidebar() {
         <nav className="flex items-center justify-between px-1 py-2 w-full" style={{ borderTop: `1px solid ${borderColor}` }}>
           <div ref={(el) => { if (el) { bottomNavRef.current = el; const saved = sessionStorage.getItem(BOTTOM_SCROLL_KEY); if (saved && !el.dataset.bsr) { el.dataset.bsr = '1'; el.style.scrollBehavior = 'auto'; el.scrollLeft = parseInt(saved, 10); } } }} onScroll={handleBottomNavScroll} className="flex-1 min-w-0 flex items-center overflow-x-auto scrollbar-none">
             {navItems.map((item) => {
+              const showAssignmentBadge = isTechnician && item.id === 'home' && pendingAssignments > 0;
               return (
                 <NavLink
                   key={item.id}
                   to={item.href}
                   className={({ isActive }) => `flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all flex-shrink-0 w-[72px] ${isActive ? 'text-gold' : theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}
                 >
-                  <div className="w-5 h-5">{renderIcon(item.icon)}</div>
+                  <div className="relative w-5 h-5">
+                    {renderIcon(item.icon)}
+                    {showAssignmentBadge && (
+                      <span className="absolute -top-1 -right-1 min-w-[14px] h-3.5 flex items-center justify-center rounded-full text-[7px] font-bold text-charcoal px-0.5" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)' }}>
+                        {pendingAssignments > 9 ? '9+' : pendingAssignments}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[8px] font-medium tracking-wide text-center">{item.label}</span>
                 </NavLink>
               );

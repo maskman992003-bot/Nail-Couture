@@ -94,26 +94,36 @@ export function computeWaitPositions(appointments) {
   return positions;
 }
 
+export function requestNotificationPermission() {
+  if (typeof Notification === 'undefined') {
+    return Promise.resolve('denied');
+  }
+  if (Notification.permission !== 'default') {
+    return Promise.resolve(Notification.permission);
+  }
+  return Notification.requestPermission();
+}
+
 export function notifyNewAssignment(appointment) {
-  if (typeof Notification === 'undefined') return;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
   const name = appointment.customer?.full_name || 'A client';
   const service = appointment.services?.name || appointment.add_ons || 'service';
   const body = `${name} — ${service}`;
 
-  const show = () => {
-    try {
-      new Notification('New assignment', { body, tag: `assignment-${appointment.id}` });
-    } catch {
-      // ignore unsupported environments
-    }
-  };
+  try {
+    new Notification('New assignment', { body, tag: `assignment-${appointment.id}` });
+  } catch {
+    // ignore unsupported environments
+  }
+}
 
-  if (Notification.permission === 'granted') {
-    show();
-  } else if (Notification.permission !== 'denied') {
-    Notification.requestPermission().then((perm) => {
-      if (perm === 'granted') show();
-    });
+export async function fetchPendingAssignmentCount(technicianId, callerPhone) {
+  if (!technicianId || !callerPhone) return 0;
+  try {
+    const mine = await fetchMyQueue(technicianId, callerPhone);
+    return mine.filter((a) => a.status === 'assigned_pending').length;
+  } catch {
+    return 0;
   }
 }
 

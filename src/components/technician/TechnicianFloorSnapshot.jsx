@@ -11,6 +11,7 @@ export default function TechnicianFloorSnapshot({
   floorAppointments,
   technicianId,
   newAssignmentIds = [],
+  onBreak = false,
 }) {
   const waiting = floorAppointments.filter((a) => a.status === 'waiting');
   const serving = floorAppointments.filter((a) => a.status === 'serving');
@@ -41,7 +42,14 @@ export default function TechnicianFloorSnapshot({
             </span>
           )}
         </div>
-        <span className="text-secondary text-xs">Read-only</span>
+        <div className="flex items-center gap-2">
+          {onBreak && (
+            <span className="px-2 py-0.5 text-xs bg-yellow-400/15 text-yellow-400 border border-yellow-400/30 rounded-full">
+              On break
+            </span>
+          )}
+          <span className="text-secondary text-xs">Read-only</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-4">
