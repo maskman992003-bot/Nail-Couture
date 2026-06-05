@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { computeWaitPositions } from '../../utils/technicianQueue';
 
 const STATUS_BADGE = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -6,17 +7,40 @@ const STATUS_BADGE = {
   serving: 'bg-green-100 text-green-800 border-green-300',
 };
 
-export default function TechnicianFloorSnapshot({ floorAppointments, technicianId }) {
+export default function TechnicianFloorSnapshot({
+  floorAppointments,
+  technicianId,
+  newAssignmentIds = [],
+}) {
   const waiting = floorAppointments.filter((a) => a.status === 'waiting');
   const serving = floorAppointments.filter((a) => a.status === 'serving');
+  const myAssigned = floorAppointments.filter(
+    (a) => a.status === 'assigned_pending' && a.technician_id === technicianId
+  );
   const assignedElsewhere = floorAppointments.filter(
     (a) => a.status === 'assigned_pending' && a.technician_id !== technicianId
   );
+  const waitPositions = computeWaitPositions(floorAppointments);
+
+  const sorted = [...floorAppointments].sort((a, b) => {
+    const aMine = a.status === 'assigned_pending' && a.technician_id === technicianId;
+    const bMine = b.status === 'assigned_pending' && b.technician_id === technicianId;
+    if (aMine && !bMine) return -1;
+    if (!aMine && bMine) return 1;
+    return new Date(a.checked_in_at) - new Date(b.checked_in_at);
+  });
 
   return (
     <div className="bg-card border border-card rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-heading text-lg text-primary">Salon Floor</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="font-heading text-lg text-primary">Salon Floor</h2>
+          {myAssigned.length > 0 && (
+            <span className="px-2 py-0.5 text-xs font-medium bg-gold text-charcoal rounded-full animate-pulse">
+              {myAssigned.length} for you
+            </span>
+          )}
+        </div>
         <span className="text-secondary text-xs">Read-only</span>
       </div>
 
@@ -30,35 +54,56 @@ export default function TechnicianFloorSnapshot({ floorAppointments, technicianI
           <div className="text-muted text-xs">In Chair</div>
         </div>
         <div className="text-center p-3 bg-secondary rounded-lg">
-          <div className="text-2xl font-heading text-blue-400">{assignedElsewhere.length}</div>
+          <div className="text-2xl font-heading text-blue-400">{assignedElsewhere.length + myAssigned.length}</div>
           <div className="text-muted text-xs">Assigned</div>
         </div>
       </div>
 
       <div className="space-y-2 max-h-48 overflow-y-auto">
-        {floorAppointments.length === 0 ? (
+        {sorted.length === 0 ? (
           <p className="text-muted text-sm text-center py-4">Floor is quiet right now</p>
         ) : (
-          floorAppointments.slice(0, 8).map((appt) => (
-            <div
-              key={appt.id}
-              className="flex items-center justify-between p-3 bg-secondary rounded-lg text-sm"
-            >
-              <div className="min-w-0">
-                <div className="text-primary font-medium truncate">
-                  {appt.customer?.full_name || 'Guest'}
+          sorted.slice(0, 10).map((appt) => {
+            const isMine = appt.status === 'assigned_pending' && appt.technician_id === technicianId;
+            const isNew = newAssignmentIds.includes(appt.id);
+            const waitPos = waitPositions.get(appt.id);
+
+            return (
+              <div
+                key={appt.id}
+                className={clsx(
+                  'flex items-center justify-between p-3 rounded-lg text-sm',
+                  isMine
+                    ? 'bg-gold/15 border border-gold/40'
+                    : 'bg-secondary'
+                )}
+              >
+                <div className="min-w-0">
+                  <div className="text-primary font-medium truncate flex items-center gap-2">
+                    {appt.customer?.full_name || 'Guest'}
+                    {isNew && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gold text-charcoal rounded uppercase">
+                        New
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-secondary text-xs truncate">
+                    {appt.services?.name || appt.add_ons || 'Service'}
+                    {appt.technician?.full_name && ` · ${appt.technician.full_name}`}
+                    {waitPos != null && ` · #${waitPos} in queue`}
+                  </div>
                 </div>
-                <div className="text-secondary text-xs truncate">
-                  {appt.services?.name || appt.add_ons || 'Service'}
-                  {appt.technician?.full_name && ` · ${appt.technician.full_name}`}
-                </div>
+                <span className={clsx(
+                  'px-2 py-0.5 text-xs border rounded shrink-0 ml-2',
+                  isMine ? 'bg-gold/30 text-charcoal border-gold/50' : (STATUS_BADGE[appt.status] || 'bg-gray-100 text-gray-800')
+                )}>
+                  {appt.status === 'waiting' ? (waitPos ? `#${waitPos}` : 'Waiting') :
+                   appt.status === 'serving' ? 'Serving' :
+                   isMine ? 'Yours' : 'Assigned'}
+                </span>
               </div>
-              <span className={clsx('px-2 py-0.5 text-xs border rounded shrink-0 ml-2', STATUS_BADGE[appt.status] || 'bg-gray-100 text-gray-800')}>
-                {appt.status === 'waiting' ? 'Waiting' :
-                 appt.status === 'serving' ? 'Serving' : 'Assigned'}
-              </span>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

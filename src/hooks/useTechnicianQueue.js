@@ -8,6 +8,7 @@ import {
   computeQueueStats,
   computeWeekStats,
   decrementRefreshmentInventory,
+  notifyNewAssignment,
 } from '../utils/technicianQueue';
 
 export function useTechnicianQueue(technicianId, callerPhoneFallback) {
@@ -18,7 +19,11 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
   const [refreshing, setRefreshing] = useState(false);
   const [actionId, setActionId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [newAssignmentIds, setNewAssignmentIds] = useState([]);
+  const [postComplete, setPostComplete] = useState(null);
   const toastTimer = useRef(null);
+  const knownPendingIds = useRef(new Set());
+  const initialLoadDone = useRef(false);
 
   const showToast = useCallback((message, type = 'success') => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -38,7 +43,23 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       ]);
 
       if (mineResult.status === 'fulfilled') {
-        setMyAppointments(mineResult.value);
+        const mine = mineResult.value;
+        setMyAppointments(mine);
+
+        const pending = mine.filter((a) => a.status === 'assigned_pending');
+        const pendingIds = new Set(pending.map((a) => a.id));
+
+        if (initialLoadDone.current) {
+          const fresh = pending.filter((a) => !knownPendingIds.current.has(a.id));
+          if (fresh.length > 0) {
+            setNewAssignmentIds((prev) => [...new Set([...prev, ...fresh.map((a) => a.id)])]);
+            fresh.forEach((a) => notifyNewAssignment(a));
+            showToast(`New assignment: ${fresh[0].customer?.full_name || 'Client'}`);
+          }
+        } else {
+          initialLoadDone.current = true;
+        }
+        knownPendingIds.current = pendingIds;
       }
       if (floorResult.status === 'fulfilled') {
         setFloorAppointments(floorResult.value);
@@ -75,6 +96,7 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
         appointment_id: appointment.id,
       });
       if (error) throw error;
+      setNewAssignmentIds((prev) => prev.filter((id) => id !== appointment.id));
       showToast(`Started: ${appointment.customer?.full_name || 'Client'}`);
       await refetch(true);
     } catch (err) {
@@ -109,6 +131,11 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       }
 
       showToast(`Completed: ${appointment.customer?.full_name || 'Client'}`);
+      setPostComplete({
+        customerId: appointment.customer_id,
+        customerName: appointment.customer?.full_name || 'Client',
+        appointmentId: appointment.id,
+      });
       await refetch(true);
     } catch (err) {
       console.error('Error completing appointment:', err);
@@ -135,11 +162,21 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       supabase.removeChannel(channel);
       clearInterval(poll);
       if (toastTimer.current) clearTimeout(toastTimer.current);
+      initialLoadDone.current = false;
+      knownPendingIds.current = new Set();
     };
   }, [technicianId, refetch]);
 
   const stats = computeQueueStats(myAppointments);
   const weekStats = computeWeekStats(weekAppointments);
+
+  const dismissNewAssignment = useCallback((id) => {
+    setNewAssignmentIds((prev) => prev.filter((x) => x !== id));
+  }, []);
+
+  const clearNewAssignments = useCallback(() => setNewAssignmentIds([]), []);
+
+  const dismissPostComplete = useCallback(() => setPostComplete(null), []);
 
   return {
     myAppointments,
@@ -150,9 +187,14 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     refreshing,
     actionId,
     toast,
+    newAssignmentIds,
+    postComplete,
     refetch,
     acceptAssignment,
     markComplete,
     dismissToast: () => setToast(null),
+    dismissNewAssignment,
+    clearNewAssignments,
+    dismissPostComplete,
   };
 }

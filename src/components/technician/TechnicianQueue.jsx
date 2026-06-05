@@ -7,17 +7,30 @@ export default function TechnicianQueue({
   actionId,
   onAccept,
   userRole,
+  newAssignmentIds = [],
 }) {
   if (pendingAssignments.length === 0) return null;
 
   return (
     <div className="bg-card border border-card rounded-xl p-5">
-      <h2 className="font-heading text-lg text-primary mb-4">My Assignments</h2>
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="font-heading text-lg text-primary">My Assignments</h2>
+        {newAssignmentIds.length > 0 && (
+          <span className="px-2 py-0.5 text-xs font-bold bg-gold text-charcoal rounded-full animate-pulse">
+            {newAssignmentIds.length} new
+          </span>
+        )}
+      </div>
       <div className="space-y-3">
-        {pendingAssignments.map((appt, index) => (
+        {pendingAssignments.map((appt, index) => {
+          const isNew = newAssignmentIds.includes(appt.id);
+          return (
           <div
             key={appt.id}
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-secondary rounded-lg"
+            className={clsx(
+              'flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg',
+              isNew ? 'bg-gold/15 border border-gold/40' : 'bg-secondary'
+            )}
           >
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-9 h-9 bg-gold/20 rounded-full flex items-center justify-center text-gold font-heading shrink-0">
@@ -29,6 +42,11 @@ export default function TechnicianQueue({
                   className="text-primary font-medium hover:text-gold-strong transition-colors truncate block"
                 >
                   {appt.customer?.full_name || 'Guest'}
+                  {isNew && (
+                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-gold text-charcoal rounded uppercase">
+                      New
+                    </span>
+                  )}
                 </Link>
                 <div className="text-secondary text-sm truncate">
                   {appt.add_ons || appt.services?.name || 'Service'}
@@ -61,7 +79,8 @@ export default function TechnicianQueue({
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

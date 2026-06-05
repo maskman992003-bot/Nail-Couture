@@ -73,13 +73,48 @@ export async function fetchMyQueue(technicianId, callerPhone) {
 
 export async function fetchFloorSnapshot(callerPhone) {
   if (!callerPhone) throw new Error('Missing caller phone for staff RPC');
+  const today = new Date().toISOString().split('T')[0];
   const { data, error } = await supabase.rpc('get_appointments', {
     caller_phone: callerPhone,
     status_filter: 'waiting,serving,assigned_pending',
+    date_from: `${today}T00:00:00`,
     order_asc: true,
   });
   if (error) throw error;
   return data || [];
+}
+
+/** Map waiting appointment id → queue position (1-based). */
+export function computeWaitPositions(appointments) {
+  const waiting = (appointments || [])
+    .filter((a) => a.status === 'waiting')
+    .sort((a, b) => new Date(a.checked_in_at) - new Date(b.checked_in_at));
+  const positions = new Map();
+  waiting.forEach((a, i) => positions.set(a.id, i + 1));
+  return positions;
+}
+
+export function notifyNewAssignment(appointment) {
+  if (typeof Notification === 'undefined') return;
+  const name = appointment.customer?.full_name || 'A client';
+  const service = appointment.services?.name || appointment.add_ons || 'service';
+  const body = `${name} — ${service}`;
+
+  const show = () => {
+    try {
+      new Notification('New assignment', { body, tag: `assignment-${appointment.id}` });
+    } catch {
+      // ignore unsupported environments
+    }
+  };
+
+  if (Notification.permission === 'granted') {
+    show();
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then((perm) => {
+      if (perm === 'granted') show();
+    });
+  }
 }
 
 export async function fetchWeekAppointments(technicianId) {

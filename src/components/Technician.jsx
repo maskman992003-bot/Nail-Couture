@@ -10,6 +10,7 @@ import TechnicianStats from './technician/TechnicianStats';
 import TechnicianFloorSnapshot from './technician/TechnicianFloorSnapshot';
 import TechnicianQueue from './technician/TechnicianQueue';
 import TechnicianInChairPanel from './technician/TechnicianInChairPanel';
+import TechnicianPostCompletePrompt from './technician/TechnicianPostCompletePrompt';
 
 export default function Technician() {
   const navigate = useNavigate();
@@ -24,10 +25,13 @@ export default function Technician() {
     refreshing,
     actionId,
     toast,
+    newAssignmentIds,
+    postComplete,
     refetch,
     acceptAssignment,
     markComplete,
     dismissToast,
+    dismissPostComplete,
   } = useTechnicianQueue(user?.id, user?.phone);
 
   useEffect(() => {
@@ -105,9 +109,18 @@ export default function Technician() {
             />
           )}
 
+          {postComplete && (
+            <TechnicianPostCompletePrompt
+              data={postComplete}
+              onDismiss={dismissPostComplete}
+              userRole={userRole}
+            />
+          )}
+
           <TechnicianFloorSnapshot
             floorAppointments={floorAppointments}
             technicianId={user?.id}
+            newAssignmentIds={newAssignmentIds}
           />
 
           {!stats.currentAppointment && !hasWork && (
@@ -146,6 +159,7 @@ export default function Technician() {
             actionId={actionId}
             onAccept={acceptAssignment}
             userRole={userRole}
+            newAssignmentIds={newAssignmentIds}
           />
         </div>
       </div>
