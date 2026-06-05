@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
+import useFocusTrap from '../hooks/useFocusTrap';
 
 export const modalLabelClass = 'text-secondary text-xs uppercase tracking-wider block mb-2';
 export const modalInputClass =
@@ -29,6 +30,8 @@ export default function AppModal({
   panelClassName = '',
   headerExtra,
 }) {
+  const panelRef = useFocusTrap(open, onClose);
+
   if (!open) return null;
 
   return createPortal(
@@ -41,6 +44,7 @@ export default function AppModal({
       role="presentation"
     >
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'app-modal-title' : undefined}

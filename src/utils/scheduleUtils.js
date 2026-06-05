@@ -179,3 +179,54 @@ export function isSameMonth(dateStr, year, month) {
 export function isToday(dateStr) {
   return dateStr === toDateStr(new Date());
 }
+
+/** Sunday-start week containing `date` */
+export function getWeekDates(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const start = new Date(d);
+  start.setDate(d.getDate() - day);
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const dt = new Date(start);
+    dt.setDate(start.getDate() + i);
+    dates.push(dt);
+  }
+  return dates;
+}
+
+export function formatWeekRange(dates) {
+  const start = dates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const end = dates[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${start} – ${end}`;
+}
+
+/**
+ * Map each date in time-off ranges to status for a staff member.
+ * Later requests overwrite earlier ones on the same date.
+ */
+export function buildTimeOffDateMap(requests, { staffId = null, statuses = ['approved', 'pending'] } = {}) {
+  const map = {};
+  const filtered = requests.filter((r) => {
+    if (staffId && r.staff_id !== staffId) return false;
+    return statuses.includes(r.status);
+  });
+
+  for (const req of filtered) {
+    const cursor = parseDateStr(req.start_date);
+    const end = parseDateStr(req.end_date);
+    while (cursor <= end) {
+      map[toDateStr(cursor)] = req.status;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  }
+  return map;
+}
+
+export function sortTimeOffRequests(requests) {
+  return [...requests].sort((a, b) => {
+    if (a.status === 'pending' && b.status !== 'pending') return -1;
+    if (b.status === 'pending' && a.status !== 'pending') return 1;
+    return a.start_date.localeCompare(b.start_date);
+  });
+}
