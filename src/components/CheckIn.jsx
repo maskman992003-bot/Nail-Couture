@@ -3,8 +3,10 @@ import { processCheckIn } from '../services/kioskService'
 import { getServices } from '../services/services'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
-import { CATEGORIES } from '../data/servicesData'
 import { getAvailableRefreshments, isRefreshmentAvailable } from '../services/inventoryService'
+import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '../utils/serviceCategories'
+import { buildAppointmentServicePayload } from '../utils/appointmentServices'
+import { LOYALTY_REWARDS, reserveLoyaltyRewardForVisit } from '../utils/loyaltyTransactions'
 import RefreshmentSelect from './RefreshmentSelect'
 import WaiverModal from './WaiverModal'
 import ScrollSelect from './ScrollSelect'
@@ -58,20 +60,32 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
   const [expandedCategory, setExpandedCategory] = useState(null)
   const [selectedServices, setSelectedServices] = useState(initialServices || [])
   const [selectedAddOns, setSelectedAddOns] = useState(initialAddOns || [])
+  const [dbCategories, setDbCategories] = useState([])
 
   useEffect(() => {
     setLoading(true)
     Promise.all([
       getServices(),
       getAvailableRefreshments(),
+      fetchServiceCategories(supabase),
     ])
-      .then(([svcData, refData]) => {
+      .then(([svcData, refData, catData]) => {
         setServices(svcData)
         setRefreshmentList(refData)
+        setDbCategories(catData)
       })
       .catch((err) => { setError(err.message) })
       .finally(() => { setLoading(false); setRefreshmentsLoading(false) })
   }, [])
+
+  useEffect(() => {
+    if (activeCategory === 'All') return
+    const { sortedCategories } = buildCategoryTabs(services, dbCategories)
+    if (!sortedCategories.includes(activeCategory)) {
+      setActiveCategory('All')
+      setExpandedCategory(null)
+    }
+  }, [services, dbCategories, activeCategory])
 
   if (loading) {
     return (
@@ -93,18 +107,8 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
   const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id))
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
 
-  const groupedServices = services.reduce((acc, service) => {
-    if (service.is_addon) return acc
-    const category = service.category || 'Other'
-    if (!acc[category]) acc[category] = []
-    acc[category].push(service)
-    return acc
-  }, {})
-
-  const allCategories = Object.keys(groupedServices).sort()
-  const displayCategories = activeCategory === 'All'
-    ? allCategories
-    : allCategories.filter((c) => c === activeCategory)
+  const { grouped: groupedServices, sortedCategories, categoryTabs } = buildCategoryTabs(services, dbCategories)
+  const displayCategories = getDisplayCategories(activeCategory, sortedCategories)
 
   const toggleService = (service) => {
     setSelectedServices((prev) =>
@@ -138,7 +142,7 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
         </div>
 
         <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x w-full px-1 pb-1">
-          {CATEGORIES.map((cat) => (
+          {categoryTabs.map((cat) => (
             <button
               key={cat}
               onClick={() => { setActiveCategory(cat); setExpandedCategory(null); }}
@@ -393,14 +397,15 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
         finalProfile = profile
       }
 
-      const allNames = selectedServices.map((s) => s.name).join(', ')
+      const { add_ons: addOnsValue, selected_service_names: selectedServiceNames } = buildAppointmentServicePayload(selectedServices, [])
       const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0)
       const { error: appointmentError } = await supabase
         .from('appointments')
         .insert({
           customer_id: profileId,
           service_id: selectedServices[0]?.id || null,
-          add_ons: allNames || null,
+          add_ons: addOnsValue,
+          selected_service_names: selectedServiceNames,
           final_price: totalPrice,
           status: 'waiting',
           checked_in_at: new Date().toISOString(),
@@ -649,10 +654,65 @@ export default function CheckIn({ onNavigate }) {
     fullName: '',
     refreshmentPref: ''
   })
+  const [customerPoints, setCustomerPoints] = useState(0)
+  const [reservedReward, setReservedReward] = useState(null)
+  const [rewardError, setRewardError] = useState('')
+  const [rewardSaving, setRewardSaving] = useState(false)
 
   useEffect(() => {
     getServices().then(setServices).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!result?.profile?.id && !result?.appointment?.customer_id) return
+    const profileId = result.profile?.id || result.appointment?.customer_id
+    supabase.from('profiles').select('loyalty_points').eq('id', profileId).maybeSingle()
+      .then(({ data }) => setCustomerPoints(data?.loyalty_points || 0))
+      .catch(() => setCustomerPoints(0))
+  }, [result?.profile?.id, result?.appointment?.customer_id])
+
+  useEffect(() => {
+    const appointment = result?.appointment
+    if (appointment?.loyalty_reward_id) {
+      setReservedReward({
+        id: appointment.loyalty_reward_id,
+        name: appointment.loyalty_reward_name,
+        points: appointment.loyalty_points_cost,
+        code: appointment.loyalty_redemption_code,
+      })
+    } else {
+      setReservedReward(null)
+    }
+  }, [result?.appointment?.id, result?.appointment?.loyalty_reward_id])
+
+  const handleReserveReward = async (reward) => {
+    if (!result?.appointment?.id || rewardSaving) return
+    setRewardSaving(true)
+    setRewardError('')
+    const reserveResult = await reserveLoyaltyRewardForVisit(phone, result.appointment.id, reward)
+    setRewardSaving(false)
+    if (!reserveResult.success) {
+      setRewardError(reserveResult.error || 'Could not reserve reward')
+      return
+    }
+    setReservedReward({
+      id: reward.id,
+      name: reward.name,
+      points: reward.points,
+      code: reserveResult.redemption_code,
+    })
+    setResult((prev) => ({
+      ...prev,
+      appointment: {
+        ...prev.appointment,
+        loyalty_reward_id: reward.id,
+        loyalty_reward_name: reward.name,
+        loyalty_points_cost: reward.points,
+        loyalty_redemption_code: reserveResult.redemption_code,
+        loyalty_discount_amount: reward.discountAmount || 0,
+      },
+    }))
+  }
 
   useEffect(() => {
     if (!newUserSuccess) return
@@ -733,24 +793,28 @@ export default function CheckIn({ onNavigate }) {
     if (!result?.appointment?.id) return
     setLoading(true)
     try {
-      const allNames = [...addOns.map((a) => a.name), ...services.map((s) => s.name)].join(', ')
+      const { add_ons: addOnsValue, selected_service_names: selectedServiceNames } = buildAppointmentServicePayload(services, addOns)
       const totalPrice = services.reduce((sum, s) => sum + (s.price || 0), 0) + addOns.reduce((sum, a) => sum + (a.price || 0), 0)
       const availableRefreshments = await getAvailableRefreshments()
       const safeRefreshmentPref = isRefreshmentAvailable(refreshmentPref, availableRefreshments)
         ? (refreshmentPref || null)
         : null
-      await supabase.rpc('update_my_appointment', {
+      const { error: updateError } = await supabase.rpc('update_my_appointment', {
         caller_phone: phone,
         appointment_id: result.appointment.id,
         p_service_id: services[0]?.id || null,
-        p_add_ons: allNames || null,
+        p_add_ons: addOnsValue,
+        p_selected_service_names: selectedServiceNames,
         p_final_price: totalPrice,
         p_refreshment_pref: safeRefreshmentPref,
       })
+      if (updateError) throw updateError
       setSelectedServices(services)
       setSelectedAddOns(addOns)
       setShowServiceSelection(false)
-    } catch { }
+    } catch (err) {
+      setError(err.message || 'Failed to save services')
+    }
     setLoading(false)
   }
 
@@ -971,6 +1035,39 @@ export default function CheckIn({ onNavigate }) {
 
           {addOns.length === 0 && selectedServices.length > 0 && (
             <div className="mb-6 text-muted text-sm">No add-ons available</div>
+          )}
+
+          {selectedServices.length > 0 && customerPoints > 0 && (
+            <div className="bg-secondary border border-theme rounded-xl p-4 mb-6 text-left">
+              <p className="text-secondary text-sm mb-2">Redeem a reward (one per visit)</p>
+              <p className="text-muted text-xs mb-3">Balance: {customerPoints} pts</p>
+              {rewardError && <p className="text-red-400 text-xs mb-3">{rewardError}</p>}
+              {reservedReward ? (
+                <div className="rounded-lg border border-gold/30 p-3">
+                  <div className="text-gold font-heading">{reservedReward.name}</div>
+                  <div className="text-secondary text-xs mt-1">{reservedReward.points} pts · Code {reservedReward.code}</div>
+                  <p className="text-muted text-xs mt-2">Applied automatically at checkout</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {LOYALTY_REWARDS.filter((reward) => customerPoints >= reward.points).map((reward) => (
+                    <button
+                      key={reward.id}
+                      type="button"
+                      disabled={rewardSaving}
+                      onClick={() => handleReserveReward(reward)}
+                      className="w-full text-left px-3 py-2 rounded-lg border border-light hover:border-gold/40 transition-colors disabled:opacity-50"
+                    >
+                      <div className="text-primary font-heading text-sm">{reward.name}</div>
+                      <div className="text-muted text-xs">{reward.points} pts · {reward.description}</div>
+                    </button>
+                  ))}
+                  {LOYALTY_REWARDS.every((reward) => customerPoints < reward.points) && (
+                    <p className="text-muted text-xs">Not enough points for available rewards yet.</p>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-in">

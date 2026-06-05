@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '../utils/routes';
 import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
 import { getServices } from '../services/services';
+import { supabase } from '../lib/supabase';
+import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '../utils/serviceCategories';
+import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
 import Sidebar from './Sidebar';
 
 export default function CustomerServices() {
@@ -12,10 +15,13 @@ export default function CustomerServices() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const [services, setServices] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [contentVisible, setContentVisible] = useState(true);
+  const isFirstCategoryRender = useRef(true);
 
   useEffect(() => {
     if (!user) {
@@ -26,18 +32,21 @@ export default function CustomerServices() {
       navigate(getHomePath(user.role));
       return;
     }
-    getServices()
-      .then((data) => setServices(data || []))
+    Promise.all([getServices(), fetchServiceCategories(supabase)])
+      .then(([data, categories]) => {
+        setServices(data || []);
+        setDbCategories(categories);
+      })
       .catch((err) => {
         if (process.env.NODE_ENV === 'development') console.error(err);
       })
       .finally(() => setLoading(false));
   }, [user, navigate]);
 
-  const mainServices = services.filter((service) => !service.is_addon);
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  const filteredServices = mainServices.filter((service) => {
+  const filteredServices = services.filter((service) => {
+    if (service.is_addon) return false;
     if (!normalizedSearch) return true;
     return (
       service.name.toLowerCase().includes(normalizedSearch) ||
@@ -45,18 +54,38 @@ export default function CustomerServices() {
     );
   });
 
-  const groupedServices = filteredServices.reduce((acc, service) => {
-    const category = service.category || 'Other';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(service);
-    return acc;
-  }, {});
+  const { grouped: groupedServices, sortedCategories, categoryTabs } = buildCategoryTabs(filteredServices, dbCategories);
+  const displayCategories = getDisplayCategories(activeCategory, sortedCategories);
 
-  const sortedCategories = Object.keys(groupedServices).sort((a, b) => a.localeCompare(b));
-  const categoryTabs = ['All', ...sortedCategories];
-  const displayCategories = activeCategory === 'All'
-    ? sortedCategories
-    : sortedCategories.filter((category) => category === activeCategory);
+  useEffect(() => {
+    if (activeCategory === 'All') return;
+    if (!sortedCategories.includes(activeCategory)) {
+      setActiveCategory('All');
+      setExpandedCategory(null);
+    }
+  }, [sortedCategories, activeCategory]);
+
+  const { changeCategory } = useCategoryFade((cat) => {
+    setActiveCategory(cat);
+    setExpandedCategory(null);
+  });
+
+  const handleCategorySelect = (cat) => {
+    changeCategory(cat, activeCategory, setContentVisible);
+  };
+
+  useEffect(() => {
+    if (isFirstCategoryRender.current) {
+      isFirstCategoryRender.current = false;
+      return;
+    }
+    setContentVisible(true);
+  }, [activeCategory]);
+
+  const fadeFrom = theme === 'dark' ? '#0B0B0C' : '#ffffff';
+  const inactiveClass = theme === 'dark'
+    ? 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
+    : 'border border-gold/30 text-charcoal/60 hover:border-gold hover:text-gold';
 
   return (
     <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
@@ -79,25 +108,13 @@ export default function CustomerServices() {
           />
         </div>
 
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-6">
-          {categoryTabs.map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => {
-                setActiveCategory(category);
-                setExpandedCategory(null);
-              }}
-              className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 ${
-                activeCategory === category
-                  ? 'bg-gold text-charcoal'
-                  : theme === 'dark' ? 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold' : 'border border-gold/30 text-charcoal/60 hover:border-gold hover:text-gold'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+        <ServiceCategoryBar
+          tabs={categoryTabs}
+          activeCategory={activeCategory}
+          onSelect={handleCategorySelect}
+          fadeFrom={fadeFrom}
+          inactiveClassName={inactiveClass}
+        />
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -108,7 +125,9 @@ export default function CustomerServices() {
             <p className={theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}>No services found.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div
+            className={`space-y-4 transition-opacity duration-300 ease-out ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
+          >
             {displayCategories.map((category) => {
               const isOpen = displayCategories.length === 1 || expandedCategory === category;
               return (
@@ -173,7 +192,7 @@ export default function CustomerServices() {
           </div>
         )}
 
-        {CUSTOMER_ONLINE_BOOKING && !loading && mainServices.length > 0 && (
+        {CUSTOMER_ONLINE_BOOKING && !loading && services.filter((s) => !s.is_addon).length > 0 && (
           <div className="mt-10 text-center">
             <div className="bg-gold/10 border border-gold/30 rounded-2xl p-8">
               <h3 className="font-heading text-2xl text-gold mb-2">Ready to Book?</h3>

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
+import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '../utils/serviceCategories';
+import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
 
 export default function ServicesPublic() {
   const { theme } = useTheme();
@@ -10,35 +11,39 @@ export default function ServicesPublic() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const [expandedCategory, setExpandedCategory] = useState(null);
-  const categoryScrollRef = useRef(null);
-  const isDraggingRef = useRef(false);
-  const dragStartXRef = useRef(0);
-  const dragStartScrollRef = useRef(0);
+  const [contentVisible, setContentVisible] = useState(true);
+  const isFirstCategoryRender = useRef(true);
 
   useEffect(() => {
     fetchServices();
     fetchCategories();
   }, []);
 
-  const handleCategoryPointerDown = (event) => {
-    if (!categoryScrollRef.current) return;
-    isDraggingRef.current = true;
-    dragStartXRef.current = event.clientX;
-    dragStartScrollRef.current = categoryScrollRef.current.scrollLeft;
-    categoryScrollRef.current.setPointerCapture(event.pointerId);
+  useEffect(() => {
+    if (activeCategory === 'All') return;
+    const { sortedCategories } = buildCategoryTabs(services, dbCategories);
+    if (!sortedCategories.includes(activeCategory)) {
+      setActiveCategory('All');
+      setExpandedCategory(null);
+    }
+  }, [services, dbCategories, activeCategory]);
+
+  const { changeCategory } = useCategoryFade((cat) => {
+    setActiveCategory(cat);
+    setExpandedCategory(null);
+  });
+
+  const handleCategorySelect = (cat) => {
+    changeCategory(cat, activeCategory, setContentVisible);
   };
 
-  const handleCategoryPointerMove = (event) => {
-    if (!isDraggingRef.current || !categoryScrollRef.current) return;
-    const deltaX = event.clientX - dragStartXRef.current;
-    categoryScrollRef.current.scrollLeft = dragStartScrollRef.current - deltaX;
-  };
-
-  const handleCategoryPointerUp = (event) => {
-    if (!categoryScrollRef.current) return;
-    isDraggingRef.current = false;
-    categoryScrollRef.current.releasePointerCapture(event.pointerId);
-  };
+  useEffect(() => {
+    if (isFirstCategoryRender.current) {
+      isFirstCategoryRender.current = false;
+      return;
+    }
+    setContentVisible(true);
+  }, [activeCategory]);
 
   const fetchServices = async () => {
     const { data } = await supabase
@@ -51,35 +56,16 @@ export default function ServicesPublic() {
   };
 
   const fetchCategories = async () => {
-    const { data } = await supabase
-      .from('service_categories')
-      .select('*')
-      .order('sort_order', { ascending: true });
-    setDbCategories(data || []);
+    const data = await fetchServiceCategories(supabase);
+    setDbCategories(data);
   };
 
-  const groupedServices = services.reduce((acc, service) => {
-    const cat = service.category || 'Other';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(service);
-    return acc;
-  }, {});
-
-  const categoryOrder = dbCategories.map((category) => category.name);
-  const categoryOrderMap = new Map(categoryOrder.map((cat, index) => [cat, index]));
-
-  const sortedCategories = Object.keys(groupedServices).sort((a, b) => {
-    const aIdx = categoryOrderMap.has(a) ? categoryOrderMap.get(a) : 999;
-    const bIdx = categoryOrderMap.has(b) ? categoryOrderMap.get(b) : 999;
-    if (aIdx !== bIdx) return aIdx - bIdx;
-    return a.localeCompare(b);
-  });
-
-  const categories = ['All', ...sortedCategories];
-
-  const displayCategories = activeCategory === 'All'
-    ? sortedCategories
-    : sortedCategories.filter((c) => c === activeCategory);
+  const { grouped: groupedServices, sortedCategories, categoryTabs } = buildCategoryTabs(services, dbCategories);
+  const displayCategories = getDisplayCategories(activeCategory, sortedCategories);
+  const fadeFrom = theme === 'dark' ? '#1a1a1a' : '#fdf8f0';
+  const inactiveClass = theme === 'dark'
+    ? 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
+    : 'border border-gold/30 text-charcoal/60 hover:border-gold hover:text-gold';
 
   return (
     <div className={`min-h-screen w-full overflow-x-hidden ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
@@ -88,29 +74,13 @@ export default function ServicesPublic() {
           <div className="text-gold font-heading text-xl">Services & Pricing</div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-4">
-          <div
-            ref={categoryScrollRef}
-            onPointerDown={handleCategoryPointerDown}
-            onPointerMove={handleCategoryPointerMove}
-            onPointerUp={handleCategoryPointerUp}
-            onPointerCancel={handleCategoryPointerUp}
-            className="flex gap-2 overflow-x-auto no-scrollbar pb-1 cursor-grab"
-            style={{ touchAction: 'pan-x' }}
-          >
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => { setActiveCategory(cat); setExpandedCategory(null); }}
-                className={`px-4 py-2 rounded-full text-sm font-heading whitespace-nowrap transition-all flex-shrink-0 ${
-                  activeCategory === cat
-                    ? 'bg-gold text-charcoal'
-                    : `border border-gold/30 hover:border-gold hover:text-gold ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+          <ServiceCategoryBar
+            tabs={categoryTabs}
+            activeCategory={activeCategory}
+            onSelect={handleCategorySelect}
+            fadeFrom={fadeFrom}
+            inactiveClassName={inactiveClass}
+          />
         </div>
       </div>
 
@@ -128,12 +98,15 @@ export default function ServicesPublic() {
             <div className="text-gold animate-pulse text-lg">Loading services...</div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div
+            className={`space-y-4 transition-opacity duration-300 ease-out ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
+          >
             {displayCategories.map((category) => {
               const isOpen = displayCategories.length === 1 || expandedCategory === category;
               return (
                 <div key={category} className={`rounded-xl border overflow-hidden ${theme === 'dark' ? 'border-gold/20 bg-white/2' : 'border-gold/30 bg-white/50'}`}>
                   <button
+                    type="button"
                     onClick={() => setExpandedCategory(isOpen ? null : category)}
                     className={`w-full flex items-center justify-between px-6 py-4 transition-colors ${theme === 'dark' ? 'hover:bg-white/3' : 'hover:bg-white/70'}`}
                   >

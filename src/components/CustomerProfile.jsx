@@ -11,6 +11,12 @@ import {
   fetchCustomerReceipts,
   fetchCustomerWaiverDetail,
   fetchReferralInfo,
+  fetchCustomerVisitPhotos,
+  fetchVisitReceipt,
+  formatReceiptContent,
+  formatPaymentReceiptRow,
+  downloadTextFile,
+  receiptFilename,
 } from '../utils/customerStats';
 import { getTierInfo, generateReferralCode, isBirthdayMonth, tierDetails } from '../utils/loyaltyTier';
 import {
@@ -35,6 +41,7 @@ const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'preferences', label: 'Preferences' },
   { id: 'loyalty', label: 'Loyalty' },
+  { id: 'gallery', label: 'Gallery' },
   { id: 'activity', label: 'Activity' },
   { id: 'security', label: 'Security' },
 ];
@@ -107,7 +114,11 @@ export default function CustomerProfile() {
   const [pinSuccess, setPinSuccess] = useState('');
   const [pinLoading, setPinLoading] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [receiptLoadingId, setReceiptLoadingId] = useState(null);
   const [loyaltyHistory, setLoyaltyHistory] = useState({ rows: [], available: false });
+  const [visitPhotos, setVisitPhotos] = useState({ rows: [], available: false });
+  const [photoFilter, setPhotoFilter] = useState('all');
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
   const [commPrefsAvailable, setCommPrefsAvailable] = useState(true);
@@ -157,13 +168,14 @@ export default function CustomerProfile() {
         'sms_reminders' in profileData || 'email_promotions' in profileData || 'preferred_contact' in profileData
       );
 
-      const [statsData, waiverData, receiptsData, referralData, notifRes, loyaltyData] = await Promise.all([
+      const [statsData, waiverData, receiptsData, referralData, notifRes, loyaltyData, photosData] = await Promise.all([
         fetchCustomerStats(userId, user?.phone),
         fetchCustomerWaiverDetail(userId),
         fetchCustomerReceipts(userId),
         fetchReferralInfo(profileData),
         supabase.from('notifications').select('*').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(5),
         fetchLoyaltyHistory(userId),
+        fetchCustomerVisitPhotos(userId),
       ]);
 
       setStats(statsData);
@@ -172,6 +184,7 @@ export default function CustomerProfile() {
       setReferralInfo(referralData);
       setNotifications(notifRes.data || []);
       setLoyaltyHistory(loyaltyData);
+      setVisitPhotos(photosData);
     } catch (err) {
       console.error('Profile load error:', err);
     }
@@ -300,6 +313,28 @@ export default function CustomerProfile() {
     navigator.clipboard.writeText(profile.referral_code);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const downloadReceipt = async (receiptRow) => {
+    if (!user?.id) return;
+    setReceiptLoadingId(receiptRow.id);
+    try {
+      let content = formatPaymentReceiptRow(receiptRow);
+      if (receiptRow.appointmentId) {
+        try {
+          const receipt = await fetchVisitReceipt(receiptRow.appointmentId, user.id, user?.phone);
+          if (receipt?.appointment) content = formatReceiptContent(receipt);
+        } catch (detailErr) {
+          console.warn('Full receipt lookup failed, using payment summary:', detailErr);
+        }
+      }
+      downloadTextFile(content, receiptFilename(receiptRow.date, receiptRow.appointmentId || receiptRow.id));
+    } catch (err) {
+      console.error('Receipt download error:', err);
+      window.alert('Unable to download receipt. Please try again.');
+    } finally {
+      setReceiptLoadingId(null);
+    }
   };
 
   const handleAvatarChange = async (e) => {
@@ -845,8 +880,66 @@ export default function CustomerProfile() {
             )}
 
             <Link to="/customer/loyalty" className={`block ${panelClass} hover:border-gold/30 transition-colors text-center`}>
-              <span className="text-gold font-heading">Browse & Redeem Rewards →</span>
+              <span className="text-gold font-heading">View Rewards Program →</span>
+              <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>Redeem during your next salon check-in</p>
             </Link>
+          </div>
+        )}
+
+        {activeTab === 'gallery' && (
+          <div className={panelClass}>
+            <h3 className={theme === 'dark' ? 'text-offwhite font-medium mb-4' : 'text-charcoal font-medium mb-4'}>Before & After Gallery</h3>
+            {!visitPhotos.available ? (
+              <p className={theme === 'dark' ? 'text-offwhite/50 text-sm' : 'text-charcoal/50 text-sm'}>Photo gallery is not available yet.</p>
+            ) : (
+              <>
+                <div className="flex gap-2 mb-6 flex-wrap">
+                  {[
+                    { key: 'all', label: 'All', count: visitPhotos.rows.length },
+                    { key: 'before', label: 'Before', count: visitPhotos.rows.filter((p) => p.photo_type === 'before').length },
+                    { key: 'after', label: 'After', count: visitPhotos.rows.filter((p) => p.photo_type === 'after').length },
+                  ].map((filter) => (
+                    <button
+                      key={filter.key}
+                      type="button"
+                      onClick={() => setPhotoFilter(filter.key)}
+                      className={`px-4 py-2 rounded-full text-xs font-heading transition-all ${
+                        photoFilter === filter.key
+                          ? 'bg-gold text-charcoal'
+                          : theme === 'dark'
+                            ? 'border border-gold/30 text-offwhite/60 hover:border-gold hover:text-gold'
+                            : 'border border-gold/30 text-charcoal/60 hover:border-gold hover:text-gold'
+                      }`}
+                    >
+                      {filter.label} ({filter.count})
+                    </button>
+                  ))}
+                </div>
+                {visitPhotos.rows.filter((photo) => photoFilter === 'all' || photo.photo_type === photoFilter).length === 0 ? (
+                  <p className={theme === 'dark' ? 'text-offwhite/40 text-sm text-center py-10' : 'text-charcoal/40 text-sm text-center py-10'}>
+                    No {photoFilter === 'all' ? '' : `${photoFilter} `}photos yet.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {visitPhotos.rows
+                      .filter((photo) => photoFilter === 'all' || photo.photo_type === photoFilter)
+                      .map((photo) => (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          onClick={() => setSelectedPhoto(photo)}
+                          className="rounded-xl overflow-hidden border border-gold/20 text-left hover:border-gold/40 transition-colors"
+                        >
+                          <img src={photo.photo_url} alt="" className="w-full h-36 object-cover" />
+                          <div className={`p-2 text-xs ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>
+                            {photo.photo_type === 'before' ? 'Before' : 'After'} · {new Date(photo.created_at).toLocaleDateString()}
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -881,8 +974,8 @@ export default function CustomerProfile() {
                 <h3 className={theme === 'dark' ? 'text-offwhite font-medium mb-4' : 'text-charcoal font-medium mb-4'}>Payment History</h3>
                 <div className="space-y-3">
                   {receipts.map((r) => (
-                    <div key={r.id} className={`flex justify-between items-start py-3 border-b last:border-0 ${theme === 'dark' ? 'border-white/5' : 'border-charcoal/5'}`}>
-                      <div>
+                    <div key={r.id} className={`flex justify-between items-start gap-3 py-3 border-b last:border-0 ${theme === 'dark' ? 'border-white/5' : 'border-charcoal/5'}`}>
+                      <div className="min-w-0">
                         <div className={valueClass(theme)}>{r.serviceName}</div>
                         <div className={theme === 'dark' ? 'text-offwhite/40 text-xs' : 'text-charcoal/40 text-xs'}>
                           {new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -890,7 +983,17 @@ export default function CustomerProfile() {
                           {r.discount > 0 && ` · -$${r.discount.toFixed(2)} ${r.discountType || ''}`}
                         </div>
                       </div>
-                      <span className="text-gold font-heading text-sm">${r.finalAmount.toFixed(2)}</span>
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <span className="text-gold font-heading text-sm">${r.finalAmount.toFixed(2)}</span>
+                        <button
+                          type="button"
+                          onClick={() => downloadReceipt(r)}
+                          disabled={receiptLoadingId === r.id}
+                          className="px-2.5 py-1 text-[10px] font-medium rounded-lg border border-gold/30 text-gold hover:bg-gold/10 transition-colors disabled:opacity-50"
+                        >
+                          {receiptLoadingId === r.id ? '…' : 'Receipt'}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1009,6 +1112,18 @@ export default function CustomerProfile() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {selectedPhoto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedPhoto(null)}>
+          <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setSelectedPhoto(null)} className="absolute -top-10 right-0 text-offwhite/70 hover:text-offwhite text-2xl">&times;</button>
+            <img src={selectedPhoto.photo_url} alt="" className="w-full max-h-[80vh] object-contain rounded-xl" />
+            <div className="text-center text-offwhite/70 text-sm mt-3">
+              {selectedPhoto.photo_type === 'before' ? 'Before' : 'After'} · {new Date(selectedPhoto.created_at).toLocaleString()}
+            </div>
           </div>
         </div>
       )}

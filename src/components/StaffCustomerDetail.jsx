@@ -136,6 +136,7 @@ export default function StaffCustomerDetail() {
   const [loyaltyReason, setLoyaltyReason] = useState('');
   const [loyaltySaving, setLoyaltySaving] = useState(false);
   const [photoType, setPhotoType] = useState('after');
+  const [photoViewFilter, setPhotoViewFilter] = useState('all');
   const [photoUploading, setPhotoUploading] = useState(false);
   const [editForm, setEditForm] = useState(null);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -796,11 +797,33 @@ export default function StaffCustomerDetail() {
                 </button>
               </div>
             )}
+            <div className="flex gap-2 mb-6 flex-wrap">
+              {[
+                { key: 'all', label: 'All', count: photos.length },
+                { key: 'before', label: 'Before', count: photos.filter((p) => p.meta?.photo_type === 'before').length },
+                { key: 'after', label: 'After', count: photos.filter((p) => p.meta?.photo_type === 'after').length },
+              ].map((filter) => (
+                <button
+                  key={filter.key}
+                  type="button"
+                  onClick={() => setPhotoViewFilter(filter.key)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-heading transition-all ${
+                    photoViewFilter === filter.key
+                      ? 'bg-gold text-charcoal'
+                      : 'border border-light text-secondary hover:border-gold hover:text-gold'
+                  }`}
+                >
+                  {filter.label} ({filter.count})
+                </button>
+              ))}
+            </div>
             {photos.length === 0 ? (
               <p className="text-secondary text-center py-8">No visit photos yet</p>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {photos.map((p) => (
+                {photos
+                  .filter((p) => photoViewFilter === 'all' || p.meta?.photo_type === photoViewFilter)
+                  .map((p) => (
                   <div key={p.id} className="rounded-lg overflow-hidden border border-light">
                     <img src={p.meta.photo_url} alt="" className="w-full h-36 object-cover" />
                     <div className="p-2 text-xs text-secondary">{p.title} · {formatDate(p.date)}</div>

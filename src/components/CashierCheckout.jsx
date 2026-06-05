@@ -25,14 +25,18 @@ const formatTime = (timestamp) => {
 };
 
 function computeTotals(basePrice, extras, discountAmount, discountType) {
-  const subtotal = basePrice + extras;
+  const serviceSubtotal = Number(basePrice) || 0;
+  const tip = Number(extras) || 0;
   let discount = 0;
   const discVal = parseFloat(discountAmount) || 0;
   if (discVal > 0) {
-    discount = discountType === 'percent' ? subtotal * (discVal / 100) : discVal;
+    discount = discountType === 'percent'
+      ? serviceSubtotal * (discVal / 100)
+      : discVal;
   }
-  const finalTotal = Math.max(0, subtotal - discount);
-  return { subtotal, discount, finalTotal };
+  discount = Math.min(Math.max(0, discount), serviceSubtotal);
+  const finalTotal = Math.max(0, serviceSubtotal - discount) + tip;
+  return { serviceSubtotal, tip, discount, finalTotal };
 }
 
 const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
@@ -45,12 +49,27 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const hasReservedReward = Boolean(appointment?.loyalty_reward_id && appointment?.loyalty_points_cost > 0);
   const basePrice = appointment?.final_price || appointment?.services?.price || 0;
   const extras = parseFloat(extrasAmount) || 0;
-  const { subtotal, discount, finalTotal } = computeTotals(basePrice, extras, discountAmount, discountType);
+  const { serviceSubtotal, tip, discount, finalTotal } = computeTotals(basePrice, extras, discountAmount, discountType);
 
   const customerPoints = appointment?.customer?.loyalty_points || 0;
   const selectedReward = LOYALTY_REWARDS.find((r) => r.id === loyaltyRewardId);
+
+  useEffect(() => {
+    if (hasReservedReward) {
+      const reservedDiscount = Number(appointment.loyalty_discount_amount || 0);
+      if (reservedDiscount > 0) {
+        setDiscountAmount(String(reservedDiscount));
+        setDiscountType('amount');
+      }
+      setLoyaltyRewardId('');
+      return;
+    }
+    setDiscountAmount('');
+    setDiscountType('amount');
+  }, [appointment?.id, hasReservedReward, appointment?.loyalty_discount_amount]);
 
   const isDark = theme === 'dark';
   const modalBg = isDark ? 'bg-[#1a1a1a] border-gold/10' : 'bg-white border-gold/30';
@@ -68,15 +87,15 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
     setError('');
     try {
       await onConfirm(appointment.id, {
-        amount: subtotal,
+        amount: basePrice,
         discount_amount: discount,
         discount_type: discountType === 'percent' ? 'percentage' : discount > 0 && selectedReward ? 'loyalty' : 'fixed',
         final_amount: finalTotal,
         extras_amount: extras,
         notes,
         payment_method: paymentMethod,
-        loyalty_points_redeem: selectedReward?.points || 0,
-        loyalty_reward_name: selectedReward?.name || null,
+        loyalty_points_redeem: hasReservedReward ? 0 : (selectedReward?.points || 0),
+        loyalty_reward_name: hasReservedReward ? null : (selectedReward?.name || null),
       });
     } catch (err) {
       setError(err.message || 'Checkout failed');
@@ -100,8 +119,14 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
             </div>
             <div className="flex justify-between items-center mb-2">
               <span className={mutedClass}>Service</span>
-              <span className="text-gold font-heading">{appointment.add_ons || appointment.services?.name || 'Service'}</span>
+              <span className="text-gold font-heading">{appointment.selected_service_names || appointment.add_ons || appointment.services?.name || 'Service'}</span>
             </div>
+            {hasReservedReward && (
+              <div className="flex justify-between items-center mb-2 pt-2 border-t border-gold/10">
+                <span className={mutedClass}>Reserved reward</span>
+                <span className="text-gold text-sm">{appointment.loyalty_reward_name}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <span className={mutedClass}>Estimated Price</span>
               <span className={mutedClass}>${basePrice.toFixed(2)}</span>
@@ -156,7 +181,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
               </div>
             </div>
 
-            {customerPoints > 0 && (
+            {customerPoints > 0 && !hasReservedReward && (
               <div>
                 <label className={labelClass}>Redeem Loyalty Reward</label>
                 <select
@@ -201,12 +226,18 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
 
           <div className="bg-gold/10 border border-gold/30 rounded-lg p-4 mt-6">
             <div className="flex justify-between items-center mb-2">
-              <span className={mutedClass}>Subtotal</span>
-              <span className={textClass}>${subtotal.toFixed(2)}</span>
+              <span className={mutedClass}>Services</span>
+              <span className={textClass}>${serviceSubtotal.toFixed(2)}</span>
             </div>
+            {tip > 0 && (
+              <div className="flex justify-between items-center mb-2">
+                <span className={mutedClass}>Tip</span>
+                <span className={textClass}>${tip.toFixed(2)}</span>
+              </div>
+            )}
             {discount > 0 && (
               <div className="flex justify-between items-center mb-2 text-green-500">
-                <span>Discount</span>
+                <span>Discount (services only)</span>
                 <span>-${discount.toFixed(2)}</span>
               </div>
             )}
@@ -381,6 +412,7 @@ export default function CashierCheckout() {
       p_notes: checkoutData.notes || null,
       p_loyalty_points_redeem: checkoutData.loyalty_points_redeem || 0,
       p_loyalty_reward_name: checkoutData.loyalty_reward_name || null,
+      p_extras_amount: checkoutData.extras_amount || 0,
     });
 
     if (error) {
