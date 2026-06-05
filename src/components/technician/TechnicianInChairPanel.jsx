@@ -9,6 +9,7 @@ import { fetchStaffNotes, addStaffNote } from '../../utils/staffCustomerNotes';
 import { uploadVisitPhoto } from '../../utils/staffCustomerTimeline';
 import { canUploadVisitPhotos } from '../../utils/staffCustomerAccess';
 import { supabase } from '../../lib/supabase';
+import WaiverModal from '../WaiverModal';
 
 export default function TechnicianInChairPanel({
   appointment,
@@ -27,6 +28,8 @@ export default function TechnicianInChairPanel({
   const [photoType, setPhotoType] = useState('after');
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoMsg, setPhotoMsg] = useState('');
+  const [showWaiver, setShowWaiver] = useState(false);
+  const [waiverSaving, setWaiverSaving] = useState(false);
   const photoInputRef = useRef(null);
 
   const customer = appointment.customer || {};
@@ -64,12 +67,35 @@ export default function TechnicianInChairPanel({
   const handleAddNote = async () => {
     if (!newNote.trim() || !appointment.customer_id) return;
     setNoteSaving(true);
-    const result = await addStaffNote(appointment.customer_id, newNote, user);
+    const result = await addStaffNote(appointment.customer_id, newNote, user, {
+      appointmentId: appointment.id,
+    });
     if (result.success) {
       setNotes((prev) => [result.note, ...prev].slice(0, 3));
       setNewNote('');
     }
     setNoteSaving(false);
+  };
+
+  const handleSaveWaiver = async (waiverData) => {
+    if (!appointment.customer_id) return;
+    setWaiverSaving(true);
+    try {
+      const { error } = await supabase.from('customer_waivers').insert([{
+        profile_id: appointment.customer_id,
+        customer_phone: customer.phone || null,
+        customer_name: customer.full_name || 'Customer',
+        agreed_to_terms: true,
+        signature_image: waiverData.signature_image,
+      }]);
+      if (error) throw error;
+      setWaiverSigned(true);
+      setShowWaiver(false);
+    } catch {
+      setPhotoMsg('Failed to save waiver');
+    } finally {
+      setWaiverSaving(false);
+    }
   };
 
   const handlePhotoUpload = async (e) => {
@@ -116,9 +142,21 @@ export default function TechnicianInChairPanel({
       )}
 
       {waiverSigned !== null && (
-        <p className={clsx('text-xs mt-2', waiverSigned ? 'text-green-400' : 'text-yellow-400')}>
-          Waiver: {waiverSigned ? 'Signed' : 'Not on file'}
-        </p>
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <p className={clsx('text-xs', waiverSigned ? 'text-green-400' : 'text-yellow-400')}>
+            Waiver: {waiverSigned ? 'Signed' : 'Not on file'}
+          </p>
+          {!waiverSigned && (
+            <button
+              type="button"
+              onClick={() => setShowWaiver(true)}
+              disabled={waiverSaving}
+              className="text-xs px-2 py-1 bg-yellow-400/15 text-yellow-400 border border-yellow-400/30 rounded hover:bg-yellow-400/25 disabled:opacity-50"
+            >
+              Collect waiver
+            </button>
+          )}
+        </div>
       )}
 
       <div className="mt-4">
@@ -268,6 +306,15 @@ export default function TechnicianInChairPanel({
       >
         {actionId === appointment.id ? 'Completing…' : 'Complete Service ✓'}
       </button>
+
+      {showWaiver && (
+        <WaiverModal
+          customerName={customer.full_name || 'Customer'}
+          customerPhone={customer.phone || ''}
+          onConfirm={handleSaveWaiver}
+          onCancel={() => setShowWaiver(false)}
+        />
+      )}
     </div>
   );
 }

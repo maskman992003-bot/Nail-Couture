@@ -16,6 +16,7 @@ import AppModal, {
   modalBtnDanger,
 } from './AppModal'
 import clsx from 'clsx'
+import { getWorkstationStatus, WORKSTATION_ON_BREAK } from '../utils/technicianWorkstation'
 
 const LOBBY_DROP_ID = 'lobby'
 
@@ -74,37 +75,41 @@ const DraggablePendingCustomer = ({ appointment, children }) => {
   )
 }
 
-const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, updating, onAccept, onComplete, wiggle, activeDragId, theme }) => {
+const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, isOnBreak, updating, onAccept, onComplete, wiggle, activeDragId, theme }) => {
   const isDraggingThisPending = activeDragId && pendingCustomer && String(pendingCustomer.id) === String(activeDragId)
+  const dropDisabled = isBusy || isPending || isOnBreak || isDraggingThisPending
   const { isOver, setNodeRef } = useDroppable({
     id: tech.id,
-    disabled: isBusy || isPending || isDraggingThisPending
+    disabled: dropDisabled
   })
 
   const showAcceptButton = !!pendingCustomer
-  const dropHighlight = isOver && !isBusy
+  const dropHighlight = isOver && !isBusy && !isOnBreak
 
   const gridItemClass = clsx(
     'rounded-xl p-5 border-2 transition-all',
     {
       'border-gold border-4 bg-gold/20 scale-105': dropHighlight,
       'border-red-500/50 bg-red-900/10': isBusy && !dropHighlight,
+      'border-yellow-500/40 bg-yellow-900/10': isOnBreak && !isBusy && !dropHighlight,
       'animate-wiggle': wiggle
     },
-    !dropHighlight && !isBusy && (
+    !dropHighlight && !isBusy && !isOnBreak && (
       theme === 'dark' ? 'border-offwhite/20 bg-offwhite/5 hover:border-gold/50' : 'border-charcoal/20 bg-charcoal/5 hover:border-gold/50'
     )
   )
 
   const techNameClass = clsx('font-heading text-lg', {
     'text-red-400': isBusy,
-    [theme === 'dark' ? 'text-offwhite' : 'text-charcoal']: !isBusy
+    'text-yellow-400': isOnBreak && !isBusy,
+    [theme === 'dark' ? 'text-offwhite' : 'text-charcoal']: !isBusy && !isOnBreak
   })
 
   const statusBadgeClass = clsx('text-xs px-2 py-1 rounded', {
     'bg-red-500/30 text-red-400': isBusy,
-    'bg-yellow-500/30 text-yellow-400': showAcceptButton && !isBusy
-  }, !isBusy && !showAcceptButton && (
+    'bg-yellow-500/30 text-yellow-400': isOnBreak && !isBusy,
+    'bg-amber-500/30 text-amber-400': showAcceptButton && !isBusy && !isOnBreak
+  }, !isBusy && !isOnBreak && !showAcceptButton && (
     theme === 'dark' ? 'bg-offwhite/20 text-offwhite/50' : 'bg-charcoal/20 text-charcoal/50'
   ))
 
@@ -119,7 +124,7 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
       <div className="flex items-center justify-between mb-2">
         <h4 className={techNameClass}>{tech.full_name}</h4>
         <span className={statusBadgeClass}>
-          {isBusy ? 'Busy' : showAcceptButton ? 'Pending' : 'Available'}
+          {isBusy ? 'Busy' : isOnBreak ? 'On Break' : showAcceptButton ? 'Pending' : 'Available'}
         </span>
       </div>
       {isBusy ? (
@@ -150,6 +155,10 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
             </button>
           </div>
         </DraggablePendingCustomer>
+      ) : isOnBreak ? (
+        <div className="text-sm text-yellow-400/80">
+          On break — cannot assign
+        </div>
       ) : (
         <div className="text-sm text-offwhite/40">
           {dropHighlight ? 'Release to assign' : 'Drop here to assign'}
@@ -549,6 +558,9 @@ export default function AdminLobby() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, async () => {
         await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, async () => {
+        await fetchTechnicians()
+      })
       .subscribe()
 
     return () => supabase.removeChannel(channel)
@@ -746,6 +758,17 @@ export default function AdminLobby() {
       a => String(a.technician_id) === technicianId && a.status === 'serving'
     )
 
+    const targetTech = technicians.find((t) => String(t.id) === technicianId)
+    const targetOnBreak = targetTech && getWorkstationStatus(targetTech.preferences) === WORKSTATION_ON_BREAK
+
+    if (targetOnBreak) {
+      setWiggleTechId(technicianId)
+      setTimeout(() => setWiggleTechId(null), 500)
+      setNotification({ message: 'Technician is on break', name: targetTech?.full_name || 'Cannot assign' })
+      setTimeout(() => setNotification(null), 3000)
+      return
+    }
+
     if (targetIsServing || targetHasOtherAssignment) {
       setWiggleTechId(technicianId)
       setTimeout(() => setWiggleTechId(null), 500)
@@ -905,6 +928,7 @@ export default function AdminLobby() {
                     const pendingCustomer = pendingAppointments.find(a => a.technician_id === tech.id && a.status === 'assigned_pending')
                     const isBusy = !!activeCustomer
                     const isPending = !!pendingCustomer
+                    const isOnBreak = getWorkstationStatus(tech.preferences) === WORKSTATION_ON_BREAK
                     
                     return (
                       <TechnicianGridItem
@@ -914,6 +938,7 @@ export default function AdminLobby() {
                         pendingCustomer={pendingCustomer}
                         isBusy={isBusy}
                         isPending={isPending}
+                        isOnBreak={isOnBreak}
                         wiggle={String(wiggleTechId) === String(tech.id)}
                         updating={updating}
                         onAccept={acceptAssignment}

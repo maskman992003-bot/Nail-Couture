@@ -21,6 +21,7 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
   const [toast, setToast] = useState(null);
   const [newAssignmentIds, setNewAssignmentIds] = useState([]);
   const [postComplete, setPostComplete] = useState(null);
+  const [priceConfirmAppt, setPriceConfirmAppt] = useState(null);
   const toastTimer = useRef(null);
   const knownPendingIds = useRef(new Set());
   const initialLoadDone = useRef(false);
@@ -107,15 +108,7 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     }
   }, [refetch, showToast, callerPhoneFallback]);
 
-  const markComplete = useCallback(async (appointment) => {
-    const price = appointment.final_price ?? appointment.services?.price ?? null;
-    if (price == null) {
-      const confirmed = window.confirm(
-        'No final price set. Complete anyway? Cashier can adjust at checkout.'
-      );
-      if (!confirmed) return;
-    }
-
+  const doComplete = useCallback(async (appointment, price) => {
     setActionId(appointment.id);
     try {
       const phone = getCallerPhone(callerPhoneFallback);
@@ -132,14 +125,54 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
 
       showToast(`Completed: ${appointment.customer?.full_name || 'Client'}`);
       setPostComplete({
-        customerId: appointment.customer_id,
+        customerId: appointment.customer_id || appointment.customer?.id || null,
         customerName: appointment.customer?.full_name || 'Client',
         appointmentId: appointment.id,
+        serviceId: appointment.service_id,
       });
       await refetch(true);
     } catch (err) {
       console.error('Error completing appointment:', err);
       showToast(err.message || 'Failed to complete service', 'error');
+    } finally {
+      setActionId(null);
+    }
+  }, [refetch, showToast, callerPhoneFallback]);
+
+  const markComplete = useCallback(async (appointment) => {
+    const price = appointment.final_price ?? appointment.services?.price ?? null;
+    if (price == null) {
+      setPriceConfirmAppt(appointment);
+      return;
+    }
+    await doComplete(appointment, price);
+  }, [doComplete]);
+
+  const confirmCompleteWithoutPrice = useCallback(async () => {
+    if (!priceConfirmAppt) return;
+    const appt = priceConfirmAppt;
+    setPriceConfirmAppt(null);
+    await doComplete(appt, null);
+  }, [priceConfirmAppt, doComplete]);
+
+  const cancelPriceConfirm = useCallback(() => setPriceConfirmAppt(null), []);
+
+  const declineAssignment = useCallback(async (appointment, reason = '') => {
+    setActionId(appointment.id);
+    try {
+      const phone = getCallerPhone(callerPhoneFallback);
+      const { error } = await supabase.rpc('decline_assignment', {
+        caller_phone: phone,
+        appointment_id: appointment.id,
+        p_reason: reason || null,
+      });
+      if (error) throw error;
+      setNewAssignmentIds((prev) => prev.filter((id) => id !== appointment.id));
+      showToast(`Returned to waiting: ${appointment.customer?.full_name || 'Client'}`);
+      await refetch(true);
+    } catch (err) {
+      console.error('Error declining assignment:', err);
+      showToast(err.message || 'Failed to decline assignment', 'error');
     } finally {
       setActionId(null);
     }
@@ -196,5 +229,9 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     dismissNewAssignment,
     clearNewAssignments,
     dismissPostComplete,
+    declineAssignment,
+    priceConfirmAppt,
+    confirmCompleteWithoutPrice,
+    cancelPriceConfirm,
   };
 }

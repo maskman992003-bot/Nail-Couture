@@ -3,73 +3,45 @@ import { supabase } from '../lib/supabase'
 export async function processCheckIn(phoneNumber, checkedInBy = null) {
   const cleanPhone = phoneNumber.replace(/\D/g, '')
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('phone', cleanPhone)
-    .single()
+  const { data, error } = await supabase.rpc('process_kiosk_check_in', {
+    p_phone: cleanPhone,
+    p_checked_in_by: checkedInBy || null,
+  })
 
-  if (profileError && profileError.code !== 'PGRST116') {
-    console.error('Profile search error:', profileError)
-    throw profileError
-  }
-
-  if (profile) {
-    const { data: existing } = await supabase
-      .from('appointments')
-      .select('id, status, service_id, scheduled_at')
-      .eq('customer_id', profile.id)
-      .in('status', ['confirmed', 'waiting', 'serving'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (existing) {
-      const { data: updated, error: updateError } = await supabase
-        .from('appointments')
-        .update({
-          status: 'waiting',
-          checked_in_at: new Date().toISOString(),
-          checked_in_by: checkedInBy || null,
-        })
-        .eq('id', existing.id)
-        .select()
-        .single()
-
-      if (updateError) throw updateError
-      return { isNew: false, name: profile.full_name, profile: profile, appointment: updated }
+  if (error) {
+    if (error.message?.includes('process_kiosk_check_in') || error.code === '42883') {
+      throw new Error('Check-in unavailable. Run sql/028_kiosk_check_in_rpc.sql in Supabase.')
     }
-
-    const { data: appointments, error: appointmentError } = await supabase
-      .from('appointments')
-      .insert({
-        customer_id: profile.id,
-        status: 'waiting',
-        checked_in_at: new Date().toISOString(),
-        checked_in_by: checkedInBy || null,
-        booking_type: 'walk_in',
-      })
-      .select()
-      .single()
-
-    if (appointmentError) throw appointmentError
-
-    return { isNew: false, name: profile.full_name, profile: profile, appointment: appointments }
+    throw error
   }
 
-  return { isNew: true }
+  if (!data) {
+    throw new Error('Check-in failed. Please try again.')
+  }
+
+  if (data.is_new) {
+    return { isNew: true }
+  }
+
+  return {
+    isNew: false,
+    name: data.name,
+    profile: data.profile,
+    appointment: data.appointment,
+  }
 }
 
 export async function logInventoryUsageByRefreshmentName(refreshmentName, quantityChanged, appointmentId, customerId, reason) {
   if (!refreshmentName) return;
-  const { data: inventoryItem, error: inventoryError } = await supabase
+  const { data: inventoryItems, error: inventoryError } = await supabase
     .from('inventory')
     .select('id')
     .eq('item_name', refreshmentName)
     .eq('category', 'refreshment')
-    .single();
+    .limit(1);
 
   if (inventoryError) throw inventoryError;
+  const inventoryItem = inventoryItems?.[0];
   if (!inventoryItem) throw new Error(`Inventory item not found for refreshment: ${refreshmentName}`);
 
   const { error } = await supabase.from('inventory_logs').insert({

@@ -40,19 +40,40 @@ function AssignmentBrief({ appt, userRole }) {
   );
 }
 
+const DECLINE_REASONS = [
+  'Not my specialty',
+  'Schedule conflict',
+  'Need a break first',
+  'Other',
+];
+
 export default function TechnicianQueue({
   pendingAssignments,
   actionId,
   onAccept,
+  onDecline,
+  onDismissNew,
   userRole,
   newAssignmentIds = [],
 }) {
   const [expandedId, setExpandedId] = useState(null);
+  const [declineId, setDeclineId] = useState(null);
+  const [declineReason, setDeclineReason] = useState('');
 
   if (pendingAssignments.length === 0) return null;
 
   const toggleExpand = (id) => {
     setExpandedId((prev) => (prev === id ? null : id));
+    if (onDismissNew && newAssignmentIds.includes(id)) {
+      onDismissNew(id);
+    }
+  };
+
+  const handleDecline = (appt) => {
+    if (!onDecline) return;
+    onDecline(appt, declineReason);
+    setDeclineId(null);
+    setDeclineReason('');
   };
 
   return (
@@ -60,9 +81,14 @@ export default function TechnicianQueue({
       <div className="flex items-center gap-2 mb-4">
         <h2 className="font-heading text-lg text-primary">My Assignments</h2>
         {newAssignmentIds.length > 0 && (
-          <span className="px-2 py-0.5 text-xs font-bold bg-gold text-charcoal rounded-full animate-pulse">
+          <button
+            type="button"
+            onClick={() => newAssignmentIds.forEach((id) => onDismissNew?.(id))}
+            className="px-2 py-0.5 text-xs font-bold bg-gold text-charcoal rounded-full animate-pulse hover:bg-gold/90"
+            title="Mark all as seen"
+          >
             {newAssignmentIds.length} new
-          </span>
+          </button>
         )}
       </div>
       <div className="space-y-3">
@@ -121,30 +147,80 @@ export default function TechnicianQueue({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 sm:flex-col sm:items-end shrink-0">
+                <div className="flex items-center gap-2 sm:flex-col sm:items-end shrink-0">
                   <span className="text-secondary text-xs hidden sm:block">
                     {appt.checked_in_at
                       ? new Date(appt.checked_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                       : ''}
                   </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAccept(appt);
-                    }}
-                    disabled={actionId === appt.id}
-                    className={clsx(
-                      'w-full sm:w-auto px-5 py-3 sm:py-2.5 min-h-[44px] rounded-lg font-medium text-sm transition-colors min-w-[140px]',
-                      actionId === appt.id
-                        ? 'bg-gold/50 text-charcoal cursor-wait'
-                        : 'bg-gold text-charcoal hover:bg-gold/90'
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    {onDecline && declineId !== appt.id && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeclineId(appt.id);
+                          setDeclineReason('');
+                        }}
+                        disabled={actionId === appt.id}
+                        className="px-3 py-3 sm:py-2.5 min-h-[44px] rounded-lg text-sm border border-light text-secondary hover:border-red-400/50 hover:text-red-400 disabled:opacity-50"
+                      >
+                        Decline
+                      </button>
                     )}
-                  >
-                    {actionId === appt.id ? 'Starting…' : 'Accept & Start'}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAccept(appt);
+                      }}
+                      disabled={actionId === appt.id}
+                      className={clsx(
+                        'flex-1 sm:flex-none px-5 py-3 sm:py-2.5 min-h-[44px] rounded-lg font-medium text-sm transition-colors min-w-[140px]',
+                        actionId === appt.id
+                          ? 'bg-gold/50 text-charcoal cursor-wait'
+                          : 'bg-gold text-charcoal hover:bg-gold/90'
+                      )}
+                    >
+                      {actionId === appt.id ? 'Starting…' : 'Accept & Start'}
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {declineId === appt.id && (
+                <div className="px-4 pb-3 border-t border-light/50">
+                  <p className="text-secondary text-xs mt-3 mb-2">Return this client to the waiting queue?</p>
+                  <select
+                    value={declineReason}
+                    onChange={(e) => setDeclineReason(e.target.value)}
+                    className="w-full text-sm px-3 py-2 bg-input border border-input rounded-lg text-primary mb-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <option value="">Reason (optional)</option>
+                    {DECLINE_REASONS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setDeclineId(null); }}
+                      className="flex-1 py-2 text-sm border border-light rounded-lg text-secondary"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleDecline(appt); }}
+                      disabled={actionId === appt.id}
+                      className="flex-1 py-2 text-sm bg-red-500/15 text-red-400 border border-red-500/30 rounded-lg disabled:opacity-50"
+                    >
+                      {actionId === appt.id ? 'Returning…' : 'Return to waiting'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {isExpanded && (
                 <div className="px-4 pb-4">

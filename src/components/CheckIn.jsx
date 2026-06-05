@@ -352,16 +352,18 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
         ? (refreshmentPref || null)
         : null
       
-       const { data: existingProfile, error: profileSearchError } = await supabase
+       const { data: profileRows, error: profileSearchError } = await supabase
          .from('profiles')
          .select('*')
-         .eq('phone', cleanPhone)
-         .single()
+         .or(`phone.eq.${cleanPhone},phone.eq.${phone}`)
+         .order('created_at', { ascending: true })
+         .limit(1)
       
       let profileId
       let finalProfile
+      const existingProfile = profileRows?.[0] || null
       
-      if (profileSearchError && profileSearchError.code !== 'PGRST116') {
+      if (profileSearchError) {
         throw profileSearchError
       }
       

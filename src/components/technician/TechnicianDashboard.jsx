@@ -7,6 +7,7 @@ import TechnicianQueue from './TechnicianQueue';
 import TechnicianInChairPanel from './TechnicianInChairPanel';
 import TechnicianPostCompletePrompt from './TechnicianPostCompletePrompt';
 import TechnicianNotificationBanner from './TechnicianNotificationBanner';
+import AppModal, { modalBtnPrimary, modalBtnSecondary } from '../AppModal';
 import {
   WORKSTATION_AVAILABLE,
   WORKSTATION_ON_BREAK,
@@ -27,8 +28,13 @@ export default function TechnicianDashboard({
   refetch,
   acceptAssignment,
   markComplete,
+  declineAssignment,
   dismissToast,
   dismissPostComplete,
+  dismissNewAssignment,
+  priceConfirmAppt,
+  confirmCompleteWithoutPrice,
+  cancelPriceConfirm,
 }) {
   const firstName = user?.full_name?.split(' ')[0] || 'Technician';
   const hasWork = stats.currentAppointment || stats.pendingCount > 0;
@@ -122,7 +128,7 @@ export default function TechnicianDashboard({
 
           {onBreak && (
             <div className="p-4 bg-yellow-400/10 border border-yellow-400/30 rounded-xl text-sm text-yellow-400">
-              You&apos;re on break — lobby can still see your status. Toggle back to Available when ready for assignments.
+              You&apos;re on break — lobby won&apos;t assign new clients until you&apos;re available again.
             </div>
           )}
 
@@ -189,11 +195,43 @@ export default function TechnicianDashboard({
             pendingAssignments={stats.pendingAssignments}
             actionId={actionId}
             onAccept={acceptAssignment}
+            onDecline={declineAssignment}
+            onDismissNew={dismissNewAssignment}
             userRole={user?.role}
             newAssignmentIds={newAssignmentIds}
           />
         </div>
       </div>
+
+      <AppModal
+        open={!!priceConfirmAppt}
+        onClose={cancelPriceConfirm}
+        title="Complete without price?"
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <button type="button" onClick={cancelPriceConfirm} className={modalBtnSecondary}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmCompleteWithoutPrice}
+              disabled={actionId === priceConfirmAppt?.id}
+              className={modalBtnPrimary}
+            >
+              {actionId === priceConfirmAppt?.id ? 'Completing…' : 'Complete anyway'}
+            </button>
+          </>
+        }
+      >
+        <p className="text-secondary text-sm">
+          No final price is set for{' '}
+          <span className="text-primary font-medium">
+            {priceConfirmAppt?.customer?.full_name || 'this client'}
+          </span>
+          . Cashier can adjust at checkout.
+        </p>
+      </AppModal>
     </>
   );
 }
