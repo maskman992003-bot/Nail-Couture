@@ -8,6 +8,7 @@ import { getHomePath } from '../utils/routes';
 import { getTierInfo, tierDetails, generateReferralCode } from '../utils/loyaltyTier';
 import { getProfileInitials } from '../utils/avatarUpload';
 import Sidebar from './Sidebar';
+import AppModal, { modalBtnPrimary, modalLabelClass } from './AppModal';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -219,90 +220,104 @@ export default function ClientPortal() {
             </Link>
           </div>
 
-          {showEarningModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
-          <div className="w-full max-w-lg flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ borderColor: 'rgba(197, 160, 89, 0.4)', backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff' }}>
-            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
-              <h2 className="font-heading text-2xl text-gold">Earn More Points</h2>
-              <button onClick={() => setShowEarningModal(false)} className={theme === 'dark' ? 'text-offwhite/40 hover:text-offwhite text-2xl' : 'text-charcoal/40 hover:text-charcoal text-2xl'}>&times;</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
-              <div className="flex items-start gap-4 p-4 rounded-xl" style={{ backgroundColor: 'rgba(197, 160, 89, 0.08)' }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)' }}>
+          <AppModal
+            open={showEarningModal}
+            onClose={() => setShowEarningModal(false)}
+            title="Earn More Points"
+            scrollBody
+            zIndex="z-[100]"
+            footer={
+              <button type="button" onClick={() => setShowEarningModal(false)} className={modalBtnPrimary}>
+                Got It
+              </button>
+            }
+          >
+            <div className="space-y-5">
+              <div className="flex items-start gap-4 p-4 rounded-xl bg-gold/10">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-gold to-[#f0d78c]">
                   <span className="text-charcoal font-heading text-lg">$</span>
                 </div>
                 <div>
-                  <div className={theme === 'dark' ? 'text-offwhite font-heading text-lg mb-1' : 'text-charcoal font-heading text-lg mb-1'}>Spend & Earn</div>
-                  <div className={theme === 'dark' ? 'text-offwhite/60 text-sm' : 'text-charcoal/60 text-sm'}>Earn <span className="text-gold font-heading">1 point</span> for every <span className="text-gold font-heading">$1 spent</span> on any service. The more you enjoy, the more you earn!</div>
+                  <div className="text-primary font-heading text-lg mb-1">Spend & Earn</div>
+                  <div className="text-secondary text-sm">
+                    Earn <span className="text-gold-strong font-heading">1 point</span> for every{' '}
+                    <span className="text-gold-strong font-heading">$1 spent</span> on any service. The more you enjoy, the more you earn!
+                  </div>
                 </div>
               </div>
-              <div className="flex items-start gap-4 p-4 rounded-xl" style={{ backgroundColor: 'rgba(197, 160, 89, 0.08)' }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)' }}>
+              <div className="flex items-start gap-4 p-4 rounded-xl bg-gold/10">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-gold to-[#f0d78c]">
                   <span className="text-charcoal font-heading text-lg">&#9733;</span>
                 </div>
                 <div>
-                  <div className={theme === 'dark' ? 'text-offwhite font-heading text-lg mb-1' : 'text-charcoal font-heading text-lg mb-1'}>Refer a Friend</div>
-                  <div className={theme === 'dark' ? 'text-offwhite/60 text-sm' : 'text-charcoal/60 text-sm'}>Share your referral code with a friend. When they book their first visit, you both earn bonus points!</div>
+                  <div className="text-primary font-heading text-lg mb-1">Refer a Friend</div>
+                  <div className="text-secondary text-sm">
+                    Share your referral code with a friend. When they book their first visit, you both earn bonus points!
+                  </div>
                 </div>
               </div>
+              <div className="rounded-xl border border-card bg-secondary p-5">
+                <div className={`${modalLabelClass} mb-2`}>Your Path to {tier.nextTier || 'Diamond'}</div>
+                <div className="text-primary font-heading text-base">{tierDetails[tier.name]?.reward}</div>
+                {tier.nextTier && (
+                  <div className="mt-3 text-sm text-secondary">
+                    Need <span className="text-gold-strong font-heading">{tier.nextThreshold - (profile.loyalty_points || 0)}</span> more points to unlock {tier.nextTier}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="mt-6 p-5 rounded-xl border" style={{ borderColor: 'rgba(197, 160, 89, 0.2)', backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 1)' : 'rgba(253, 248, 240, 1)' }}>
-              <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-2' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-2'}>Your Path to {tier.nextTier || 'Diamond'}</div>
-              <div className={theme === 'dark' ? 'text-offwhite font-heading text-base' : 'text-charcoal font-heading text-base'}>{tierDetails[tier.name]?.reward}</div>
-              {tier.nextTier && (
-                <div className={theme === 'dark' ? 'mt-3 text-sm text-offwhite/50' : 'mt-3 text-sm text-charcoal/50'}>
-                  Need <span className="text-gold font-heading">{tier.nextThreshold - (profile.loyalty_points || 0)}</span> more points to unlock {tier.nextTier}
-                </div>
-              )}
-            </div>
-            <button onClick={() => setShowEarningModal(false)} className="mt-6 w-full py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90">Got It</button>
-          </div>
-        </div>
-      )}
+          </AppModal>
 
-      {showDetailModal && selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowDetailModal(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff' }}>
-            <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
-              <h2 className="font-heading text-2xl text-gold">Appointment Details</h2>
-              <button onClick={() => setShowDetailModal(false)} className={theme === 'dark' ? 'text-offwhite/40 hover:text-gold text-xl leading-none' : 'text-charcoal/40 hover:text-gold text-xl leading-none'}>&times;</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-              <div>
-                <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-1' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-1'}>Services</div>
-                <div className={theme === 'dark' ? 'text-offwhite font-heading text-lg' : 'text-charcoal font-heading text-lg'}>{selectedBooking.add_ons || selectedBooking.services?.name || 'N/A'}</div>
-              </div>
-              {selectedBooking.final_price || selectedBooking.services?.price ? (
+          <AppModal
+            open={showDetailModal && !!selectedBooking}
+            onClose={() => setShowDetailModal(false)}
+            title="Appointment Details"
+            scrollBody
+            zIndex="z-50"
+            footer={
+              <button type="button" onClick={() => setShowDetailModal(false)} className={modalBtnPrimary}>
+                Close
+              </button>
+            }
+          >
+            {selectedBooking && (
+              <div className="space-y-4">
                 <div>
-                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-1' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-1'}>Total Price</div>
-                  <div className="text-gold font-heading text-xl">${(selectedBooking.final_price || selectedBooking.services?.price || 0).toFixed(2)}</div>
+                  <div className={modalLabelClass}>Services</div>
+                  <div className="text-primary font-heading text-lg">{selectedBooking.add_ons || selectedBooking.services?.name || 'N/A'}</div>
                 </div>
-              ) : null}
-              <div>
-                <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-1' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-1'}>Date & Time</div>
-                <div className={theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}>{new Date(selectedBooking.checked_in_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {new Date(selectedBooking.checked_in_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
-              </div>
-              <div>
-                <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-1' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-1'}>Status</div>
-                <span className={`px-3 py-1 text-xs border rounded-full ${statusColors[selectedBooking.status]}`}>{statusLabels[selectedBooking.status]}</span>
-              </div>
-              {selectedBooking.technician?.name && (
+                {(selectedBooking.final_price || selectedBooking.services?.price) ? (
+                  <div>
+                    <div className={modalLabelClass}>Total Price</div>
+                    <div className="text-gold-strong font-heading text-xl">${(selectedBooking.final_price || selectedBooking.services?.price || 0).toFixed(2)}</div>
+                  </div>
+                ) : null}
                 <div>
-                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-1' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-1'}>Technician</div>
-                  <div className={theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}>{selectedBooking.technician.name}</div>
+                  <div className={modalLabelClass}>Date & Time</div>
+                  <div className="text-primary">
+                    {new Date(selectedBooking.checked_in_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at{' '}
+                    {new Date(selectedBooking.checked_in_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                  </div>
                 </div>
-              )}
-              {selectedBooking.cancellation_reason && (
                 <div>
-                  <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-1' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-1'}>Cancellation Reason</div>
-                  <div className={theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}>{selectedBooking.cancellation_reason}</div>
+                  <div className={modalLabelClass}>Status</div>
+                  <span className={`px-3 py-1 text-xs border rounded-full ${statusColors[selectedBooking.status]}`}>{statusLabels[selectedBooking.status]}</span>
                 </div>
-              )}
-            </div>
-            <button onClick={() => setShowDetailModal(false)} className="mt-8 w-full py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90 transition-colors">Close</button>
-          </div>
-        </div>
-      )}
+                {selectedBooking.technician?.name && (
+                  <div>
+                    <div className={modalLabelClass}>Technician</div>
+                    <div className="text-primary">{selectedBooking.technician.name}</div>
+                  </div>
+                )}
+                {selectedBooking.cancellation_reason && (
+                  <div>
+                    <div className={modalLabelClass}>Cancellation Reason</div>
+                    <div className="text-secondary">{selectedBooking.cancellation_reason}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </AppModal>
 
       </div>
     </div>

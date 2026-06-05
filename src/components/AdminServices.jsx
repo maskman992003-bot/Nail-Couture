@@ -34,6 +34,8 @@ export default function AdminServices() {
   const [showCatForm, setShowCatForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [catDeleteTarget, setCatDeleteTarget] = useState(null);
+  const [catDeleting, setCatDeleting] = useState(false);
 
   useEffect(() => { fetchServices(); fetchCategories(); }, []);
 
@@ -179,15 +181,22 @@ export default function AdminServices() {
     fetchCategories();
   };
 
-  const catHandleDelete = async (id) => {
-    if (!confirm('Delete this category? Services using it will keep the text value.')) return;
+  const catHandleDelete = async () => {
+    if (!catDeleteTarget) return;
+    setCatDeleting(true);
     setApiError('');
     const currentUser = user || {};
     const { error } = await supabase.rpc('manage_service_category', {
       admin_phone: currentUser.phone,
-      action: 'delete', category_id: id,
+      action: 'delete', category_id: catDeleteTarget.id,
     });
-    if (error) { setApiError(error.message); return; }
+    setCatDeleting(false);
+    if (error) {
+      setApiError(error.message);
+      setCatDeleteTarget(null);
+      return;
+    }
+    setCatDeleteTarget(null);
     fetchCategories();
   };
 
@@ -417,7 +426,7 @@ export default function AdminServices() {
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
                             <button onClick={() => catOpenEdit(cat)} className="text-gold hover:underline text-sm">Edit</button>
-                            <button onClick={() => catHandleDelete(cat.id)} className="text-red-400 hover:underline text-sm">Delete</button>
+                            <button onClick={() => setCatDeleteTarget(cat)} className="text-red-400 hover:underline text-sm">Delete</button>
                           </div>
                         </td>
                       </tr>
@@ -432,42 +441,93 @@ export default function AdminServices() {
       </div>
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl overflow-hidden border border-card shadow-2xl bg-card p-5 sm:p-6">
-              <div className="text-center mb-5">
-                <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </div>
-                <h3 className="font-heading text-xl text-primary mb-2">Delete Service?</h3>
-                <p className="text-secondary text-sm">
-                  Are you sure you want to delete <span className="text-gold-strong font-medium">{deleteTarget.name}</span>?
-                </p>
-                <p className="text-secondary text-xs mt-2">
-                  Existing bookings will keep the service name as text. This action cannot be undone.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setDeleteTarget(null)}
-                  disabled={deleting}
-                  className="flex-1 py-3 bg-input text-primary hover:bg-input/80 rounded-xl transition-colors text-sm disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className={modalBtnDanger}
-                >
-                  {deleting ? 'Deleting...' : 'Delete Service'}
-                </button>
-              </div>
+        <AppModal
+          open
+          onClose={() => !deleting && setDeleteTarget(null)}
+          title="Delete Service?"
+          maxWidth="max-w-sm"
+          zIndex="z-[200]"
+          panelClassName="border-red-500/30"
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className={modalBtnSecondary}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className={modalBtnDanger}
+              >
+                {deleting ? 'Deleting...' : 'Delete Service'}
+              </button>
+            </>
+          }
+        >
+          <div className="flex justify-center mb-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+              <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
           </div>
-        </div>
+          <p className="text-secondary text-sm text-center">
+            Are you sure you want to delete <span className="text-gold-strong font-medium">{deleteTarget.name}</span>?
+          </p>
+          <p className="text-secondary text-xs text-center mt-2">
+            Existing bookings will keep the service name as text. This action cannot be undone.
+          </p>
+        </AppModal>
+      )}
+
+      {catDeleteTarget && (
+        <AppModal
+          open
+          onClose={() => !catDeleting && setCatDeleteTarget(null)}
+          title="Delete Category?"
+          maxWidth="max-w-sm"
+          zIndex="z-[200]"
+          panelClassName="border-red-500/30"
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => setCatDeleteTarget(null)}
+                disabled={catDeleting}
+                className={modalBtnSecondary}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={catHandleDelete}
+                disabled={catDeleting}
+                className={modalBtnDanger}
+              >
+                {catDeleting ? 'Deleting...' : 'Delete Category'}
+              </button>
+            </>
+          }
+        >
+          <div className="flex justify-center mb-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+              <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-secondary text-sm text-center">
+            Are you sure you want to delete <span className="text-gold-strong font-medium">{catDeleteTarget.name}</span>?
+          </p>
+          <p className="text-secondary text-xs text-center mt-2">
+            Services using this category will keep the text value. This action cannot be undone.
+          </p>
+        </AppModal>
       )}
     </div>
   );

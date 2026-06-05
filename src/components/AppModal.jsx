@@ -60,7 +60,7 @@ export default function AppModal({
           <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-light shrink-0">
             <div className="min-w-0 flex-1">
               {title && (
-                <h2 id="app-modal-title" className="font-heading text-xl text-gold">
+                <h2 id="app-modal-title" className="font-heading text-xl text-gold-strong">
                   {title}
                 </h2>
               )}
