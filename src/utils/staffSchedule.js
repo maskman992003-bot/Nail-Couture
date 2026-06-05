@@ -94,10 +94,12 @@ export async function reviewTimeOffRequest(requestId, status, reviewedBy) {
 
 export async function fetchTechnicianAppointments(staffId, startDate, endDate) {
   const { data, error } = await supabase.rpc('get_technician_appointments', {
-    p_staff_id: staffId,
+    p_employee_id: staffId || null,
+    p_staff_id: staffId || null,
     p_start_date: startDate,
     p_end_date: endDate,
-  });  if (error) throw error;
+  });
+  if (error) throw error;
   return (data || []).map((row) => ({
     id: row.id || row.appointment_id,
     customer_name: row.customer_name,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
@@ -58,13 +58,15 @@ export default function TechnicianSchedule() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'timeoff' && TIME_OFF_REQUESTS ? 'timeoff' : 'schedule';
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [shifts, setShifts] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [timeOffRequests, setTimeOffRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('schedule');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [detailModal, setDetailModal] = useState({ open: false, date: null, dayShifts: [], dayAppts: [] });
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [requestForm, setRequestForm] = useState({ startDate: '', endDate: '', reason: '' });
