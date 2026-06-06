@@ -65,11 +65,11 @@
   .bg-modal { background-color: var(--card-bg); }
 }
 
-/* Native form controls ignore semi-transparent --input-bg; use solid surfaces instead. */
-select,
-select option {
+/* Style closed select only — option styling breaks native dropdowns (white popup + white text). */
+select {
   background-color: var(--bg-secondary);
   color: var(--text-primary);
+  color-scheme: inherit;
 }
 
 input[type="date"],
