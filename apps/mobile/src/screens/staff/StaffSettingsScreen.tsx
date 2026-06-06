@@ -199,7 +199,7 @@ export function StaffSettingsScreen() {
 
   const PinPad = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <View style={{ alignItems: 'center', marginVertical: 12 }}>
-      <Text style={[styles.textGold, { fontSize: 28, letterSpacing: 8, marginBottom: 16 }]}>
+      <Text style={[styles.textHeading, { fontSize: 28, letterSpacing: 8, marginBottom: 16 }]}>
         {'•'.repeat(value.length).padEnd(4, '○')}
       </Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: 240, justifyContent: 'center', gap: 8 }}>

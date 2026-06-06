@@ -527,7 +527,7 @@ export function CheckInScreen() {
       </View>
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <Text style={[styles.textGold, { fontSize: 32, fontWeight: '600', letterSpacing: 2 }]}>CHECK IN</Text>
+        <Text style={styles.kioskTitle}>CHECK IN</Text>
         <Text style={[styles.textSecondary, { marginTop: 8, marginBottom: 24 }]}>
           Enter your phone number to begin
         </Text>

@@ -17,7 +17,7 @@ export function AppLayout({ title, subtitle, children, footer }: AppLayoutProps)
   const layout = useLayout({ withBottomTabBar: true });
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <SafeAreaView style={styles.staffScreen} edges={['top']}>
       {(title || subtitle) && (
         <View
           style={{
@@ -27,7 +27,7 @@ export function AppLayout({ title, subtitle, children, footer }: AppLayoutProps)
           }}
         >
           {title ? (
-            <Text style={[styles.textGold, { fontSize: 28, fontWeight: '600' }]}>{title}</Text>
+            <Text style={[styles.textHeading, { fontSize: 28, fontWeight: '600' }]}>{title}</Text>
           ) : null}
           {subtitle ? (
             <Text style={[styles.textSecondary, { marginTop: spacing[1] }]}>{subtitle}</Text>

@@ -142,17 +142,9 @@ export function PublicNavbar({ onNavigateTab }: PublicNavbarProps) {
 
           <Pressable
             onPress={goToLogin}
-            style={{
-              marginTop: 8,
-              borderRadius: 999,
-              backgroundColor: styles.tokens.goldStrong,
-              paddingVertical: 12,
-              alignItems: 'center',
-            }}
+            style={[styles.buttonPrimary, { marginTop: 8, paddingHorizontal: 24 }]}
           >
-            <Text style={{ color: '#121212', letterSpacing: 2, fontSize: 13, fontWeight: '600' }}>
-              LOGIN
-            </Text>
+            <Text style={[styles.buttonPrimaryText, { fontSize: 13, letterSpacing: 2 }]}>LOGIN</Text>
           </Pressable>
         </View>
       ) : null}

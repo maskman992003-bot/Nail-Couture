@@ -157,7 +157,7 @@ export function RegisterScreen() {
           >
             <Text style={[styles.textGold, { fontSize: 40 }]}>🎁</Text>
           </View>
-          <Text style={[styles.textGold, { fontSize: 32, fontWeight: '600', textAlign: 'center' }]}>
+          <Text style={[styles.pageTitleGold, { textAlign: 'center' }]}>
             Welcome to the Club
           </Text>
           <Text style={[styles.textPrimary, { fontSize: 22, marginTop: 12, textAlign: 'center' }]}>

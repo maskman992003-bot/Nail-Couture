@@ -1,5 +1,5 @@
 import type { ReactNode, RefObject } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLayout } from '../../theme/useLayout';
 import { useThemeStyles } from '../../theme/useThemeStyles';
@@ -20,6 +20,7 @@ export function PublicScreenLayout({
 }: PublicScreenLayoutProps) {
   const styles = useThemeStyles();
   const layout = useLayout();
+  const watermarkSize = Math.min(360, layout.width * 0.6);
 
   const content = scroll ? (
     <ScrollView
@@ -36,8 +37,28 @@ export function PublicScreenLayout({
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <PublicNavbar onNavigateTab={onNavigateTab} />
-      {content}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: '42%',
+          left: '50%',
+          width: watermarkSize,
+          height: watermarkSize,
+          transform: [{ translateX: -watermarkSize / 2 }, { translateY: -watermarkSize / 2 }],
+          zIndex: 0,
+        }}
+      >
+        <Image
+          source={require('../../../assets/NC-watermark.png')}
+          style={{ width: '100%', height: '100%', opacity: 0.1 }}
+          resizeMode="contain"
+        />
+      </View>
+      <View style={{ flex: 1, zIndex: 1 }}>
+        <PublicNavbar onNavigateTab={onNavigateTab} />
+        {content}
+      </View>
     </SafeAreaView>
   );
 }

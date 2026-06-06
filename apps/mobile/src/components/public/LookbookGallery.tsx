@@ -75,7 +75,7 @@ export function LookbookGallery({ onContactPress }: LookbookGalleryProps) {
         <Text style={{ color: styles.tokens.goldStrong, fontSize: 11, letterSpacing: 2 }}>
           {item.category.toUpperCase()}
         </Text>
-        <Text style={{ color: '#F9F9F9', fontSize: 20, fontWeight: '600', marginTop: 4 }}>
+        <Text style={[styles.textGold, { fontSize: 20, fontWeight: '600', marginTop: 4, fontFamily: styles.fonts.heading }]}>
           {item.title}
         </Text>
         <Text style={{ color: 'rgba(249,249,249,0.65)', marginTop: 4 }} numberOfLines={2}>
@@ -96,7 +96,7 @@ export function LookbookGallery({ onContactPress }: LookbookGalleryProps) {
   return (
     <View>
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
-        <Text style={[styles.textPrimary, { fontSize: 32, fontWeight: '600' }]}>Couture Lookbook</Text>
+        <Text style={styles.pageTitle}>Couture Lookbook</Text>
         <Text style={[styles.textSecondary, { marginTop: 6 }]}>Inspiration for your next appointment</Text>
       </View>
 

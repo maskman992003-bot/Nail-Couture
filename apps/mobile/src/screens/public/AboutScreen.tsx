@@ -49,7 +49,7 @@ export function AboutScreen({ navigation }: AboutScreenProps) {
     <PublicScreenLayout onNavigateTab={(tab) => navigation.navigate(tab)}>
       <View style={{ paddingHorizontal: 20, paddingTop: 12, gap: 24 }}>
         <View>
-          <Text style={[styles.textPrimary, { fontSize: 32, fontWeight: '600', textAlign: 'center' }]}>
+          <Text style={[styles.pageTitle, { textAlign: 'center' }]}>
             The Story of Nail Couture
           </Text>
           <Text style={[styles.textSecondary, { marginTop: 16, lineHeight: 24, textAlign: 'center' }]}>
@@ -67,7 +67,7 @@ export function AboutScreen({ navigation }: AboutScreenProps) {
         </View>
 
         <View>
-          <Text style={[styles.textPrimary, { fontSize: 26, fontWeight: '600', textAlign: 'center' }]}>
+          <Text style={[styles.pageTitle, { fontSize: 26, textAlign: 'center' }]}>
             Visit Our Studio
           </Text>
           <View

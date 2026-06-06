@@ -221,9 +221,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       </View>
 
       <View style={{ paddingHorizontal: layout.horizontalPadding, paddingTop: spacing[2], gap: spacing[3] }}>
-        <Text style={[styles.textGold, { fontSize: 13, letterSpacing: 2, fontWeight: '600' }]}>
-          EXPLORE
-        </Text>
+        <Text style={styles.sectionLabel}>EXPLORE</Text>
         {[
           { title: 'Services & Pricing', subtitle: 'Browse our full menu', tab: 'Services' as const },
           { title: 'Couture Lookbook', subtitle: 'Find your next inspiration', tab: 'Lookbook' as const },
@@ -234,7 +232,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             onPress={() => navigateTab(card.tab)}
             style={[styles.card, { padding: 18 }]}
           >
-            <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>{card.title}</Text>
+            <Text style={[styles.pageTitle, { fontSize: 18 }]}>{card.title}</Text>
             <Text style={[styles.textSecondary, { marginTop: 4 }]}>{card.subtitle}</Text>
           </Pressable>
         ))}

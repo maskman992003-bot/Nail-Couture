@@ -36,7 +36,8 @@ export function AppModal({
   panelStyle,
   maxPanelWidth = maxWidth.lg,
 }: AppModalProps) {
-  const { tokens } = useThemeStyles();
+  const styles = useThemeStyles();
+  const { tokens } = styles;
   const { height: windowHeight } = useWindowDimensions();
   const scrollMaxHeight = Math.min(windowHeight * 0.9 - spacing[8] * 2, windowHeight - spacing[8] * 2);
 
@@ -74,12 +75,12 @@ export function AppModal({
             >
               <View style={{ flex: 1, minWidth: 0 }}>
                 {title ? (
-                  <Text style={{ color: tokens.goldStrong, fontSize: 20, fontWeight: '600' }}>
+                  <Text style={[styles.textHeading, { fontSize: 20, fontWeight: '600' }]}>
                     {title}
                   </Text>
                 ) : null}
                 {subtitle ? (
-                  <Text style={{ color: tokens.textSecondary, marginTop: spacing[1], fontSize: 14 }}>
+                  <Text style={[styles.textSecondary, { marginTop: spacing[1], fontSize: 14 }]}>
                     {subtitle}
                   </Text>
                 ) : null}
@@ -116,7 +117,8 @@ export function ModalButton({
   variant?: 'primary' | 'secondary' | 'danger';
   disabled?: boolean;
 }) {
-  const { tokens } = useThemeStyles();
+  const styles = useThemeStyles();
+  const { tokens } = styles;
 
   const backgroundColor =
     variant === 'primary'
@@ -124,7 +126,6 @@ export function ModalButton({
       : variant === 'danger'
         ? '#ef4444'
         : tokens.inputBg;
-  const textColor = variant === 'primary' ? '#121212' : tokens.textPrimary;
 
   return (
     <Pressable
@@ -139,7 +140,15 @@ export function ModalButton({
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      <Text style={{ color: textColor, fontWeight: '500', fontSize: 14 }}>{label}</Text>
+      <Text
+        style={
+          variant === 'primary'
+            ? [styles.buttonPrimaryText, { fontSize: 14, letterSpacing: 1.5 }]
+            : { color: tokens.textPrimary, fontWeight: '500', fontSize: 14, fontFamily: styles.fonts.body }
+        }
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }

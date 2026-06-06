@@ -196,6 +196,8 @@ Internal order for execution — **no device testing until all phases complete**
 - [x] [`BookingWizard.jsx`](apps/web/src/components/BookingWizard.jsx), [`ScrollSelect.jsx`](apps/web/src/components/ScrollSelect.jsx), [`RefreshmentSelect.jsx`](apps/web/src/components/RefreshmentSelect.jsx)
 - [x] Notification panel, logout confirm, badges, realtime subscriptions
 - [x] Parity pass: compare every web screen side-by-side with RN
+- [x] Phase A: legacy files archived to `Trash_Can/`
+- [ ] Phase C (in progress): batch visual parity — public, customer, staff, admin screens
 
 ### Phase 5 — Full device test + cutover (week 10)
 

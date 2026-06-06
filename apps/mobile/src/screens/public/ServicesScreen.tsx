@@ -80,12 +80,8 @@ export function ServicesScreen({ navigation }: ServicesScreenProps) {
     <PublicScreenLayout onNavigateTab={(tab) => navigation.navigate(tab)}>
       <View style={{ paddingHorizontal: 20, paddingTop: 12, gap: 16 }}>
         <View>
-          <Text style={[styles.textGold, { fontSize: 14, letterSpacing: 2, fontWeight: '600' }]}>
-            SERVICES & PRICING
-          </Text>
-          <Text style={[styles.textPrimary, { fontSize: 32, fontWeight: '600', marginTop: 8 }]}>
-            Our Services
-          </Text>
+          <Text style={styles.sectionLabel}>SERVICES & PRICING</Text>
+          <Text style={[styles.pageTitleGold, { marginTop: 8 }]}>Our Services</Text>
           <Text style={[styles.textSecondary, { marginTop: 8, lineHeight: 22 }]}>
             Expert craftsmanship in nail couture. Each service is performed with precision,
             medical-grade sterilization, and premium non-toxic products.
@@ -125,9 +121,7 @@ export function ServicesScreen({ navigation }: ServicesScreenProps) {
                     }}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>
-                        {category}
-                      </Text>
+                      <Text style={[styles.pageTitle, { fontSize: 18 }]}>{category}</Text>
                       <Text style={styles.textSecondary}>({categoryServices.length})</Text>
                     </View>
                     <Icon
@@ -151,10 +145,10 @@ export function ServicesScreen({ navigation }: ServicesScreenProps) {
                           }}
                         >
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                            <Text style={[styles.textPrimary, { fontSize: 16, fontWeight: '600', flex: 1 }]}>
+                            <Text style={[styles.pageTitle, { fontSize: 16, flex: 1 }]}>
                               {service.name}
                             </Text>
-                            <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600' }]}>
+                            <Text style={[styles.pageTitleGold, { fontSize: 18 }]}>
                               ${service.price?.toFixed(0)}
                             </Text>
                           </View>
@@ -207,7 +201,7 @@ export function ServicesScreen({ navigation }: ServicesScreenProps) {
             },
           ]}
         >
-          <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600', textAlign: 'center' }]}>
+          <Text style={[styles.textHeading, { fontSize: 22, textAlign: 'center' }]}>
             Need Help Scheduling?
           </Text>
           <Text style={[styles.textSecondary, { textAlign: 'center', marginTop: 8, marginBottom: 16 }]}>

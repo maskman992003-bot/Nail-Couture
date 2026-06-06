@@ -384,7 +384,7 @@ export function AdminLobbyScreen() {
         </View>
       )}
 
-      <Text style={[styles.textGold, { fontSize: 16, fontWeight: '600', marginBottom: 8 }]}>
+      <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>
         Waiting ({lobbyAppointments.length})
       </Text>
       {lobbyAppointments.length === 0 ? (
@@ -393,7 +393,7 @@ export function AdminLobbyScreen() {
         lobbyAppointments.map(renderWaitingCard)
       )}
 
-      <Text style={[styles.textGold, { fontSize: 16, fontWeight: '600', marginTop: 8, marginBottom: 8 }]}>
+      <Text style={[styles.sectionTitle, { marginTop: 8, marginBottom: 8 }]}>
         Ready for Checkout ({checkoutReady.length})
       </Text>
       {checkoutReady.map((appt) => (
@@ -420,7 +420,7 @@ export function AdminLobbyScreen() {
         </View>
       ))}
 
-      <Text style={[styles.textGold, { fontSize: 16, fontWeight: '600', marginTop: 8, marginBottom: 8 }]}>
+      <Text style={[styles.sectionTitle, { marginTop: 8, marginBottom: 8 }]}>
         Technician Stations
       </Text>
       {technicians.map(renderTechCard)}

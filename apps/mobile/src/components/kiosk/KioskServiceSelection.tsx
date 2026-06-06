@@ -139,7 +139,7 @@ export function KioskServiceSelection({
             <Text style={styles.textGold}>Back</Text>
           </View>
         </Pressable>
-        <Text style={[styles.textGold, { fontSize: 28, fontWeight: '600' }]}>Select Your Services</Text>
+        <Text style={[styles.textHeading, { fontSize: 28, fontWeight: '600' }]}>Select Your Services</Text>
         <Text style={styles.textSecondary}>Choose one or more treatments</Text>
       </View>
 

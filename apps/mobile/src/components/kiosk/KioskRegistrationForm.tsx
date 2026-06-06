@@ -182,7 +182,7 @@ export function KioskRegistrationForm({
           >
             <Text style={[styles.textGold, { fontSize: 28 }]}>★</Text>
           </View>
-          <Text style={[styles.textGold, { fontSize: 28, fontWeight: '600' }]}>Join the Couture Club</Text>
+          <Text style={[styles.textHeading, { fontSize: 28, fontWeight: '600' }]}>Join the Couture Club</Text>
           <Text style={styles.textSecondary}>Create your profile to get started</Text>
         </View>
 
