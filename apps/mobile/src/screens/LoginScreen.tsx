@@ -139,7 +139,7 @@ export function LoginScreen() {
         </Pressable>
       ) : null}
       <View style={[layout.authCardWrap, { flex: 1, justifyContent: 'center' }]}>
-      <View style={[styles.card, { padding: spacing[8] }]}>
+      <View style={[styles.authCard, { padding: spacing[8], shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 24, elevation: 12 }]}>
         <View style={{ alignItems: 'center', marginBottom: spacing[8] }}>
           <Image
             source={require('../../assets/NC.jpg')}

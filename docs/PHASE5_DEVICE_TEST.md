@@ -1,6 +1,6 @@
 # Phase 5 — Device Test + Cutover
 
-> Branch: `IOS` → PR to `main` when all checks pass.
+> Branch: `Mobile` → PR to `main` when all checks pass.
 
 Phase 5 validates the complete React Native app on real iOS and Android hardware, fixes device-only parity gaps, then cuts over from web-as-primary to RN-as-primary.
 
@@ -163,7 +163,7 @@ When all sections above pass on **both iOS and Android**:
 - [ ] `featureFlags.global.mobileApp` is `true` in `packages/shared`
 - [ ] Document RN as primary dev target in team notes
 - [ ] Freeze new web UI features (bug fixes only on web)
-- [ ] Open PR: `IOS` → `main`
+- [ ] Open PR: `Mobile` → `main`
 - [ ] Merge after review
 - [ ] Optional: submit preview/production builds via `eas build --profile production`
 

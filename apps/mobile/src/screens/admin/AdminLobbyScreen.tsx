@@ -397,9 +397,24 @@ export function AdminLobbyScreen() {
         Ready for Checkout ({checkoutReady.length})
       </Text>
       {checkoutReady.map((appt) => (
-        <View key={appt.id} style={[styles.card, { padding: 12, marginBottom: 8 }]}>
-          <Text style={styles.textPrimary}>{appt.customer?.full_name || 'Guest'}</Text>
-          <Text style={styles.textGold}>
+        <View
+          key={appt.id}
+          style={{
+            backgroundColor: 'rgba(245,158,11,0.1)',
+            borderColor: 'rgba(245,158,11,0.3)',
+            borderWidth: 1,
+            borderRadius: 12,
+            padding: 20,
+            marginBottom: 8,
+          }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={[styles.textPrimary, { fontWeight: '600' }]}>{appt.customer?.full_name || 'Guest'}</Text>
+            <View style={{ backgroundColor: 'rgba(245,158,11,0.2)', borderRadius: 4, paddingHorizontal: 8, paddingVertical: 4 }}>
+              <Text style={{ color: '#fbbf24', fontSize: 11 }}>Awaiting payment</Text>
+            </View>
+          </View>
+          <Text style={{ color: '#fbbf24', fontWeight: '600', fontSize: 16 }}>
             ${getAppointmentTotalPrice(appt, services).toFixed(2)}
           </Text>
         </View>

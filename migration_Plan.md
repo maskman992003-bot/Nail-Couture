@@ -1,8 +1,8 @@
 # React Native Migration Plan — Nail Couture
 
-> **Branch:** All migration work happens on the `IOS` branch (`origin/IOS`).  
+> **Branch:** All migration work happens on the `Mobile` branch (`origin/Mobile`).  
 > **Strategy:** Complete migration sprint — port all existing web screens to React Native before real-device testing.  
-> **Status:** Phase 5 in progress on `IOS` — device test + cutover (see [`docs/PHASE5_DEVICE_TEST.md`](docs/PHASE5_DEVICE_TEST.md))
+> **Status:** Phase 5 in progress on `Mobile` — device test + cutover (see [`docs/PHASE5_DEVICE_TEST.md`](docs/PHASE5_DEVICE_TEST.md))
 
 ---
 
@@ -10,37 +10,37 @@
 
 | Item | Detail |
 |------|--------|
-| **Working branch** | `IOS` (already created and tracking `origin/IOS`) |
+| **Working branch** | `Mobile` (already created and tracking `origin/Mobile`) |
 | **Base branch** | `main` |
-| **Rule** | All migration commits go to `IOS` only — do not commit migration work directly to `main` |
+| **Rule** | All migration commits go to `Mobile` only — do not commit migration work directly to `main` |
 | **When to merge** | After Phase 5 (full device test + parity pass) is complete |
-| **PR target** | `IOS` → `main` |
+| **PR target** | `Mobile` → `main` |
 
 ### Branch commands (reference)
 
 ```bash
-git checkout IOS
-git pull origin IOS
+git checkout Mobile
+git pull origin Mobile
 # ... do migration work ...
 git add .
 git commit -m "your message"
-git push origin IOS
+git push origin Mobile
 ```
 
 ---
 
 ## Problem diagnosis (current web app)
 
-The mobile bottom nav in [`src/components/Sidebar.jsx`](src/components/Sidebar.jsx) uses a CSS `overflow-x-auto` container with hidden scrollbars and React Router `<NavLink>` children.
+The mobile bottom nav in [`src/components/Sidebar.jsx`](apps/web/src/components/Sidebar.jsx) uses a CSS `overflow-x-auto` container with hidden scrollbars and React Router `<NavLink>` children.
 
 **Why iOS simulator works but Windows does not:**
 
 - iOS Safari applies touch momentum scrolling to overflow regions automatically.
 - On Windows (Chrome/Edge), horizontal scroll requires Shift+wheel or a visible scrollbar — but `scrollbar-none` hides it.
 - Dragging over `<a>` links often triggers navigation/selection instead of scrolling on Chromium.
-- Unlike [`ServiceCategoryBar.jsx`](src/components/ServiceCategoryBar.jsx), the bottom nav lacks `touch-action: pan-x`, `overscroll-x-contain`, or mouse/trackpad fallbacks.
+- Unlike [`ServiceCategoryBar.jsx`](apps/web/src/components/ServiceCategoryBar.jsx), the bottom nav lacks `touch-action: pan-x`, `overscroll-x-contain`, or mouse/trackpad fallbacks.
 
-**Current stack:** React 19 + Vite + Tailwind ([`package.json`](package.json)). No React Native, Capacitor, or Expo wrapper exists today. `featureFlags.global.mobileApp` is `false` in [`src/constants/featureFlags.js`](src/constants/featureFlags.js).
+**Current stack:** React 19 + Vite + Tailwind ([`package.json`](package.json)). No React Native, Capacitor, or Expo wrapper exists today. `featureFlags.global.mobileApp` is `false` in [`src/constants/featureFlags.js`](apps/web/src/constants/featureFlags.js).
 
 ---
 
@@ -111,7 +111,7 @@ nail-couture/
       lib/        # supabase client (env-agnostic)
 ```
 
-**Port directly (~40%):** [`src/utils/*`](src/utils), [`src/services/*`](src/services), [`src/lib/supabase.js`](src/lib/supabase.js), role helpers in [`src/utils/routes.js`](src/utils/routes.js).
+**Port directly (~40%):** [`src/utils/*`](apps/web/src/utils), [`src/services/*`](apps/web/src/services), [`src/lib/supabase.js`](apps/web/src/lib/supabase.js), role helpers in [`src/utils/routes.js`](apps/web/src/utils/routes.js).
 
 **Rewrite (~60%):** All JSX UI, Tailwind classes, DOM APIs, react-router, dnd-kit lobby, schedule CSS grids, signature canvas, Recharts.
 
@@ -119,8 +119,8 @@ nail-couture/
 
 - **Framework:** Expo SDK 52+ with dev builds (not Expo Go for native modules)
 - **Navigation:** `@react-navigation/native` — stack + role-aware tab navigator
-- **Styling:** NativeWind v4 (reuse Tailwind token names from [`src/index.css`](src/index.css) where possible)
-- **Storage:** `@react-native-async-storage/async-storage` (replace `localStorage` in [`AuthContext.jsx`](src/contexts/AuthContext.jsx), [`ThemeContext.jsx`](src/contexts/ThemeContext.jsx))
+- **Styling:** NativeWind v4 (reuse Tailwind token names from [`src/index.css`](apps/web/src/index.css) where possible)
+- **Storage:** `@react-native-async-storage/async-storage` (replace `localStorage` in [`AuthContext.jsx`](apps/web/src/contexts/AuthContext.jsx), [`ThemeContext.jsx`](apps/web/src/contexts/ThemeContext.jsx))
 - **Supabase:** same `@supabase/supabase-js` package
 - **Gestures/animation:** `react-native-gesture-handler` + `react-native-reanimated`
 
@@ -147,7 +147,7 @@ Replace the web CSS scroll container with a custom tab bar using RN `ScrollView`
 - Use `Pressable` instead of `<NavLink>` — no link-drag conflict
 - Horizontal scroll works on iOS, Android, and Windows RN (mouse wheel, touch, trackpad)
 - Persist scroll offset with `AsyncStorage` (replaces `sessionStorage` in Sidebar)
-- Map existing `navItemsByRole` from [`Sidebar.jsx`](src/components/Sidebar.jsx) to screen names in React Navigation
+- Map existing `navItemsByRole` from [`Sidebar.jsx`](apps/web/src/components/Sidebar.jsx) to screen names in React Navigation
 
 ---
 
@@ -166,34 +166,34 @@ Internal order for execution — **no device testing until all phases complete**
 
 ### Phase 1 — Public + customer screens (week 2–3)
 
-- [x] [`App.jsx`](src/App.jsx), [`Lookbook.jsx`](src/components/Lookbook.jsx), [`Services.jsx`](src/components/Services.jsx), [`AboutContact.jsx`](src/components/AboutContact.jsx) — public stack in `apps/mobile`
-- [x] [`ClientLogin.jsx`](src/components/ClientLogin.jsx), [`ClientRegister.jsx`](src/components/ClientRegister.jsx) — login + register in `apps/mobile`
-- [x] [`CheckIn.jsx`](src/components/CheckIn.jsx) + [`WaiverModal.jsx`](src/components/WaiverModal.jsx) — kiosk check-in + signature waiver in `apps/mobile`
-- [x] [`ClientPortal.jsx`](src/components/ClientPortal.jsx), [`CustomerProfile.jsx`](src/components/CustomerProfile.jsx), [`CustomerServices.jsx`](src/components/CustomerServices.jsx)
-- [x] [`CustomerBooking.jsx`](src/components/CustomerBooking.jsx) — disabled-state port (online booking flag off)
-- [x] [`CustomerHistory.jsx`](src/components/CustomerHistory.jsx), [`CustomerLoyalty.jsx`](src/components/CustomerLoyalty.jsx)
-- [ ] [`EditBooking.jsx`](src/components/EditBooking.jsx) — deferred until online booking wizard port
+- [x] [`App.jsx`](apps/web/src/App.jsx), [`Lookbook.jsx`](apps/web/src/components/Lookbook.jsx), [`Services.jsx`](apps/web/src/components/Services.jsx), [`AboutContact.jsx`](apps/web/src/components/AboutContact.jsx) — public stack in `apps/mobile`
+- [x] [`ClientLogin.jsx`](apps/web/src/components/ClientLogin.jsx), [`ClientRegister.jsx`](apps/web/src/components/ClientRegister.jsx) — login + register in `apps/mobile`
+- [x] [`CheckIn.jsx`](apps/web/src/components/CheckIn.jsx) + [`WaiverModal.jsx`](apps/web/src/components/WaiverModal.jsx) — kiosk check-in + signature waiver in `apps/mobile`
+- [x] [`ClientPortal.jsx`](apps/web/src/components/ClientPortal.jsx), [`CustomerProfile.jsx`](apps/web/src/components/CustomerProfile.jsx), [`CustomerServices.jsx`](apps/web/src/components/CustomerServices.jsx)
+- [x] [`CustomerBooking.jsx`](apps/web/src/components/CustomerBooking.jsx) — disabled-state port (online booking flag off)
+- [x] [`CustomerHistory.jsx`](apps/web/src/components/CustomerHistory.jsx), [`CustomerLoyalty.jsx`](apps/web/src/components/CustomerLoyalty.jsx)
+- [ ] [`EditBooking.jsx`](apps/web/src/components/EditBooking.jsx) — deferred until online booking wizard port
 
 ### Phase 2 — Staff screens (week 4–5)
 
-- [x] [`Technician.jsx`](src/components/Technician.jsx) + entire `technician/*` folder (12 components)
-- [x] [`Cashier.jsx`](src/components/Cashier.jsx), [`CashierCheckout.jsx`](src/components/CashierCheckout.jsx)
-- [x] [`TechnicianSchedule.jsx`](src/components/TechnicianSchedule.jsx), [`StaffSchedule.jsx`](src/components/StaffSchedule.jsx) + `schedule/*` (12 components)
-- [x] [`StaffCustomerDetail.jsx`](src/components/StaffCustomerDetail.jsx), [`StaffProfile.jsx`](src/components/StaffProfile.jsx)
+- [x] [`Technician.jsx`](apps/web/src/components/Technician.jsx) + entire `technician/*` folder (12 components)
+- [x] [`Cashier.jsx`](apps/web/src/components/Cashier.jsx), [`CashierCheckout.jsx`](apps/web/src/components/CashierCheckout.jsx)
+- [x] [`TechnicianSchedule.jsx`](apps/web/src/components/TechnicianSchedule.jsx), [`StaffSchedule.jsx`](apps/web/src/components/StaffSchedule.jsx) + `schedule/*` (12 components)
+- [x] [`StaffCustomerDetail.jsx`](apps/web/src/components/StaffCustomerDetail.jsx), [`StaffProfile.jsx`](apps/web/src/components/StaffProfile.jsx)
 
 ### Phase 3 — Admin screens (week 6–8)
 
-- [x] Role dashboards: [`SuperAdmin.jsx`](src/components/SuperAdmin.jsx), [`Admin.jsx`](src/components/Admin.jsx) → `AdminHomeScreen.tsx`
-- [x] [`AdminLobby.jsx`](src/components/AdminLobby.jsx) — PanResponder drag + tap-assign, gesture-handler ready
-- [x] [`AdminBookings.jsx`](src/components/AdminBookings.jsx), [`AdminServices.jsx`](src/components/AdminServices.jsx), [`AdminInventory.jsx`](src/components/AdminInventory.jsx)
-- [x] [`AdminReports.jsx`](src/components/AdminReports.jsx) — SVG bar charts via `react-native-svg`
-- [x] [`StaffManagement.jsx`](src/components/StaffManagement.jsx), [`SalonActivity.jsx`](src/components/SalonActivity.jsx)
-- [x] [`CustomerManagementHistory.jsx`](src/components/CustomerManagementHistory.jsx) (Phase 2), [`Settings.jsx`](src/components/Settings.jsx) → expanded `StaffSettingsScreen.tsx`
+- [x] Role dashboards: [`SuperAdmin.jsx`](apps/web/src/components/SuperAdmin.jsx), [`Admin.jsx`](apps/web/src/components/Admin.jsx) → `AdminHomeScreen.tsx`
+- [x] [`AdminLobby.jsx`](apps/web/src/components/AdminLobby.jsx) — PanResponder drag + tap-assign, gesture-handler ready
+- [x] [`AdminBookings.jsx`](apps/web/src/components/AdminBookings.jsx), [`AdminServices.jsx`](apps/web/src/components/AdminServices.jsx), [`AdminInventory.jsx`](apps/web/src/components/AdminInventory.jsx)
+- [x] [`AdminReports.jsx`](apps/web/src/components/AdminReports.jsx) — SVG bar charts via `react-native-svg`
+- [x] [`StaffManagement.jsx`](apps/web/src/components/StaffManagement.jsx), [`SalonActivity.jsx`](apps/web/src/components/SalonActivity.jsx)
+- [x] [`CustomerManagementHistory.jsx`](apps/web/src/components/CustomerManagementHistory.jsx) (Phase 2), [`Settings.jsx`](apps/web/src/components/Settings.jsx) → expanded `StaffSettingsScreen.tsx`
 
 ### Phase 4 — Shared components + polish (week 9)
 
-- [x] [`ServiceCategoryBar.jsx`](src/components/ServiceCategoryBar.jsx), [`VirtualizedTimelineList.jsx`](src/components/VirtualizedTimelineList.jsx)
-- [x] [`BookingWizard.jsx`](src/components/BookingWizard.jsx), [`ScrollSelect.jsx`](src/components/ScrollSelect.jsx), [`RefreshmentSelect.jsx`](src/components/RefreshmentSelect.jsx)
+- [x] [`ServiceCategoryBar.jsx`](apps/web/src/components/ServiceCategoryBar.jsx), [`VirtualizedTimelineList.jsx`](apps/web/src/components/VirtualizedTimelineList.jsx)
+- [x] [`BookingWizard.jsx`](apps/web/src/components/BookingWizard.jsx), [`ScrollSelect.jsx`](apps/web/src/components/ScrollSelect.jsx), [`RefreshmentSelect.jsx`](apps/web/src/components/RefreshmentSelect.jsx)
 - [x] Notification panel, logout confirm, badges, realtime subscriptions
 - [x] Parity pass: compare every web screen side-by-side with RN
 
@@ -205,7 +205,7 @@ Internal order for execution — **no device testing until all phases complete**
 - [x] EAS dev-client + `expo-image-picker` wired for visit photo upload
 - [x] Set `featureFlags.global.mobileApp: true` (shared package)
 - [ ] RN becomes primary development target (after device sign-off)
-- [ ] Open PR: `IOS` → `main`
+- [ ] Open PR: `Mobile` → `main`
 
 ### Phase 6 — Windows (week 11+)
 
@@ -225,7 +225,7 @@ Instead of duplicating role-prefixed URLs (`/owner/lobby`, `/admin/lobby`), use 
 | `/customer/*` | `CustomerStack` |
 | Public routes (`/`, `/login`) | `AuthStack` / `PublicStack` |
 
-Reuse [`getHomePath`](src/utils/routes.js), [`getSettingsPath`](src/utils/routes.js), and `ProtectedRoute` role checks — adapt from URL matching to navigation state.
+Reuse [`getHomePath`](apps/web/src/utils/routes.js), [`getSettingsPath`](apps/web/src/utils/routes.js), and `ProtectedRoute` role checks — adapt from URL matching to navigation state.
 
 ---
 
@@ -289,7 +289,7 @@ For each ported screen, verify:
 
 ## Execution order
 
-Run the complete sprint sequentially on branch `IOS` — no stopping for partial device tests:
+Run the complete sprint sequentially on branch `Mobile` — no stopping for partial device tests:
 
 1. Phase 0: Monorepo + RN foundation (auth, nav, shared primitives)
 2. Phase 1: Public + customer (all screens)

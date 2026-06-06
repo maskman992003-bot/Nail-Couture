@@ -194,7 +194,7 @@ export function RegisterScreen() {
           </Pressable>
         ) : null}
 
-        <View style={[layout.authCardWrap, styles.card, { padding: spacing[8] }]}>
+        <View style={[layout.authCardWrap, styles.authCard, { padding: spacing[8] }]}>
           <View style={{ alignItems: 'center', marginBottom: 24 }}>
             <Image
               source={require('../../assets/NC.jpg')}

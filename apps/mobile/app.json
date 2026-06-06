@@ -42,7 +42,9 @@
           "photosPermission": "Allow Nail Couture to access your photos for visit documentation.",
           "cameraPermission": "Allow Nail Couture to take photos for visit documentation."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-splash-screen"
     ],
     "extra": {
       "eas": {

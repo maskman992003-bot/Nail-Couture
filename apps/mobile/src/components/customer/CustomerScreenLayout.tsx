@@ -34,7 +34,7 @@ export function CustomerScreenLayout({
           <View style={styles.layout.pageHeader}>
             <View style={{ flex: 1 }}>
               {title ? (
-                <Text style={[styles.textGold, { fontSize: 32, fontWeight: '600' }]}>{title}</Text>
+                <Text style={[styles.textHeading, { fontSize: 32, fontWeight: '600' }]}>{title}</Text>
               ) : null}
               {subtitle ? (
                 <Text style={[styles.textSecondary, { marginTop: 4 }]}>{subtitle}</Text>

@@ -7,7 +7,10 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { colors } from '@nail-couture/shared/theme/tokens.js';
 import { getNavItemsForRole } from '@nail-couture/shared/navigation/navItems.js';
 import { spacing } from '@nail-couture/shared/theme/layout.js';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +29,7 @@ export function ScrollableBottomTabBar({
 }: BottomTabBarProps) {
   const { user } = useAuth();
   const { tokens } = useThemeStyles();
+  const insets = useSafeAreaInsets();
   const { getBadgeCount } = useNavBadges();
   const scrollRef = useRef<ScrollView>(null);
   const contentWidthRef = useRef(0);
@@ -80,12 +84,20 @@ export function ScrollableBottomTabBar({
     return null;
   }
 
+  const inactiveColor = tokens.textSecondary;
+
   return (
     <View
       style={{
         borderTopWidth: 1,
-        borderTopColor: tokens.borderLight,
-        backgroundColor: tokens.bgSecondary,
+        borderTopColor: tokens.sidebarBorder,
+        backgroundColor: tokens.sidebarBg,
+        paddingBottom: Math.max(insets.bottom, spacing[1]),
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+        elevation: 24,
       }}
       onLayout={onLayout}
     >
@@ -99,7 +111,7 @@ export function ScrollableBottomTabBar({
         onContentSizeChange={onContentSizeChange}
         contentContainerStyle={{
           alignItems: 'center',
-          paddingHorizontal: spacing[2],
+          paddingHorizontal: spacing[1],
           paddingVertical: spacing[2],
           gap: spacing[1],
         }}
@@ -136,42 +148,40 @@ export function ScrollableBottomTabBar({
               accessibilityRole="button"
               accessibilityState={isFocused ? { selected: true } : {}}
               accessibilityLabel={options?.tabBarAccessibilityLabel ?? item.label}
-              style={[
-                layout.bottomTabItem,
-                {
-                  borderRadius: spacing[2],
-                  backgroundColor: isFocused ? tokens.inputBg : 'transparent',
-                },
-              ]}
+              style={layout.bottomTabItem}
             >
               <View style={{ position: 'relative' }}>
                 <NavIcon path={item.icon} active={isFocused} />
                 {showBadge ? (
-                  <View
+                  <LinearGradient
+                    colors={[colors.gold, colors.goldLight]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                     style={{
                       position: 'absolute',
-                      top: -6,
+                      top: -4,
                       right: -10,
-                      minWidth: 16,
-                      height: 16,
-                      borderRadius: 8,
-                      backgroundColor: tokens.goldStrong,
+                      minWidth: 14,
+                      height: 14,
+                      borderRadius: 7,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      paddingHorizontal: 4,
+                      paddingHorizontal: 2,
                     }}
                   >
-                    <Text style={{ color: '#121212', fontSize: 9, fontWeight: '700' }}>
+                    <Text style={{ color: colors.charcoal, fontSize: 7, fontWeight: '700' }}>
                       {badgeCount > 9 ? '9+' : badgeCount}
                     </Text>
-                  </View>
+                  </LinearGradient>
                 ) : null}
               </View>
               <Text
                 style={{
                   marginTop: spacing[0.5],
                   fontSize: 8,
-                  color: isFocused ? tokens.goldStrong : tokens.textSecondary,
+                  fontWeight: '500',
+                  letterSpacing: 0.5,
+                  color: isFocused ? tokens.goldStrong : inactiveColor,
                 }}
                 numberOfLines={1}
               >
@@ -180,6 +190,7 @@ export function ScrollableBottomTabBar({
             </Pressable>
           );
         })}
+        <View style={{ width: spacing[4], flexShrink: 0 }} accessibilityElementsHidden />
       </ScrollView>
     </View>
   );

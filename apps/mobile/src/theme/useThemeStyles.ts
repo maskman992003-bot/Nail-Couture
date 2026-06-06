@@ -1,25 +1,42 @@
 import { useMemo } from 'react';
-import type { DimensionValue } from 'react-native';
-import { getThemeTokens } from '@nail-couture/shared/theme/tokens.js';
+import type { DimensionValue, TextStyle, ViewStyle } from 'react-native';
+import { colors, fontFamilies, getThemeTokens } from '@nail-couture/shared/theme/tokens.js';
 import { borderRadius, spacing } from '@nail-couture/shared/theme/layout.js';
 import { useTheme } from '../contexts/ThemeContext';
 import { flex, layout } from './layoutStyles';
+
+const primaryButtonShadow: ViewStyle = {
+  shadowColor: colors.gold,
+  shadowOffset: { width: 0, height: 0 },
+  shadowOpacity: 0.18,
+  shadowRadius: 20,
+  elevation: 8,
+};
 
 export function useThemeStyles() {
   const { theme } = useTheme();
 
   return useMemo(() => {
     const tokens = getThemeTokens(theme);
+    const headingFont: TextStyle = { fontFamily: fontFamilies.heading };
+    const bodyFont: TextStyle = { fontFamily: fontFamilies.body };
+
     return {
       theme,
       tokens,
       spacing,
       flex,
       layout,
+      fonts: fontFamilies,
       screen: {
         flex: 1,
         width: '100%' as DimensionValue,
         backgroundColor: tokens.bgPrimary,
+      },
+      staffScreen: {
+        flex: 1,
+        width: '100%' as DimensionValue,
+        backgroundColor: tokens.staffBg,
       },
       card: {
         backgroundColor: tokens.cardBg,
@@ -27,28 +44,38 @@ export function useThemeStyles() {
         borderWidth: 1,
         borderRadius: borderRadius['2xl'],
       },
-      textPrimary: { color: tokens.textPrimary },
-      textSecondary: { color: tokens.textSecondary },
-      textGold: { color: tokens.goldStrong },
+      authCard: {
+        backgroundColor: tokens.authCardBg,
+        borderColor: tokens.cardBorder,
+        borderWidth: 1,
+        borderRadius: borderRadius['2xl'],
+      },
+      textPrimary: { color: tokens.textPrimary, ...bodyFont },
+      textSecondary: { color: tokens.textSecondary, ...bodyFont },
+      textGold: { color: tokens.goldStrong, ...bodyFont },
+      textHeading: { color: tokens.goldStrong, ...headingFont },
       input: {
         backgroundColor: tokens.inputBg,
         borderColor: tokens.inputBorder,
         borderWidth: 1,
-        borderRadius: 12,
+        borderRadius: borderRadius.lg,
         color: tokens.textPrimary,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingHorizontal: spacing[4],
+        paddingVertical: spacing[3],
+        ...bodyFont,
       },
       buttonPrimary: {
         backgroundColor: tokens.goldStrong,
-        borderRadius: 999,
-        paddingVertical: 14,
+        borderRadius: borderRadius.full,
+        paddingVertical: spacing[3],
         alignItems: 'center' as const,
+        ...primaryButtonShadow,
       },
       buttonPrimaryText: {
-        color: '#121212',
+        color: colors.charcoal,
+        fontFamily: fontFamilies.heading,
         fontWeight: '600' as const,
-        letterSpacing: 2,
+        letterSpacing: 3.4,
         textTransform: 'uppercase' as const,
       },
     };

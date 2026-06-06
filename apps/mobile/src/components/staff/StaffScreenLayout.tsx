@@ -27,7 +27,7 @@ export function StaffScreenLayout({
   const resolvedHeaderRight = headerRight ?? (showUserActions ? <UserHeaderActions /> : null);
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <SafeAreaView style={styles.staffScreen} edges={['top']}>
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={layout.pageContent}
@@ -37,7 +37,7 @@ export function StaffScreenLayout({
           <View style={styles.layout.pageHeader}>
             <View style={{ flex: 1 }}>
               {title ? (
-                <Text style={[styles.textGold, { fontSize: 28, fontWeight: '600' }]}>{title}</Text>
+                <Text style={[styles.textHeading, { fontSize: 28, fontWeight: '600' }]}>{title}</Text>
               ) : null}
               {subtitle ? (
                 <Text style={[styles.textSecondary, { marginTop: 4 }]}>{subtitle}</Text>

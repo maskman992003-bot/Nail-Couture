@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { Image, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { spacing } from '@nail-couture/shared/theme/layout.js';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -33,21 +34,49 @@ function HeroButton({
       style={{
         flex: 1,
         minWidth: 140,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing[2],
         borderRadius: 999,
         borderWidth: isPrimary ? 0 : 1,
-        borderColor: styles.tokens.borderColor,
-        backgroundColor: isPrimary ? styles.tokens.goldStrong : `${styles.tokens.textPrimary}08`,
-        paddingVertical: 14,
-        paddingHorizontal: 12,
-        alignItems: 'center',
+        borderColor: isPrimary ? 'transparent' : `${styles.tokens.textPrimary}1A`,
+        backgroundColor: isPrimary ? styles.tokens.goldStrong : `${styles.tokens.textPrimary}0D`,
+        paddingVertical: spacing[3],
+        paddingHorizontal: spacing[5],
+        ...(isPrimary
+          ? {
+              shadowColor: '#c5a059',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.18,
+              shadowRadius: 20,
+              elevation: 8,
+            }
+          : {}),
       }}
     >
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          borderWidth: 1,
+          borderColor: isPrimary ? 'rgba(255,255,255,0.08)' : `${styles.tokens.textPrimary}1A`,
+          backgroundColor: isPrimary ? styles.tokens.bgPrimary : `${styles.tokens.textPrimary}0D`,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{ color: styles.tokens.goldStrong, fontSize: 14 }}>{isPrimary ? '★' : '◫'}</Text>
+      </View>
       <Text
         style={{
           color: isPrimary ? '#121212' : styles.tokens.textPrimary,
           fontSize: 11,
-          letterSpacing: 2,
+          letterSpacing: 3.4,
           fontWeight: '600',
+          fontFamily: styles.fonts.heading,
+          textTransform: 'uppercase',
         }}
       >
         {label}
@@ -92,22 +121,35 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           paddingTop: spacing[6],
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
         }}
       >
+        <LinearGradient
+          colors={
+            styles.theme === 'dark'
+              ? ['#121212', 'rgba(18,18,18,0.95)', '#121212']
+              : ['#FDF8F0', 'rgba(253,248,240,0.95)', '#FDF8F0']
+          }
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        />
         <Image
           source={require('../../../assets/NC-watermark.png')}
           style={{
             position: 'absolute',
-            top: '30%',
+            top: '50%',
             left: '50%',
-            width: 260,
-            height: 260,
-            opacity: 0.08,
-            transform: [{ translateX: -130 }, { translateY: -130 }],
+            width: Math.min(360, layout.width * 0.6),
+            height: Math.min(360, layout.width * 0.6),
+            opacity: 0.1,
+            transform: [
+              { translateX: -Math.min(180, layout.width * 0.3) },
+              { translateY: -Math.min(180, layout.width * 0.3) },
+            ],
           }}
           resizeMode="contain"
         />
 
+        <View style={{ zIndex: 1, alignItems: 'center', maxWidth: 896, width: '100%' }}>
         <View
           style={{
             alignSelf: 'center',
@@ -117,7 +159,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             borderRadius: 999,
             borderWidth: 1,
             borderColor: `${styles.tokens.goldStrong}33`,
-            backgroundColor: `${styles.tokens.goldStrong}0D`,
+            backgroundColor: styles.theme === 'dark' ? 'rgba(255,255,255,0.05)' : `${styles.tokens.goldStrong}0D`,
             paddingHorizontal: 14,
             paddingVertical: 8,
             marginBottom: 24,
@@ -125,21 +167,25 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         >
           <View
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
+              width: 10,
+              height: 10,
+              borderRadius: 5,
               backgroundColor: styles.tokens.goldStrong,
+              shadowColor: styles.tokens.goldStrong,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
             }}
           />
-          <Text style={[styles.textGold, { fontSize: 10, letterSpacing: 2.5, fontWeight: '600' }]}>
+          <Text style={[styles.textGold, { fontSize: 11, letterSpacing: 3.2, fontWeight: '600', textTransform: 'uppercase' }]}>
             FLAWLESS MEDICAL-GRADE STERILIZATION
           </Text>
         </View>
 
-        <Text style={[styles.textPrimary, { fontSize: 38, fontWeight: '600', textAlign: 'center' }]}>
+        <Text style={[styles.textPrimary, styles.textHeading, { fontSize: 42, fontWeight: '600', textAlign: 'center', letterSpacing: 0.5 }]}>
           Couture Nails.
         </Text>
-        <Text style={[styles.textGold, { fontSize: 38, fontWeight: '600', textAlign: 'center', marginTop: 8 }]}>
+        <Text style={[styles.textHeading, { fontSize: 42, fontWeight: '600', textAlign: 'center', marginTop: 12 }]}>
           Expertly Tailored.
         </Text>
         <Text
@@ -170,6 +216,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             onPress={() => rootNavigation.navigate('CheckIn')}
           />
           <HeroButton label={bookingLabel} onPress={handleBooking} />
+        </View>
         </View>
       </View>
 
