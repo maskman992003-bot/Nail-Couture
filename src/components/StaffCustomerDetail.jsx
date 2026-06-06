@@ -1,11 +1,20 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
 import clsx from 'clsx';
 import { getCustomersPath } from '../utils/routes';
-import { fetchCustomerStats, fetchCustomerReceipts, fetchReferralInfo, fetchCustomerVisitHistory } from '../utils/customerStats';
+import {
+  fetchCustomerStats,
+  fetchCustomerReceipts,
+  fetchReferralInfo,
+  fetchCustomerVisitHistory,
+  computeServingDurationMinutes,
+} from '../utils/customerStats';
+import {
+  parseVisitFinalServices,
+} from '../utils/appointmentServiceHistory';
 import { getTierInfo } from '../utils/loyaltyTier';
 import {
   parseProfilePreferences,
@@ -21,6 +30,7 @@ import {
   fetchCustomerTimeline,
   adjustCustomerLoyalty,
   uploadVisitPhoto,
+  deleteVisitPhoto,
 } from '../utils/staffCustomerTimeline';
 import {
   canAccessStaffCrm,
@@ -28,7 +38,10 @@ import {
   canAdjustLoyalty,
   canAddStaffNotes,
   canUploadVisitPhotos,
+  canDeleteVisitPhotos,
 } from '../utils/staffCustomerAccess';
+import TimelineEventRow, { formatTimelineDate } from './TimelineEventRow';
+import { enrichVisits, visitDate } from '../utils/visitEnrichment';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -51,62 +64,11 @@ const VISIT_STATUS = {
   in_progress: { label: 'In Progress', color: 'bg-green-900/50 text-green-300 border-green-700/50' },
 };
 
-const TIMELINE_ICONS = {
-  visit: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-  payment: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
-  waiver: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-  note: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
-  loyalty: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-  photo: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
-};
+const formatDate = formatTimelineDate;
 
-function formatDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
-}
-
-function visitDate(appointment) {
-  return appointment.checked_in_at || appointment.scheduled_at || appointment.created_at;
-}
-
-async function enrichVisits(rawVisits, customerId) {
-  const allAddonNames = [...new Set(rawVisits.flatMap((v) => (v.add_ons ? v.add_ons.split(',').map((n) => n.trim()) : [])))];
-  const [addOnResult, paymentsResult] = await Promise.all([
-    allAddonNames.length
-      ? supabase.from('services').select('id, name, price, duration_minutes').in('name', allAddonNames)
-      : Promise.resolve({ data: [] }),
-    customerId
-      ? supabase
-        .from('payment_transactions')
-        .select('appointment_id, discount_amount, discount_type, payment_method, final_amount, amount')
-        .eq('customer_id', customerId)
-        .eq('status', 'completed')
-      : Promise.resolve({ data: [] }),
-  ]);
-  const addOnMap = {};
-  (addOnResult.data || []).forEach((a) => { addOnMap[a.name] = a; });
-  const paymentMap = {};
-  (paymentsResult.data || []).forEach((p) => {
-    if (p.appointment_id) paymentMap[p.appointment_id] = p;
-  });
-
-  return rawVisits.map((v) => {
-    const addonNames = v.add_ons ? v.add_ons.split(',').map((n) => n.trim()) : [];
-    const addonDetails = addonNames.map((n) => addOnMap[n]).filter(Boolean);
-    const addOnTotal = addonDetails.reduce((sum, a) => sum + (a.price || 0), 0);
-    const payment = paymentMap[v.id];
-    const totalPrice = v.final_price ?? payment?.final_amount ?? ((v.services?.price || 0) + addOnTotal);
-    return {
-      ...v,
-      addonDetails,
-      payment,
-      totalPrice,
-      visitAt: visitDate(v),
-    };
-  });
+function splitNames(value) {
+  if (!value) return [];
+  return value.split(',').map((n) => n.trim()).filter(Boolean);
 }
 
 export default function StaffCustomerDetail() {
@@ -138,11 +100,37 @@ export default function StaffCustomerDetail() {
   const [photoType, setPhotoType] = useState('after');
   const [photoViewFilter, setPhotoViewFilter] = useState('all');
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoDeletingId, setPhotoDeletingId] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [visitSearch, setVisitSearch] = useState('');
+  const [timelineLoaded, setTimelineLoaded] = useState(false);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [visitsLoaded, setVisitsLoaded] = useState(false);
+  const [visitsLoading, setVisitsLoading] = useState(false);
 
   const canEdit = canEditCustomerProfile(user?.role);
   const canAdjust = canAdjustLoyalty(user?.role);
+  const canDeletePhotos = canDeleteVisitPhotos(user?.role);
+
+  const filteredVisits = useMemo(() => {
+    const sorted = [...visits].sort((a, b) => new Date(b.visitAt) - new Date(a.visitAt));
+    const term = visitSearch.trim().toLowerCase();
+    if (!term) return sorted;
+    const termDigits = term.replace(/\D/g, '');
+    return sorted.filter((visit) => {
+      const c = profile;
+      if (!c) return false;
+      const name = (c.full_name || '').toLowerCase();
+      const email = (c.email || '').toLowerCase();
+      const phone = (c.phone || '').toLowerCase();
+      const phoneDigits = (c.phone || '').replace(/\D/g, '');
+      return name.includes(term)
+        || email.includes(term)
+        || phone.includes(term)
+        || (termDigits.length >= 3 && phoneDigits.includes(termDigits));
+    });
+  }, [visits, visitSearch, profile]);
 
   const resetEditForm = useCallback((profileData) => {
     setEditForm({
@@ -155,8 +143,8 @@ export default function StaffCustomerDetail() {
     });
   }, []);
 
-  const loadData = useCallback(async () => {
-    if (!customerId) return;
+  const loadCoreData = useCallback(async () => {
+    if (!customerId) return null;
 
     const { data: profileData, error } = await supabase
       .from('profiles')
@@ -166,44 +154,79 @@ export default function StaffCustomerDetail() {
 
     if (error || !profileData || profileData.role !== 'customer') {
       navigate(getCustomersPath(user?.role));
-      return;
+      return null;
     }
 
     setProfile(profileData);
     resetEditForm(profileData);
     setEditingProfile(false);
 
-    const [
-      statsData,
-      referral,
-      receiptRows,
-      timelineData,
-      notesData,
-      loyaltyData,
-      visitRows,
-    ] = await Promise.all([
+    const [statsData, referral, receiptRows, notesData, loyaltyData] = await Promise.all([
       fetchCustomerStats(customerId, profileData.phone),
       fetchReferralInfo(profileData),
       fetchCustomerReceipts(customerId, 10),
-      fetchCustomerTimeline(customerId, profileData.phone),
       fetchStaffNotes(customerId),
       fetchLoyaltyHistory(customerId, 25),
-      fetchCustomerVisitHistory(customerId, profileData.phone, { includeOnline: true }).catch((err) => {
-        console.error('Failed to load visit history:', err);
-        return [];
-      }),
     ]);
 
     setStats(statsData);
     setReferralInfo(referral);
     setReceipts(receiptRows);
-    setTimeline(timelineData.events);
     setNotes(notesData.rows);
     setNotesAvailable(notesData.available);
     setLoyaltyHistory(loyaltyData.rows);
-    setPhotos(timelineData.events.filter((e) => e.type === 'photo'));
-    setVisits(await enrichVisits(visitRows, customerId));
+
+    return profileData;
   }, [customerId, navigate, user?.role, resetEditForm]);
+
+  const loadTimelineData = useCallback(async (profileData) => {
+    if (!profileData) return;
+    setTimelineLoading(true);
+    try {
+      const timelineData = await fetchCustomerTimeline(customerId, profileData.phone);
+      setTimeline(timelineData.events);
+      setPhotos(timelineData.events.filter((e) => e.type === 'photo'));
+      setTimelineLoaded(true);
+    } catch (err) {
+      console.error('Failed to load customer timeline:', err);
+    } finally {
+      setTimelineLoading(false);
+    }
+  }, [customerId]);
+
+  const loadVisitHistoryData = useCallback(async (profileData) => {
+    if (!profileData) return;
+    setVisitsLoading(true);
+    try {
+      const visitRows = await fetchCustomerVisitHistory(customerId, profileData.phone, { includeOnline: true });
+      const enriched = await enrichVisits(visitRows);
+      enriched.sort((a, b) => new Date(b.visitAt) - new Date(a.visitAt));
+      setVisits(enriched);
+      setVisitsLoaded(true);
+    } catch (err) {
+      console.error('Failed to enrich visit history:', err);
+      try {
+        const visitRows = await fetchCustomerVisitHistory(customerId, profileData.phone, { includeOnline: true });
+        const fallback = visitRows.map((v) => ({ ...v, visitAt: visitDate(v), totalPrice: v.final_price ?? 0 }));
+        fallback.sort((a, b) => new Date(b.visitAt) - new Date(a.visitAt));
+        setVisits(fallback);
+        setVisitsLoaded(true);
+      } catch (innerErr) {
+        console.error('Failed to load visit history:', innerErr);
+      }
+    } finally {
+      setVisitsLoading(false);
+    }
+  }, [customerId]);
+
+  const loadData = useCallback(async () => {
+    setTimelineLoaded(false);
+    setVisitsLoaded(false);
+    setTimeline([]);
+    setVisits([]);
+    setPhotos([]);
+    return loadCoreData();
+  }, [loadCoreData]);
 
   useEffect(() => {
     if (!user) {
@@ -217,6 +240,26 @@ export default function StaffCustomerDetail() {
     setLoading(true);
     loadData().finally(() => setLoading(false));
   }, [user, loadData, navigate]);
+
+  useEffect(() => {
+    if (!profile || loading) return;
+    if ((activeTab === 'timeline' || activeTab === 'photos') && !timelineLoaded && !timelineLoading) {
+      loadTimelineData(profile);
+    }
+    if (activeTab === 'history' && !visitsLoaded && !visitsLoading) {
+      loadVisitHistoryData(profile);
+    }
+  }, [
+    activeTab,
+    profile,
+    loading,
+    timelineLoaded,
+    timelineLoading,
+    visitsLoaded,
+    visitsLoading,
+    loadTimelineData,
+    loadVisitHistoryData,
+  ]);
 
   const handleStartEditProfile = () => {
     if (!canEdit || !profile) return;
@@ -318,10 +361,33 @@ export default function StaffCustomerDetail() {
       type: 'photo',
       date: result.photo.created_at,
       title: `${photoType === 'before' ? 'Before' : 'After'} photo`,
-      meta: result.photo,
+      subtitle: user?.full_name ? `By ${user.full_name}` : 'By Staff',
+      meta: {
+        ...result.photo,
+        uploader_name: user?.full_name || 'Staff',
+      },
     };
     setPhotos((prev) => [entry, ...prev]);
     setTimeline((prev) => [entry, ...prev]);
+  };
+
+  const handlePhotoDelete = async (photoEvent) => {
+    if (!canDeletePhotos) return;
+    const photoId = photoEvent.meta?.id || photoEvent.id?.replace(/^photo-/, '');
+    if (!photoId) return;
+    if (!window.confirm('Remove this photo from the gallery? This cannot be undone.')) return;
+
+    setPhotoDeletingId(photoId);
+    const result = await deleteVisitPhoto(photoId, photoEvent.meta?.photo_url);
+    setPhotoDeletingId(null);
+
+    if (!result.success) {
+      setSaveMsg(result.error);
+      return;
+    }
+
+    setPhotos((prev) => prev.filter((p) => (p.meta?.id || p.id?.replace(/^photo-/, '')) !== photoId));
+    setTimeline((prev) => prev.filter((e) => e.type !== 'photo' || (e.meta?.id || e.id?.replace(/^photo-/, '')) !== photoId));
   };
 
   if (loading) {
@@ -524,16 +590,41 @@ export default function StaffCustomerDetail() {
         )}
 
         {activeTab === 'history' && (
-          <Section title="Visit history">
-            {visits.length === 0 ? (
-              <p className="text-secondary text-center py-8">No visits recorded yet</p>
+          <div className="bg-secondary border-card rounded-xl border p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <h3 className="font-heading text-lg text-gold">Visit history</h3>
+              <div className="relative w-full sm:max-w-xs">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 8a3 3 0 100 6 3 3 0 000-6z" />
+                </svg>
+                <input
+                  type="search"
+                  value={visitSearch}
+                  onChange={(e) => setVisitSearch(e.target.value)}
+                  placeholder="Search name, phone, email…"
+                  className="w-full pl-9 pr-4 py-2.5 bg-input border-input border rounded-xl text-primary text-sm placeholder-text-muted focus:border-gold focus:outline-none"
+                />
+              </div>
+            </div>
+            {filteredVisits.length === 0 ? (
+              <p className="text-secondary text-center py-8">
+                {visits.length === 0 ? 'No visits recorded yet' : 'No visits match your search'}
+              </p>
             ) : (
               <div className="space-y-3">
-                <p className="text-secondary text-sm mb-4">{visits.length} visit{visits.length !== 1 ? 's' : ''} total</p>
-                {visits.map((visit) => {
+                <p className="text-secondary text-sm mb-4">
+                  {filteredVisits.length} visit{filteredVisits.length !== 1 ? 's' : ''}
+                  {visitSearch.trim() ? ' matching search' : ''}
+                </p>
+                {visitsLoading && visits.length === 0 ? (
+                  <p className="text-secondary text-center py-8">Loading visit history…</p>
+                ) : (
+                filteredVisits.map((visit) => {
                   const statusCfg = VISIT_STATUS[visit.status];
                   const isExpanded = expandedVisitId === visit.id;
-                  const serviceName = visit.services?.name || visit.add_ons || 'Service';
+                  const summary = visit.serviceSummary;
+                  const finalServices = summary?.finalServices || parseVisitFinalServices(visit);
+                  const cardCustomer = profile;
                   return (
                     <div key={visit.id} className="bg-secondary rounded-lg border border-light overflow-hidden">
                       <button
@@ -542,8 +633,16 @@ export default function StaffCustomerDetail() {
                         className="w-full flex items-start justify-between gap-3 p-4 text-left hover:bg-gold/5 transition-colors"
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="text-primary font-medium">{serviceName}</div>
+                          <div className="text-primary font-medium truncate">
+                            {cardCustomer?.full_name || 'Customer'}
+                          </div>
                           <div className="text-secondary text-sm mt-0.5">
+                            {cardCustomer?.phone || '—'}
+                            {cardCustomer?.email && (
+                              <span className="hidden sm:inline">{` · ${cardCustomer.email}`}</span>
+                            )}
+                          </div>
+                          <div className="text-secondary text-xs mt-1">
                             {formatDate(visit.visitAt)}
                             {visit.technicians?.full_name && ` · ${visit.technicians.full_name}`}
                           </div>
@@ -564,103 +663,31 @@ export default function StaffCustomerDetail() {
                         </div>
                       </button>
                       {isExpanded && (
-                        <div className="px-4 pb-4 pt-0 border-t border-light space-y-3">
-                          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm pt-3">
-                            <DetailRow label="Service" value={visit.services?.name || '—'} />
-                            {visit.services?.duration_minutes && (
-                              <DetailRow label="Duration" value={`${visit.services.duration_minutes} min`} />
-                            )}
-                            <DetailRow label="Technician" value={visit.technicians?.full_name || 'Unassigned'} />
-                            <DetailRow
-                              label="Booking type"
-                              value={visit.booking_type === 'online' ? 'Online' : 'Walk-in'}
-                            />
-                            <DetailRow label="Check-in" value={formatDate(visit.checked_in_at)} />
-                            {visit.scheduled_at && visit.scheduled_at !== visit.checked_in_at && (
-                              <DetailRow label="Scheduled" value={formatDate(visit.scheduled_at)} />
-                            )}
-                          </dl>
-                          {visit.addonDetails?.length > 0 && (
-                            <div>
-                              <div className="text-secondary text-xs uppercase tracking-widest mb-2">Add-ons</div>
-                              <div className="space-y-1">
-                                {visit.addonDetails.map((addon) => (
-                                  <div key={addon.id} className="flex justify-between text-sm">
-                                    <span className="text-primary">+ {addon.name}</span>
-                                    <span className="text-gold">${Number(addon.price || 0).toFixed(2)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {visit.add_ons && !visit.services?.name && (
-                            <DetailRow label="Services" value={visit.add_ons} />
-                          )}
-                          <div className="flex justify-between items-center pt-2 border-t border-light">
-                            <span className="text-secondary text-sm">Total</span>
-                            <span className="text-gold font-heading text-lg">${Number(visit.totalPrice).toFixed(2)}</span>
-                          </div>
-                          {visit.payment?.discount_amount > 0 && (
-                            <div className="p-3 bg-gold/5 border border-gold/20 rounded-lg text-sm">
-                              <div className="text-gold">Discount: ${Number(visit.payment.discount_amount).toFixed(2)}</div>
-                              {visit.payment.discount_type && (
-                                <div className="text-secondary text-xs mt-1">Type: {visit.payment.discount_type}</div>
-                              )}
-                              {visit.payment.payment_method && (
-                                <div className="text-secondary text-xs">Paid via: {visit.payment.payment_method}</div>
-                              )}
-                            </div>
-                          )}
-                          {visit.notes && (
-                            <div>
-                              <div className="text-secondary text-xs uppercase tracking-widest mb-1">Visit notes</div>
-                              <p className="text-primary text-sm">{visit.notes}</p>
-                            </div>
-                          )}
-                        </div>
+                        <VisitHistoryDetail
+                          visit={visit}
+                          summary={summary}
+                          finalServices={finalServices}
+                        />
                       )}
                     </div>
                   );
-                })}
+                })
+                )}
               </div>
             )}
-          </Section>
+          </div>
         )}
 
         {activeTab === 'timeline' && (
           <Section title="Full activity timeline">
-            {timeline.length === 0 ? (
+            {timelineLoading && timeline.length === 0 ? (
+              <p className="text-secondary text-center py-8">Loading activity…</p>
+            ) : timeline.length === 0 ? (
               <p className="text-secondary text-center py-8">No activity recorded yet</p>
             ) : (
               <div className="space-y-3">
                 {timeline.map((event) => (
-                  <div key={event.id} className="flex gap-3 p-3 bg-secondary rounded-lg border border-light">
-                    <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={TIMELINE_ICONS[event.type] || TIMELINE_ICONS.visit} />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between gap-2">
-                        <div className="text-primary font-medium">{event.title}</div>
-                        {event.amount != null && (
-                          <div className="text-gold text-sm">${Number(event.amount).toFixed(2)}</div>
-                        )}
-                      </div>
-                      {event.subtitle && <div className="text-secondary text-sm">{event.subtitle}</div>}
-                      {event.body && <div className="text-primary/80 text-sm mt-1">{event.body}</div>}
-                      {event.status && (
-                        <span className="inline-block mt-1 text-xs uppercase tracking-wider text-secondary">{event.status}</span>
-                      )}
-                      {event.type === 'waiver' && event.meta?.signature_image && (
-                        <img src={event.meta.signature_image} alt="Signature" className="mt-2 h-16 object-contain bg-white rounded border" />
-                      )}
-                      {event.type === 'photo' && event.meta?.photo_url && (
-                        <img src={event.meta.photo_url} alt="" className="mt-2 h-24 object-cover rounded border border-light" />
-                      )}
-                      <div className="text-secondary text-xs mt-1">{formatDate(event.date)}</div>
-                    </div>
-                  </div>
+                  <TimelineEventRow key={event.id} event={event} profile={profile} />
                 ))}
               </div>
             )}
@@ -824,9 +851,27 @@ export default function StaffCustomerDetail() {
                 {photos
                   .filter((p) => photoViewFilter === 'all' || p.meta?.photo_type === photoViewFilter)
                   .map((p) => (
-                  <div key={p.id} className="rounded-lg overflow-hidden border border-light">
+                  <div key={p.id} className="rounded-lg overflow-hidden border border-light relative group">
                     <img src={p.meta.photo_url} alt="" className="w-full h-36 object-cover" />
-                    <div className="p-2 text-xs text-secondary">{p.title} · {formatDate(p.date)}</div>
+                    {canDeletePhotos && (
+                      <button
+                        type="button"
+                        onClick={() => handlePhotoDelete(p)}
+                        disabled={photoDeletingId === (p.meta?.id || p.id?.replace(/^photo-/, ''))}
+                        className="absolute top-2 right-2 p-1.5 rounded-full bg-charcoal/80 text-red-300 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity disabled:opacity-50"
+                        title="Remove photo"
+                        aria-label="Remove photo"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+                    <div className="p-2 text-xs text-secondary">
+                      {p.title}
+                      {p.meta?.uploader_name && ` · By ${p.meta.uploader_name}`}
+                      {' · '}{formatDate(p.date)}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -834,6 +879,241 @@ export default function StaffCustomerDetail() {
           </Section>
         )}
       </div>
+    </div>
+  );
+}
+
+function normalizeLineItems(items) {
+  if (!items?.length) return [];
+  return items.map((item) => (
+    typeof item === 'string' ? { name: item, price: null } : item
+  ));
+}
+
+function ServiceItemList({ label, items, variant = 'main' }) {
+  const lineItems = normalizeLineItems(items);
+  if (!lineItems.length) return null;
+  const dotColor = variant === 'addon'
+    ? 'bg-amber-400/80'
+    : variant === 'removed'
+      ? 'bg-red-400/60'
+      : 'bg-gold/80';
+  return (
+    <div>
+      <div className="text-secondary text-[10px] uppercase tracking-widest mb-1.5">{label}</div>
+      <ul className="space-y-1.5">
+        {lineItems.map((item) => (
+          <li key={`${variant}-${item.name}`} className="flex items-start justify-between gap-3 text-sm">
+            <div className="flex items-start gap-2 min-w-0">
+              <span className={clsx('mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0', dotColor)} />
+              <span className={clsx('text-primary', variant === 'removed' && 'line-through text-secondary')}>
+                {variant === 'addon' ? `+ ${item.name}` : variant === 'removed' ? `− ${item.name}` : item.name}
+              </span>
+            </div>
+            {item.price != null && (
+              <span className={clsx('text-gold font-heading flex-shrink-0', variant === 'removed' && 'line-through opacity-60')}>
+                ${Number(item.price).toFixed(2)}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ServiceChangeStep({ entry, stepNumber, isLast }) {
+  return (
+    <div className="flex gap-3">
+      <div className="flex flex-col items-center flex-shrink-0">
+        <div className="w-7 h-7 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center text-xs font-heading text-gold">
+          {stepNumber}
+        </div>
+        {!isLast && <div className="w-px flex-1 bg-light min-h-[1rem] mt-1" />}
+      </div>
+      <div className={clsx('flex-1 min-w-0', !isLast && 'pb-4')}>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <span className="text-primary font-medium text-sm">{entry.action}</span>
+          <span className="text-secondary text-xs">{formatDate(entry.date)}</span>
+        </div>
+        <div className="mt-2 p-3 rounded-lg bg-primary/30 border border-light/60 space-y-2">
+          {entry.action === 'Services removed' ? (
+            <>
+              <ServiceItemList label="Removed services" items={entry.removedMainItems || entry.removedMain} variant="removed" />
+              <ServiceItemList label="Removed add-ons" items={entry.removedAddonItems || entry.removedAddons} variant="removed" />
+            </>
+          ) : (
+            <>
+              <ServiceItemList label="Services" items={entry.mainItems || entry.mainServices} />
+              {(entry.addonItems?.length > 0 || entry.addons?.length > 0) && (
+                <ServiceItemList label="Add-ons" items={entry.addonItems || entry.addons} variant="addon" />
+              )}
+            </>
+          )}
+          {!entry.mainItems?.length && !entry.addonItems?.length
+            && !entry.removedMainItems?.length && !entry.removedAddonItems?.length
+            && !entry.mainServices?.length && !entry.addons?.length
+            && !entry.removedMain?.length && !entry.removedAddons?.length && (
+            <p className="text-secondary text-sm">No services recorded</p>
+          )}
+        </div>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-secondary border border-light text-secondary">
+            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span>
+              <span className="text-primary">{entry.changedByName}</span>
+              <span className="text-secondary"> · {entry.changedByRole}</span>
+            </span>
+          </span>
+          {entry.stepPrice != null && entry.stepPrice > 0 && (
+            <span className="text-gold font-heading text-sm">${Number(entry.stepPrice).toFixed(2)}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaymentSummaryRows({ paymentSummary }) {
+  if (!paymentSummary) return null;
+  const { subtotal, discount, discountType, tip, totalPaid, paymentMethod } = paymentSummary;
+  const discountLabel = discountType === 'percentage' || discountType === 'percent'
+    ? 'Discount'
+    : discountType === 'loyalty'
+      ? 'Loyalty discount'
+      : 'Discount';
+
+  return (
+    <div className="p-4 rounded-xl bg-gold/5 border border-gold/20 space-y-2 text-sm">
+      <h4 className="font-heading text-gold text-sm uppercase tracking-wider mb-3">Payment summary</h4>
+      <div className="flex justify-between">
+        <span className="text-secondary">Services subtotal</span>
+        <span className="text-primary">${Number(subtotal).toFixed(2)}</span>
+      </div>
+      {discount > 0 && (
+        <div className="flex justify-between">
+          <span className="text-secondary">{discountLabel}</span>
+          <span className="text-red-300">−${Number(discount).toFixed(2)}</span>
+        </div>
+      )}
+      {tip > 0 && (
+        <div className="flex justify-between">
+          <span className="text-secondary">Tip</span>
+          <span className="text-primary">+${Number(tip).toFixed(2)}</span>
+        </div>
+      )}
+      <div className="flex justify-between pt-2 border-t border-gold/20 font-medium">
+        <span className="text-gold font-heading">Total paid</span>
+        <span className="text-gold font-heading text-lg">${Number(totalPaid).toFixed(2)}</span>
+      </div>
+      {paymentMethod && (
+        <div className="text-secondary text-xs pt-1">Paid via {paymentMethod}</div>
+      )}
+    </div>
+  );
+}
+
+export function VisitHistoryDetail({ visit, summary, finalServices }) {
+  const servingMinutes = computeServingDurationMinutes(visit);
+  const changeLog = summary?.changeLog || [];
+  const hasChangeLog = changeLog.length > 0;
+  const finalItems = summary?.finalWithPrices || {
+    mainItems: finalServices.main.map((name) => ({ name, price: null })),
+    addonItems: finalServices.addons.map((name) => ({ name, price: null })),
+  };
+  const removedItems = summary?.performedRemoved || { mainItems: [], addonItems: [] };
+  const paymentSummary = summary?.paymentSummary;
+  const hasAddons = finalItems.addonItems?.length > 0;
+  const hasRemoved = removedItems.mainItems?.length > 0 || removedItems.addonItems?.length > 0;
+
+  return (
+    <div className="px-4 pb-4 pt-0 border-t border-light space-y-4">
+      {/* Final services */}
+      <div className="pt-4 p-4 rounded-xl border border-light bg-primary/20">
+        <h4 className="font-heading text-gold text-sm uppercase tracking-wider mb-3">Services performed</h4>
+        <ServiceItemList label="Services" items={finalItems.mainItems} />
+        {hasAddons && (
+          <div className="mt-3">
+            <ServiceItemList label="Add-ons" items={finalItems.addonItems} variant="addon" />
+          </div>
+        )}
+        {hasRemoved && (
+          <div className="mt-3 pt-3 border-t border-light/60">
+            <div className="text-secondary text-[10px] uppercase tracking-widest mb-2">Removed from visit</div>
+            <ServiceItemList label="Services" items={removedItems.mainItems} variant="removed" />
+            {removedItems.addonItems?.length > 0 && (
+              <div className="mt-2">
+                <ServiceItemList label="Add-ons" items={removedItems.addonItems} variant="removed" />
+              </div>
+            )}
+          </div>
+        )}
+        {!finalServices.main.length && !finalServices.addons.length && !hasRemoved && (
+          <p className="text-secondary text-sm">{summary?.finalLabelText || '—'}</p>
+        )}
+      </div>
+
+      <PaymentSummaryRows paymentSummary={paymentSummary} />
+
+      {/* Service change timeline */}
+      {hasChangeLog ? (
+        <div>
+          <h4 className="text-secondary text-xs uppercase tracking-widest mb-3">How services changed</h4>
+          <div className="pl-1">
+            {changeLog.map((entry, index) => (
+              <ServiceChangeStep
+                key={entry.id}
+                entry={entry}
+                stepNumber={index + 1}
+                isLast={index === changeLog.length - 1}
+              />
+            ))}
+          </div>
+        </div>
+      ) : summary?.checkIn && (summary.checkIn.services.length > 0 || summary.checkIn.addons.length > 0) && (
+        <div className="p-4 rounded-lg border border-light bg-primary/20">
+          <h4 className="text-secondary text-xs uppercase tracking-widest mb-2">
+            At check-in{summary.checkIn.approximate ? ' (approximate)' : ''}
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <ServiceItemList label="Main services" items={summary.checkIn.services} />
+            <ServiceItemList label="Add-ons" items={summary.checkIn.addons} variant="addon" />
+          </div>
+          {summary.checkIn.attribution && (
+            <p className="text-secondary text-xs mt-3">
+              {formatDate(summary.checkIn.date)} · {summary.checkIn.attribution}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Visit details */}
+      <div className="pt-2 border-t border-light">
+        <h4 className="text-secondary text-xs uppercase tracking-widest mb-3">Visit details</h4>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <DetailRow label="Technician" value={visit.technicians?.full_name || 'Unassigned'} />
+          <DetailRow
+            label="Booking"
+            value={visit.booking_type === 'online' ? 'Online' : 'Walk-in'}
+          />
+          <DetailRow label="Check-in" value={formatDate(visit.checked_in_at)} />
+          {servingMinutes != null && (
+            <DetailRow label="Duration" value={`${servingMinutes} min`} />
+          )}
+          {visit.scheduled_at && visit.scheduled_at !== visit.checked_in_at && (
+            <DetailRow label="Scheduled" value={formatDate(visit.scheduled_at)} />
+          )}
+        </dl>
+      </div>
+
+      {visit.notes && (
+        <div className="pt-2 border-t border-light">
+          <h4 className="text-secondary text-xs uppercase tracking-widest mb-1">Visit notes</h4>
+          <p className="text-primary text-sm leading-relaxed">{visit.notes}</p>
+        </div>
+      )}
     </div>
   );
 }

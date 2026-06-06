@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
+import { modalSelectClass } from '../AppModal';
 import { getCustomerDetailPath } from '../../utils/routes';
 import { parseProfilePreferences, labelForOption, NAIL_SHAPES, NAIL_LENGTHS, NAIL_FINISHES } from '../../utils/profilePreferences';
 
@@ -194,7 +195,7 @@ export default function TechnicianQueue({
                   <select
                     value={declineReason}
                     onChange={(e) => setDeclineReason(e.target.value)}
-                    className="w-full text-sm px-3 py-2 bg-input border border-input rounded-lg text-primary mb-2"
+                    className={clsx('w-full text-sm mb-2', modalSelectClass)}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <option value="">Reason (optional)</option>

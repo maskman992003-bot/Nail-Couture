@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
+import { useTheme } from '../../contexts/ThemeContext';
 import TechnicianQuickLinks from './TechnicianQuickLinks';
 import TechnicianStats from './TechnicianStats';
 import TechnicianFloorSnapshot from './TechnicianFloorSnapshot';
 import TechnicianQueue from './TechnicianQueue';
 import TechnicianInChairPanel from './TechnicianInChairPanel';
-import TechnicianPostCompletePrompt from './TechnicianPostCompletePrompt';
 import TechnicianNotificationBanner from './TechnicianNotificationBanner';
+import TechnicianNewAssignmentBanner from './TechnicianNewAssignmentBanner';
 import AppModal, { modalBtnPrimary, modalBtnSecondary } from '../AppModal';
 import {
   WORKSTATION_AVAILABLE,
@@ -20,11 +21,13 @@ export default function TechnicianDashboard({
   floorAppointments,
   stats,
   weekStats,
+  tipsToday,
+  paymentsByAppointment,
   refreshing,
   actionId,
   toast,
   newAssignmentIds,
-  postComplete,
+  newAssignmentBanner,
   refetch,
   acceptAssignment,
   markComplete,
@@ -34,12 +37,14 @@ export default function TechnicianDashboard({
   logProductUsage,
   floorTechnicians,
   dismissToast,
-  dismissPostComplete,
   dismissNewAssignment,
+  clearNewAssignments,
+  scrollToAssignments,
   priceConfirmAppt,
   confirmCompleteWithoutPrice,
   cancelPriceConfirm,
 }) {
+  const { theme } = useTheme();
   const firstName = user?.full_name?.split(' ')[0] || 'Technician';
   const hasWork = stats.currentAppointment || stats.pendingCount > 0;
   const [workstationStatus, setWorkstationStatusState] = useState(WORKSTATION_AVAILABLE);
@@ -72,6 +77,8 @@ export default function TechnicianDashboard({
 
   return (
     <>
+      <style>{`.technician-dashboard select, .technician-dashboard option { background: var(--input-bg); color: var(--text-primary); } .technician-dashboard select { color-scheme: ${theme}; }`}</style>
+
       {toast && (
         <div
           className={clsx(
@@ -93,7 +100,7 @@ export default function TechnicianDashboard({
         </div>
       )}
 
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="technician-dashboard p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-light">
           <div>
             <h1 className="font-heading text-3xl text-gold-strong">Hello, {firstName}</h1>
@@ -136,9 +143,11 @@ export default function TechnicianDashboard({
             </div>
           )}
 
-          <TechnicianQuickLinks role={user?.role} />
-
-          <TechnicianStats stats={stats} weekStats={weekStats} />
+          <TechnicianNewAssignmentBanner
+            assignments={newAssignmentBanner}
+            onView={scrollToAssignments}
+            onDismissAll={clearNewAssignments}
+          />
 
           {stats.currentAppointment && (
             <TechnicianInChairPanel
@@ -148,14 +157,6 @@ export default function TechnicianDashboard({
               onUpdateServices={updateServingServices}
               onToggleChecklistItem={updateChecklistItem}
               onLogProductUsage={logProductUsage}
-              userRole={user?.role}
-            />
-          )}
-
-          {postComplete && (
-            <TechnicianPostCompletePrompt
-              data={postComplete}
-              onDismiss={dismissPostComplete}
               userRole={user?.role}
             />
           )}
@@ -186,15 +187,27 @@ export default function TechnicianDashboard({
             </div>
           )}
 
-          <TechnicianQueue
-            pendingAssignments={stats.pendingAssignments}
-            actionId={actionId}
-            onAccept={acceptAssignment}
-            onDecline={declineAssignment}
-            onDismissNew={dismissNewAssignment}
+          <div id="my-assignments">
+            <TechnicianQueue
+              pendingAssignments={stats.pendingAssignments}
+              actionId={actionId}
+              onAccept={acceptAssignment}
+              onDecline={declineAssignment}
+              onDismissNew={dismissNewAssignment}
+              userRole={user?.role}
+              newAssignmentIds={newAssignmentIds}
+            />
+          </div>
+
+          <TechnicianStats
+            stats={stats}
+            weekStats={weekStats}
+            tipsToday={tipsToday}
+            paymentsByAppointment={paymentsByAppointment}
             userRole={user?.role}
-            newAssignmentIds={newAssignmentIds}
           />
+
+          <TechnicianQuickLinks role={user?.role} />
         </div>
       </div>
 

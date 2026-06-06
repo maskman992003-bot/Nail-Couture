@@ -355,10 +355,12 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
 
   const handleSave = async () => {
     setSaving(true)
-    const allNames = [...formData.selected_services.map(s => s.name), ...formData.selected_addons].join(', ')
+    const serviceNames = formData.selected_services.map((s) => s.name).filter(Boolean)
+    const addOnNames = formData.selected_addons.filter(Boolean)
     const updates = {
       service_id: formData.selected_services[0]?.id || null,
-      add_ons: allNames || null,
+      selected_service_names: serviceNames.length ? serviceNames.join(', ') : null,
+      add_ons: addOnNames.length ? addOnNames.join(', ') : null,
       final_price: parseFloat(finalDisplayPrice),
       nail_goal: formData.nail_goal || null,
     }
@@ -704,6 +706,7 @@ export default function AdminLobby() {
       appointment_id: appointmentId,
       p_service_id: apptUpdates.service_id || null,
       p_add_ons: apptUpdates.add_ons || null,
+      p_selected_service_names: apptUpdates.selected_service_names || null,
       p_final_price: apptUpdates.final_price || null,
       p_refreshment_pref: apptUpdates.refreshment_pref || null,
       p_technician_id: apptUpdates.technician_id || null,

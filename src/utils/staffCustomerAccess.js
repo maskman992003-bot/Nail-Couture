@@ -21,3 +21,11 @@ export function canUploadVisitPhotos(role) {
 export function canAddStaffNotes(role) {
   return CRM_STAFF_ROLES.includes(role);
 }
+
+export function canDeleteVisitPhotos(role) {
+  return CRM_MANAGEMENT_ROLES.includes(role);
+}
+
+export function canViewGlobalVisitHistory(role) {
+  return CRM_MANAGEMENT_ROLES.includes(role);
+}

@@ -19,7 +19,7 @@ async function resolveCustomerIds(customerId, phone) {
 }
 
 const APPOINTMENT_SELECT = `
-  id, status, booking_type, final_price, checked_in_at, scheduled_at, created_at,
+  id, customer_id, status, booking_type, final_price, checked_in_at, scheduled_at, created_at,
   start_time, completed_at,
   service_id, technician_id, add_ons, selected_service_names, notes,
   loyalty_reward_id, loyalty_reward_name, loyalty_points_cost, loyalty_redemption_code,
@@ -43,6 +43,67 @@ export async function fetchCustomerVisitHistory(customerId, phone, { includeOnli
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) throw error;
   return data || [];
+}
+
+const GLOBAL_VISIT_SELECT = `
+  ${APPOINTMENT_SELECT.trim()},
+  customer:profiles!appointments_client_id_fkey(id, full_name, email, phone)
+`;
+
+export async function fetchGlobalVisitHistory({
+  limit = 50,
+  includeOnline = true,
+  fromDate,
+  toDate,
+  cursor,
+} = {}) {
+  let query = supabase
+    .from('appointments')
+    .select(GLOBAL_VISIT_SELECT);
+
+  if (!includeOnline) {
+    query = query.or('booking_type.eq.walk_in,booking_type.is.null');
+  }
+
+  if (fromDate) query = query.gte('created_at', fromDate);
+  if (toDate) query = query.lte('created_at', toDate);
+
+  const fetchLimit = cursor ? limit + 50 : limit + 10;
+
+  const { data, error } = await query
+    .order('checked_in_at', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(fetchLimit);
+
+  if (error) throw error;
+
+  let rows = data || [];
+
+  if (cursor) {
+    rows = rows.filter((visit) => {
+      const visitAt = visit.checked_in_at || visit.scheduled_at || visit.created_at;
+      const eventTime = new Date(visitAt).getTime();
+      const cursorTime = new Date(cursor.date).getTime();
+      if (eventTime < cursorTime) return true;
+      if (eventTime > cursorTime) return false;
+      return String(visit.id) < String(cursor.id);
+    });
+  }
+
+  const page = rows.slice(0, limit);
+  const hasMore = rows.length > limit;
+  const lastVisit = page[page.length - 1];
+  const lastVisitAt = lastVisit
+    ? (lastVisit.checked_in_at || lastVisit.scheduled_at || lastVisit.created_at)
+    : null;
+
+  return {
+    rows: page,
+    hasMore,
+    nextCursor: hasMore && lastVisitAt
+      ? { date: lastVisitAt, id: lastVisit.id }
+      : null,
+  };
 }
 
 export async function fetchVisitLoyaltyPoints(customerIds) {
@@ -142,6 +203,14 @@ export async function fetchVisitReceipt(appointmentId, customerId, phone, bookin
   const payment = await fetchVisitPayment(appointmentId);
 
   return buildReceiptFromBooking(enriched, payment);
+}
+
+export function computeServingDurationMinutes(appointment) {
+  const start = appointment.start_time;
+  const end = appointment.completed_at;
+  if (!start || !end) return null;
+  const minutes = Math.round((new Date(end) - new Date(start)) / 60000);
+  return minutes > 0 ? minutes : null;
 }
 
 export function computeActualDurationMinutes(appointment) {

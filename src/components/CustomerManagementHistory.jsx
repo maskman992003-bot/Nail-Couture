@@ -79,14 +79,28 @@ export default function CustomerManagementHistory() {
       const { data: appointmentsData, error: appointmentsError } = await supabase
         .from('appointments')
         .select(`*, services:appointments_service_id_fkey!left(*), technicians:profiles!appointments_technician_id_fkey!left(*)`)
-        .order('created_at', { ascending: false });
+        .order('completed_at', { ascending: false, nullsFirst: false });
       if (appointmentsError) throw appointmentsError;
+
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('payment_transactions')
+        .select('appointment_id, customer_id, created_at')
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
+      if (paymentsError) throw paymentsError;
+
+      const checkoutByAppointment = {};
+      (paymentsData || []).forEach((payment) => {
+        if (payment.appointment_id && !checkoutByAppointment[payment.appointment_id]) {
+          checkoutByAppointment[payment.appointment_id] = payment.created_at;
+        }
+      });
 
       const customerMap = new Map();
       profilesData.forEach(profile => {
         const normalizedRole = profile.role?.toString().trim().toLowerCase() || '';
         if (normalizedRole === 'customer') {
-          customerMap.set(profile.id, { ...profile, visits: [], totalVisits: 0, totalSpent: 0, lastVisit: null });
+          customerMap.set(profile.id, { ...profile, visits: [], totalVisits: 0, totalSpent: 0, lastCheckout: null });
         }
       });
 
@@ -103,9 +117,12 @@ export default function CustomerManagementHistory() {
         const primaryServiceName = appointment.services?.name || 'Unknown Service';
         const serviceList = [primaryServiceName, ...addOnNames].filter((name, index, arr) => name && arr.indexOf(name) === index);
 
+        const checkoutAt = appointment.completed_at || checkoutByAppointment[appointment.id] || null;
+
         const visit = {
           id: appointment.id,
-          date: appointment.scheduled_at || appointment.checked_in_at,
+          date: checkoutAt || appointment.checked_in_at || appointment.scheduled_at,
+          checkoutAt,
           service: appointment.services ? { name: primaryServiceName, price: appointment.services.price, duration: appointment.services.duration_minutes } : { name: primaryServiceName, price: 0, duration: 0 },
           serviceSummary: serviceList.join(', '),
           addOns: addOnNames,
@@ -120,15 +137,16 @@ export default function CustomerManagementHistory() {
         if (appointment.status === 'completed') {
           customer.totalVisits += 1;
           customer.totalSpent += (appointment.final_price || 0);
-          const visitDate = new Date(appointment.scheduled_at || appointment.checked_in_at);
-          if (!customer.lastVisit || visitDate > new Date(customer.lastVisit)) {
-            customer.lastVisit = appointment.scheduled_at || appointment.checked_in_at;
+          if (checkoutAt) {
+            const checkoutDate = new Date(checkoutAt);
+            if (!customer.lastCheckout || checkoutDate > new Date(customer.lastCheckout)) {
+              customer.lastCheckout = checkoutAt;
+            }
           }
         }
       });
 
-      const customersArray = Array.from(customerMap.values())
-        .sort((a, b) => a.full_name.localeCompare(b.full_name));
+      const customersArray = Array.from(customerMap.values());
 
       setCustomers(customersArray);
     } catch (error) {
@@ -170,8 +188,8 @@ export default function CustomerManagementHistory() {
         break;
       case 'recent':
         sorted.sort((a, b) => {
-          const dateA = a.lastVisit ? new Date(a.lastVisit).getTime() : 0;
-          const dateB = b.lastVisit ? new Date(b.lastVisit).getTime() : 0;
+          const dateA = a.lastCheckout ? new Date(a.lastCheckout).getTime() : 0;
+          const dateB = b.lastCheckout ? new Date(b.lastCheckout).getTime() : 0;
           return dateB - dateA;
         });
         break;
@@ -251,7 +269,7 @@ export default function CustomerManagementHistory() {
                   onChange={handleSortChange}
                   className="w-full px-4 py-3 bg-input border-input border rounded-xl text-primary placeholder-text-muted focus:border-gold focus:ring-2 focus:ring-gold/20 focus:outline-none appearance-none pr-10"
                 >
-                  <option value="recent">Recent Visits</option>
+                  <option value="recent">Recent Checkout</option>
                   <option value="az">A-Z (Name)</option>
                   <option value="spend_desc">Highest Spend</option>
                   <option value="visits_desc">Most Visits</option>

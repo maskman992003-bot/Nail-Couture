@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   getCallerPhone,
@@ -6,9 +6,13 @@ import {
   fetchFloorSnapshot,
   fetchFloorTechnicians,
   fetchWeekAppointments,
+  fetchTechnicianDayPayments,
   computeQueueStats,
   computeWeekStats,
   notifyNewAssignment,
+  playAssignmentChime,
+  sumTipsFromPayments,
+  mapPaymentsByAppointment,
 } from '../utils/technicianQueue';
 import { toggleChecklistItem } from '../utils/serviceChecklist';
 import { logInventoryUsage } from '../utils/inventoryUsage';
@@ -18,12 +22,13 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
   const [floorAppointments, setFloorAppointments] = useState([]);
   const [floorTechnicians, setFloorTechnicians] = useState([]);
   const [weekAppointments, setWeekAppointments] = useState([]);
+  const [todayPayments, setTodayPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionId, setActionId] = useState(null);
   const [toast, setToast] = useState(null);
   const [newAssignmentIds, setNewAssignmentIds] = useState([]);
-  const [postComplete, setPostComplete] = useState(null);
+  const [newAssignmentBanner, setNewAssignmentBanner] = useState([]);
   const [priceConfirmAppt, setPriceConfirmAppt] = useState(null);
   const toastTimer = useRef(null);
   const knownPendingIds = useRef(new Set());
@@ -35,16 +40,49 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     toastTimer.current = setTimeout(() => setToast(null), 4000);
   }, []);
 
+  const handleFreshAssignments = useCallback((fresh) => {
+    if (fresh.length === 0) return;
+
+    setNewAssignmentIds((prev) => [...new Set([...prev, ...fresh.map((a) => a.id)])]);
+    setNewAssignmentBanner((prev) => {
+      const existing = new Set(prev.map((p) => p.id));
+      const added = fresh
+        .filter((a) => !existing.has(a.id))
+        .map((a) => ({
+          id: a.id,
+          name: a.customer?.full_name || 'Client',
+        }));
+      return [...prev, ...added];
+    });
+
+    fresh.forEach((a) => notifyNewAssignment(a));
+    playAssignmentChime();
+
+    if (fresh.length === 1) {
+      showToast(`New assignment: ${fresh[0].customer?.full_name || 'Client'}`);
+    } else {
+      const names = fresh.map((a) => a.customer?.full_name || 'Client').join(', ');
+      showToast(`${fresh.length} new assignments: ${names}`);
+    }
+
+    if (localStorage.getItem('tech_alert_autoscroll') !== 'false') {
+      requestAnimationFrame(() => {
+        document.getElementById('my-assignments')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [showToast]);
+
   const refetch = useCallback(async (silent = false) => {
     if (!technicianId) return;
     if (!silent) setRefreshing(true);
     const phone = getCallerPhone(callerPhoneFallback);
     try {
-      const [mineResult, floorResult, techResult, weekResult] = await Promise.allSettled([
+      const [mineResult, floorResult, techResult, weekResult, paymentsResult] = await Promise.allSettled([
         fetchMyQueue(technicianId, phone),
         fetchFloorSnapshot(phone),
         fetchFloorTechnicians(),
         fetchWeekAppointments(technicianId),
+        fetchTechnicianDayPayments(technicianId),
       ]);
 
       if (mineResult.status === 'fulfilled') {
@@ -56,11 +94,7 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
 
         if (initialLoadDone.current) {
           const fresh = pending.filter((a) => !knownPendingIds.current.has(a.id));
-          if (fresh.length > 0) {
-            setNewAssignmentIds((prev) => [...new Set([...prev, ...fresh.map((a) => a.id)])]);
-            fresh.forEach((a) => notifyNewAssignment(a));
-            showToast(`New assignment: ${fresh[0].customer?.full_name || 'Client'}`);
-          }
+          handleFreshAssignments(fresh);
         } else {
           initialLoadDone.current = true;
         }
@@ -75,6 +109,9 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       if (weekResult.status === 'fulfilled') {
         setWeekAppointments(weekResult.value);
       }
+      if (paymentsResult.status === 'fulfilled') {
+        setTodayPayments(paymentsResult.value);
+      }
 
       const coreFailed = mineResult.status === 'rejected' || floorResult.status === 'rejected';
       if (coreFailed) {
@@ -88,12 +125,12 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       }
     } catch (err) {
       console.error('Error fetching technician queue:', err);
-      if (!silent) showToast(err?.message || 'Failed to refresh queue', 'error');
+      if (!silent) showToast(err.message || 'Failed to refresh queue', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [technicianId, callerPhoneFallback, showToast]);
+  }, [technicianId, callerPhoneFallback, showToast, handleFreshAssignments]);
 
   const acceptAssignment = useCallback(async (appointment) => {
     setActionId(appointment.id);
@@ -105,6 +142,7 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       });
       if (error) throw error;
       setNewAssignmentIds((prev) => prev.filter((id) => id !== appointment.id));
+      setNewAssignmentBanner((prev) => prev.filter((a) => a.id !== appointment.id));
       showToast(`Started: ${appointment.customer?.full_name || 'Client'}`);
       await refetch(true);
     } catch (err) {
@@ -132,12 +170,6 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       }
 
       showToast(`Sent to checkout: ${appointment.customer?.full_name || 'Client'}`);
-      setPostComplete({
-        customerId: appointment.customer_id || appointment.customer?.id || null,
-        customerName: appointment.customer?.full_name || 'Client',
-        appointmentId: appointment.id,
-        serviceId: appointment.service_id,
-      });
       await refetch(true);
     } catch (err) {
       console.error('Error sending to checkout:', err);
@@ -165,7 +197,7 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
 
   const cancelPriceConfirm = useCallback(() => setPriceConfirmAppt(null), []);
 
-  const updateServingServices = useCallback(async (appointment, { service_id, add_ons, final_price }) => {
+  const updateServingServices = useCallback(async (appointment, { service_id, add_ons, final_price, selected_service_names }) => {
     setActionId(appointment.id);
     try {
       const phone = getCallerPhone(callerPhoneFallback);
@@ -175,6 +207,7 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
         p_service_id: service_id ?? null,
         p_add_ons: add_ons ?? null,
         p_final_price: final_price ?? null,
+        p_selected_service_names: selected_service_names ?? null,
       });
       if (error) throw error;
       showToast('Services updated');
@@ -247,6 +280,7 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       });
       if (error) throw error;
       setNewAssignmentIds((prev) => prev.filter((id) => id !== appointment.id));
+      setNewAssignmentBanner((prev) => prev.filter((a) => a.id !== appointment.id));
       showToast(`Returned to waiting: ${appointment.customer?.full_name || 'Client'}`);
       await refetch(true);
     } catch (err) {
@@ -266,6 +300,17 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
         refetch(true);
       })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'appointments',
+        filter: `technician_id=eq.${technicianId}`,
+      }, () => {
+        refetch(true);
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'payment_transactions' }, () => {
+        fetchTechnicianDayPayments(technicianId).then(setTodayPayments).catch(() => {});
+      })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
         fetchFloorTechnicians().then(setFloorTechnicians).catch(() => {});
       })
@@ -284,14 +329,25 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
 
   const stats = computeQueueStats(myAppointments);
   const weekStats = computeWeekStats(weekAppointments);
+  const tipsToday = sumTipsFromPayments(todayPayments);
+  const paymentsByAppointment = useMemo(
+    () => mapPaymentsByAppointment(todayPayments),
+    [todayPayments]
+  );
 
   const dismissNewAssignment = useCallback((id) => {
     setNewAssignmentIds((prev) => prev.filter((x) => x !== id));
+    setNewAssignmentBanner((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
-  const clearNewAssignments = useCallback(() => setNewAssignmentIds([]), []);
+  const clearNewAssignments = useCallback(() => {
+    setNewAssignmentIds([]);
+    setNewAssignmentBanner([]);
+  }, []);
 
-  const dismissPostComplete = useCallback(() => setPostComplete(null), []);
+  const scrollToAssignments = useCallback(() => {
+    document.getElementById('my-assignments')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   return {
     myAppointments,
@@ -299,19 +355,22 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     floorTechnicians,
     stats,
     weekStats,
+    tipsToday,
+    todayPayments,
+    paymentsByAppointment,
     loading,
     refreshing,
     actionId,
     toast,
     newAssignmentIds,
-    postComplete,
+    newAssignmentBanner,
     refetch,
     acceptAssignment,
     markComplete,
     dismissToast: () => setToast(null),
     dismissNewAssignment,
     clearNewAssignments,
-    dismissPostComplete,
+    scrollToAssignments,
     declineAssignment,
     updateServingServices,
     updateChecklistItem,

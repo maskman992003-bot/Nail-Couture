@@ -47,6 +47,15 @@ export function getCustomerDetailPath(role, customerId) {
   return `${getCustomersPath(role)}/${customerId}`;
 }
 
+export function getSalonActivityPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/salon-activity';
+    case 'owner': return '/owner/salon-activity';
+    case 'partner': return '/partner/salon-activity';
+    default: return '/portal';
+  }
+}
+
 export function getMySchedulePath(role) {
   switch (role) {
     case 'cashier': return '/cashier/schedule';

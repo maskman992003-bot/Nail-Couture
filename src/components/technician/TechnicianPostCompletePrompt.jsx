@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
+import { modalSelectClass } from '../AppModal';
 import { getCustomerDetailPath } from '../../utils/routes';
 import { addStaffNote } from '../../utils/staffCustomerNotes';
 import { uploadVisitPhoto } from '../../utils/staffCustomerTimeline';
@@ -125,7 +126,7 @@ export default function TechnicianPostCompletePrompt({ data, onDismiss, userRole
             <select
               value={photoType}
               onChange={(e) => setPhotoType(e.target.value)}
-              className="px-3 py-2 text-sm bg-input border border-input rounded-lg text-primary"
+              className={clsx('text-sm', modalSelectClass)}
             >
               <option value="before">Before</option>
               <option value="after">After</option>

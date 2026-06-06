@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { fetchTechnicianAppointments } from './staffSchedule';
 import { logRefreshmentUsage } from './inventoryUsage';
+import { getWorkstationStatus, WORKSTATION_ON_BREAK } from './technicianWorkstation';
 
 export function getCallerPhone(fallbackPhone) {
   try {
@@ -30,8 +31,9 @@ function isToday(dateStr) {
 export function filterMyQueueForToday(appointments) {
   return (appointments || []).filter((a) => {
     if (a.status === 'assigned_pending' || a.status === 'serving') return true;
-    if (a.status === 'completed') {
-      return isToday(a.checked_in_at) || isToday(a.start_time) || isToday(a.scheduled_at);
+    if (a.status === 'ready_for_checkout' || a.status === 'completed') {
+      return isToday(a.checked_in_at) || isToday(a.start_time) || isToday(a.scheduled_at)
+        || isToday(a.completed_at) || isToday(a.end_time);
     }
     return false;
   });
@@ -65,7 +67,7 @@ export async function fetchMyQueue(technicianId, callerPhone) {
   const { data, error } = await supabase.rpc('get_appointments', {
     caller_phone: callerPhone,
     technician_id_filter: technicianId,
-    status_filter: 'assigned_pending,serving,completed',
+    status_filter: 'assigned_pending,serving,ready_for_checkout,completed',
     order_asc: true,
   });
   if (error) throw error;
@@ -88,7 +90,7 @@ export async function fetchFloorSnapshot(callerPhone) {
   const today = new Date().toISOString().split('T')[0];
   const { data, error } = await supabase.rpc('get_appointments', {
     caller_phone: callerPhone,
-    status_filter: 'waiting,serving,assigned_pending',
+    status_filter: 'waiting,serving,assigned_pending,ready_for_checkout',
     date_from: `${today}T00:00:00`,
     order_asc: true,
   });
@@ -114,6 +116,120 @@ export function requestNotificationPermission() {
     return Promise.resolve(Notification.permission);
   }
   return Notification.requestPermission();
+}
+
+export function getTodayStartDate() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+export async function fetchTechnicianDayPayments(technicianId) {
+  if (!technicianId) return [];
+  const todayStart = getTodayStartDate().toISOString();
+  const { data, error } = await supabase
+    .from('payment_transactions')
+    .select(`
+      id,
+      appointment_id,
+      extras_amount,
+      amount,
+      final_amount,
+      created_at,
+      customer:profiles!payment_transactions_customer_id_fkey ( full_name )
+    `)
+    .eq('technician_id', technicianId)
+    .eq('status', 'completed')
+    .gte('created_at', todayStart)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.warn('Technician tips fetch failed:', error);
+    return [];
+  }
+  return data || [];
+}
+
+export function sumTipsFromPayments(payments) {
+  return (payments || []).reduce((sum, p) => {
+    const tip = Number(p.extras_amount ?? 0);
+    return sum + (Number.isFinite(tip) ? tip : 0);
+  }, 0);
+}
+
+export function mapPaymentsByAppointment(payments) {
+  const map = new Map();
+  for (const p of payments || []) {
+    if (p.appointment_id) map.set(p.appointment_id, p);
+  }
+  return map;
+}
+
+export function getTodayWorkAppointments(myAppointments) {
+  return (myAppointments || []).filter(
+    (a) => a.status === 'completed' || a.status === 'ready_for_checkout'
+  );
+}
+
+export function formatServiceDuration(startTime, endTime) {
+  if (!startTime || !endTime) return null;
+  const mins = Math.round((new Date(endTime) - new Date(startTime)) / 60000);
+  if (mins < 1) return '< 1 min';
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+export function playAssignmentChime() {
+  if (localStorage.getItem('tech_alert_sound') === 'false') return;
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.35);
+  } catch {
+    // ignore unsupported environments
+  }
+}
+
+export function buildTechnicianFloorRows(technicians, floorAppointments, currentTechnicianId) {
+  const serving = floorAppointments.filter((a) => a.status === 'serving');
+  const pending = floorAppointments.filter((a) => a.status === 'assigned_pending');
+
+  return (technicians || []).map((tech) => {
+    const isMe = tech.id === currentTechnicianId;
+    const activeCustomer = serving.find((a) => a.technician_id === tech.id);
+    const pendingCustomer = pending.find((a) => a.technician_id === tech.id);
+    const onBreak = getWorkstationStatus(tech.preferences) === WORKSTATION_ON_BREAK;
+    const isBusy = !!activeCustomer;
+    const isPending = !!pendingCustomer;
+    const client = activeCustomer || pendingCustomer;
+
+    const statusLabel = isBusy
+      ? 'Busy'
+      : onBreak
+        ? 'On Break'
+        : isPending
+          ? 'Pending'
+          : 'Available';
+
+    const statusClass = isBusy
+      ? 'bg-red-400/15 text-red-400 border-red-400/30'
+      : onBreak
+        ? 'bg-yellow-400/15 text-yellow-400 border-yellow-400/30'
+        : isPending
+          ? 'bg-blue-400/15 text-blue-400 border-blue-400/30'
+          : 'bg-green-400/15 text-green-400 border-green-400/30';
+
+    return { tech, isMe, statusLabel, statusClass, client, onBreak };
+  });
 }
 
 export function notifyNewAssignment(appointment) {
@@ -156,11 +272,6 @@ export function computeQueueStats(myAppointments) {
   const serving = myAppointments.find((a) => a.status === 'serving') || null;
   const nextUp = pending[0] || null;
 
-  const revenueToday = completed.reduce((sum, a) => {
-    const price = Number(a.final_price ?? a.services?.price ?? 0);
-    return sum + (Number.isFinite(price) ? price : 0);
-  }, 0);
-
   const durations = completed
     .filter((a) => a.start_time && (a.end_time || a.completed_at))
     .map((a) => {
@@ -181,8 +292,9 @@ export function computeQueueStats(myAppointments) {
   return {
     completedToday: completed.length,
     pendingCount: pending.length,
-    revenueToday,
     avgServiceMinutes,
+    completedAppointments: completed,
+    todayWorkAppointments: getTodayWorkAppointments(myAppointments),
     nextClient: nextUp,
     nextClientService: nextService,
     currentAppointment: serving,

@@ -13,6 +13,7 @@ import CustomerProfile from './components/CustomerProfile.jsx'
 import CustomerServices from './components/CustomerServices.jsx'
 import CustomerManagementHistory from './components/CustomerManagementHistory.jsx'
 import StaffCustomerDetail from './components/StaffCustomerDetail.jsx'
+import SalonActivity from './components/SalonActivity.jsx'
 import EditBooking from './components/EditBooking.jsx'
 import SuperAdmin from './components/SuperAdmin.jsx'
 import Admin from './components/Admin.jsx'
@@ -144,6 +145,11 @@ createRoot(document.getElementById('root')).render(
                   <StaffCustomerDetail />
                 </ProtectedRoute>
               } />
+              <Route path="/superadmin/salon-activity" element={
+                <ProtectedRoute allowedRoles={['super_admin']}>
+                  <SalonActivity />
+                </ProtectedRoute>
+              } />
             
               {/* Owner Routes */}
              <Route path="/owner" element={
@@ -202,6 +208,11 @@ createRoot(document.getElementById('root')).render(
                   <StaffCustomerDetail />
                 </ProtectedRoute>
               } />
+              <Route path="/owner/salon-activity" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <SalonActivity />
+                </ProtectedRoute>
+              } />
             
               {/* Partner Routes */}
              <Route path="/partner" element={
@@ -232,6 +243,11 @@ createRoot(document.getElementById('root')).render(
               <Route path="/partner/customers/:id" element={
                 <ProtectedRoute allowedRoles={['partner']}>
                   <StaffCustomerDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/partner/salon-activity" element={
+                <ProtectedRoute allowedRoles={['partner']}>
+                  <SalonActivity />
                 </ProtectedRoute>
               } />
               <Route path="/partner/staff" element={

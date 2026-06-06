@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
+import { modalSelectClass } from '../AppModal';
 import { getCustomerDetailPath } from '../../utils/routes';
 import { formatElapsedMinutes } from '../../utils/technicianQueue';
 import { parseProfilePreferences, labelForOption, NAIL_SHAPES, NAIL_LENGTHS, NAIL_FINISHES } from '../../utils/profilePreferences';
@@ -208,7 +209,7 @@ export default function TechnicianInChairPanel({
           <select
             value={photoType}
             onChange={(e) => setPhotoType(e.target.value)}
-            className="px-2 py-1.5 text-xs bg-input border border-input rounded-lg text-primary"
+            className={clsx('text-xs', modalSelectClass)}
           >
             <option value="before">Before</option>
             <option value="after">After</option>
