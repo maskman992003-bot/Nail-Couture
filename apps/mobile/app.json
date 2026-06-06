@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "Nail Couture",
+    "slug": "nail-couture",
+    "owner": "elgarhy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "nailcouture",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nailcouture.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Nail Couture uses your photo library to attach before/after visit photos to customer records.",
+        "NSCameraUsageDescription": "Nail Couture uses the camera to capture before/after visit photos."
+      }
+    },
+    "android": {
+      "package": "com.nailcouture.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#121212",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-dev-client",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Nail Couture to access your photos for visit documentation.",
+          "cameraPermission": "Allow Nail Couture to take photos for visit documentation."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d0f8e8c4-e1b3-4178-831b-76dbed167afe"
+      }
+    }
+  }
+}

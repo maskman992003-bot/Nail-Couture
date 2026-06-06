@@ -2,44 +2,18 @@
   "name": "nail-couture",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
-    "@supabase/supabase-js": "^2.105.4",
-    "@tailwindcss/vite": "^4.3.0",
-    "@tanstack/react-virtual": "^3.14.2",
-    "clsx": "^2.1.1",
-    "framer-motion": "^12.38.0",
-    "lucide-react": "^1.16.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "react-router-dom": "^7.15.0",
-    "react-signature-canvas": "^1.1.0-alpha.2",
-    "recharts": "^3.8.1",
-    "swiper": "^12.1.4",
-    "tailwind-merge": "^3.6.0",
-    "ws": "^8.21.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "autoprefixer": "^10.5.0",
-    "eslint": "^10.2.1",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.5.0",
-    "postcss": "^8.5.14",
-    "tailwindcss": "^4.3.0",
-    "vite": "^8.0.10"
+    "dev": "npm run dev -w @nail-couture/web",
+    "dev:web": "npm run dev -w @nail-couture/web",
+    "dev:mobile": "npm run start -w @nail-couture/mobile",
+    "build:mobile:ios": "npm run build:dev:ios -w @nail-couture/mobile",
+    "build:mobile:android": "npm run build:dev:android -w @nail-couture/mobile",
+    "build": "npm run build -w @nail-couture/web",
+    "build:web": "npm run build -w @nail-couture/web",
+    "lint": "npm run lint -w @nail-couture/web"
   }
 }
