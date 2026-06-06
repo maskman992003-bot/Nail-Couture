@@ -5,9 +5,12 @@ import {
   ScrollView,
   Text,
   View,
+  useWindowDimensions,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import { maxWidth, spacing } from '@nail-couture/shared/theme/layout.js';
+import { layout } from '../theme/layoutStyles';
 import { useThemeStyles } from '../theme/useThemeStyles';
 
 type AppModalProps = {
@@ -19,6 +22,7 @@ type AppModalProps = {
   footer?: ReactNode;
   scrollBody?: boolean;
   panelStyle?: StyleProp<ViewStyle>;
+  maxPanelWidth?: number;
 };
 
 export function AppModal({
@@ -30,11 +34,14 @@ export function AppModal({
   footer,
   scrollBody = false,
   panelStyle,
+  maxPanelWidth = maxWidth.lg,
 }: AppModalProps) {
   const { tokens } = useThemeStyles();
+  const { height: windowHeight } = useWindowDimensions();
+  const scrollMaxHeight = Math.min(windowHeight * 0.9 - spacing[8] * 2, windowHeight - spacing[8] * 2);
 
   const body = scrollBody ? (
-    <ScrollView style={{ maxHeight: 420 }}>{children}</ScrollView>
+    <ScrollView style={{ maxHeight: scrollMaxHeight }}>{children}</ScrollView>
   ) : (
     <View>{children}</View>
   );
@@ -42,23 +49,17 @@ export function AppModal({
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
-        style={{
-          flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          justifyContent: 'center',
-          padding: 16,
-        }}
+        style={[layout.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}
         onPress={onClose}
       >
         <Pressable
           style={[
+            layout.modalPanel,
             {
               backgroundColor: tokens.cardBg,
               borderColor: tokens.cardBorder,
               borderWidth: 1,
-              borderRadius: 20,
-              maxHeight: '90%',
-              overflow: 'hidden',
+              maxWidth: maxPanelWidth,
             },
             panelStyle,
           ]}
@@ -66,35 +67,34 @@ export function AppModal({
         >
           {(title || subtitle) && (
             <View
-              style={{
-                paddingHorizontal: 20,
-                paddingVertical: 16,
-                borderBottomWidth: 1,
-                borderBottomColor: tokens.borderLight,
-              }}
+              style={[
+                layout.modalHeader,
+                { borderBottomWidth: 1, borderBottomColor: tokens.borderLight },
+              ]}
             >
-              {title ? (
-                <Text style={{ color: tokens.goldStrong, fontSize: 20, fontWeight: '600' }}>
-                  {title}
-                </Text>
-              ) : null}
-              {subtitle ? (
-                <Text style={{ color: tokens.textSecondary, marginTop: 4 }}>{subtitle}</Text>
-              ) : null}
+              <View style={{ flex: 1, minWidth: 0 }}>
+                {title ? (
+                  <Text style={{ color: tokens.goldStrong, fontSize: 20, fontWeight: '600' }}>
+                    {title}
+                  </Text>
+                ) : null}
+                {subtitle ? (
+                  <Text style={{ color: tokens.textSecondary, marginTop: spacing[1], fontSize: 14 }}>
+                    {subtitle}
+                  </Text>
+                ) : null}
+              </View>
             </View>
           )}
 
-          <View style={{ padding: 20 }}>{body}</View>
+          <View style={layout.modalBody}>{body}</View>
 
           {footer ? (
             <View
-              style={{
-                padding: 16,
-                borderTopWidth: 1,
-                borderTopColor: tokens.borderLight,
-                flexDirection: 'row',
-                gap: 12,
-              }}
+              style={[
+                layout.modalFooter,
+                { borderTopWidth: 1, borderTopColor: tokens.borderLight },
+              ]}
             >
               {footer}
             </View>
@@ -133,13 +133,13 @@ export function ModalButton({
       style={{
         flex: 1,
         backgroundColor,
-        borderRadius: 12,
-        paddingVertical: 14,
+        borderRadius: spacing[3],
+        paddingVertical: spacing[3],
         alignItems: 'center',
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      <Text style={{ color: textColor, fontWeight: '500' }}>{label}</Text>
+      <Text style={{ color: textColor, fontWeight: '500', fontSize: 14 }}>{label}</Text>
     </Pressable>
   );
 }

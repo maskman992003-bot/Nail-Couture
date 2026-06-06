@@ -9,8 +9,10 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { getNavItemsForRole } from '@nail-couture/shared/navigation/navItems.js';
+import { spacing } from '@nail-couture/shared/theme/layout.js';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavBadges } from '../hooks/useNavBadges';
+import { layout } from '../theme/layoutStyles';
 import { useThemeStyles } from '../theme/useThemeStyles';
 import { NavIcon } from '../components/NavIcon';
 import { resolveScreenName } from './screenRegistry';
@@ -97,9 +99,9 @@ export function ScrollableBottomTabBar({
         onContentSizeChange={onContentSizeChange}
         contentContainerStyle={{
           alignItems: 'center',
-          paddingHorizontal: 8,
-          paddingVertical: 8,
-          gap: 4,
+          paddingHorizontal: spacing[2],
+          paddingVertical: spacing[2],
+          gap: spacing[1],
         }}
       >
         {navItems.map((item: { id: string; label: string; icon: string }) => {
@@ -134,15 +136,13 @@ export function ScrollableBottomTabBar({
               accessibilityRole="button"
               accessibilityState={isFocused ? { selected: true } : {}}
               accessibilityLabel={options?.tabBarAccessibilityLabel ?? item.label}
-              style={{
-                minWidth: 76,
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: 10,
-                paddingVertical: 8,
-                borderRadius: 14,
-                backgroundColor: isFocused ? tokens.inputBg : 'transparent',
-              }}
+              style={[
+                layout.bottomTabItem,
+                {
+                  borderRadius: spacing[2],
+                  backgroundColor: isFocused ? tokens.inputBg : 'transparent',
+                },
+              ]}
             >
               <View style={{ position: 'relative' }}>
                 <NavIcon path={item.icon} active={isFocused} />
@@ -169,8 +169,8 @@ export function ScrollableBottomTabBar({
               </View>
               <Text
                 style={{
-                  marginTop: 4,
-                  fontSize: 11,
+                  marginTop: spacing[0.5],
+                  fontSize: 8,
                   color: isFocused ? tokens.goldStrong : tokens.textSecondary,
                 }}
                 numberOfLines={1}

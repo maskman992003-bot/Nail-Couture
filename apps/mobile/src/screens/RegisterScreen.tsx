@@ -11,10 +11,13 @@ import {
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { spacing } from '@nail-couture/shared/theme/layout.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../contexts/AuthContext';
 import { DAYS, MONTHS } from '../constants/birthdayOptions';
 import { ScrollSelect } from '../components/forms/ScrollSelect';
+import { layout } from '../theme/layoutStyles';
+import { useLayout } from '../theme/useLayout';
 import { useThemeStyles } from '../theme/useThemeStyles';
 import type { RootStackParamList } from '../navigation/publicTypes';
 
@@ -29,6 +32,7 @@ export function RegisterScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'Register'>>();
   const { login } = useAuth();
   const styles = useThemeStyles();
+  const pageLayout = useLayout();
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -137,7 +141,7 @@ export function RegisterScreen() {
 
   if (successProfile) {
     return (
-      <SafeAreaView style={[styles.screen, { justifyContent: 'center', padding: 24 }]}>
+      <SafeAreaView style={[styles.screen, layout.authScreen]}>
         <View style={{ alignItems: 'center' }}>
           <View
             style={{
@@ -176,14 +180,19 @@ export function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 32 }}>
+      <ScrollView
+        contentContainerStyle={[
+          layout.authScreen,
+          { paddingBottom: pageLayout.contentBottomPadding },
+        ]}
+      >
         {navigation.canGoBack() ? (
-          <Pressable onPress={() => navigation.goBack()} style={{ marginBottom: 12 }}>
+          <Pressable onPress={() => navigation.goBack()} style={{ marginBottom: spacing[3], alignSelf: 'flex-start' }}>
             <Text style={styles.textGold}>← Back</Text>
           </Pressable>
         ) : null}
 
-        <View style={[styles.card, { padding: 24 }]}>
+        <View style={[layout.authCardWrap, styles.card, { padding: spacing[8] }]}>
           <View style={{ alignItems: 'center', marginBottom: 24 }}>
             <Image
               source={require('../../assets/NC.jpg')}
@@ -198,7 +207,7 @@ export function RegisterScreen() {
             ) : null}
           </View>
 
-          <View style={{ gap: 16 }}>
+          <View style={{ gap: spacing[4] }}>
             <FormField label="Full Name">
               <TextInput
                 value={formData.full_name}
@@ -290,7 +299,7 @@ export function RegisterScreen() {
             </Pressable>
           </View>
 
-          <Pressable onPress={() => navigation.navigate('Login')} style={{ marginTop: 24, alignItems: 'center' }}>
+          <Pressable onPress={() => navigation.navigate('Login')} style={{ marginTop: spacing[6], alignItems: 'center' }}>
             <Text style={styles.textGold}>← Back to Login</Text>
           </Pressable>
         </View>
