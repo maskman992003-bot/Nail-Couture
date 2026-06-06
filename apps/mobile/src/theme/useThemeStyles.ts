@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
+import type { DimensionValue } from 'react-native';
 import { getThemeTokens } from '@nail-couture/shared/theme/tokens.js';
+import { borderRadius, spacing } from '@nail-couture/shared/theme/layout.js';
 import { useTheme } from '../contexts/ThemeContext';
+import { flex, layout } from './layoutStyles';
 
 export function useThemeStyles() {
   const { theme } = useTheme();
@@ -10,15 +13,19 @@ export function useThemeStyles() {
     return {
       theme,
       tokens,
+      spacing,
+      flex,
+      layout,
       screen: {
         flex: 1,
+        width: '100%' as DimensionValue,
         backgroundColor: tokens.bgPrimary,
       },
       card: {
         backgroundColor: tokens.cardBg,
         borderColor: tokens.cardBorder,
         borderWidth: 1,
-        borderRadius: 16,
+        borderRadius: borderRadius['2xl'],
       },
       textPrimary: { color: tokens.textPrimary },
       textSecondary: { color: tokens.textSecondary },

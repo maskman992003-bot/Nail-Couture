@@ -1,5 +1,7 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, type DimensionValue } from 'react-native';
+import { spacing } from '@nail-couture/shared/theme/layout.js';
 import { DAY_LABELS, toDateStr } from '@nail-couture/shared/utils/scheduleUtils.js';
+import { useLayout } from '../../../theme/useLayout';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import { APPOINTMENT_STATUS_COLORS } from './constants';
 import { ShiftChip, type ShiftRecord } from './ShiftChip';
@@ -37,9 +39,21 @@ export function WeekGrid({
   todayStr,
 }: WeekGridProps) {
   const { tokens } = useThemeStyles();
+  const layout = useLayout();
+  const columns = layout.gridColumns({ base: 1, md: 7 });
+  const isRowLayout = columns > 1;
+  const columnGap = spacing[4];
+  const itemBasis = `${100 / columns}%` as DimensionValue;
 
   return (
-    <View style={{ gap: 12 }}>
+    <View
+      style={{
+        flexDirection: isRowLayout ? 'row' : 'column',
+        flexWrap: isRowLayout ? 'wrap' : 'nowrap',
+        marginHorizontal: isRowLayout ? -columnGap / 2 : 0,
+        gap: isRowLayout ? 0 : columnGap,
+      }}
+    >
       {weekDates.map((dateObj) => {
         const dateIso = toDateStr(dateObj);
         const isToday = dateIso === todayStr;
@@ -58,18 +72,26 @@ export function WeekGrid({
             key={dateIso}
             onPress={() => onDayClick(dateObj, dateIso)}
             style={{
-              minHeight: 120,
-              backgroundColor: isToday || isSelected ? `${tokens.goldStrong}0A` : tokens.bgSecondary,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: isToday
-                ? `${tokens.goldStrong}66`
-                : isSelected
-                  ? tokens.goldStrong
-                  : tokens.borderLight,
-              padding: 12,
+              width: isRowLayout ? itemBasis : ('100%' as DimensionValue),
+              paddingHorizontal: isRowLayout ? columnGap / 2 : 0,
+              marginBottom: isRowLayout ? columnGap : 0,
             }}
           >
+            <View
+              style={{
+                flex: 1,
+                minHeight: layout.isMdUp ? 220 : 140,
+                backgroundColor: isToday || isSelected ? `${tokens.goldStrong}0A` : tokens.bgSecondary,
+                borderRadius: spacing[3],
+                borderWidth: 1,
+                borderColor: isToday
+                  ? `${tokens.goldStrong}66`
+                  : isSelected
+                    ? tokens.goldStrong
+                    : tokens.borderLight,
+                padding: spacing[3],
+              }}
+            >
             <View
               style={{
                 flexDirection: 'row',
@@ -198,6 +220,7 @@ export function WeekGrid({
                 No shifts
               </Text>
             ) : null}
+            </View>
           </Pressable>
         );
       })}

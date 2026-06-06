@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import type { NewAssignmentBannerItem } from './types';
 
@@ -50,8 +51,8 @@ export function TechnicianNewAssignmentBanner({
             View assignments
           </Text>
         </Pressable>
-        <Pressable onPress={onDismissAll} hitSlop={8} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-          <Text style={{ color: '#121212', fontSize: 22, opacity: 0.7 }}>×</Text>
+        <Pressable onPress={onDismissAll} hitSlop={8} style={{ paddingHorizontal: 12, paddingVertical: 8 }} accessibilityLabel="Dismiss">
+          <Icon name="close" size={22} color="#121212" style={{ opacity: 0.7 }} />
         </Pressable>
       </View>
     </View>

@@ -6,6 +6,7 @@ import {
   getChecklistProgress,
   checklistCompletionCount,
 } from '@nail-couture/shared/utils/serviceChecklist.js';
+import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import type { TechnicianAppointment } from './types';
 
@@ -117,7 +118,7 @@ export function TechnicianServiceChecklist({
                   justifyContent: 'center',
                 }}
               >
-                {checked ? <Text style={{ color: '#121212', fontSize: 12, fontWeight: '700' }}>✓</Text> : null}
+                {checked ? <Icon name="check" size={12} color="#121212" strokeWidth={3} /> : null}
               </View>
               <Text
                 style={[

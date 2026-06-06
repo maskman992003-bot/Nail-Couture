@@ -1,6 +1,7 @@
 import type { ReactNode, RefObject } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLayout } from '../../theme/useLayout';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import { PublicNavbar } from './PublicNavbar';
 
@@ -18,12 +19,13 @@ export function PublicScreenLayout({
   scrollRef,
 }: PublicScreenLayoutProps) {
   const styles = useThemeStyles();
+  const layout = useLayout();
 
   const content = scroll ? (
     <ScrollView
       ref={scrollRef}
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingBottom: 32 }}
+      contentContainerStyle={layout.pageContent}
       showsVerticalScrollIndicator={false}
     >
       {children}

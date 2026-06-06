@@ -1,11 +1,13 @@
 import { useRef } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { spacing } from '@nail-couture/shared/theme/layout.js';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags.js';
 import { BookingWizard } from '../../components/BookingWizard';
 import { PublicScreenLayout } from '../../components/public/PublicScreenLayout';
+import { useLayout } from '../../theme/useLayout';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import type { PublicTabParamList, RootStackParamList } from '../../navigation/publicTypes';
 
@@ -56,7 +58,10 @@ function HeroButton({
 
 export function HomeScreen({ navigation }: HomeScreenProps) {
   const styles = useThemeStyles();
+  const layout = useLayout();
+  const { height: windowHeight } = useWindowDimensions();
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const heroMinHeight = Math.round(windowHeight * 0.7);
   const scrollRef = useRef<import('react-native').ScrollView>(null);
   const bookingOffsetRef = useRef(0);
 
@@ -79,7 +84,16 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       scrollRef={scrollRef}
       onNavigateTab={(tab) => navigation.navigate(tab)}
     >
-      <View style={{ position: 'relative', minHeight: 520, paddingHorizontal: 20, paddingTop: 24 }}>
+      <View
+        style={{
+          position: 'relative',
+          minHeight: heroMinHeight,
+          paddingHorizontal: layout.horizontalPadding,
+          paddingTop: spacing[6],
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Image
           source={require('../../../assets/NC-watermark.png')}
           style={{
@@ -138,7 +152,17 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           non-toxic products, and artisans trained in the finest traditions of nail couture.
         </Text>
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 32, justifyContent: 'center' }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: spacing[4],
+            marginTop: spacing[8],
+            justifyContent: 'center',
+            width: '100%',
+            maxWidth: 896,
+          }}
+        >
           <HeroButton label="LOOKBOOK" onPress={() => navigateTab('Lookbook')} />
           <HeroButton
             label="CHECK IN"
@@ -149,7 +173,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: 20, paddingTop: 8, gap: 12 }}>
+      <View style={{ paddingHorizontal: layout.horizontalPadding, paddingTop: spacing[2], gap: spacing[3] }}>
         <Text style={[styles.textGold, { fontSize: 13, letterSpacing: 2, fontWeight: '600' }]}>
           EXPLORE
         </Text>
@@ -171,7 +195,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
       {CUSTOMER_ONLINE_BOOKING ? (
         <View
-          style={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 32 }}
+          style={{
+            paddingHorizontal: layout.horizontalPadding,
+            paddingTop: spacing[6],
+            paddingBottom: layout.contentBottomPadding,
+          }}
           onLayout={(event) => {
             bookingOffsetRef.current = event.nativeEvent.layout.y;
           }}

@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { ScrollSelect } from '../../components/forms/ScrollSelect';
+import { Icon } from '../../components/icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type BookingRecord = {
@@ -288,11 +289,13 @@ export function AdminBookingsScreen() {
       subtitle="Manage appointments"
       headerRight={
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Pressable onPress={exportCSV} style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: styles.tokens.borderLight }}>
+          <Pressable onPress={exportCSV} style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: styles.tokens.borderLight, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon name="download" size={16} color={styles.tokens.goldStrong} />
             <Text style={styles.textGold}>Export</Text>
           </Pressable>
-          <Pressable onPress={() => setShowCreateModal(true)} style={{ backgroundColor: styles.tokens.goldStrong, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 }}>
-            <Text style={{ color: '#121212', fontWeight: '600' }}>+ New</Text>
+          <Pressable onPress={() => setShowCreateModal(true)} style={{ backgroundColor: styles.tokens.goldStrong, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon name="plus" size={16} color="#121212" />
+            <Text style={{ color: '#121212', fontWeight: '600' }}>New</Text>
           </Pressable>
         </View>
       }
@@ -415,7 +418,8 @@ export function AdminBookingsScreen() {
                     <Text style={styles.textGold}>Reactivate</Text>
                   </Pressable>
                 )}
-                <Pressable onPress={() => setDeleteTarget(booking)}>
+                <Pressable onPress={() => setDeleteTarget(booking)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Icon name="trash" size={14} color="#f87171" />
                   <Text style={{ color: '#f87171' }}>Delete</Text>
                 </Pressable>
               </View>

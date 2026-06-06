@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   Text,
   TextInput,
@@ -9,8 +10,11 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { spacing } from '@nail-couture/shared/theme/layout.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../contexts/AuthContext';
+import { Icon } from '../components/icons/Icon';
+import { layout } from '../theme/layoutStyles';
 import { useThemeStyles } from '../theme/useThemeStyles';
 import { AppModal, ModalButton } from '../components/AppModal';
 import type { RootStackParamList } from '../navigation/publicTypes';
@@ -124,23 +128,31 @@ export function LoginScreen() {
   const pinKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'delete'] as const;
 
   return (
-    <SafeAreaView style={[styles.screen, { padding: 20 }]}>
+    <SafeAreaView style={[styles.screen, layout.authScreen]}>
       {navigation.canGoBack() ? (
-        <Pressable onPress={() => navigation.goBack()} style={{ marginBottom: 12, alignSelf: 'flex-start' }}>
-          <Text style={styles.textGold}>← Back</Text>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={{ marginBottom: spacing[3], alignSelf: 'flex-start', width: '100%', maxWidth: layout.authCardWrap.maxWidth, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+        >
+          <Icon name="chevronLeft" size={18} color={styles.tokens.goldStrong} />
+          <Text style={styles.textGold}>Back</Text>
         </Pressable>
       ) : null}
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-      <View style={[styles.card, { padding: 24 }]}>
-        <Text style={[styles.textGold, { fontSize: 24, textAlign: 'center', marginBottom: 8 }]}>
-          Nail Couture
-        </Text>
-        <Text style={[styles.textSecondary, { textAlign: 'center', marginBottom: 24 }]}>
-          Client Portal Login
-        </Text>
+      <View style={[layout.authCardWrap, { flex: 1, justifyContent: 'center' }]}>
+      <View style={[styles.card, { padding: spacing[8] }]}>
+        <View style={{ alignItems: 'center', marginBottom: spacing[8] }}>
+          <Image
+            source={require('../../assets/NC.jpg')}
+            style={{ height: 112, width: 200 }}
+            resizeMode="contain"
+          />
+          <Text style={[styles.textSecondary, { textAlign: 'center', marginTop: spacing[2] }]}>
+            Client Portal Login
+          </Text>
+        </View>
 
-        <Text style={[styles.textSecondary, { fontSize: 12, letterSpacing: 1, marginBottom: 8 }]}>
-          PHONE NUMBER
+        <Text style={[styles.textSecondary, { fontSize: 12, letterSpacing: 1, marginBottom: spacing[2], textTransform: 'uppercase' }]}>
+          Phone Number
         </Text>
         <TextInput
           value={phone}
@@ -153,12 +165,12 @@ export function LoginScreen() {
           keyboardType="phone-pad"
           style={styles.input}
         />
-        {error ? <Text style={{ color: '#f87171', marginTop: 8 }}>{error}</Text> : null}
+        {error ? <Text style={{ color: '#f87171', marginTop: spacing[2], fontSize: 14 }}>{error}</Text> : null}
 
         <Pressable
           onPress={handleSubmit}
           disabled={loading}
-          style={[styles.buttonPrimary, { marginTop: 24, opacity: loading ? 0.6 : 1 }]}
+          style={[styles.buttonPrimary, { marginTop: spacing[6], opacity: loading ? 0.6 : 1 }]}
         >
           {loading ? (
             <ActivityIndicator color="#121212" />
@@ -169,7 +181,7 @@ export function LoginScreen() {
 
         <Pressable
           onPress={() => navigation.navigate('Register')}
-          style={{ marginTop: 20, alignItems: 'center' }}
+          style={{ marginTop: spacing[6], alignItems: 'center' }}
         >
           <Text style={styles.textSecondary}>
             New here? <Text style={styles.textGold}>Create an account</Text>
@@ -187,6 +199,7 @@ export function LoginScreen() {
         }}
         title={profile?.full_name ? `Hello, ${String(profile.full_name).split(' ')[0]}` : 'Enter PIN'}
         subtitle="Enter your 4-digit PIN"
+        maxPanelWidth={384}
         footer={
           <ModalButton
             label="Cancel"
@@ -199,14 +212,14 @@ export function LoginScreen() {
           />
         }
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing[5], marginBottom: spacing[8] }}>
           {[1, 2, 3, 4].map((index) => (
             <View
               key={index}
               style={{
-                width: 12,
-                height: 12,
-                borderRadius: 6,
+                width: 14,
+                height: 14,
+                borderRadius: 7,
                 backgroundColor: pinInput[index - 1] ? styles.tokens.goldStrong : styles.tokens.inputBg,
               }}
             />
@@ -215,19 +228,28 @@ export function LoginScreen() {
         {pinError ? <Text style={{ color: '#f87171', textAlign: 'center', marginBottom: 12 }}>{pinError}</Text> : null}
         {pinLoading ? <ActivityIndicator color={styles.tokens.goldStrong} style={{ marginBottom: 12 }} /> : null}
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: spacing[6],
+            maxWidth: 280,
+            alignSelf: 'center',
+          }}
+        >
           {pinKeys.map((key, index) => {
             if (key === '') {
-              return <View key={`spacer-${index}`} style={{ width: 72, height: 56 }} />;
+              return <View key={`spacer-${index}`} style={{ width: '30%', height: spacing[16] }} />;
             }
             if (key === 'delete') {
               return (
                 <Pressable
                   key={`delete-${index}`}
                   onPress={handlePinBackspace}
-                  style={{ width: 72, height: 56, alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: '30%', height: spacing[16], alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <Text style={styles.textSecondary}>Del</Text>
+                  <Icon name="backspace" size={24} color={styles.tokens.textSecondary} />
                 </Pressable>
               );
             }
@@ -236,15 +258,15 @@ export function LoginScreen() {
                 key={`digit-${key}-${index}`}
                 onPress={() => handlePinDigit(key)}
                 style={{
-                  width: 72,
-                  height: 56,
-                  borderRadius: 28,
+                  width: '30%',
+                  height: spacing[16],
+                  borderRadius: spacing[16] / 2,
                   alignItems: 'center',
                   justifyContent: 'center',
                   backgroundColor: styles.tokens.inputBg,
                 }}
               >
-                <Text style={[styles.textPrimary, { fontSize: 22 }]}>{key}</Text>
+                <Text style={[styles.textPrimary, { fontSize: 24, fontWeight: '300' }]}>{key}</Text>
               </Pressable>
             );
           })}

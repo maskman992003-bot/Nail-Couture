@@ -15,6 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { LobbyEditModal } from '../../components/admin/LobbyEditModal';
+import { Icon } from '../../components/icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type AppointmentRecord = {
@@ -287,7 +288,7 @@ export function AdminLobbyScreen() {
               <Text style={styles.textSecondary}>Edit</Text>
             </Pressable>
             <Pressable onPress={() => setCancelConfirm(appt)}>
-              <Text style={{ color: '#f87171' }}>✕</Text>
+              <Icon name="close" size={18} color="#f87171" />
             </Pressable>
           </View>
         </View>

@@ -9,6 +9,7 @@ import {
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { PublicScreenLayout } from '../../components/public/PublicScreenLayout';
 import { ServiceCategoryBar } from '../../components/public/ServiceCategoryBar';
+import { Icon } from '../../components/icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import type { PublicTabParamList } from '../../navigation/publicTypes';
 
@@ -129,7 +130,11 @@ export function ServicesScreen({ navigation }: ServicesScreenProps) {
                       </Text>
                       <Text style={styles.textSecondary}>({categoryServices.length})</Text>
                     </View>
-                    <Text style={styles.textGold}>{isOpen ? '−' : '+'}</Text>
+                    <Icon
+                      name={isOpen ? 'chevronUp' : 'chevronDown'}
+                      size={18}
+                      color={styles.tokens.goldStrong}
+                    />
                   </Pressable>
 
                   {isOpen ? (

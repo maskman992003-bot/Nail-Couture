@@ -9,6 +9,7 @@ import {
 } from '@nail-couture/shared/utils/profilePreferences.js';
 import { ScrollSelect } from '../../forms/ScrollSelect';
 import type { SelectOption } from '../../../constants/birthdayOptions';
+import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import type { TechnicianAppointment } from './types';
 
@@ -176,7 +177,11 @@ export function TechnicianQueue({
                       </Text>
                     ) : null}
                   </View>
-                  <Text style={styles.textSecondary}>{isExpanded ? '▲' : '▼'}</Text>
+                  <Icon
+                    name={isExpanded ? 'chevronUp' : 'chevronDown'}
+                    size={16}
+                    color={styles.tokens.textSecondary}
+                  />
                 </View>
 
                 {appt.checked_in_at ? (

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { ScrollSelect } from './forms/ScrollSelect';
+import { Icon } from './icons/Icon';
 import { useThemeStyles } from '../theme/useThemeStyles';
 
 const servicesData = [
@@ -192,13 +193,13 @@ function BookingCalendar({
     <View style={[styles.card, { padding: 12 }]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <Pressable onPress={() => canGoPrev() && setCurrentMonth(new Date(year, month - 1, 1))} disabled={!canGoPrev()}>
-          <Text style={[styles.textGold, { opacity: canGoPrev() ? 1 : 0.3 }]}>‹</Text>
+          <Icon name="chevronLeft" size={20} color={styles.tokens.goldStrong} style={{ opacity: canGoPrev() ? 1 : 0.3 }} />
         </Pressable>
         <Text style={[styles.textPrimary, { fontWeight: '600' }]}>
           {MONTH_NAMES[month]} {year}
         </Text>
         <Pressable onPress={() => setCurrentMonth(new Date(year, month + 1, 1))}>
-          <Text style={styles.textGold}>›</Text>
+          <Icon name="chevronRight" size={20} color={styles.tokens.goldStrong} />
         </Pressable>
       </View>
 
@@ -667,7 +668,7 @@ export function BookingWizard() {
                 justifyContent: 'center',
               }}
             >
-              {formData.agreed ? <Text style={{ color: '#121212', fontSize: 12 }}>✓</Text> : null}
+              {formData.agreed ? <Icon name="check" size={12} color="#121212" strokeWidth={3} /> : null}
             </View>
             <Text style={[styles.textSecondary, { flex: 1, fontSize: 13 }]}>
               I agree to the 24-hour cancellation policy
@@ -705,7 +706,7 @@ export function BookingWizard() {
 
       {step === 4 && (
         <View style={[styles.card, { padding: 24, alignItems: 'center' }]}>
-          <Text style={[styles.textGold, { fontSize: 48, marginBottom: 12 }]}>✓</Text>
+          <Icon name="check" size={48} color={styles.tokens.goldStrong} strokeWidth={2} style={{ marginBottom: 12 }} />
           <Text style={[styles.textPrimary, { fontSize: 22, fontWeight: '600', textAlign: 'center' }]}>
             Booking Confirmed!
           </Text>
