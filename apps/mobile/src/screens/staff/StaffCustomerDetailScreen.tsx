@@ -49,6 +49,7 @@ import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { ScrollSelect } from '../../components/forms/ScrollSelect';
 import { TimelineEventRow, formatTimelineDate } from '../../components/timeline/TimelineEventRow';
 import { AppModal, ModalButton } from '../../components/AppModal';
+import { Icon } from '../../components/icons/Icon';
 import { APPOINTMENT_STATUS_COLORS, APPOINTMENT_STATUS_LABELS, TIER_COLORS } from '../../constants/customerConstants';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import { pickAndUploadVisitPhoto } from '../../utils/visitPhotoUpload';
@@ -607,8 +608,9 @@ export function StaffCustomerDetailScreen() {
         ) : undefined
       }
     >
-      <Pressable onPress={() => navigation.goBack()} style={{ marginBottom: 12 }}>
-        <Text style={styles.textSecondary}>← Back to customers</Text>
+      <Pressable onPress={() => navigation.goBack()} style={{ marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Icon name="chevronLeft" size={16} color={styles.tokens.textSecondary} />
+        <Text style={styles.textSecondary}>Back to customers</Text>
       </Pressable>
 
       <View style={[styles.card, { padding: 16, marginBottom: 12 }]}>
@@ -919,7 +921,11 @@ export function StaffCustomerDetailScreen() {
                               {APPOINTMENT_STATUS_LABELS[visit.status] || visit.status}
                             </Text>
                           </View>
-                          <Text style={styles.textSecondary}>{isExpanded ? '▲' : '▼'}</Text>
+                          <Icon
+                            name={isExpanded ? 'chevronUp' : 'chevronDown'}
+                            size={16}
+                            color={styles.tokens.textSecondary}
+                          />
                         </View>
                       </View>
                     </Pressable>
@@ -1191,7 +1197,7 @@ export function StaffCustomerDetailScreen() {
                           opacity: photoDeletingId === photoId ? 0.5 : 1,
                         }}
                       >
-                        <Text style={{ color: '#f87171', fontSize: 12 }}>✕</Text>
+                        <Icon name="close" size={14} color="#f87171" />
                       </Pressable>
                     ) : null}
                     <View style={{ padding: 8 }}>

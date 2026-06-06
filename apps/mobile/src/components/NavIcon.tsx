@@ -1,4 +1,4 @@
-import Svg, { Path } from 'react-native-svg';
+import { Icon } from './icons/Icon';
 import { useThemeStyles } from '../theme/useThemeStyles';
 
 type NavIconProps = {
@@ -9,17 +9,12 @@ type NavIconProps = {
 
 export function NavIcon({ path, size = 20, active = false }: NavIconProps) {
   const { tokens } = useThemeStyles();
-  const color = active ? tokens.goldStrong : tokens.textSecondary;
 
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d={path}
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <Icon
+      path={path}
+      size={size}
+      color={active ? tokens.goldStrong : tokens.textSecondary}
+    />
   );
 }

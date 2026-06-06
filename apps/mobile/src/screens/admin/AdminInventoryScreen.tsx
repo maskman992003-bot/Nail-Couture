@@ -9,6 +9,7 @@ import {
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
+import { Icon } from '../../components/icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type InventoryItem = {
@@ -213,7 +214,7 @@ export function AdminInventoryScreen() {
                   disabled={item.quantity === 0 || adjustingId === item.id}
                   style={{ width: 36, height: 36, borderRadius: 8, borderWidth: 1, borderColor: styles.tokens.borderLight, alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <Text style={styles.textPrimary}>−</Text>
+                  <Icon name="minus" size={18} color={styles.tokens.textPrimary} />
                 </Pressable>
                 <TextInput
                   value={qtyValue}
@@ -236,7 +237,7 @@ export function AdminInventoryScreen() {
                   disabled={adjustingId === item.id}
                   style={{ width: 36, height: 36, borderRadius: 8, borderWidth: 1, borderColor: styles.tokens.borderLight, alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <Text style={styles.textPrimary}>+</Text>
+                  <Icon name="plus" size={18} color={styles.tokens.textPrimary} />
                 </Pressable>
               </View>
             </View>

@@ -1,6 +1,7 @@
 import { Pressable, Switch, Text, View } from 'react-native';
 import { getMonthLabel, ROLE_LABELS } from '@nail-couture/shared/utils/scheduleUtils.js';
 import { ScrollSelect } from '../../forms/ScrollSelect';
+import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import type { StaffMember } from './ScheduleTeamPicker';
 
@@ -76,7 +77,7 @@ export function BulkApplyPanel({
             borderColor: styles.tokens.borderLight,
           }}
         >
-          <Text style={{ color: styles.tokens.textSecondary, fontSize: 16 }}>‹</Text>
+          <Icon name="chevronLeft" size={20} color={styles.tokens.textSecondary} />
         </Pressable>
         <Text style={[styles.textPrimary, { fontSize: 16, fontWeight: '600', minWidth: 140, textAlign: 'center' }]}>
           {getMonthLabel(viewYear, viewMonth)}
@@ -90,7 +91,7 @@ export function BulkApplyPanel({
             borderColor: styles.tokens.borderLight,
           }}
         >
-          <Text style={{ color: styles.tokens.textSecondary, fontSize: 16 }}>›</Text>
+          <Icon name="chevronRight" size={20} color={styles.tokens.textSecondary} />
         </Pressable>
         {!isCurrentMonth ? (
           <Pressable

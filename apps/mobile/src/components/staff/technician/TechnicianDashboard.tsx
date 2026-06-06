@@ -7,6 +7,7 @@ import {
   setWorkstationStatus,
 } from '@nail-couture/shared/utils/technicianWorkstation.js';
 import { AppModal, ModalButton } from '../../AppModal';
+import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import { TechnicianQuickLinks } from './TechnicianQuickLinks';
 import { TechnicianStats } from './TechnicianStats';
@@ -157,10 +158,13 @@ export function TechnicianDashboard({
           >
             {toast.message}
           </Text>
-          <Pressable onPress={dismissToast} hitSlop={8}>
-            <Text style={{ color: toast.type === 'error' ? '#fff' : '#121212', fontSize: 20, opacity: 0.7 }}>
-              ×
-            </Text>
+          <Pressable onPress={dismissToast} hitSlop={8} accessibilityLabel="Dismiss">
+            <Icon
+              name="close"
+              size={20}
+              color={toast.type === 'error' ? '#fff' : '#121212'}
+              style={{ opacity: 0.7 }}
+            />
           </Pressable>
         </View>
       ) : null}

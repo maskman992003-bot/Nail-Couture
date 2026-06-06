@@ -7,6 +7,7 @@ import {
   buildServiceUpdatePayload,
 } from '@nail-couture/shared/utils/appointmentServices.js';
 import { AppModal, ModalButton } from '../../AppModal';
+import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import type { TechnicianAppointment, ServiceUpdatePayload } from './types';
 
@@ -115,7 +116,7 @@ export function TechnicianServiceEditor({
           justifyContent: 'center',
         }}
       >
-        {checked ? <Text style={{ color: '#121212', fontSize: 12, fontWeight: '700' }}>✓</Text> : null}
+        {checked ? <Icon name="check" size={12} color="#121212" strokeWidth={3} /> : null}
       </View>
       <Text style={[styles.textPrimary, { flex: 1, fontSize: 14 }]}>{label}</Text>
       <Text style={{ color: '#4ade80', fontSize: 14 }}>{priceLabel}</Text>

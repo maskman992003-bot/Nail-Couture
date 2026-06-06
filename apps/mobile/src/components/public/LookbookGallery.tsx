@@ -9,6 +9,7 @@ import {
   type ListRenderItem,
 } from 'react-native';
 import { lookbookCategories, lookbookData, type LookbookItem } from '../../constants/lookbookData';
+import { Icon } from '../icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import { AppModal, ModalButton } from '../AppModal';
 
@@ -46,6 +47,21 @@ export function LookbookGallery({ onContactPress }: LookbookGalleryProps) {
       }}
     >
       <Image source={item.image} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+      <View
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: 12,
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: `${styles.tokens.goldStrong}33`,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon name="zoomIn" size={20} color={styles.tokens.goldStrong} />
+      </View>
       <View
         style={{
           position: 'absolute',

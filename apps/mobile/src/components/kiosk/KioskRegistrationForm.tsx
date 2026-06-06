@@ -21,6 +21,7 @@ import {
   type ServiceRecord,
   type ServiceSelectionPayload,
 } from './KioskServiceSelection';
+import { Icon } from '../icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type KioskRegistrationFormProps = {
@@ -162,8 +163,9 @@ export function KioskRegistrationForm({
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 32 }}>
-        <Pressable onPress={onClose} style={{ alignSelf: 'flex-end', marginBottom: 8 }}>
-          <Text style={styles.textGold}>✕ Close</Text>
+        <Pressable onPress={onClose} style={{ alignSelf: 'flex-end', marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Icon name="close" size={20} color={styles.tokens.goldStrong} />
+          <Text style={styles.textGold}>Close</Text>
         </Pressable>
 
         <View style={{ alignItems: 'center', marginBottom: 24 }}>

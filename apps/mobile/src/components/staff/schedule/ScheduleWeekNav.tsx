@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 
 type ScheduleWeekNavProps = {
@@ -46,8 +47,8 @@ export function ScheduleWeekNav({
           padding: 2,
         }}
       >
-        <Pressable onPress={onPrev} style={{ padding: 8 }}>
-          <Text style={{ color: tokens.textSecondary, fontSize: 16 }}>‹</Text>
+        <Pressable onPress={onPrev} style={{ padding: 8 }} accessibilityLabel="Previous week">
+          <Icon name="chevronLeft" size={20} color={tokens.textSecondary} />
         </Pressable>
         <Text
           style={{
@@ -61,8 +62,8 @@ export function ScheduleWeekNav({
         >
           {label}
         </Text>
-        <Pressable onPress={onNext} style={{ padding: 8 }}>
-          <Text style={{ color: tokens.textSecondary, fontSize: 16 }}>›</Text>
+        <Pressable onPress={onNext} style={{ padding: 8 }} accessibilityLabel="Next week">
+          <Icon name="chevronRight" size={20} color={tokens.textSecondary} />
         </Pressable>
       </View>
     </View>

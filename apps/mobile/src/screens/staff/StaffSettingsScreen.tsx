@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
+import { Icon } from '../../components/icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type ProfileRecord = {
@@ -211,7 +212,11 @@ export function StaffSettingsScreen() {
             }}
             style={{ width: 72, height: 52, borderRadius: 12, backgroundColor: styles.tokens.cardBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: styles.tokens.borderLight }}
           >
-            <Text style={[styles.textPrimary, { fontSize: 20 }]}>{key === 'del' ? '⌫' : key}</Text>
+            {key === 'del' ? (
+              <Icon name="backspace" size={22} color={styles.tokens.textPrimary} />
+            ) : (
+              <Text style={[styles.textPrimary, { fontSize: 20 }]}>{key}</Text>
+            )}
           </Pressable>
         ))}
       </View>

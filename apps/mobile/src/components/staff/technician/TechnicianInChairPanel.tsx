@@ -16,6 +16,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { WaiverModal } from '../../kiosk/WaiverModal';
 import { ScrollSelect } from '../../forms/ScrollSelect';
 import { pickAndUploadVisitPhoto } from '../../../utils/visitPhotoUpload';
+import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import { TechnicianServiceEditor } from './TechnicianServiceEditor';
 import { TechnicianServiceChecklist } from './TechnicianServiceChecklist';
@@ -437,7 +438,11 @@ export function TechnicianInChairPanel({
         }}
       >
         <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Client brief</Text>
-        <Text style={styles.textSecondary}>{briefOpen ? '▲' : '▼'}</Text>
+        <Icon
+          name={briefOpen ? 'chevronUp' : 'chevronDown'}
+          size={16}
+          color={styles.tokens.textSecondary}
+        />
       </Pressable>
       {briefOpen ? <View style={{ marginTop: 12 }}>{clientBrief}</View> : null}
 

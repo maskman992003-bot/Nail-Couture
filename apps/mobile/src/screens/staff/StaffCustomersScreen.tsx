@@ -13,6 +13,7 @@ import { canAccessStaffCrm } from '@nail-couture/shared/utils/staffCustomerAcces
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { ScrollSelect } from '../../components/forms/ScrollSelect';
+import { Icon } from '../../components/icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import type { CustomersStackParamList } from '../../navigation/staffTypes';
 
@@ -459,7 +460,10 @@ export function StaffCustomersScreen() {
             disabled={currentPage === 1}
             style={{ opacity: currentPage === 1 ? 0.3 : 1, padding: 8 }}
           >
-            <Text style={styles.textPrimary}>← Previous</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon name="chevronLeft" size={16} color={styles.tokens.textPrimary} />
+              <Text style={styles.textPrimary}>Previous</Text>
+            </View>
           </Pressable>
           <Text style={[styles.textSecondary, { fontSize: 12 }]}>
             Page {currentPage} of {totalPages}
@@ -469,7 +473,10 @@ export function StaffCustomersScreen() {
             disabled={currentPage === totalPages}
             style={{ opacity: currentPage === totalPages ? 0.3 : 1, padding: 8 }}
           >
-            <Text style={styles.textPrimary}>Next →</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.textPrimary}>Next</Text>
+              <Icon name="chevronRight" size={16} color={styles.tokens.textPrimary} />
+            </View>
           </Pressable>
         </View>
       ) : null}

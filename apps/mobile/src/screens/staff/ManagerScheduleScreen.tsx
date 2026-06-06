@@ -42,6 +42,7 @@ import { WeekGrid } from '../../components/staff/schedule/WeekGrid';
 import { WeeklyPatternBuilder } from '../../components/staff/schedule/WeeklyPatternBuilder';
 import type { ShiftRecord } from '../../components/staff/schedule/ShiftChip';
 import type { AppointmentRecord } from '../../components/staff/schedule/WeekGrid';
+import { Icon } from '../../components/icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type ShiftRow = ShiftRecord & { employee_id: string; shift_date: string };
@@ -592,14 +593,14 @@ export function ManagerScheduleView() {
                   />
                   {calendarView === 'month' ? (
                     <>
-                      <Pressable onPress={goPrevMonth} style={{ padding: 8 }}>
-                        <Text style={{ color: styles.tokens.textSecondary, fontSize: 18 }}>‹</Text>
+                      <Pressable onPress={goPrevMonth} style={{ padding: 8 }} accessibilityLabel="Previous month">
+                        <Icon name="chevronLeft" size={20} color={styles.tokens.textSecondary} />
                       </Pressable>
                       <Text style={[styles.textPrimary, { fontWeight: '600', minWidth: 120, textAlign: 'center' }]}>
                         {getMonthLabel(viewYear, viewMonth)}
                       </Text>
-                      <Pressable onPress={goNextMonth} style={{ padding: 8 }}>
-                        <Text style={{ color: styles.tokens.textSecondary, fontSize: 18 }}>›</Text>
+                      <Pressable onPress={goNextMonth} style={{ padding: 8 }} accessibilityLabel="Next month">
+                        <Icon name="chevronRight" size={20} color={styles.tokens.textSecondary} />
                       </Pressable>
                       {!isCurrentMonth ? (
                         <Pressable

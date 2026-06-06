@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useNotifications } from '../hooks/useNotifications';
 import { useThemeStyles } from '../theme/useThemeStyles';
 import { NotificationPanel } from './NotificationPanel';
 import { BELL_PATH, HeaderIcon, LOGOUT_PATH, LogoutConfirmModal } from './LogoutConfirmModal';
+import { Icon } from './icons/Icon';
 
 export function UserHeaderActions() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const navigation = useNavigation();
   const styles = useThemeStyles();
   const [panelOpen, setPanelOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -26,6 +31,14 @@ export function UserHeaderActions() {
     .toUpperCase()
     .slice(0, 2);
 
+  const menuItemStyle = {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  };
+
   return (
     <>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -33,6 +46,7 @@ export function UserHeaderActions() {
           onPress={() => setPanelOpen(true)}
           hitSlop={8}
           style={{ position: 'relative', padding: 6 }}
+          accessibilityLabel="Notifications"
         >
           <HeaderIcon path={BELL_PATH} color={styles.tokens.textSecondary} />
           {unreadCount > 0 ? (
@@ -69,6 +83,7 @@ export function UserHeaderActions() {
             alignItems: 'center',
             justifyContent: 'center',
           }}
+          accessibilityLabel="User menu"
         >
           <Text style={[styles.textGold, { fontSize: 12, fontWeight: '600' }]}>{initials}</Text>
         </Pressable>
@@ -93,15 +108,29 @@ export function UserHeaderActions() {
             <Pressable
               onPress={() => {
                 setMenuOpen(false);
+                navigation.navigate('Settings' as never);
+              }}
+              style={[menuItemStyle, { borderBottomWidth: 1, borderBottomColor: styles.tokens.borderLight }]}
+            >
+              <Icon name="settings" size={18} color={styles.tokens.textSecondary} />
+              <Text style={styles.textPrimary}>Settings</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                toggleTheme();
+                setMenuOpen(false);
+              }}
+              style={[menuItemStyle, { borderBottomWidth: 1, borderBottomColor: styles.tokens.borderLight }]}
+            >
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} color={styles.tokens.textSecondary} />
+              <Text style={styles.textPrimary}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setMenuOpen(false);
                 setPanelOpen(true);
               }}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 10,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
-              }}
+              style={[menuItemStyle, { borderBottomWidth: 1, borderBottomColor: styles.tokens.borderLight }]}
             >
               <HeaderIcon path={BELL_PATH} color={styles.tokens.textSecondary} size={18} />
               <Text style={styles.textPrimary}>Notifications</Text>
@@ -124,15 +153,7 @@ export function UserHeaderActions() {
                 setMenuOpen(false);
                 setLogoutOpen(true);
               }}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 10,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
-                borderTopWidth: 1,
-                borderTopColor: styles.tokens.borderLight,
-              }}
+              style={menuItemStyle}
             >
               <HeaderIcon path={LOGOUT_PATH} color="#f87171" size={18} />
               <Text style={{ color: '#f87171' }}>Logout</Text>

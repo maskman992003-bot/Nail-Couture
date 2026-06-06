@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import type { SelectOption } from '../../constants/birthdayOptions';
+import { Icon } from '../icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type ScrollSelectProps = {
@@ -26,7 +27,7 @@ export function ScrollSelect({ value, onChange, options, placeholder = 'Select' 
         ]}
       >
         <Text style={{ color: value ? styles.tokens.textPrimary : styles.tokens.textMuted }}>{display}</Text>
-        <Text style={styles.textGold}>▼</Text>
+        <Icon name="chevronDown" size={16} color={styles.tokens.goldStrong} />
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
