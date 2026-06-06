@@ -51,6 +51,7 @@ import { TimelineEventRow, formatTimelineDate } from '../../components/timeline/
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { APPOINTMENT_STATUS_COLORS, APPOINTMENT_STATUS_LABELS, TIER_COLORS } from '../../constants/customerConstants';
 import { useThemeStyles } from '../../theme/useThemeStyles';
+import { pickAndUploadVisitPhoto } from '../../utils/visitPhotoUpload';
 import type { CustomersStackParamList } from '../../navigation/staffTypes';
 
 const TABS = [
@@ -243,6 +244,7 @@ export function StaffCustomerDetailScreen() {
   const [loyaltyReason, setLoyaltyReason] = useState('');
   const [loyaltySaving, setLoyaltySaving] = useState(false);
   const [photoType, setPhotoType] = useState('after');
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [photoViewFilter, setPhotoViewFilter] = useState('all');
   const [photoDeletingId, setPhotoDeletingId] = useState<string | null>(null);
   const [deletePhotoTarget, setDeletePhotoTarget] = useState<TimelineEvent | null>(null);
@@ -501,9 +503,32 @@ export function StaffCustomerDetailScreen() {
     setTimeout(() => setSaveMsg(''), 2500);
   };
 
-  const handlePhotoUploadStub = () => {
-    setSaveMsg('Photo upload requires expo-image-picker (not yet integrated on mobile)');
-    setTimeout(() => setSaveMsg(''), 3000);
+  const handlePhotoUpload = async () => {
+    if (!canUploadPhotos) return;
+    setPhotoUploading(true);
+    setSaveMsg('');
+    const result = await pickAndUploadVisitPhoto(customerId, null, photoType, user?.id);
+    setPhotoUploading(false);
+    if ('canceled' in result && result.canceled) return;
+    if (!result.success) {
+      setSaveMsg(result.error || 'Upload failed');
+      return;
+    }
+    if (!('photo' in result) || !result.photo) return;
+    const photo = result.photo as Record<string, unknown>;
+    const entry: TimelineEvent = {
+      id: `photo-${photo.id}`,
+      type: 'photo',
+      date: photo.created_at as string,
+      title: `${photoType === 'before' ? 'Before' : 'After'} photo`,
+      subtitle: user?.full_name ? `By ${user.full_name}` : 'By Staff',
+      meta: {
+        ...photo,
+        uploader_name: user?.full_name || 'Staff',
+      },
+    };
+    setPhotos((prev) => [entry, ...prev]);
+    setTimeline((prev) => [entry, ...prev]);
   };
 
   const handlePhotoDelete = async () => {
@@ -1079,10 +1104,16 @@ export function StaffCustomerDetailScreen() {
                 />
               </View>
               <Pressable
-                onPress={handlePhotoUploadStub}
-                style={[styles.buttonPrimary, { paddingHorizontal: 20, borderRadius: 10 }]}
+                onPress={handlePhotoUpload}
+                disabled={photoUploading}
+                style={[
+                  styles.buttonPrimary,
+                  { paddingHorizontal: 20, borderRadius: 10, opacity: photoUploading ? 0.6 : 1 },
+                ]}
               >
-                <Text style={styles.buttonPrimaryText}>Upload photo</Text>
+                <Text style={styles.buttonPrimaryText}>
+                  {photoUploading ? 'Uploading…' : 'Upload photo'}
+                </Text>
               </Pressable>
             </View>
           ) : null}

@@ -61,8 +61,8 @@ export const featureFlags = {
     roleBasedAccess: true,          // Different views by role
     realtimeUpdates: true,          // Live data sync between clients
     
-    // Phase 2
-    mobileApp: false,               // Native mobile app (Phase 2+)
+    // Phase 5 — RN cutover
+    mobileApp: true,                // Native mobile app (primary target)
     apiAccess: false,               // Third-party integrations (Phase 3)
   },
   

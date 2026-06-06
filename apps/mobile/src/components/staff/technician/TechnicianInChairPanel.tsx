@@ -10,9 +10,12 @@ import {
 } from '@nail-couture/shared/utils/profilePreferences.js';
 import { formatElapsedMinutes } from '@nail-couture/shared/utils/technicianQueue.js';
 import { fetchStaffNotes, addStaffNote } from '@nail-couture/shared/utils/staffCustomerNotes.js';
+import { canUploadVisitPhotos } from '@nail-couture/shared/utils/staffCustomerAccess.js';
 import { getAppointmentServiceLabels } from '@nail-couture/shared/utils/appointmentServices.js';
 import { useAuth } from '../../../contexts/AuthContext';
 import { WaiverModal } from '../../kiosk/WaiverModal';
+import { ScrollSelect } from '../../forms/ScrollSelect';
+import { pickAndUploadVisitPhoto } from '../../../utils/visitPhotoUpload';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import { TechnicianServiceEditor } from './TechnicianServiceEditor';
 import { TechnicianServiceChecklist } from './TechnicianServiceChecklist';
@@ -63,6 +66,9 @@ export function TechnicianInChairPanel({
   const [showWaiver, setShowWaiver] = useState(false);
   const [waiverSaving, setWaiverSaving] = useState(false);
   const [showServiceEditor, setShowServiceEditor] = useState(false);
+  const [photoType, setPhotoType] = useState('after');
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState('');
 
   const serviceLabels = getAppointmentServiceLabels(appointment);
   const isUpdating = actionId === appointment.id;
@@ -136,6 +142,21 @@ export function TechnicianInChairPanel({
     } finally {
       setWaiverSaving(false);
     }
+  };
+
+  const handlePhotoUpload = async () => {
+    if (!canUploadVisitPhotos(user?.role) || !appointment.customer_id) return;
+    setPhotoUploading(true);
+    setPhotoMsg('');
+    const result = await pickAndUploadVisitPhoto(
+      appointment.customer_id,
+      appointment.id,
+      photoType,
+      user?.id,
+    );
+    setPhotoUploading(false);
+    if ('canceled' in result && result.canceled) return;
+    setPhotoMsg(result.success ? 'Photo uploaded' : result.error || 'Upload failed');
   };
 
   const prefItems = [
@@ -230,20 +251,47 @@ export function TechnicianInChairPanel({
         ) : null}
       </View>
 
-      <View
-        style={{
-          marginTop: 8,
-          padding: 12,
-          borderRadius: 12,
-          backgroundColor: styles.tokens.inputBg,
-          borderWidth: 1,
-          borderColor: styles.tokens.borderLight,
-        }}
-      >
-        <Text style={[styles.textSecondary, { fontSize: 12 }]}>
-          Photo upload is not available in the mobile app yet.
-        </Text>
-      </View>
+      {canUploadVisitPhotos(user?.role) ? (
+        <View style={{ marginTop: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <View style={{ minWidth: 120, flex: 1 }}>
+            <ScrollSelect
+              value={photoType}
+              onChange={setPhotoType}
+              options={[
+                { value: 'before', label: 'Before' },
+                { value: 'after', label: 'After' },
+              ]}
+              placeholder="Photo type"
+            />
+          </View>
+          <Pressable
+            onPress={handlePhotoUpload}
+            disabled={photoUploading}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: styles.tokens.borderLight,
+              opacity: photoUploading ? 0.5 : 1,
+            }}
+          >
+            <Text style={[styles.textPrimary, { fontSize: 12 }]}>
+              {photoUploading ? 'Uploading…' : 'Upload photo'}
+            </Text>
+          </Pressable>
+          {photoMsg ? (
+            <Text
+              style={{
+                fontSize: 12,
+                color: photoMsg.toLowerCase().includes('fail') ? '#f87171' : '#4ade80',
+              }}
+            >
+              {photoMsg}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 

@@ -2,7 +2,7 @@
 
 > **Branch:** All migration work happens on the `IOS` branch (`origin/IOS`).  
 > **Strategy:** Complete migration sprint — port all existing web screens to React Native before real-device testing.  
-> **Status:** Phase 4 shared components + polish complete on `IOS` — Phase 5 (device test + cutover) next
+> **Status:** Phase 5 in progress on `IOS` — device test + cutover (see [`docs/PHASE5_DEVICE_TEST.md`](docs/PHASE5_DEVICE_TEST.md))
 
 ---
 
@@ -199,11 +199,12 @@ Internal order for execution — **no device testing until all phases complete**
 
 ### Phase 5 — Full device test + cutover (week 10)
 
-- [ ] Install on real iOS + Android devices
+- [ ] Install on real iOS + Android devices — see [`docs/PHASE5_DEVICE_TEST.md`](docs/PHASE5_DEVICE_TEST.md)
 - [ ] Test all roles, all nav items, scrollable bottom nav, realtime, file upload, signatures
 - [ ] Fix parity gaps found on device
-- [ ] Set `featureFlags.global.mobileApp: true`
-- [ ] RN becomes primary development target
+- [x] EAS dev-client + `expo-image-picker` wired for visit photo upload
+- [x] Set `featureFlags.global.mobileApp: true` (shared package)
+- [ ] RN becomes primary development target (after device sign-off)
 - [ ] Open PR: `IOS` → `main`
 
 ### Phase 6 — Windows (week 11+)
