@@ -16,6 +16,7 @@ import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../contexts/AuthContext';
 import { DAYS, MONTHS } from '../constants/birthdayOptions';
 import { ScrollSelect } from '../components/forms/ScrollSelect';
+import { Icon } from '../components/icons/Icon';
 import { layout } from '../theme/layoutStyles';
 import { useLayout } from '../theme/useLayout';
 import { useThemeStyles } from '../theme/useThemeStyles';
@@ -187,8 +188,9 @@ export function RegisterScreen() {
         ]}
       >
         {navigation.canGoBack() ? (
-          <Pressable onPress={() => navigation.goBack()} style={{ marginBottom: spacing[3], alignSelf: 'flex-start' }}>
-            <Text style={styles.textGold}>← Back</Text>
+          <Pressable onPress={() => navigation.goBack()} style={{ marginBottom: spacing[3], alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon name="chevronLeft" size={18} color={styles.tokens.goldStrong} />
+            <Text style={styles.textGold}>Back</Text>
           </Pressable>
         ) : null}
 
@@ -299,8 +301,9 @@ export function RegisterScreen() {
             </Pressable>
           </View>
 
-          <Pressable onPress={() => navigation.navigate('Login')} style={{ marginTop: spacing[6], alignItems: 'center' }}>
-            <Text style={styles.textGold}>← Back to Login</Text>
+          <Pressable onPress={() => navigation.navigate('Login')} style={{ marginTop: spacing[6], alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
+            <Icon name="chevronLeft" size={16} color={styles.tokens.goldStrong} />
+            <Text style={styles.textGold}>Back to Login</Text>
           </Pressable>
         </View>
       </ScrollView>

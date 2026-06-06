@@ -1,5 +1,5 @@
 import { Image, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { Icon } from '../icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 export const TIMELINE_ICONS: Record<string, string> = {
@@ -89,15 +89,7 @@ export function TimelineEventRow({ event, profile = null }: TimelineEventRowProp
           justifyContent: 'center',
         }}
       >
-        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-          <Path
-            d={iconPath}
-            stroke={styles.tokens.goldStrong}
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </Svg>
+        <Icon path={iconPath} size={16} color={styles.tokens.goldStrong} />
       </View>
 
       <View style={{ flex: 1, minWidth: 0 }}>

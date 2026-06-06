@@ -1,6 +1,6 @@
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import { Icon } from './icons/Icon';
 import { useThemeStyles } from '../theme/useThemeStyles';
 import type { AppNotification } from '../hooks/useNotifications';
 
@@ -76,8 +76,8 @@ export function NotificationPanel({
                   <Text style={[styles.textGold, { fontSize: 12 }]}>Mark all read</Text>
                 </Pressable>
               ) : null}
-              <Pressable onPress={onClose} hitSlop={8}>
-                <Text style={[styles.textSecondary, { fontSize: 24 }]}>×</Text>
+              <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close">
+                <Icon name="close" size={24} color={styles.tokens.textSecondary} />
               </Pressable>
             </View>
           </View>
@@ -85,15 +85,7 @@ export function NotificationPanel({
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 16 }}>
             {notifications.length === 0 ? (
               <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-                <Svg width={40} height={40} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    stroke={styles.tokens.textMuted}
-                    strokeWidth={1.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
+                <Icon name="bell" size={40} color={styles.tokens.textMuted} strokeWidth={1.5} />
                 <Text style={[styles.textSecondary, { marginTop: 12 }]}>No notifications yet</Text>
               </View>
             ) : (

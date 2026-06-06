@@ -3,6 +3,7 @@ import {
   DAY_LABELS_FULL,
   SHIFT_TYPES,
 } from '@nail-couture/shared/utils/scheduleUtils.js';
+import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import { APPOINTMENT_STATUS_LABELS, appointmentStatusBadgeStyle } from './constants';
 import { ShiftChip, type ShiftRecord } from './ShiftChip';
@@ -73,8 +74,8 @@ export function DayDetailPanel({
           </Text>
           <Text style={[styles.textSecondary, { fontSize: 12, marginTop: 2 }]}>{dateLabel}</Text>
         </View>
-        <Pressable onPress={onClose} hitSlop={8}>
-          <Text style={{ color: styles.tokens.textSecondary, fontSize: 28, lineHeight: 28 }}>×</Text>
+        <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close">
+          <Icon name="close" size={28} color={styles.tokens.textSecondary} />
         </Pressable>
       </View>
 

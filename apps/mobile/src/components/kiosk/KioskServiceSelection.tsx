@@ -10,6 +10,7 @@ import {
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { ServiceCategoryBar } from '../public/ServiceCategoryBar';
 import { RefreshmentSelect } from '../forms/RefreshmentSelect';
+import { Icon } from '../icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 export type ServiceRecord = {
@@ -133,7 +134,10 @@ export function KioskServiceSelection({
     <View style={styles.screen}>
       <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 }}>
         <Pressable onPress={onBack} style={{ marginBottom: 12 }}>
-          <Text style={styles.textGold}>← Back</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon name="chevronLeft" size={18} color={styles.tokens.goldStrong} />
+            <Text style={styles.textGold}>Back</Text>
+          </View>
         </Pressable>
         <Text style={[styles.textGold, { fontSize: 28, fontWeight: '600' }]}>Select Your Services</Text>
         <Text style={styles.textSecondary}>Choose one or more treatments</Text>
@@ -200,7 +204,7 @@ export function KioskServiceSelection({
                               justifyContent: 'center',
                             }}
                           >
-                            {selected ? <Text style={{ color: '#121212', fontSize: 12 }}>✓</Text> : null}
+                            {selected ? <Icon name="check" size={12} color="#121212" strokeWidth={3} /> : null}
                           </View>
                           <View style={{ flex: 1 }}>
                             <Text style={[styles.textPrimary, { fontWeight: '600' }]}>{service.name}</Text>

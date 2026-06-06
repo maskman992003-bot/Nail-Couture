@@ -22,6 +22,7 @@ import {
   type ServiceSelectionPayload,
 } from '../components/kiosk/KioskServiceSelection';
 import { WaiverModal } from '../components/kiosk/WaiverModal';
+import { Icon } from '../components/icons/Icon';
 import { useThemeStyles } from '../theme/useThemeStyles';
 import type { RootStackParamList } from '../navigation/publicTypes';
 
@@ -519,8 +520,9 @@ export function CheckInScreen() {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={{ padding: 20 }}>
-        <Pressable onPress={() => navigation.goBack()}>
-          <Text style={styles.textGold}>✕ Close</Text>
+        <Pressable onPress={() => navigation.goBack()} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Icon name="close" size={20} color={styles.tokens.goldStrong} />
+          <Text style={styles.textGold}>Close</Text>
         </Pressable>
       </View>
 
@@ -577,9 +579,13 @@ export function CheckInScreen() {
                     opacity: disabled && key !== 'del' && key !== 'clear' ? 0.5 : 1,
                   }}
                 >
-                  <Text style={[styles.textPrimary, { fontSize: key === 'clear' ? 11 : 22, letterSpacing: 1 }]}>
-                    {key === 'del' ? '⌫' : key === 'clear' ? 'CLEAR' : key}
-                  </Text>
+                  {key === 'del' ? (
+                    <Icon name="backspace" size={24} color={styles.tokens.textPrimary} />
+                  ) : (
+                    <Text style={[styles.textPrimary, { fontSize: key === 'clear' ? 11 : 22, letterSpacing: 1 }]}>
+                      {key === 'clear' ? 'CLEAR' : key}
+                    </Text>
+                  )}
                 </Pressable>
               );
             })}

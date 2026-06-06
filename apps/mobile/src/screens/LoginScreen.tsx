@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { spacing } from '@nail-couture/shared/theme/layout.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../contexts/AuthContext';
+import { Icon } from '../components/icons/Icon';
 import { layout } from '../theme/layoutStyles';
 import { useThemeStyles } from '../theme/useThemeStyles';
 import { AppModal, ModalButton } from '../components/AppModal';
@@ -131,9 +132,10 @@ export function LoginScreen() {
       {navigation.canGoBack() ? (
         <Pressable
           onPress={() => navigation.goBack()}
-          style={{ marginBottom: spacing[3], alignSelf: 'flex-start', width: '100%', maxWidth: layout.authCardWrap.maxWidth }}
+          style={{ marginBottom: spacing[3], alignSelf: 'flex-start', width: '100%', maxWidth: layout.authCardWrap.maxWidth, flexDirection: 'row', alignItems: 'center', gap: 6 }}
         >
-          <Text style={styles.textGold}>← Back</Text>
+          <Icon name="chevronLeft" size={18} color={styles.tokens.goldStrong} />
+          <Text style={styles.textGold}>Back</Text>
         </Pressable>
       ) : null}
       <View style={[layout.authCardWrap, { flex: 1, justifyContent: 'center' }]}>
@@ -247,7 +249,7 @@ export function LoginScreen() {
                   onPress={handlePinBackspace}
                   style={{ width: '30%', height: spacing[16], alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <Text style={styles.textSecondary}>Del</Text>
+                  <Icon name="backspace" size={24} color={styles.tokens.textSecondary} />
                 </Pressable>
               );
             }
