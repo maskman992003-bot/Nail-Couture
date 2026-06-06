@@ -25,6 +25,7 @@
   --card-border: rgba(197, 160, 89, 0.2);
   --input-bg: rgba(249, 249, 249, 0.1);
   --input-border: rgba(249, 249, 249, 0.2);
+  color-scheme: dark;
 }
 
 [data-theme="light"] {
@@ -40,6 +41,7 @@
   --card-border: rgba(197, 160, 89, 0.3);
   --input-bg: rgba(18, 18, 18, 0.1);
   --input-border: rgba(18, 18, 18, 0.2);
+  color-scheme: light;
 }
 
 @layer utilities {
@@ -61,6 +63,19 @@
 
   .text-gold-strong { color: var(--gold-strong); }
   .bg-modal { background-color: var(--card-bg); }
+}
+
+/* Native form controls ignore semi-transparent --input-bg; use solid surfaces instead. */
+select,
+select option {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  color-scheme: inherit;
 }
 
 * {
