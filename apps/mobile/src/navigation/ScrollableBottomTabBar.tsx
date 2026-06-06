@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { getNavItemsForRole } from '@nail-couture/shared/navigation/navItems.js';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavBadges } from '../hooks/useNavBadges';
 import { useThemeStyles } from '../theme/useThemeStyles';
 import { NavIcon } from '../components/NavIcon';
 import { resolveScreenName } from './screenRegistry';
@@ -23,6 +24,7 @@ export function ScrollableBottomTabBar({
 }: BottomTabBarProps) {
   const { user } = useAuth();
   const { tokens } = useThemeStyles();
+  const { getBadgeCount } = useNavBadges();
   const scrollRef = useRef<ScrollView>(null);
   const contentWidthRef = useRef(0);
   const scrollOffsetRef = useRef(0);
@@ -122,6 +124,9 @@ export function ScrollableBottomTabBar({
             navigation.navigate(screenName);
           };
 
+          const badgeCount = getBadgeCount(item.id);
+          const showBadge = badgeCount > 0;
+
           return (
             <Pressable
               key={item.id}
@@ -139,7 +144,29 @@ export function ScrollableBottomTabBar({
                 backgroundColor: isFocused ? tokens.inputBg : 'transparent',
               }}
             >
-              <NavIcon path={item.icon} active={isFocused} />
+              <View style={{ position: 'relative' }}>
+                <NavIcon path={item.icon} active={isFocused} />
+                {showBadge ? (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: -6,
+                      right: -10,
+                      minWidth: 16,
+                      height: 16,
+                      borderRadius: 8,
+                      backgroundColor: tokens.goldStrong,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      paddingHorizontal: 4,
+                    }}
+                  >
+                    <Text style={{ color: '#121212', fontSize: 9, fontWeight: '700' }}>
+                      {badgeCount > 9 ? '9+' : badgeCount}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
               <Text
                 style={{
                   marginTop: 4,

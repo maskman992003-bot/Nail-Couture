@@ -6,10 +6,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../contexts/AuthContext';
 import { useThemeStyles } from '../theme/useThemeStyles';
 import { AppModal, ModalButton } from '../components/AppModal';
+import type { RootStackParamList } from '../navigation/publicTypes';
 
 type Profile = Record<string, unknown> & {
   id: string;
@@ -18,6 +22,7 @@ type Profile = Record<string, unknown> & {
 };
 
 export function LoginScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -119,7 +124,13 @@ export function LoginScreen() {
   const pinKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'delete'] as const;
 
   return (
-    <View style={[styles.screen, { justifyContent: 'center', padding: 20 }]}>
+    <SafeAreaView style={[styles.screen, { padding: 20 }]}>
+      {navigation.canGoBack() ? (
+        <Pressable onPress={() => navigation.goBack()} style={{ marginBottom: 12, alignSelf: 'flex-start' }}>
+          <Text style={styles.textGold}>← Back</Text>
+        </Pressable>
+      ) : null}
+      <View style={{ flex: 1, justifyContent: 'center' }}>
       <View style={[styles.card, { padding: 24 }]}>
         <Text style={[styles.textGold, { fontSize: 24, textAlign: 'center', marginBottom: 8 }]}>
           Nail Couture
@@ -154,6 +165,15 @@ export function LoginScreen() {
           ) : (
             <Text style={styles.buttonPrimaryText}>Access Portal</Text>
           )}
+        </Pressable>
+
+        <Pressable
+          onPress={() => navigation.navigate('Register')}
+          style={{ marginTop: 20, alignItems: 'center' }}
+        >
+          <Text style={styles.textSecondary}>
+            New here? <Text style={styles.textGold}>Create an account</Text>
+          </Text>
         </Pressable>
       </View>
 
@@ -230,6 +250,7 @@ export function LoginScreen() {
           })}
         </View>
       </AppModal>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }

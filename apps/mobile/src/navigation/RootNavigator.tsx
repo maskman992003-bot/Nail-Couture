@@ -5,14 +5,14 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getNavItemsForRole } from '@nail-couture/shared/navigation/navItems.js';
 import { useAuth } from '../contexts/AuthContext';
 import { LoginScreen } from '../screens/LoginScreen';
+import { RegisterScreen } from '../screens/RegisterScreen';
+import { CheckInScreen } from '../screens/CheckInScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
+import { PublicNavigator } from './PublicNavigator';
 import { ScrollableBottomTabBar } from './ScrollableBottomTabBar';
 import { ALL_SCREEN_NAMES, resolveScreenName } from './screenRegistry';
-
-type RootStackParamList = {
-  Login: undefined;
-  Main: undefined;
-};
+import { getScreenComponent } from './customerScreens';
+import type { RootStackParamList } from './publicTypes';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const MainTabs = createBottomTabNavigator();
@@ -31,7 +31,11 @@ function MainTabNavigator() {
       screenOptions={{ headerShown: false }}
     >
       {ALL_SCREEN_NAMES.filter((screen) => visibleScreens.includes(screen)).map((screen) => (
-        <MainTabs.Screen key={screen} name={screen} component={PlaceholderScreen} />
+        <MainTabs.Screen
+          key={screen}
+          name={screen}
+          component={getScreenComponent(screen, user?.role)}
+        />
       ))}
     </MainTabs.Navigator>
   );
@@ -49,7 +53,24 @@ function AppStack() {
       {user ? (
         <RootStack.Screen name="Main" component={MainTabNavigator} />
       ) : (
-        <RootStack.Screen name="Login" component={LoginScreen} />
+        <>
+          <RootStack.Screen name="Public" component={PublicNavigator} />
+          <RootStack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ presentation: 'modal' }}
+          />
+          <RootStack.Screen
+            name="Register"
+            component={RegisterScreen}
+            options={{ presentation: 'modal' }}
+          />
+          <RootStack.Screen
+            name="CheckIn"
+            component={CheckInScreen}
+            options={{ presentation: 'fullScreenModal' }}
+          />
+        </>
       )}
     </RootStack.Navigator>
   );

@@ -2,7 +2,7 @@
 
 > **Branch:** All migration work happens on the `IOS` branch (`origin/IOS`).  
 > **Strategy:** Complete migration sprint — port all existing web screens to React Native before real-device testing.  
-> **Status:** Phase 0 in progress on `IOS`
+> **Status:** Phase 4 shared components + polish complete on `IOS` — Phase 5 (device test + cutover) next
 
 ---
 
@@ -166,34 +166,36 @@ Internal order for execution — **no device testing until all phases complete**
 
 ### Phase 1 — Public + customer screens (week 2–3)
 
-- [ ] [`App.jsx`](src/App.jsx), [`Lookbook.jsx`](src/components/Lookbook.jsx), [`Services.jsx`](src/components/Services.jsx), [`AboutContact.jsx`](src/components/AboutContact.jsx)
-- [ ] [`ClientLogin.jsx`](src/components/ClientLogin.jsx), [`ClientRegister.jsx`](src/components/ClientRegister.jsx)
-- [ ] [`CheckIn.jsx`](src/components/CheckIn.jsx) + [`WaiverModal.jsx`](src/components/WaiverModal.jsx)
-- [ ] [`ClientPortal.jsx`](src/components/ClientPortal.jsx), [`CustomerProfile.jsx`](src/components/CustomerProfile.jsx), [`CustomerServices.jsx`](src/components/CustomerServices.jsx)
-- [ ] [`CustomerBooking.jsx`](src/components/CustomerBooking.jsx), [`CustomerHistory.jsx`](src/components/CustomerHistory.jsx), [`CustomerLoyalty.jsx`](src/components/CustomerLoyalty.jsx), [`EditBooking.jsx`](src/components/EditBooking.jsx)
+- [x] [`App.jsx`](src/App.jsx), [`Lookbook.jsx`](src/components/Lookbook.jsx), [`Services.jsx`](src/components/Services.jsx), [`AboutContact.jsx`](src/components/AboutContact.jsx) — public stack in `apps/mobile`
+- [x] [`ClientLogin.jsx`](src/components/ClientLogin.jsx), [`ClientRegister.jsx`](src/components/ClientRegister.jsx) — login + register in `apps/mobile`
+- [x] [`CheckIn.jsx`](src/components/CheckIn.jsx) + [`WaiverModal.jsx`](src/components/WaiverModal.jsx) — kiosk check-in + signature waiver in `apps/mobile`
+- [x] [`ClientPortal.jsx`](src/components/ClientPortal.jsx), [`CustomerProfile.jsx`](src/components/CustomerProfile.jsx), [`CustomerServices.jsx`](src/components/CustomerServices.jsx)
+- [x] [`CustomerBooking.jsx`](src/components/CustomerBooking.jsx) — disabled-state port (online booking flag off)
+- [x] [`CustomerHistory.jsx`](src/components/CustomerHistory.jsx), [`CustomerLoyalty.jsx`](src/components/CustomerLoyalty.jsx)
+- [ ] [`EditBooking.jsx`](src/components/EditBooking.jsx) — deferred until online booking wizard port
 
 ### Phase 2 — Staff screens (week 4–5)
 
-- [ ] [`Technician.jsx`](src/components/Technician.jsx) + entire `technician/*` folder (12 components)
-- [ ] [`Cashier.jsx`](src/components/Cashier.jsx), [`CashierCheckout.jsx`](src/components/CashierCheckout.jsx)
-- [ ] [`TechnicianSchedule.jsx`](src/components/TechnicianSchedule.jsx), [`StaffSchedule.jsx`](src/components/StaffSchedule.jsx) + `schedule/*` (12 components)
-- [ ] [`StaffCustomerDetail.jsx`](src/components/StaffCustomerDetail.jsx), [`StaffProfile.jsx`](src/components/StaffProfile.jsx)
+- [x] [`Technician.jsx`](src/components/Technician.jsx) + entire `technician/*` folder (12 components)
+- [x] [`Cashier.jsx`](src/components/Cashier.jsx), [`CashierCheckout.jsx`](src/components/CashierCheckout.jsx)
+- [x] [`TechnicianSchedule.jsx`](src/components/TechnicianSchedule.jsx), [`StaffSchedule.jsx`](src/components/StaffSchedule.jsx) + `schedule/*` (12 components)
+- [x] [`StaffCustomerDetail.jsx`](src/components/StaffCustomerDetail.jsx), [`StaffProfile.jsx`](src/components/StaffProfile.jsx)
 
 ### Phase 3 — Admin screens (week 6–8)
 
-- [ ] Role dashboards: [`SuperAdmin.jsx`](src/components/SuperAdmin.jsx), [`Admin.jsx`](src/components/Admin.jsx)
-- [ ] [`AdminLobby.jsx`](src/components/AdminLobby.jsx) — DnD rewrite with gesture-handler + Reanimated
-- [ ] [`AdminBookings.jsx`](src/components/AdminBookings.jsx), [`AdminServices.jsx`](src/components/AdminServices.jsx), [`AdminInventory.jsx`](src/components/AdminInventory.jsx)
-- [ ] [`AdminReports.jsx`](src/components/AdminReports.jsx) — Recharts → victory-native
-- [ ] [`StaffManagement.jsx`](src/components/StaffManagement.jsx), [`SalonActivity.jsx`](src/components/SalonActivity.jsx)
-- [ ] [`CustomerManagementHistory.jsx`](src/components/CustomerManagementHistory.jsx), [`Settings.jsx`](src/components/Settings.jsx)
+- [x] Role dashboards: [`SuperAdmin.jsx`](src/components/SuperAdmin.jsx), [`Admin.jsx`](src/components/Admin.jsx) → `AdminHomeScreen.tsx`
+- [x] [`AdminLobby.jsx`](src/components/AdminLobby.jsx) — PanResponder drag + tap-assign, gesture-handler ready
+- [x] [`AdminBookings.jsx`](src/components/AdminBookings.jsx), [`AdminServices.jsx`](src/components/AdminServices.jsx), [`AdminInventory.jsx`](src/components/AdminInventory.jsx)
+- [x] [`AdminReports.jsx`](src/components/AdminReports.jsx) — SVG bar charts via `react-native-svg`
+- [x] [`StaffManagement.jsx`](src/components/StaffManagement.jsx), [`SalonActivity.jsx`](src/components/SalonActivity.jsx)
+- [x] [`CustomerManagementHistory.jsx`](src/components/CustomerManagementHistory.jsx) (Phase 2), [`Settings.jsx`](src/components/Settings.jsx) → expanded `StaffSettingsScreen.tsx`
 
 ### Phase 4 — Shared components + polish (week 9)
 
-- [ ] [`ServiceCategoryBar.jsx`](src/components/ServiceCategoryBar.jsx), [`VirtualizedTimelineList.jsx`](src/components/VirtualizedTimelineList.jsx)
-- [ ] [`BookingWizard.jsx`](src/components/BookingWizard.jsx), [`ScrollSelect.jsx`](src/components/ScrollSelect.jsx), [`RefreshmentSelect.jsx`](src/components/RefreshmentSelect.jsx)
-- [ ] Notification panel, logout confirm, badges, realtime subscriptions
-- [ ] Parity pass: compare every web screen side-by-side with RN
+- [x] [`ServiceCategoryBar.jsx`](src/components/ServiceCategoryBar.jsx), [`VirtualizedTimelineList.jsx`](src/components/VirtualizedTimelineList.jsx)
+- [x] [`BookingWizard.jsx`](src/components/BookingWizard.jsx), [`ScrollSelect.jsx`](src/components/ScrollSelect.jsx), [`RefreshmentSelect.jsx`](src/components/RefreshmentSelect.jsx)
+- [x] Notification panel, logout confirm, badges, realtime subscriptions
+- [x] Parity pass: compare every web screen side-by-side with RN
 
 ### Phase 5 — Full device test + cutover (week 10)
 
