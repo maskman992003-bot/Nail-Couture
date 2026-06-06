@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
 import clsx from 'clsx';
 import { getCustomersPath, getCustomerDetailPath } from '../utils/routes';
@@ -66,6 +67,7 @@ function matchesSearch(customer, term, termDigits) {
 export default function SalonActivity() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   const [activeTab, setActiveTab] = useState('timeline');
   const [datePreset, setDatePreset] = useState('today');
@@ -193,7 +195,8 @@ export default function SalonActivity() {
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
+      <style>{`.salon-activity select, .salon-activity option { background: var(--input-bg); color: var(--text-primary); } .salon-activity select, .salon-activity input[type="date"] { color-scheme: ${theme}; }`}</style>
+      <div className="salon-activity p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-heading text-2xl text-gold">Salon activity</h1>
