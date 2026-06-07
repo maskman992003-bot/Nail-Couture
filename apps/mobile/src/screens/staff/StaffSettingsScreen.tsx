@@ -234,7 +234,7 @@ export function StaffSettingsScreen() {
       <View style={[styles.card, { padding: 16, marginBottom: 12 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 }}>
           <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: 'rgba(197,160,89,0.15)', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={[styles.textGold, { fontSize: 20, fontWeight: '600' }]}>{initials}</Text>
+            <Text style={[styles.statValue, { fontSize: 20 }]}>{initials}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>{displayName}</Text>
@@ -278,12 +278,12 @@ export function StaffSettingsScreen() {
           <Text style={[styles.textPrimary, { fontWeight: '600', marginBottom: 12 }]}>My Activity</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600' }]}>{workStats.todayCount}</Text>
+              <Text style={styles.statValue}>{workStats.todayCount}</Text>
               <Text style={[styles.textSecondary, { fontSize: 11, textAlign: 'center' }]}>{todayLabel}</Text>
               <Text style={[styles.textSecondary, { fontSize: 10 }]}>${workStats.todayValue.toFixed(0)} {valueLabel}</Text>
             </View>
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600' }]}>{workStats.weekCount}</Text>
+              <Text style={styles.statValue}>{workStats.weekCount}</Text>
               <Text style={[styles.textSecondary, { fontSize: 11, textAlign: 'center' }]}>This week</Text>
               <Text style={[styles.textSecondary, { fontSize: 10 }]}>${workStats.weekValue.toFixed(0)} {valueLabel}</Text>
             </View>

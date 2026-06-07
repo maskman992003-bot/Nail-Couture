@@ -162,7 +162,7 @@ export function AdminHomeScreen() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
         {isManager && (
           <View style={statCard}>
-            <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600' }]}>
+            <Text style={styles.statValue}>
               ${stats.todayRevenue.toFixed(0)}
             </Text>
             <Text style={styles.textSecondary}>Revenue</Text>
@@ -191,7 +191,7 @@ export function AdminHomeScreen() {
       {quickLinks.map((link) => (
         <Pressable key={link.screen} onPress={() => navigation.navigate(link.screen)} style={linkCard}>
           <Text style={{ fontSize: 28, marginBottom: 6 }}>{link.icon}</Text>
-          <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600' }]}>{link.title}</Text>
+          <Text style={styles.panelTitle}>{link.title}</Text>
           <Text style={[styles.textSecondary, { marginTop: 4 }]}>{link.desc}</Text>
         </Pressable>
       ))}
@@ -199,7 +199,7 @@ export function AdminHomeScreen() {
       {isManager && (
         <View style={[styles.card, { padding: 16, marginTop: 8 }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>Today&apos;s Activity</Text>
+            <Text style={styles.cardTitle}>Today&apos;s Activity</Text>
             <Pressable onPress={() => navigation.navigate('Lobby')}>
               <Text style={styles.textGold}>View Lobby</Text>
             </Pressable>
@@ -273,7 +273,7 @@ export function AdminHomeScreen() {
               <Text style={styles.textSecondary}>Notes</Text>
               <Text style={styles.textPrimary}>{selectedAppointment.notes || 'No notes'}</Text>
             </View>
-            <Text style={[styles.textGold, { fontSize: 24, fontWeight: '600', textAlign: 'right' }]}>
+            <Text style={[styles.statValueLg, { textAlign: 'right' }]}>
               ${getAppointmentFinalPrice(selectedAppointment).toFixed(2)}
             </Text>
           </View>

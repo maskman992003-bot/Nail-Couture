@@ -229,12 +229,12 @@ export function CustomerProfileScreen() {
               justifyContent: 'center',
             }}
           >
-            <Text style={[styles.textGold, { fontSize: 20, fontWeight: '700' }]}>
+            <Text style={[styles.statValue, { fontSize: 20 }]}>
               {getProfileInitials(profile.full_name)}
             </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.textPrimary, { fontSize: 20, fontWeight: '600' }]}>{profile.full_name}</Text>
+            <Text style={styles.cardTitleLg}>{profile.full_name}</Text>
             <Text style={styles.textSecondary}>{profile.phone}</Text>
             <Text style={[styles.textGold, { fontSize: 12, marginTop: 4 }]}>
               {tier.name} · {profile.loyalty_points ?? 0} pts

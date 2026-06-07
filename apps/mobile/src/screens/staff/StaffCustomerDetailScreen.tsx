@@ -131,7 +131,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   const styles = useThemeStyles();
   return (
     <View style={[styles.card, { padding: 16, marginBottom: 12 }]}>
-      <Text style={[styles.textGold, { fontSize: 17, fontWeight: '600', marginBottom: 12 }]}>{title}</Text>
+      <Text style={[styles.panelTitle, { marginBottom: 12 }]}>{title}</Text>
       {children}
     </View>
   );
@@ -152,7 +152,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <View style={[styles.card, { padding: 10, flex: 1, alignItems: 'center' }]}>
       <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 1 }]}>{label.toUpperCase()}</Text>
-      <Text style={[styles.textGold, { fontSize: 16, fontWeight: '600', marginTop: 4 }]}>{value}</Text>
+      <Text style={[styles.sectionTitle, { marginTop: 4 }]}>{value}</Text>
     </View>
   );
 }
@@ -631,11 +631,11 @@ export function StaffCustomerDetailScreen() {
                 justifyContent: 'center',
               }}
             >
-              <Text style={[styles.textGold, { fontSize: 24, fontWeight: '600' }]}>{initials}</Text>
+              <Text style={[styles.statValueLg, { fontSize: 24 }]}>{initials}</Text>
             </View>
           )}
           <View style={{ flex: 1 }}>
-            <Text style={[styles.textPrimary, { fontSize: 22, fontWeight: '600', textTransform: 'capitalize' }]}>
+            <Text style={[styles.cardTitleLg, { textTransform: 'capitalize' }]}>
               {profile.full_name}
             </Text>
             <Text style={styles.textSecondary}>{profile.email}</Text>
@@ -1010,7 +1010,7 @@ export function StaffCustomerDetailScreen() {
         <View>
           <Section title="Loyalty status">
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 12 }}>
-              <Text style={[styles.textGold, { fontSize: 32, fontWeight: '600' }]}>
+              <Text style={styles.statValueLg}>
                 {profile.loyalty_points || 0}
               </Text>
               <View>

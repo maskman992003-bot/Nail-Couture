@@ -239,9 +239,9 @@ export function StaffProfileScreen({ staffId: staffIdProp }: StaffProfileScreenP
               marginBottom: 16,
             }}
           >
-            <Text style={[styles.textGold, { fontSize: 32, fontWeight: '600' }]}>{initials}</Text>
+            <Text style={[styles.statValueLg, { fontSize: 32 }]}>{initials}</Text>
           </View>
-          <Text style={[styles.textPrimary, { fontSize: 22, fontWeight: '600', marginBottom: 4 }]}>
+          <Text style={[styles.statValue, { color: styles.tokens.textPrimary, fontSize: 22, marginBottom: 4 }]}>
             {profile.full_name || 'Unknown'}
           </Text>
           <Text style={[styles.textSecondary, { marginBottom: 12 }]}>{profile.email || 'No email'}</Text>
@@ -263,7 +263,7 @@ export function StaffProfileScreen({ staffId: staffIdProp }: StaffProfileScreenP
 
         <View style={{ flex: 2, minWidth: 260, gap: 16 }}>
           <View style={[styles.card, { padding: 16 }]}>
-            <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600', marginBottom: 16 }]}>
+            <Text style={[styles.panelTitle, { marginBottom: 16 }]}>
               Performance
             </Text>
             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -279,11 +279,11 @@ export function StaffProfileScreen({ staffId: staffIdProp }: StaffProfileScreenP
                 ]}
               >
                 <Text style={{ color: '#4ade80', fontSize: 13, marginBottom: 8 }}>Today</Text>
-                <Text style={[styles.textPrimary, { fontSize: 24, fontWeight: '600' }]}>
+                <Text style={[styles.statValueLg, { color: styles.tokens.textPrimary, fontSize: 24 }]}>
                   {todayStats.servicesCompleted}
                 </Text>
                 <Text style={styles.textSecondary}>Services completed</Text>
-                <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600', marginTop: 8 }]}>
+                <Text style={[styles.statValue, { marginTop: 8 }]}>
                   ${todayStats.revenueProcessed.toFixed(0)}
                 </Text>
                 <Text style={styles.textSecondary}>Revenue</Text>
@@ -300,11 +300,11 @@ export function StaffProfileScreen({ staffId: staffIdProp }: StaffProfileScreenP
                 ]}
               >
                 <Text style={{ color: '#60a5fa', fontSize: 13, marginBottom: 8 }}>This Week</Text>
-                <Text style={[styles.textPrimary, { fontSize: 24, fontWeight: '600' }]}>
+                <Text style={[styles.statValueLg, { color: styles.tokens.textPrimary, fontSize: 24 }]}>
                   {weekStats.servicesCompleted}
                 </Text>
                 <Text style={styles.textSecondary}>Services completed</Text>
-                <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600', marginTop: 8 }]}>
+                <Text style={[styles.statValue, { marginTop: 8 }]}>
                   ${weekStats.revenueProcessed.toFixed(0)}
                 </Text>
                 <Text style={styles.textSecondary}>Revenue</Text>
@@ -313,7 +313,7 @@ export function StaffProfileScreen({ staffId: staffIdProp }: StaffProfileScreenP
           </View>
 
           <View style={[styles.card, { padding: 16 }]}>
-            <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600', marginBottom: 16 }]}>
+            <Text style={[styles.panelTitle, { marginBottom: 16 }]}>
               Role Management
             </Text>
             <Text style={[styles.textSecondary, { marginBottom: 8 }]}>Change role:</Text>
@@ -329,7 +329,7 @@ export function StaffProfileScreen({ staffId: staffIdProp }: StaffProfileScreenP
           </View>
 
           <View style={[styles.card, { padding: 16 }]}>
-            <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600', marginBottom: 16 }]}>
+            <Text style={[styles.panelTitle, { marginBottom: 16 }]}>
               Activity Log
             </Text>
             {cashierActivity.length === 0 ? (

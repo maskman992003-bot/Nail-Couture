@@ -125,9 +125,7 @@ export function CashierHomeScreen() {
           <Text style={styles.textSecondary}>Paid Today</Text>
         </View>
         <View style={statCard}>
-          <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600' }]}>
-            ${revenueToday.toFixed(0)}
-          </Text>
+          <Text style={styles.statValue}>${revenueToday.toFixed(0)}</Text>
           <Text style={styles.textSecondary}>Revenue</Text>
         </View>
       </View>
@@ -164,7 +162,7 @@ export function CashierHomeScreen() {
           </View>
         )}
         <Text style={{ fontSize: 32, marginBottom: 8 }}>💳</Text>
-        <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600' }]}>Checkout</Text>
+        <Text style={styles.statValue}>Checkout</Text>
         <Text style={[styles.textSecondary, { marginTop: 4, textAlign: 'center' }]}>
           Process payments and settlements
         </Text>
@@ -172,7 +170,7 @@ export function CashierHomeScreen() {
 
       <Pressable onPress={() => navigation.navigate('Lobby')} style={linkCard}>
         <Text style={{ fontSize: 32, marginBottom: 8 }}>👥</Text>
-        <Text style={[styles.textPrimary, { fontSize: 20, fontWeight: '600' }]}>Lobby</Text>
+        <Text style={styles.cardTitleLg}>Lobby</Text>
         <Text style={[styles.textSecondary, { marginTop: 4, textAlign: 'center' }]}>
           Monitor floor and assist check-ins
         </Text>
@@ -180,14 +178,14 @@ export function CashierHomeScreen() {
 
       <Pressable onPress={() => navigation.navigate('Reports')} style={linkCard}>
         <Text style={{ fontSize: 32, marginBottom: 8 }}>📊</Text>
-        <Text style={[styles.textPrimary, { fontSize: 20, fontWeight: '600' }]}>Daily Reports</Text>
+        <Text style={styles.cardTitleLg}>Daily Reports</Text>
         <Text style={[styles.textSecondary, { marginTop: 4, textAlign: 'center' }]}>
           View transactions and revenue
         </Text>
       </Pressable>
 
       <View style={[styles.card, { padding: 16, marginTop: 8 }]}>
-        <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600', marginBottom: 12 }]}>
+        <Text style={[styles.cardTitle, { marginBottom: 12 }]}>
           Today&apos;s Transactions
         </Text>
         {recentTransactions.length > 0 ? (
@@ -211,7 +209,7 @@ export function CashierHomeScreen() {
                   <Text style={styles.textSecondary}>{serviceLabel}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600' }]}>
+                  <Text style={styles.priceText}>
                     ${Number(tx.final_amount || tx.amount || 0).toFixed(2)}
                   </Text>
                   <Text style={{ color: '#4ade80', fontSize: 11, textTransform: 'capitalize' }}>

@@ -80,6 +80,48 @@ export function useThemeStyles() {
         fontSize: 16,
         fontWeight: '600' as const,
       },
+      panelTitle: {
+        color: tokens.goldStrong,
+        fontFamily: fontFamilies.heading,
+        fontSize: 18,
+        fontWeight: '600' as const,
+      },
+      cardTitleLg: {
+        color: tokens.textPrimary,
+        fontFamily: fontFamilies.heading,
+        fontSize: 20,
+        fontWeight: '600' as const,
+      },
+      cardTitle: {
+        color: tokens.textPrimary,
+        fontFamily: fontFamilies.heading,
+        fontSize: 18,
+        fontWeight: '600' as const,
+      },
+      statValueLg: {
+        color: tokens.goldStrong,
+        fontFamily: fontFamilies.heading,
+        fontSize: 28,
+        fontWeight: '600' as const,
+      },
+      statValue: {
+        color: tokens.goldStrong,
+        fontFamily: fontFamilies.heading,
+        fontSize: 22,
+        fontWeight: '600' as const,
+      },
+      priceText: {
+        color: tokens.goldStrong,
+        fontFamily: fontFamilies.heading,
+        fontSize: 18,
+        fontWeight: '600' as const,
+      },
+      priceTextLg: {
+        color: tokens.goldStrong,
+        fontFamily: fontFamilies.heading,
+        fontSize: 22,
+        fontWeight: '600' as const,
+      },
       kioskTitle: {
         color: tokens.goldStrong,
         fontFamily: fontFamilies.heading,

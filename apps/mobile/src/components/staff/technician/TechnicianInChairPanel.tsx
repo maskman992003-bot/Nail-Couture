@@ -316,7 +316,7 @@ export function TechnicianInChairPanel({
           marginBottom: 12,
         }}
       >
-        <Text style={[styles.textPrimary, { fontSize: 20, fontWeight: '600' }]}>In Chair</Text>
+        <Text style={styles.cardTitleLg}>In Chair</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {elapsed ? (
             <View
@@ -350,7 +350,7 @@ export function TechnicianInChairPanel({
         </View>
       </View>
 
-      <Text style={[styles.textPrimary, { fontSize: 24, fontWeight: '600' }]}>
+      <Text style={[styles.statValueLg, { color: styles.tokens.textPrimary, fontSize: 24 }]}>
         {customer.full_name || 'Customer'}
       </Text>
 

@@ -266,7 +266,7 @@ export function TechnicianDashboard({
         {!stats.currentAppointment && !hasWork ? (
           <View style={[styles.card, { padding: 32, marginBottom: 16, alignItems: 'center' }]}>
             <Text style={{ fontSize: 40, marginBottom: 8 }}>✨</Text>
-            <Text style={[styles.textPrimary, { fontSize: 20, fontWeight: '600' }]}>All clear!</Text>
+            <Text style={styles.cardTitle}>All clear!</Text>
             <Text style={[styles.textSecondary, { fontSize: 13, marginTop: 4, textAlign: 'center' }]}>
               No assignments right now. Check the floor snapshot for salon activity.
             </Text>

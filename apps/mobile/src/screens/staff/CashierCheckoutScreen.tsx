@@ -271,7 +271,7 @@ function CheckoutModal({ appointment, open, onClose, onConfirm }: CheckoutModalP
           }}
         >
           <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Final Total</Text>
-          <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600' }]}>
+          <Text style={styles.priceTextLg}>
             ${finalTotal.toFixed(2)}
           </Text>
         </View>
@@ -334,7 +334,7 @@ function AppointmentCard({
       ]}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-        <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>
+        <Text style={styles.cardTitle}>
           {appointment.customer?.full_name || 'Guest'}
         </Text>
         <Text
@@ -507,7 +507,7 @@ export function CashierCheckoutScreen() {
 
       {readyAppointments.length > 0 && (
         <View style={{ marginBottom: 20 }}>
-          <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600', marginBottom: 12 }]}>
+          <Text style={[styles.panelTitle, { marginBottom: 12 }]}>
             Checkout Queue ({readyAppointments.length})
           </Text>
           {readyAppointments.map((appt) => (
@@ -518,7 +518,7 @@ export function CashierCheckoutScreen() {
 
       {servingAppointments.length > 0 && (
         <View style={{ marginBottom: 20 }}>
-          <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600', marginBottom: 12 }]}>
+          <Text style={[styles.cardTitle, { marginBottom: 12 }]}>
             Still In Chair ({servingAppointments.length})
           </Text>
           {servingAppointments.map((appt) => (
@@ -530,7 +530,7 @@ export function CashierCheckoutScreen() {
       {readyAppointments.length === 0 && servingAppointments.length === 0 && (
         <View style={[styles.card, { padding: 32, alignItems: 'center' }]}>
           <Text style={{ fontSize: 48, marginBottom: 12 }}>☐</Text>
-          <Text style={[styles.textPrimary, { fontSize: 20, fontWeight: '600', marginBottom: 8 }]}>
+          <Text style={[styles.cardTitleLg, { marginBottom: 8 }]}>
             No Clients to Checkout
           </Text>
           <Text style={[styles.textSecondary, { textAlign: 'center' }]}>

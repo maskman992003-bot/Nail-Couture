@@ -128,7 +128,7 @@ export function CustomerHomeScreen() {
 
       {appointments.length > 0 ? (
         <View style={[styles.card, { padding: 16, marginTop: 16, gap: 12 }]}>
-          <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2 }]}>
+          <Text style={styles.sectionLabel}>
             YOUR ACTIVE APPOINTMENT{appointments.length > 1 ? 'S' : ''}
           </Text>
           {appointments.map((booking) => (
@@ -148,7 +148,7 @@ export function CustomerHomeScreen() {
               }}
             >
               <View style={{ flex: 1 }}>
-                <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>
+                <Text style={styles.cardTitle}>
                   {booking.add_ons || booking.services?.name || 'Service'}
                 </Text>
                 {booking.checked_in_at ? (
@@ -171,7 +171,7 @@ export function CustomerHomeScreen() {
       ) : (
         <View style={[styles.card, { padding: 24, marginTop: 16, alignItems: 'center' }]}>
           <Text style={{ fontSize: 40, marginBottom: 8 }}>💅</Text>
-          <Text style={[styles.textPrimary, { fontSize: 22, fontWeight: '600', textAlign: 'center' }]}>
+          <Text style={[styles.cardTitleLg, { textAlign: 'center' }]}>
             Book Your Experience
           </Text>
           <Text style={[styles.textSecondary, { textAlign: 'center', marginTop: 8, marginBottom: 16 }]}>
@@ -198,7 +198,7 @@ export function CustomerHomeScreen() {
           style={[styles.card, { flex: 1, padding: 16 }]}
         >
           <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 1 }]}>ACCOUNT</Text>
-          <Text style={[styles.textGold, { fontSize: 16, fontWeight: '600', marginTop: 6 }]}>
+          <Text style={[styles.sectionTitle, { marginTop: 6 }]}>
             My Profile →
           </Text>
         </Pressable>
@@ -207,7 +207,7 @@ export function CustomerHomeScreen() {
           style={[styles.card, { flex: 1, padding: 16 }]}
         >
           <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 1 }]}>REWARDS</Text>
-          <Text style={[styles.textGold, { fontSize: 16, fontWeight: '600', marginTop: 6 }]}>
+          <Text style={[styles.sectionTitle, { marginTop: 6 }]}>
             Redeem Points →
           </Text>
         </Pressable>

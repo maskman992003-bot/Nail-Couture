@@ -411,7 +411,7 @@ export function BookingWizard() {
   return (
     <View>
       <View style={{ alignItems: 'center', marginBottom: 20 }}>
-        <Text style={[styles.textGold, { fontSize: 26, fontWeight: '600', textAlign: 'center' }]}>
+        <Text style={[styles.textHeading, { fontSize: 26, textAlign: 'center' }]}>
           Book Your Appointment
         </Text>
         <Text style={[styles.textSecondary, { marginTop: 6, textAlign: 'center' }]}>

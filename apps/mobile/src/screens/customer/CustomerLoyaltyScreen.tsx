@@ -70,7 +70,7 @@ export function CustomerLoyaltyScreen() {
       <MembershipCard profile={profile} onCopyReferral={handleCopyReferral} copiedCode={copiedCode} />
 
       <View style={[styles.card, { padding: 16, marginTop: 16, gap: 12 }]}>
-        <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2 }]}>HOW TO EARN</Text>
+        <Text style={styles.sectionLabel}>HOW TO EARN</Text>
         <Text style={styles.textSecondary}>
           Earn 1 point per $1 spent. Share your referral code for bonus points when friends join.
         </Text>
@@ -96,7 +96,7 @@ export function CustomerLoyaltyScreen() {
       </View>
 
       <View style={[styles.card, { padding: 16, marginTop: 16 }]}>
-        <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2, marginBottom: 12 }]}>
+        <Text style={[styles.sectionLabel, { fontSize: 10, marginBottom: 12 }]}>
           AVAILABLE REWARDS
         </Text>
         <Text style={[styles.textSecondary, { marginBottom: 12 }]}>

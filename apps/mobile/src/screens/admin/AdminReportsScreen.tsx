@@ -197,7 +197,7 @@ export function AdminReportsScreen() {
           { label: preferPayments ? 'Payments' : 'Completed', value: currentMetrics.paymentCount },
         ].map((m) => (
           <View key={m.label} style={[styles.card, { padding: 12, minWidth: 90, alignItems: 'center' }]}>
-            <Text style={[styles.textGold, { fontWeight: '600', fontSize: 16 }]}>{m.value}</Text>
+            <Text style={[styles.sectionTitle, { fontWeight: '600' }]}>{m.value}</Text>
             <Text style={[styles.textSecondary, { fontSize: 10 }]}>{m.label}</Text>
           </View>
         ))}
@@ -205,14 +205,14 @@ export function AdminReportsScreen() {
 
       {activeTab !== 'custom' && (
         <View style={[styles.card, { padding: 16, marginBottom: 16 }]}>
-          <Text style={[styles.textPrimary, { fontWeight: '600', marginBottom: 12 }]}>Revenue Comparison</Text>
+          <Text style={[styles.cardTitle, { marginBottom: 12 }]}>Revenue Comparison</Text>
           <SimpleBarChart data={comparisonChart} />
         </View>
       )}
 
       {topServices.length > 0 && (
         <View style={[styles.card, { padding: 16 }]}>
-          <Text style={[styles.textPrimary, { fontWeight: '600', marginBottom: 12 }]}>Popular Services</Text>
+          <Text style={[styles.cardTitle, { marginBottom: 12 }]}>Popular Services</Text>
           <SimpleBarChart data={topServices} color="#4ade80" />
         </View>
       )}

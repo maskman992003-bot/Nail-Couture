@@ -11,7 +11,7 @@ export function CustomerBookingScreen() {
     return (
       <CustomerScreenLayout title="Book Appointment" subtitle="Online booking">
         <View style={[styles.card, { padding: 24, alignItems: 'center' }]}>
-          <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600', textAlign: 'center' }]}>
+          <Text style={[styles.statValue, { textAlign: 'center' }]}>
             Booking Temporarily Unavailable
           </Text>
           <Text style={[styles.textSecondary, { textAlign: 'center', marginTop: 12, marginBottom: 20 }]}>

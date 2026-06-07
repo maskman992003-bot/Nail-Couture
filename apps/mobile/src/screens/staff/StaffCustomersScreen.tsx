@@ -369,19 +369,19 @@ export function StaffCustomersScreen() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
           <View style={{ alignItems: 'center' }}>
             <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 1 }]}>ELITE CUSTOMERS</Text>
-            <Text style={[styles.textGold, { fontSize: 24, fontWeight: '600', marginTop: 4 }]}>
+            <Text style={[styles.statValueLg, { fontSize: 24, marginTop: 4 }]}>
               {summaryStats.totalCustomers}
             </Text>
           </View>
           <View style={{ alignItems: 'center' }}>
             <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 1 }]}>TOTAL VISITS</Text>
-            <Text style={[styles.textPrimary, { fontSize: 20, fontWeight: '600', marginTop: 4 }]}>
+            <Text style={[styles.cardTitleLg, { marginTop: 4 }]}>
               {summaryStats.totalVisits}
             </Text>
           </View>
           <View style={{ alignItems: 'center' }}>
             <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 1 }]}>REVENUE</Text>
-            <Text style={[styles.textGold, { fontSize: 20, fontWeight: '600', marginTop: 4 }]}>
+            <Text style={[styles.statValue, { fontSize: 20, marginTop: 4 }]}>
               ${summaryStats.totalSpent.toFixed(2)}
             </Text>
           </View>
@@ -391,7 +391,7 @@ export function StaffCustomersScreen() {
       {sortedCustomers.length === 0 ? (
         <View style={{ alignItems: 'center', paddingVertical: 40 }}>
           <Text style={{ fontSize: 36, marginBottom: 8 }}>📦</Text>
-          <Text style={[styles.textPrimary, { fontSize: 20, fontWeight: '600', marginBottom: 4 }]}>
+          <Text style={[styles.cardTitleLg, { marginBottom: 4 }]}>
             No Records Match
           </Text>
           <Text style={styles.textSecondary}>No records match your criteria or chosen date range</Text>

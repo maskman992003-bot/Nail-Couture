@@ -101,7 +101,7 @@ export function TechnicianQueue({
   return (
     <View style={[styles.card, { padding: 16, marginBottom: 16 }]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>My Assignments</Text>
+        <Text style={styles.cardTitle}>My Assignments</Text>
         {newAssignmentIds.length > 0 ? (
           <Pressable
             onPress={() => newAssignmentIds.forEach((id) => onDismissNew?.(id))}

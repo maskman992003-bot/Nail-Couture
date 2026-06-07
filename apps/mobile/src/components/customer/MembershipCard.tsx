@@ -42,9 +42,7 @@ export function MembershipCard({
         },
       ]}
     >
-      <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2, marginBottom: 12 }]}>
-        MEMBERSHIP CARD
-      </Text>
+      <Text style={styles.sectionLabel}>MEMBERSHIP CARD</Text>
 
       <View
         style={{
@@ -57,13 +55,15 @@ export function MembershipCard({
           marginBottom: 12,
         }}
       >
-        <Text style={[styles.textGold, { fontSize: 22, fontWeight: '700' }]}>
+        <Text style={[styles.statValueLg, { fontSize: 22 }]}>
           {getProfileInitials(profile.full_name)}
         </Text>
       </View>
 
-      <Text style={{ color: tierColor, fontSize: 24, fontWeight: '600' }}>{tier.name} Member</Text>
-      <Text style={[styles.textGold, { fontSize: 44, fontWeight: '700', marginVertical: 8 }]}>
+      <Text style={{ color: tierColor, fontSize: 24, fontWeight: '600', fontFamily: styles.fonts.heading }}>
+        {tier.name} Member
+      </Text>
+      <Text style={[styles.statValueLg, { fontSize: 44, marginVertical: 8 }]}>
         {profile.loyalty_points || 0}
       </Text>
       <Text style={styles.textSecondary}>points</Text>
@@ -111,7 +111,7 @@ export function MembershipCard({
           <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2, marginBottom: 8 }]}>
             YOUR REFERRAL CODE
           </Text>
-          <Text style={[styles.textGold, { fontSize: 18, letterSpacing: 3, marginBottom: 10 }]}>
+          <Text style={[styles.statValue, { fontSize: 18, letterSpacing: 3, marginBottom: 10 }]}>
             {profile.referral_code}
           </Text>
           {onCopyReferral ? (

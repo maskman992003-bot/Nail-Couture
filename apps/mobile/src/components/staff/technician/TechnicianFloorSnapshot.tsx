@@ -278,7 +278,7 @@ export function TechnicianFloorSnapshot({
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-          <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>Salon Floor</Text>
+            <Text style={styles.cardTitle}>Salon Floor</Text>
           {myAssigned.length > 0 ? (
             <View
               style={{

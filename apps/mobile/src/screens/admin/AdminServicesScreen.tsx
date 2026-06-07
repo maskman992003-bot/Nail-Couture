@@ -249,7 +249,7 @@ export function AdminServicesScreen() {
                     {svc.category} · {svc.duration_minutes || 0} min
                   </Text>
                 </View>
-                <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600' }]}>${svc.price}</Text>
+                <Text style={styles.priceText}>${svc.price}</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 10 }}>
                 <Pressable onPress={() => openEdit(svc)}>

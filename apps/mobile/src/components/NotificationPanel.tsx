@@ -54,7 +54,7 @@ export function NotificationPanel({
             }}
           >
             <View>
-              <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600' }]}>Notifications</Text>
+              <Text style={styles.statValue}>Notifications</Text>
               {unreadCount > 0 ? (
                 <Text style={[styles.textSecondary, { fontSize: 12, marginTop: 4 }]}>
                   {unreadCount} unread
