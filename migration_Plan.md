@@ -212,8 +212,12 @@ Internal order for execution — **no device testing until all phases complete**
 
 ### Phase 6 — Windows (week 11+)
 
-- [ ] Add `react-native-windows` target
+- [x] Add `react-native-windows` target — see [`docs/PHASE6_WINDOWS.md`](docs/PHASE6_WINDOWS.md)
+- [x] `windows/` native project scaffolded (`npx react-native init-windows`)
+- [x] Metro merged for Expo + monorepo + RNW blockList
+- [x] Platform guards: image picker, gradients, clipboard
 - [ ] Full app validation on Windows touch + mouse
+- [ ] MSIX packaging / store submission (future)
 
 ---
 

@@ -6,7 +6,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+import { setClipboardString } from '../../platform/clipboard';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { APPOINTMENT_STATUS_COLORS, APPOINTMENT_STATUS_LABELS } from '@nail-couture/shared/utils/appointmentHelpers.js';
 import { useAuth } from '../../contexts/AuthContext';
@@ -256,7 +256,7 @@ export function AdminBookingsScreen() {
       String(b.final_price || b.service?.price || ''),
     ]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-    await Clipboard.setStringAsync(csv);
+    await setClipboardString(csv);
   };
 
   const inputStyle = {

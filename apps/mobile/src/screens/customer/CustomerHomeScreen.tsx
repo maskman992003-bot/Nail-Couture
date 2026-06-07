@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import * as Clipboard from 'expo-clipboard';
+import { setClipboardString } from '../../platform/clipboard';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags.js';
 import { getTierInfo, generateReferralCode, tierDetails } from '@nail-couture/shared/utils/loyaltyTier.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
@@ -88,7 +88,7 @@ export function CustomerHomeScreen() {
 
   const handleCopyReferral = async () => {
     if (!profile?.referral_code) return;
-    await Clipboard.setStringAsync(profile.referral_code);
+    await setClipboardString(profile.referral_code);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };

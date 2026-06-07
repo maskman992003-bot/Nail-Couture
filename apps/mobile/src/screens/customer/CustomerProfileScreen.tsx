@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+import { setClipboardString } from '../../platform/clipboard';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { isRefreshmentAvailable } from '@nail-couture/shared/services/inventoryService.js';
 import { fetchCustomerStats } from '@nail-couture/shared/utils/customerStats.js';
@@ -196,7 +196,7 @@ export function CustomerProfileScreen() {
 
   const handleCopyReferral = async () => {
     if (!profile?.referral_code) return;
-    await Clipboard.setStringAsync(profile.referral_code);
+    await setClipboardString(profile.referral_code);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };

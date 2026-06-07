@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+import { setClipboardString } from '../../platform/clipboard';
 import { LOYALTY_REWARDS, fetchLoyaltyHistory, formatTransactionType } from '@nail-couture/shared/utils/loyaltyTransactions.js';
 import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
@@ -46,7 +46,7 @@ export function CustomerLoyaltyScreen() {
 
   const handleCopyReferral = async () => {
     if (!profile?.referral_code) return;
-    await Clipboard.setStringAsync(profile.referral_code);
+    await setClipboardString(profile.referral_code);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };

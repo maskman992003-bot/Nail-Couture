@@ -6,7 +6,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+import { setClipboardString } from '../../platform/clipboard';
 import { analyzeCustomRange, analyzePeriod } from '@nail-couture/shared/utils/reportsAnalytics.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
@@ -103,7 +103,7 @@ export function AdminReportsScreen() {
     const serviceLines = Object.entries(currentMetrics.serviceCounts)
       .sort((a, b) => b[1] - a[1])
       .map(([name, count]) => `${name},${count}`);
-    await Clipboard.setStringAsync([...lines, '', 'Service,Count', ...serviceLines].join('\n'));
+    await setClipboardString([...lines, '', 'Service,Count', ...serviceLines].join('\n'));
     setExporting(false);
   };
 

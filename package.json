@@ -10,6 +10,8 @@
     "dev": "npm run dev -w @nail-couture/web",
     "dev:web": "npm run dev -w @nail-couture/web",
     "dev:mobile": "npm run start -w @nail-couture/mobile",
+    "dev:windows": "npm run windows -w @nail-couture/mobile",
+    "start:windows": "npm run start:metro -w @nail-couture/mobile",
     "build:mobile:ios": "npm run build:dev:ios -w @nail-couture/mobile",
     "build:mobile:android": "npm run build:dev:android -w @nail-couture/mobile",
     "build": "npm run build -w @nail-couture/web",

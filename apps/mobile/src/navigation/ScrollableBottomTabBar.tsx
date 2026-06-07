@@ -7,7 +7,7 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient';
+import { GoldGradientBadge } from '../components/GoldGradientBadge';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors } from '@nail-couture/shared/theme/tokens.js';
@@ -153,10 +153,7 @@ export function ScrollableBottomTabBar({
               <View style={{ position: 'relative' }}>
                 <NavIcon path={item.icon} active={isFocused} />
                 {showBadge ? (
-                  <LinearGradient
-                    colors={[colors.gold, colors.goldLight]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
+                  <GoldGradientBadge
                     style={{
                       position: 'absolute',
                       top: -4,
@@ -164,15 +161,13 @@ export function ScrollableBottomTabBar({
                       minWidth: 14,
                       height: 14,
                       borderRadius: 7,
-                      alignItems: 'center',
-                      justifyContent: 'center',
                       paddingHorizontal: 2,
                     }}
                   >
                     <Text style={{ color: colors.charcoal, fontSize: 7, fontWeight: '700' }}>
                       {badgeCount > 9 ? '9+' : badgeCount}
                     </Text>
-                  </LinearGradient>
+                  </GoldGradientBadge>
                 ) : null}
               </View>
               <Text

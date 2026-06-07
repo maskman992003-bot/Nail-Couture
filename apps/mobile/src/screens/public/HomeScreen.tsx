@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Image, Pressable, Text, View, useWindowDimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ScreenGradient } from '../../components/ScreenGradient';
 import { spacing } from '@nail-couture/shared/theme/layout.js';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -124,12 +124,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           overflow: 'hidden',
         }}
       >
-        <LinearGradient
-          colors={
-            styles.theme === 'dark'
-              ? ['#121212', 'rgba(18,18,18,0.95)', '#121212']
-              : ['#FDF8F0', 'rgba(253,248,240,0.95)', '#FDF8F0']
-          }
+        <ScreenGradient
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         />
         <Image

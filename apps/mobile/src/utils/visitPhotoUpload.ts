@@ -1,4 +1,6 @@
-import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
+import { isWindows } from '../platform';
+
 import { uploadVisitPhoto } from '@nail-couture/shared/utils/staffCustomerTimeline.js';
 
 type PickedAsset = {
@@ -18,6 +20,14 @@ export type PickAndUploadVisitPhotoResult =
   | { success: false; canceled: true; error?: string };
 
 export async function pickVisitPhotoFromLibrary(): Promise<PickResult> {
+  if (isWindows || Platform.OS === 'web') {
+    return {
+      canceled: true,
+      reason: 'picker',
+    };
+  }
+
+  const ImagePicker = await import('expo-image-picker');
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permission.granted) {
     return { canceled: true, reason: 'permission' };
