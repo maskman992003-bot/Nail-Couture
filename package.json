@@ -14,6 +14,10 @@
     "build:mobile:android": "npm run build:dev:android -w @nail-couture/mobile",
     "build": "npm run build -w @nail-couture/web",
     "build:web": "npm run build -w @nail-couture/web",
+    "build:capacitor": "npm run build -w @nail-couture/web && npm run sync -w @nail-couture/capacitor",
+    "sync:capacitor": "npm run sync -w @nail-couture/capacitor",
+    "cap:ios": "npm run open:ios -w @nail-couture/capacitor",
+    "cap:android": "npm run open:android -w @nail-couture/capacitor",
     "lint": "npm run lint -w @nail-couture/web"
   }
 }
