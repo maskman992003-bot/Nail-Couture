@@ -198,6 +198,7 @@ Internal order for execution — **no device testing until all phases complete**
 - [x] Parity pass: compare every web screen side-by-side with RN
 - [x] Phase A: legacy files archived to `Trash_Can/`
 - [ ] Phase C (in progress): batch visual parity — public, customer, staff, admin screens
+- [x] Phase C typography + layout parity — shared tokens applied across all role screens
 
 ### Phase 5 — Full device test + cutover (week 10)
 
