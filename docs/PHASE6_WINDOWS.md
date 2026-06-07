@@ -10,7 +10,12 @@
 1. **Visual Studio 2022** (Community or higher)
    - Workload: **Universal Windows Platform development**
    - Workload: **Desktop development with C++**
-   - Individual component: **Windows 10/11 SDK** (10.0.19041 or newer)
+   - **Windows 11 SDK (10.0.22621)** — required by RNW 0.83 native modules
+
+   Install SDK standalone if missing:
+   ```powershell
+   winget install Microsoft.WindowsSDK.10.0.22621
+   ```
 
 2. **Node.js** 20.19.4+ (matches Expo SDK 56 / RN 0.85)
 
@@ -129,7 +134,11 @@ From the migration testing matrix:
 | Issue | Fix |
 |-------|-----|
 | `MSBuild` not found | Install VS 2022 C++ + UWP workloads |
-| `Solution file is required` | Ensure `react-native.config.js` sets `solutionFile: 'Mobile.sln'` |
+| `Solution file is required` | Ensure `react-native.config.js` sets `solutionFile: 'Mobile.sln'` and nested `project.projectFile` |
+| `Project is required but not specified` | Set `project.windows.project.projectFile` (not top-level `projectFile`) in `react-native.config.js` |
+| Windows App SDK transitive deps error | Repo root `Directory.Build.props` sets `WindowsAppSDKVerifyTransitiveDependencies=false` |
+| `Windows SDK version 10.0.22621.0 was not found` | Install SDK via winget (see Prerequisites) |
+| `JSIndexedRAMBundle.cpp` C2665 compile error | **RN 0.85 vs RNW 0.83 mismatch** — wait for RNW 0.85 or use RN 0.83 (breaks Expo 56) |
 | `Unable to find vswhere` / no VS release | Install Visual Studio 2022, or run `node_modules/react-native-windows/scripts/rnw-dependencies.ps1` elevated |
 | Metro crash when running Windows | Ensure `windows/` is in Metro `blockList` (already in `metro.config.js`) |
 | `expo-modules-core` / `EXPO_OS` errors | Some Expo APIs still load at runtime — report screen + stack trace |

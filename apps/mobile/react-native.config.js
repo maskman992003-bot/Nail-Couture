@@ -4,6 +4,9 @@ module.exports = {
     windows: {
       sourceDir: 'windows',
       solutionFile: 'Mobile.sln',
+      project: {
+        projectFile: 'Mobile/Mobile.vcxproj',
+      },
     },
   },
 };
