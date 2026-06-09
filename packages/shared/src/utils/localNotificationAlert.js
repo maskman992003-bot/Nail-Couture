@@ -1,4 +1,5 @@
 import { featureFlags } from '../constants/featureFlags.js';
+import { playNotificationAlertSound } from './notificationAlertSound.js';
 
 /**
  * Show a local/system alert when a new in-app notification arrives.
@@ -19,9 +20,13 @@ export function showLocalNotificationAlert(notification) {
       } catch {
         /* ignore */
       }
+    } else {
+      playNotificationAlertSound();
     }
     return;
   }
+
+  playNotificationAlertSound();
 
   // React Native — loaded dynamically so web bundle stays clean
   if (typeof globalThis !== 'undefined' && globalThis.__NC_SHOW_LOCAL_NOTIFICATION__) {
@@ -46,18 +51,33 @@ export async function requestLocalNotificationPermission() {
 }
 
 /**
+ * Prompt once per browser session after login.
+ */
+export async function ensureLocalNotificationPermission() {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'default') return;
+  if (sessionStorage.getItem('nc_notif_perm_asked') === '1') return;
+  sessionStorage.setItem('nc_notif_perm_asked', '1');
+  await requestLocalNotificationPermission();
+}
+
+/**
  * Detect newly arrived unread notifications and fire local alerts.
  *
  * @param {Array<{ id: string, is_read: boolean, title: string, body?: string, message?: string }>} next
  * @param {Set<string>} seenIds
+ * @returns {{ seenIds: Set<string>, newUnreadCount: number }}
  */
 export function alertNewNotifications(next, seenIds) {
-  if (!Array.isArray(next)) return seenIds;
+  if (!Array.isArray(next)) return { seenIds, newUnreadCount: 0 };
+
+  let newUnreadCount = 0;
 
   for (const notif of next) {
     if (!notif?.id || notif.is_read || seenIds.has(notif.id)) continue;
     showLocalNotificationAlert(notif);
     seenIds.add(notif.id);
+    newUnreadCount += 1;
   }
 
   for (const id of [...seenIds]) {
@@ -66,5 +86,5 @@ export function alertNewNotifications(next, seenIds) {
     }
   }
 
-  return seenIds;
+  return { seenIds, newUnreadCount };
 }

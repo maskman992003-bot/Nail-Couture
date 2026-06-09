@@ -7,6 +7,8 @@ import { getNavItemsForRole } from '@nail-couture/shared/navigation/navItems.js'
 import { featureFlags } from '@nail-couture/shared/constants/featureFlags.js';
 import { getNotificationWebPath } from '@nail-couture/shared/constants/notificationRoutes.js';
 import { useNotifications } from '@nail-couture/shared/hooks/useNotifications.js';
+import NotificationBell from '@nail-couture/shared/components/NotificationBell.jsx';
+import NotificationPanel from '@nail-couture/shared/components/NotificationPanel.jsx';
 import { getSettingsPath } from '@nail-couture/shared/utils/routes';
 import { fetchPendingAssignmentCount } from '@nail-couture/shared/utils/technicianQueue';
 import { modalBtnPrimary, modalBtnSecondary } from './AppModal';
@@ -66,8 +68,11 @@ export default function Sidebar() {
   const {
     notifications,
     unreadCount,
+    bellRing,
     markAllRead,
     markOneRead,
+    deleteOne,
+    deleteAll,
   } = useNotifications({
     userPhone,
     userId: user?.id,
@@ -231,8 +236,15 @@ export default function Sidebar() {
         </div>
 
         {/* User Menu */}
-        <div className="p-4 border-t flex-shrink-0 flex justify-center lg:justify-start" style={{ borderColor }}>
-          <div className="relative desktop-user-menu w-full md:flex md:justify-center lg:block">
+        <div className="p-4 border-t flex-shrink-0 flex justify-center lg:justify-start gap-2" style={{ borderColor }}>
+          <NotificationBell
+            unreadCount={unreadCount}
+            ring={bellRing}
+            theme={theme}
+            onClick={() => setNotifPanelOpen(true)}
+            className="hover:bg-gold/10"
+          />
+          <div className="relative desktop-user-menu w-full md:flex md:justify-center lg:block flex-1 min-w-0">
             <button
               onClick={() => { setShowDesktopUserMenu((v) => !v); }}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity w-full md:justify-center lg:justify-start cursor-pointer"
@@ -342,7 +354,14 @@ export default function Sidebar() {
             <div className="w-4 h-full flex-shrink-0" aria-hidden="true" />
           </div>
           
-          <div className="relative flex flex-col items-center w-[60px] mobile-user-menu flex-shrink-0 border-l border-gold/10 pl-1">
+          <div className="relative flex items-center gap-1 w-[72px] mobile-user-menu flex-shrink-0 border-l border-gold/10 pl-1">
+            <NotificationBell
+              unreadCount={unreadCount}
+              ring={bellRing}
+              theme={theme}
+              size="sm"
+              onClick={() => setNotifPanelOpen(true)}
+            />
             <button
               onClick={(e) => { 
                 e.stopPropagation();
@@ -424,84 +443,18 @@ export default function Sidebar() {
       `}</style>
 
       {notifPanelOpen ? (
-        <div className="fixed inset-0 z-[200]" onClick={() => setNotifPanelOpen(false)}>
-          <div className="absolute inset-0 bg-black/60" />
-          <div
-              className="absolute right-0 top-0 h-full w-full max-w-sm overflow-y-auto shadow-2xl"
-              style={{ 
-                backgroundColor: theme === 'dark' ? '#111' : '#fff', 
-                borderLeft: `1px solid ${theme === 'dark' ? 'rgba(197,160,89,0.2)' : 'rgba(197,160,89,0.3)'}` 
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b" style={{ 
-                borderColor: theme === 'dark' ? 'rgba(197,160,89,0.15)' : 'rgba(197,160,89,0.2)', 
-                backgroundColor: theme === 'dark' ? '#111' : '#fff' 
-              }}>
-              <div>
-                <h2 className="font-heading text-2xl text-gold">Notifications</h2>
-                {unreadCount > 0 && <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>{unreadCount} unread</p>}
-              </div>
-              <div className="flex items-center gap-3">
-                {unreadCount > 0 && (
-                  <button
-                    onClick={markAllRead}
-                    className="px-3 py-1.5 text-xs text-gold border border-gold/40 rounded-xl hover:bg-gold/10 transition-colors"
-                  >
-                    Mark all read
-                  </button>
-                )}
-                <button
-                  onClick={() => setNotifPanelOpen(false)}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors text-xl ${theme === 'dark' ? 'text-offwhite/40 hover:text-offwhite' : 'text-charcoal/40 hover:text-charcoal'}`}
-                >
-                  &times;
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 space-y-3">
-              {notifications.length === 0 ? (
-                <div className="text-center py-12">
-                  <svg className={`w-10 h-10 mx-auto mb-3 ${theme === 'dark' ? 'text-offwhite/20' : 'text-charcoal/20'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
-                  <p className={`text-sm ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No notifications yet</p>
-                </div>
-              ) : notifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  onClick={() => handleNotificationClick(notif)}
-                  className="rounded-xl p-4 border transition-all cursor-pointer"
-                  style={{
-                    backgroundColor: theme === 'dark' 
-                      ? (notif.is_read ? 'rgba(255,255,255,0.02)' : 'rgba(197,160,89,0.06)') 
-                      : (notif.is_read ? 'rgba(197,160,89,0.03)' : 'rgba(197,160,89,0.1)'),
-                    borderColor: theme === 'dark' 
-                      ? (notif.is_read ? 'rgba(255,255,255,0.06)' : 'rgba(197,160,89,0.3)') 
-                      : (notif.is_read ? 'rgba(197,160,89,0.15)' : 'rgba(197,160,89,0.4)'),
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    {!notif.is_read && (
-                      <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0 bg-gold" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className={`font-heading text-sm mb-1 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{notif.title}</div>
-                      <div className={`text-xs mb-2 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>{notif.body || notif.message}</div>
-                      <div className={`text-[10px] ${theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}`}>
-                        {new Date(notif.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at{' '}
-                        {new Date(notif.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <NotificationPanel
+          open={notifPanelOpen}
+          onClose={() => setNotifPanelOpen(false)}
+          notifications={notifications}
+          unreadCount={unreadCount}
+          theme={theme}
+          onMarkAllRead={markAllRead}
+          onMarkOneRead={markOneRead}
+          onDeleteOne={deleteOne}
+          onDeleteAll={deleteAll}
+          onNotificationPress={handleNotificationClick}
+        />
       ) : null}
 
       {showLogoutConfirm && (

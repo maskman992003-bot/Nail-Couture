@@ -14,6 +14,7 @@ import { ScrollSelect } from '../../components/forms/ScrollSelect';
 import { RefreshmentSelect } from '../../components/forms/RefreshmentSelect';
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { NotificationPreferencesSection } from '../../components/NotificationPreferencesSection';
+import { NotificationHistorySection } from '../../components/NotificationHistorySection';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import { useAvailableRefreshments } from '../../hooks/useAvailableRefreshments';
 
@@ -302,6 +303,7 @@ export function CustomerProfileScreen() {
             copiedCode={copiedCode}
             showReferral
           />
+          <NotificationHistorySection />
         </View>
       ) : null}
 

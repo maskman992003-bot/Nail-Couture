@@ -76,6 +76,14 @@ WITH checks AS (
   UNION ALL SELECT '040_update_notification_preferences',
     EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
             WHERE n.nspname = 'public' AND p.proname = 'update_notification_preferences')
+
+  UNION ALL SELECT '042_delete_notification',
+    EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = 'public' AND p.proname = 'delete_notification')
+
+  UNION ALL SELECT '042_delete_all_my_notifications',
+    EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+            WHERE n.nspname = 'public' AND p.proname = 'delete_all_my_notifications')
 )
 SELECT
   check_id,

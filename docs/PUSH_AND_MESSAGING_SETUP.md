@@ -23,6 +23,9 @@ SMS and email **do not send** until you explicitly enable them in the database (
 | [`sql/038_gate_external_messaging.sql`](../sql/038_gate_external_messaging.sql) | **Disables SMS/email by default** |
 | [`sql/039_p1_notification_events.sql`](../sql/039_p1_notification_events.sql) | Waiver, staff, schedule, loyalty P1 alerts |
 | [`sql/040_notification_preferences.sql`](../sql/040_notification_preferences.sql) | Per-user mute toggles (`profiles.notification_preferences`) |
+| [`sql/042_notification_delete.sql`](../sql/042_notification_delete.sql) | Hard-delete RPCs for panel + profile history |
+
+**Delete behavior:** Notifications removed via **Clear all** or per-row delete are **permanently deleted** from the database (not soft-deleted).
 
 ---
 
@@ -130,13 +133,22 @@ Run [`sql/040_notification_preferences.sql`](../sql/040_notification_preferences
 
 Feature flag: `global.notificationPreferences` in `packages/shared/src/constants/featureFlags.js`.
 
-## 7. Local alerts (works without push webhook)
+## 7. Delete notifications (migration 042)
+
+Run [`sql/042_notification_delete.sql`](../sql/042_notification_delete.sql) for hard-delete from the notification panel and profile history:
+
+- `delete_notification(p_phone, p_notif_id)` — remove one row
+- `delete_all_my_notifications(p_phone)` — clear full history
+
+This is **not recoverable**. Muted types (040) still prevent new rows from being created.
+
+## 8. Local alerts (works without push webhook)
 
 When logged in, new in-app notifications show **local device alerts** (Expo on mobile; browser notifications on web when the tab is hidden). No Supabase webhook required for this.
 
 Grant notification permission on the device/browser for best results.
 
-## 8. Verify remote push (optional — when app is fully closed)
+## 9. Verify remote push (optional — when app is fully closed)
 
 ```sql
 SELECT status, COUNT(*) FROM notification_push_queue GROUP BY status;

@@ -16,8 +16,11 @@ Step-by-step rollout for the Nail Couture notification system. Use this after co
 | Migration 038 (SMS/email gated off) | SQL Editor | ☐ |
 | Migration 039 (P1 extra events) | SQL Editor | ☐ |
 | Migration 040 (mute preferences) | SQL Editor | ☐ |
+| Migration 042 (delete RPCs) | SQL Editor | ☐ |
 | Realtime on `notifications` | Dashboard | ☐ |
 | P0 manual app tests | App (web + mobile) | ☐ |
+| Bell ring + sound on new notification | Device / browser | ☐ |
+| Delete from panel + profile history | App | ☐ |
 | Deploy `send-notification-push` | CLI | ☐ |
 | Push webhook | Dashboard | ☐ |
 | Mobile dev client rebuild | CLI / EAS | ☐ |
@@ -129,6 +132,7 @@ WHERE table_name = 'notifications' AND column_name = 'metadata';
 | 4 | [`sql/038_gate_external_messaging.sql`](../sql/038_gate_external_messaging.sql) |
 | 5 | [`sql/039_p1_notification_events.sql`](../sql/039_p1_notification_events.sql) |
 | 6 | [`sql/040_notification_preferences.sql`](../sql/040_notification_preferences.sql) |
+| 7 | [`sql/042_notification_delete.sql`](../sql/042_notification_delete.sql) |
 
 **Verify (SQL Editor):**
 
@@ -156,6 +160,29 @@ Or run the full script: [`sql/041_verify_notifications_rollout.sql`](../sql/041_
 
 - [ ] Settings → mute a type (e.g. `lobby_waiting`) → trigger that workflow → no in-app row for that user
 - [ ] Unmute → workflow fires again
+
+**042 spot checks (delete UX):**
+
+- [ ] Open notification panel → delete one row → gone from panel and profile Activity/history
+- [ ] **Clear all** → empty everywhere (hard delete, not recoverable)
+- [ ] RPCs: `delete_notification`, `delete_all_my_notifications`
+
+---
+
+## Phase 1b — Bell, sound, and delete UX (app)
+
+After migration 042 and app deploy:
+
+| Check | Web | Mobile |
+|-------|-----|--------|
+| Persistent bell visible on every page | Sidebar bell (desktop + mobile nav) | Header bell in `UserHeaderActions` |
+| Bell rings/shakes on new unread | CSS `animate-bell-ring` | Animated rotation on bell |
+| Foreground sound on new notification | Web Audio chime | Expo local alert with `sound: 'default'` |
+| Delete from slide-over panel | × per row + Clear all | × per row + Clear all |
+| Delete from profile history | Customer Profile → Activity tab | Customer Profile → Overview |
+
+- [ ] Browser/device prompts for notification permission once per session (web)
+- [ ] Trigger workflow → bell animates + sound plays while app is in foreground
 
 ---
 
@@ -260,7 +287,7 @@ After SQL is applied on Supabase:
 - [ ] Deploy web app build
 - [ ] Ship mobile dev/production build with push entitlements
 
-**Known gap:** Customer **web** has preferences + a static recent list in profile, but no live bell like staff `Sidebar`. Mobile has the full bell panel for all roles.
+**Known gap (resolved):** Customer web now has live notification history on Profile → Activity with delete; persistent bell on all web pages matches mobile header bell.
 
 ---
 

@@ -1,4 +1,4 @@
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './icons/Icon';
 import { useThemeStyles } from '../theme/useThemeStyles';
@@ -11,6 +11,8 @@ type NotificationPanelProps = {
   unreadCount: number;
   onMarkAllRead: () => void;
   onMarkOneRead: (id: string) => void;
+  onDeleteOne: (id: string) => void;
+  onDeleteAll: () => void;
   onNotificationPress?: (notif: AppNotification) => void;
 };
 
@@ -21,10 +23,24 @@ export function NotificationPanel({
   unreadCount,
   onMarkAllRead,
   onMarkOneRead,
+  onDeleteOne,
+  onDeleteAll,
   onNotificationPress,
 }: NotificationPanelProps) {
   const styles = useThemeStyles();
   const insets = useSafeAreaInsets();
+
+  const handleClearAll = () => {
+    if (notifications.length === 0) return;
+    Alert.alert(
+      'Clear all notifications?',
+      'This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Clear all', style: 'destructive', onPress: onDeleteAll },
+      ],
+    );
+  };
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
@@ -63,7 +79,7 @@ export function NotificationPanel({
                 </Text>
               ) : null}
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '55%' }}>
               {unreadCount > 0 ? (
                 <Pressable
                   onPress={onMarkAllRead}
@@ -76,6 +92,20 @@ export function NotificationPanel({
                   }}
                 >
                   <Text style={[styles.textGold, { fontSize: 12 }]}>Mark all read</Text>
+                </Pressable>
+              ) : null}
+              {notifications.length > 0 ? (
+                <Pressable
+                  onPress={handleClearAll}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: 'rgba(248,113,113,0.4)',
+                  }}
+                >
+                  <Text style={{ color: '#f87171', fontSize: 12 }}>Clear all</Text>
                 </Pressable>
               ) : null}
               <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close">
@@ -111,7 +141,15 @@ export function NotificationPanel({
                       : `${styles.tokens.goldStrong}12`,
                   }}
                 >
-                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <Pressable
+                    onPress={() => onDeleteOne(notif.id)}
+                    hitSlop={8}
+                    style={{ position: 'absolute', top: 8, right: 8, zIndex: 1, padding: 4 }}
+                    accessibilityLabel="Delete notification"
+                  >
+                    <Icon name="close" size={16} color={styles.tokens.textMuted} />
+                  </Pressable>
+                  <View style={{ flexDirection: 'row', gap: 10, paddingRight: 20 }}>
                     {!notif.is_read ? (
                       <View
                         style={{

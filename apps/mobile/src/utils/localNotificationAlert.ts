@@ -11,7 +11,11 @@ type LocalNotification = {
 export async function showMobileLocalNotification(notification: LocalNotification) {
   if (!featureFlags.global.notifications) return;
 
-  const { status } = await Notifications.getPermissionsAsync();
+  let { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') {
+    const req = await Notifications.requestPermissionsAsync();
+    status = req.status;
+  }
   if (status !== 'granted') return;
 
   await Notifications.scheduleNotificationAsync({
@@ -19,6 +23,7 @@ export async function showMobileLocalNotification(notification: LocalNotificatio
       title: notification.title,
       body: notification.body || notification.message || '',
       data: { notificationId: notification.id },
+      sound: 'default',
     },
     trigger: null,
   });

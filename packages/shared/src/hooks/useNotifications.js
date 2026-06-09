@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabase } from '../lib/supabase.js';
-import { alertNewNotifications } from '../utils/localNotificationAlert.js';
+import { alertNewNotifications, ensureLocalNotificationPermission } from '../utils/localNotificationAlert.js';
 
 const POLL_MS = 15000;
+const BELL_RING_MS = 2000;
 
 /**
  * @typedef {Object} AppNotification
@@ -27,8 +28,21 @@ const POLL_MS = 15000;
 export function useNotifications({ userPhone, userId, enabled = true, getIsActive, localAlerts = false }) {
   const [notifications, setNotifications] = useState(/** @type {AppNotification[]} */ ([]));
   const [loading, setLoading] = useState(false);
+  const [bellRing, setBellRing] = useState(false);
+  const [bellRingKey, setBellRingKey] = useState(0);
   const channelRef = useRef(null);
   const seenNotificationIdsRef = useRef(/** @type {Set<string>} */ (new Set()));
+  const bellRingTimerRef = useRef(/** @type {ReturnType<typeof setTimeout> | null} */ (null));
+
+  const triggerBellRing = useCallback(() => {
+    setBellRing(true);
+    setBellRingKey((k) => k + 1);
+    if (bellRingTimerRef.current) clearTimeout(bellRingTimerRef.current);
+    bellRingTimerRef.current = setTimeout(() => {
+      setBellRing(false);
+      bellRingTimerRef.current = null;
+    }, BELL_RING_MS);
+  }, []);
 
   const isActive = useCallback(() => {
     if (getIsActive) return getIsActive();
@@ -50,7 +64,12 @@ export function useNotifications({ userPhone, userId, enabled = true, getIsActiv
       if (!error) {
         const rows = data || [];
         if (localAlerts) {
-          seenNotificationIdsRef.current = alertNewNotifications(rows, seenNotificationIdsRef.current);
+          const { seenIds, newUnreadCount } = alertNewNotifications(
+            rows,
+            seenNotificationIdsRef.current,
+          );
+          seenNotificationIdsRef.current = seenIds;
+          if (newUnreadCount > 0) triggerBellRing();
         }
         setNotifications(rows);
       }
@@ -58,13 +77,18 @@ export function useNotifications({ userPhone, userId, enabled = true, getIsActiv
       /* ignore */
     }
     setLoading(false);
-  }, [userPhone, localAlerts]);
+  }, [userPhone, localAlerts, triggerBellRing]);
 
   useEffect(() => {
     if (!enabled || !userPhone) {
       setNotifications([]);
       seenNotificationIdsRef.current = new Set();
+      setBellRing(false);
       return undefined;
+    }
+
+    if (localAlerts) {
+      ensureLocalNotificationPermission().catch(() => {});
     }
 
     fetchNotifications();
@@ -86,8 +110,9 @@ export function useNotifications({ userPhone, userId, enabled = true, getIsActiv
       if (visibilityHandler) {
         document.removeEventListener('visibilitychange', visibilityHandler);
       }
+      if (bellRingTimerRef.current) clearTimeout(bellRingTimerRef.current);
     };
-  }, [enabled, userPhone, fetchNotifications, isActive]);
+  }, [enabled, userPhone, localAlerts, fetchNotifications, isActive]);
 
   useEffect(() => {
     if (!enabled || !userId || !userPhone) return undefined;
@@ -149,13 +174,45 @@ export function useNotifications({ userPhone, userId, enabled = true, getIsActiv
     [userPhone],
   );
 
+  const deleteOne = useCallback(
+    async (id) => {
+      if (!userPhone) return;
+      try {
+        await getSupabase().rpc('delete_notification', {
+          p_phone: userPhone,
+          p_notif_id: id,
+        });
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        seenNotificationIdsRef.current.delete(id);
+      } catch {
+        /* ignore */
+      }
+    },
+    [userPhone],
+  );
+
+  const deleteAll = useCallback(async () => {
+    if (!userPhone || notifications.length === 0) return;
+    try {
+      await getSupabase().rpc('delete_all_my_notifications', { p_phone: userPhone });
+      setNotifications([]);
+      seenNotificationIdsRef.current = new Set();
+    } catch {
+      /* ignore */
+    }
+  }, [userPhone, notifications.length]);
+
   return {
     notifications,
     loading,
     unreadCount,
+    bellRing,
+    bellRingKey,
     fetchNotifications,
     markAllRead,
     markOneRead,
+    deleteOne,
+    deleteAll,
   };
 }
 

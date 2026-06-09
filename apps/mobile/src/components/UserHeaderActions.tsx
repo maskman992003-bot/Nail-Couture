@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Modal, Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getNotificationMobileScreen } from '@nail-couture/shared/constants/notificationRoutes.js';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,8 +18,34 @@ export function UserHeaderActions() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const bellAnim = useRef(new Animated.Value(0)).current;
 
-  const { notifications, unreadCount, markAllRead, markOneRead } = useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    bellRingKey,
+    markAllRead,
+    markOneRead,
+    deleteOne,
+    deleteAll,
+  } = useNotifications();
+
+  useEffect(() => {
+    if (!bellRingKey) return;
+    bellAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(bellAnim, { toValue: 1, duration: 120, useNativeDriver: true }),
+      Animated.timing(bellAnim, { toValue: -1, duration: 120, useNativeDriver: true }),
+      Animated.timing(bellAnim, { toValue: 1, duration: 120, useNativeDriver: true }),
+      Animated.timing(bellAnim, { toValue: -1, duration: 120, useNativeDriver: true }),
+      Animated.timing(bellAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
+    ]).start();
+  }, [bellRingKey, bellAnim]);
+
+  const bellRotation = bellAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-14deg', '0deg', '14deg'],
+  });
 
   const handleNotificationPress = (notif: AppNotification) => {
     const screen = getNotificationMobileScreen(notif.type, user?.role);
@@ -55,7 +81,9 @@ export function UserHeaderActions() {
           style={{ position: 'relative', padding: 6 }}
           accessibilityLabel="Notifications"
         >
-          <HeaderIcon path={BELL_PATH} color={styles.tokens.textSecondary} />
+          <Animated.View style={{ transform: [{ rotate: bellRotation }] }}>
+            <HeaderIcon path={BELL_PATH} color={styles.tokens.textSecondary} />
+          </Animated.View>
           {unreadCount > 0 ? (
             <View
               style={{
@@ -90,24 +118,23 @@ export function UserHeaderActions() {
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          accessibilityLabel="User menu"
         >
           <Text style={[styles.textGold, { fontSize: 12, fontWeight: '600' }]}>{initials}</Text>
         </Pressable>
       </View>
 
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
-        <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 56, paddingRight: 20 }}
-          onPress={() => setMenuOpen(false)}
-        >
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} onPress={() => setMenuOpen(false)}>
           <Pressable
             style={{
+              position: 'absolute',
+              top: 56,
+              right: 16,
               minWidth: 200,
+              backgroundColor: styles.tokens.cardBg,
               borderRadius: 12,
               borderWidth: 1,
               borderColor: styles.tokens.borderLight,
-              backgroundColor: styles.tokens.cardBg,
               overflow: 'hidden',
             }}
             onPress={(e) => e.stopPropagation()}
@@ -176,6 +203,8 @@ export function UserHeaderActions() {
         unreadCount={unreadCount}
         onMarkAllRead={markAllRead}
         onMarkOneRead={markOneRead}
+        onDeleteOne={deleteOne}
+        onDeleteAll={deleteAll}
         onNotificationPress={handleNotificationPress}
       />
 

@@ -20,6 +20,10 @@ import {
 } from '@nail-couture/shared/utils/customerStats';
 import { getTierInfo, generateReferralCode, isBirthdayMonth, tierDetails } from '@nail-couture/shared/utils/loyaltyTier';
 import NotificationPreferencesPanel from '@nail-couture/shared/components/NotificationPreferencesPanel.jsx';
+import NotificationHistorySection from '@nail-couture/shared/components/NotificationHistorySection.jsx';
+import { getNotificationWebPath } from '@nail-couture/shared/constants/notificationRoutes.js';
+import { featureFlags } from '@nail-couture/shared/constants/featureFlags.js';
+import { useNotifications } from '@nail-couture/shared/hooks/useNotifications.js';
 import {
   parseProfilePreferences,
   buildProfilePreferences,
@@ -98,7 +102,6 @@ export default function CustomerProfile() {
   const [receipts, setReceipts] = useState([]);
   const [waiver, setWaiver] = useState(null);
   const [referralInfo, setReferralInfo] = useState(null);
-  const [notifications, setNotifications] = useState([]);
   const [showWaiverModal, setShowWaiverModal] = useState(false);
   const [preferencesAvailable, setPreferencesAvailable] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -126,6 +129,23 @@ export default function CustomerProfile() {
   const [commPrefsAvailable, setCommPrefsAvailable] = useState(true);
   const [commPrefsSaving, setCommPrefsSaving] = useState(false);
   const avatarInputRef = useRef(null);
+
+  const {
+    notifications,
+    markOneRead,
+    deleteOne,
+    deleteAll,
+  } = useNotifications({
+    userPhone: user?.phone,
+    userId: user?.id,
+    enabled: Boolean(user?.phone),
+    localAlerts: featureFlags.global.notifications,
+  });
+
+  const handleNotificationPress = (notif) => {
+    const path = getNotificationWebPath(notif.type, user?.role);
+    if (path) navigate(path);
+  };
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -197,12 +217,11 @@ export default function CustomerProfile() {
         'sms_reminders' in profileData || 'email_promotions' in profileData || 'preferred_contact' in profileData
       );
 
-      const [statsData, waiverData, receiptsData, referralData, notifRes, loyaltyData, photosData] = await Promise.all([
+      const [statsData, waiverData, receiptsData, referralData, loyaltyData, photosData] = await Promise.all([
         fetchCustomerStats(userId, user?.phone),
         fetchCustomerWaiverDetail(userId),
         fetchCustomerReceipts(userId),
         fetchReferralInfo(profileData),
-        supabase.from('notifications').select('*').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(5),
         fetchLoyaltyHistory(userId),
         fetchCustomerVisitPhotos(userId),
       ]);
@@ -211,7 +230,6 @@ export default function CustomerProfile() {
       setWaiver(waiverData);
       setReceipts(receiptsData);
       setReferralInfo(referralData);
-      setNotifications(notifRes.data || []);
       setLoyaltyHistory(loyaltyData);
       setVisitPhotos(photosData);
     } catch (err) {
@@ -1074,19 +1092,17 @@ export default function CustomerProfile() {
               </div>
             </div>
 
-            {notifications.length > 0 && (
-              <div className={panelClass}>
-                <h3 className={theme === 'dark' ? 'text-offwhite font-medium mb-4' : 'text-charcoal font-medium mb-4'}>Recent Notifications</h3>
-                <div className="space-y-3">
-                  {notifications.map((n) => (
-                    <div key={n.id} className={cardClass(theme)}>
-                      <div className="font-medium text-sm text-gold">{n.title}</div>
-                      <div className={theme === 'dark' ? 'text-offwhite/60 text-xs mt-1' : 'text-charcoal/60 text-xs mt-1'}>{n.body || n.message}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <NotificationHistorySection
+              notifications={notifications}
+              theme={theme}
+              panelClass={panelClass}
+              cardClass={cardClass}
+              onMarkOneRead={markOneRead}
+              onDeleteOne={deleteOne}
+              onDeleteAll={deleteAll}
+              onNotificationPress={handleNotificationPress}
+              preferencesLink="/customer/profile?tab=preferences&section=notifications"
+            />
           </div>
         )}
 
