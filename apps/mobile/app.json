@@ -37,6 +37,13 @@
     "plugins": [
       "expo-dev-client",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#C5A059"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Allow Nail Couture to access your photos for visit documentation.",

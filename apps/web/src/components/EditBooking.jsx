@@ -173,16 +173,6 @@ export default function EditBooking() {
       });
       if (error) throw error;
 
-      const userId = user?.id;
-      const userName = user?.full_name || 'Customer';
-      await supabase.from('notifications').insert({
-        recipient_id: userId,
-        reference_id: bookingId,
-        title: 'Appointment Updated',
-        body: `Hi ${userName?.split(' ')[0] || 'there'}, your appointment for ${selectedServices.map((s) => s.name).join(', ')} has been updated to ${newScheduled.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at ${selectedTime}.`,
-        is_read: false,
-      }).catch(() => {});
-
       navigate('/customer/history');
     } catch (err) {
       setError(err.message || 'Failed to update booking');

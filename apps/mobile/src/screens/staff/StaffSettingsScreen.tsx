@@ -8,6 +8,7 @@ import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { Icon } from '../../components/icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
+import { NotificationPreferencesSection } from '../../components/NotificationPreferencesSection';
 
 type ProfileRecord = {
   id: string;
@@ -298,6 +299,8 @@ export function StaffSettingsScreen() {
         </View>
         <Switch value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ true: styles.tokens.goldStrong }} />
       </View>
+
+      <NotificationPreferencesSection userPhone={user?.phone || profile?.phone} role={role} />
 
       <View style={[styles.card, { padding: 16, marginBottom: 12 }]}>
         <Text style={[styles.textPrimary, { fontWeight: '600', marginBottom: 4 }]}>Login PIN</Text>

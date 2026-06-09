@@ -5,6 +5,7 @@ import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLa
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import { useState } from 'react';
+import { NotificationPreferencesSection } from '../../components/NotificationPreferencesSection';
 
 export function CustomerSettingsScreen() {
   const { user, logout } = useAuth();
@@ -40,6 +41,8 @@ export function CustomerSettingsScreen() {
         </View>
         <Switch value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ true: styles.tokens.goldStrong }} />
       </View>
+
+      <NotificationPreferencesSection userPhone={user?.phone} role="customer" />
 
       <Pressable
         onPress={() => setShowLogoutConfirm(true)}

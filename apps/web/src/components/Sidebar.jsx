@@ -4,6 +4,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { getNavItemsForRole } from '@nail-couture/shared/navigation/navItems.js';
+import { featureFlags } from '@nail-couture/shared/constants/featureFlags.js';
+import { getNotificationWebPath } from '@nail-couture/shared/constants/notificationRoutes.js';
+import { useNotifications } from '@nail-couture/shared/hooks/useNotifications.js';
 import { getSettingsPath } from '@nail-couture/shared/utils/routes';
 import { fetchPendingAssignmentCount } from '@nail-couture/shared/utils/technicianQueue';
 import { modalBtnPrimary, modalBtnSecondary } from './AppModal';
@@ -20,7 +23,6 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState([]);
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDesktopUserMenu, setShowDesktopUserMenu] = useState(false);
@@ -61,14 +63,17 @@ export default function Sidebar() {
     }
   }, [BOTTOM_SCROLL_KEY]);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!userPhone) return;
-    try {
-      const { data, error } = await supabase.rpc('get_my_notifications', { p_phone: userPhone });
-      if (error) return;
-      setNotifications(data || []);
-    } catch { }
-  }, [userPhone]);
+  const {
+    notifications,
+    unreadCount,
+    markAllRead,
+    markOneRead,
+  } = useNotifications({
+    userPhone,
+    userId: user?.id,
+    enabled: Boolean(userPhone),
+    localAlerts: featureFlags.global.notifications,
+  });
 
   const refreshPendingAssignments = useCallback(async () => {
     if (!isTechnician || !user?.id || !userPhone) return;
@@ -142,31 +147,6 @@ export default function Sidebar() {
   }, [isCashier, userPhone, refreshCheckoutQueue]);
 
   useEffect(() => {
-    if (!userPhone || !notifPanelOpen) return;
-
-    fetchNotifications();
-
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        fetchNotifications();
-      }
-    }, 15000);
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchNotifications();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [userPhone, notifPanelOpen, fetchNotifications]);
-
-  useEffect(() => {
     if (!showDesktopUserMenu) return;
     const closeMenu = (e) => {
       if (!e.target.closest('.desktop-user-menu')) setShowDesktopUserMenu(false);
@@ -184,22 +164,13 @@ export default function Sidebar() {
     return () => document.removeEventListener('pointerdown', closeMenu);
   }, [showMobileUserMenu]);
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
-
-  const markAllRead = async () => {
-    if (unreadCount === 0 || !user?.phone) return;
-    try {
-      await supabase.rpc('mark_my_notifications_read', { p_phone: user.phone });
-      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    } catch { }
-  };
-
-  const markOneRead = async (id) => {
-    if (!user?.phone) return;
-    try {
-      await supabase.rpc('mark_notification_read', { p_phone: user.phone, p_notif_id: id });
-      setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true } : n));
-    } catch { }
+  const handleNotificationClick = (notif) => {
+    if (!notif.is_read) markOneRead(notif.id);
+    const path = getNotificationWebPath(notif.type, user?.role);
+    if (path) {
+      setNotifPanelOpen(false);
+      navigate(path);
+    }
   };
 
   const settingsPath = getSettingsPath(user?.role);
@@ -502,7 +473,7 @@ export default function Sidebar() {
               ) : notifications.map((notif) => (
                 <div
                   key={notif.id}
-                  onClick={() => { if (!notif.is_read) markOneRead(notif.id); }}
+                  onClick={() => handleNotificationClick(notif)}
                   className="rounded-xl p-4 border transition-all cursor-pointer"
                   style={{
                     backgroundColor: theme === 'dark' 

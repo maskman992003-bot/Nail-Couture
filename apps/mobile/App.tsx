@@ -1,10 +1,12 @@
 import './global.css';
 import './src/lib/supabase';
+import './src/utils/localNotificationAlert';
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { PushNotificationRegistrar } from './src/hooks/usePushNotifications';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 
@@ -24,6 +26,7 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
+            <PushNotificationRegistrar />
             <AppContent />
           </AuthProvider>
         </ThemeProvider>

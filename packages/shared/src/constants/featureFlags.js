@@ -16,7 +16,7 @@ export const featureFlags = {
     
     // Phase 2 (Future)
     onlineBooking: false,           // Main online booking toggle
-    appointmentReminders: false,    // SMS/email reminders (Phase 3)
+    appointmentReminders: false,    // SMS/email reminders (Phase 3 — infra ready, off until enabled)
     prepayOptions: false,           // Pay online in advance (Phase 3)
   },
   
@@ -58,6 +58,9 @@ export const featureFlags = {
     // Always On
     authentication: true,           // Login/logout/user management
     notifications: true,            // In-app notifications
+    pushNotifications: true,        // Mobile push via Expo (Phase 2)
+    externalMessaging: false,       // SMS/email — infra ready, off until Twilio/Resend configured
+    notificationPreferences: true,  // Per-user mute toggles in Settings (Phase 5)
     roleBasedAccess: true,          // Different views by role
     realtimeUpdates: true,          // Live data sync between clients
     
@@ -83,3 +86,7 @@ export const TECHNICIAN_LIVE_FLOOR = featureFlags.staff.technicianLiveFloor;
 export const ADVANCED_REPORTING = featureFlags.staff.advancedReporting;
 export const MANAGEMENT_CUSTOMER_HISTORY = featureFlags.management.customerHistory;
 export const CASHIER_CHECKOUT = featureFlags.staff.cashierCheckout;
+export const PUSH_NOTIFICATIONS = featureFlags.global.pushNotifications;
+export const EXTERNAL_MESSAGING = featureFlags.global.externalMessaging;
+export const NOTIFICATION_PREFERENCES = featureFlags.global.notificationPreferences;
+export const APPOINTMENT_REMINDERS = featureFlags.customer.appointmentReminders;

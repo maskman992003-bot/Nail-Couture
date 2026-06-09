@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -19,6 +19,7 @@ import {
   receiptFilename,
 } from '@nail-couture/shared/utils/customerStats';
 import { getTierInfo, generateReferralCode, isBirthdayMonth, tierDetails } from '@nail-couture/shared/utils/loyaltyTier';
+import NotificationPreferencesPanel from '@nail-couture/shared/components/NotificationPreferencesPanel.jsx';
 import {
   parseProfilePreferences,
   buildProfilePreferences,
@@ -88,6 +89,7 @@ const valueClass = (theme) =>
 
 export default function CustomerProfile() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, login } = useAuth();
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
@@ -124,6 +126,33 @@ export default function CustomerProfile() {
   const [commPrefsAvailable, setCommPrefsAvailable] = useState(true);
   const [commPrefsSaving, setCommPrefsSaving] = useState(false);
   const avatarInputRef = useRef(null);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && TABS.some((item) => item.id === tab)) {
+      setActiveTab(tab);
+    }
+    if (searchParams.get('section') === 'notifications') {
+      requestAnimationFrame(() => {
+        document.getElementById('notification-preferences')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
+    }
+  }, [searchParams]);
+
+  const setProfileTab = (tabId, section) => {
+    setActiveTab(tabId);
+    if (tabId !== 'preferences') setEditing(false);
+    if (tabId === 'overview') {
+      setSearchParams({}, { replace: true });
+      return;
+    }
+    const params = { tab: tabId };
+    if (section) params.section = section;
+    setSearchParams(params, { replace: true });
+  };
 
   const fetchProfile = useCallback(async () => {
     const userId = user?.id;
@@ -506,7 +535,7 @@ export default function CustomerProfile() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => { setActiveTab(tab.id); if (tab.id !== 'preferences') setEditing(false); }}
+              onClick={() => setProfileTab(tab.id)}
               className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id
                   ? 'bg-gold text-charcoal'
@@ -576,12 +605,31 @@ export default function CustomerProfile() {
                 <span className="text-gold font-heading text-sm">Rewards & Redemption →</span>
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>Redeem points for perks</p>
               </Link>
+              <button
+                type="button"
+                onClick={() => setProfileTab('preferences', 'notifications')}
+                className={`${panelClass} hover:border-gold/30 transition-colors text-left sm:col-span-2`}
+              >
+                <span className="text-gold font-heading text-sm">Notification Preferences →</span>
+                <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>
+                  Choose which appointment, payment, and rewards alerts you receive
+                </p>
+              </button>
             </div>
           </div>
         )}
 
         {activeTab === 'preferences' && (
-          <div className={panelClass}>
+          <div className="space-y-6">
+            <div id="notification-preferences">
+              <NotificationPreferencesPanel
+                userPhone={user?.phone || profile?.phone}
+                role="customer"
+                theme={theme}
+              />
+            </div>
+
+            <div className={panelClass}>
             <div className="flex items-center justify-between mb-6">
               <h3 className={theme === 'dark' ? 'text-offwhite font-medium' : 'text-charcoal font-medium'}>Salon Preferences</h3>
               {!editing && (
@@ -786,6 +834,7 @@ export default function CustomerProfile() {
                 </p>
               )}
             </div>
+          </div>
           </div>
         )}
 

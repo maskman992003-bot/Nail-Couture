@@ -13,6 +13,7 @@ import { MembershipCard } from '../../components/customer/MembershipCard';
 import { ScrollSelect } from '../../components/forms/ScrollSelect';
 import { RefreshmentSelect } from '../../components/forms/RefreshmentSelect';
 import { AppModal, ModalButton } from '../../components/AppModal';
+import { NotificationPreferencesSection } from '../../components/NotificationPreferencesSection';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import { useAvailableRefreshments } from '../../hooks/useAvailableRefreshments';
 
@@ -305,7 +306,8 @@ export function CustomerProfileScreen() {
       ) : null}
 
       {activeTab === 'preferences' ? (
-        <View style={[styles.card, { padding: 16, gap: 14 }]}>
+        <>
+          <View style={[styles.card, { padding: 16, gap: 14 }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Salon Preferences</Text>
             {!editing ? (
@@ -387,6 +389,12 @@ export function CustomerProfileScreen() {
             </View>
           )}
         </View>
+
+        <NotificationPreferencesSection
+          userPhone={user?.phone || profile?.phone}
+          role="customer"
+        />
+        </>
       ) : null}
 
       {activeTab === 'security' ? (

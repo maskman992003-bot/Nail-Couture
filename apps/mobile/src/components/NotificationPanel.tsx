@@ -11,6 +11,7 @@ type NotificationPanelProps = {
   unreadCount: number;
   onMarkAllRead: () => void;
   onMarkOneRead: (id: string) => void;
+  onNotificationPress?: (notif: AppNotification) => void;
 };
 
 export function NotificationPanel({
@@ -20,6 +21,7 @@ export function NotificationPanel({
   unreadCount,
   onMarkAllRead,
   onMarkOneRead,
+  onNotificationPress,
 }: NotificationPanelProps) {
   const styles = useThemeStyles();
   const insets = useSafeAreaInsets();
@@ -94,6 +96,7 @@ export function NotificationPanel({
                   key={notif.id}
                   onPress={() => {
                     if (!notif.is_read) onMarkOneRead(notif.id);
+                    onNotificationPress?.(notif);
                   }}
                   style={{
                     borderRadius: 12,

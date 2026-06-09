@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
+import NotificationPreferencesPanel from '@nail-couture/shared/components/NotificationPreferencesPanel.jsx';
 import clsx from 'clsx';
 
 const roleLabels = {
@@ -495,6 +496,12 @@ export default function Settings() {
             </div>
           </div>
         )}
+
+        <NotificationPreferencesPanel
+          userPhone={user?.phone}
+          role={role}
+          theme={theme}
+        />
 
         <div className="rounded-2xl border border-card bg-card p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

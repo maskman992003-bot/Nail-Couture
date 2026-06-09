@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { getNotificationMobileScreen } from '@nail-couture/shared/constants/notificationRoutes.js';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useNotifications } from '../hooks/useNotifications';
+import { useNotifications, type AppNotification } from '../hooks/useNotifications';
 import { useThemeStyles } from '../theme/useThemeStyles';
 import { NotificationPanel } from './NotificationPanel';
 import { BELL_PATH, HeaderIcon, LOGOUT_PATH, LogoutConfirmModal } from './LogoutConfirmModal';
@@ -18,9 +19,15 @@ export function UserHeaderActions() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
 
-  const { notifications, unreadCount, markAllRead, markOneRead } = useNotifications(
-    panelOpen || menuOpen,
-  );
+  const { notifications, unreadCount, markAllRead, markOneRead } = useNotifications();
+
+  const handleNotificationPress = (notif: AppNotification) => {
+    const screen = getNotificationMobileScreen(notif.type, user?.role);
+    if (screen) {
+      setPanelOpen(false);
+      navigation.navigate(screen as never);
+    }
+  };
 
   if (!user) return null;
 
@@ -169,6 +176,7 @@ export function UserHeaderActions() {
         unreadCount={unreadCount}
         onMarkAllRead={markAllRead}
         onMarkOneRead={markOneRead}
+        onNotificationPress={handleNotificationPress}
       />
 
       <LogoutConfirmModal open={logoutOpen} onClose={() => setLogoutOpen(false)} onConfirm={logout} />
