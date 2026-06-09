@@ -4,6 +4,21 @@ import { featureFlags } from '../../constants/featureFlags';
 import { computeWaitPositions, buildTechnicianFloorRows } from '../../utils/technicianQueue';
 import TechnicianFloorGrid from './TechnicianFloorGrid';
 
+const FLOOR_VIEW_STORAGE_KEY = 'technician_floor_view';
+
+function readFloorView() {
+  if (typeof window === 'undefined') return 'grid';
+  return localStorage.getItem(FLOOR_VIEW_STORAGE_KEY) === 'list' ? 'list' : 'grid';
+}
+
+function persistFloorView(view) {
+  try {
+    localStorage.setItem(FLOOR_VIEW_STORAGE_KEY, view);
+  } catch {
+    /* ignore */
+  }
+}
+
 const STATUS_BADGE = {
   waiting: 'bg-yellow-400/15 text-yellow-400 border-yellow-400/30',
   assigned_pending: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
@@ -127,8 +142,13 @@ export default function TechnicianFloorSnapshot({
   newAssignmentIds = [],
   onBreak = false,
 }) {
-  const [view, setView] = useState('grid');
+  const [view, setView] = useState(readFloorView);
   const showGrid = featureFlags.staff.technicianLiveFloor && floorTechnicians.length > 0;
+
+  const selectView = (next) => {
+    setView(next);
+    persistFloorView(next);
+  };
 
   const waiting = floorAppointments.filter((a) => a.status === 'waiting');
   const serving = floorAppointments.filter((a) => a.status === 'serving');
@@ -144,7 +164,7 @@ export default function TechnicianFloorSnapshot({
     <div className="bg-card border border-card rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="font-heading text-lg text-primary">Salon Floor</h2>
+          <h2 className="font-heading text-lg text-primary">Lobby</h2>
           {myAssigned.length > 0 && (
             <span className="px-2 py-0.5 text-xs font-medium bg-gold text-charcoal rounded-full animate-pulse">
               {myAssigned.length} for you
@@ -156,7 +176,7 @@ export default function TechnicianFloorSnapshot({
             <div className="flex rounded-lg border border-light overflow-hidden">
               <button
                 type="button"
-                onClick={() => setView('grid')}
+                onClick={() => selectView('grid')}
                 className={clsx(
                   'px-2.5 py-1 text-xs',
                   view === 'grid' ? 'bg-gold/20 text-gold-strong' : 'text-secondary hover:text-primary'
@@ -166,7 +186,7 @@ export default function TechnicianFloorSnapshot({
               </button>
               <button
                 type="button"
-                onClick={() => setView('list')}
+                onClick={() => selectView('list')}
                 className={clsx(
                   'px-2.5 py-1 text-xs',
                   view === 'list' ? 'bg-gold/20 text-gold-strong' : 'text-secondary hover:text-primary'
@@ -181,7 +201,6 @@ export default function TechnicianFloorSnapshot({
               On break
             </span>
           )}
-          <span className="text-secondary text-xs">Read-only</span>
         </div>
       </div>
 

@@ -449,15 +449,6 @@ export default function Settings() {
                 <div className="text-secondary text-xs uppercase tracking-wider mb-2">Member Since</div>
                 <div className="text-primary">{formatDate(profile?.created_at)}</div>
               </div>
-              <div className="rounded-xl border border-light bg-secondary p-4 sm:col-span-2">
-                <div className="text-secondary text-xs uppercase tracking-wider mb-2">Access Level</div>
-                <div className="text-primary text-sm">
-                  {role === 'technician' && 'Perform services, view your schedule, and manage your assigned customers.'}
-                  {role === 'cashier' && 'Process checkouts, manage lobby flow, and handle daily transactions.'}
-                  {role === 'admin' && 'Manage daily salon operations, staff schedules, and customer bookings.'}
-                  {['super_admin', 'owner', 'partner'].includes(role) && 'Full salon oversight including staff, services, reports, and business settings.'}
-                </div>
-              </div>
             </div>
           )}
         </div>

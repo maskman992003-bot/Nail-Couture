@@ -28,9 +28,9 @@ export function getSettingsPath(role) {
     case 'technician':
       return '/technician/settings';
     case 'customer':
-      return '/customer/profile?tab=preferences&section=notifications';
+      return '/customer/settings';
     default:
-      return '/customer/profile?tab=preferences&section=notifications';
+      return '/customer/settings';
   }
 }
 

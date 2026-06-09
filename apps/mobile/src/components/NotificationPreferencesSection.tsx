@@ -10,7 +10,7 @@ type NotificationPreferencesSectionProps = {
 
 export function NotificationPreferencesSection({ userPhone, role }: NotificationPreferencesSectionProps) {
   const styles = useThemeStyles();
-  const { enabled, available, loading, saving, error, groups, toggleType, toggleGroup } =
+  const { enabled, available, loading, error, groups, toggleType, toggleGroup } =
     useNotificationPreferences(userPhone, role);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
@@ -79,26 +79,26 @@ export function NotificationPreferencesSection({ userPhone, role }: Notification
                 <View style={{ marginTop: 10, marginLeft: 18, gap: 8 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginBottom: 4 }}>
                     <Pressable
-                      disabled={saving || group.allEnabled}
+                      disabled={group.allEnabled}
                       onPress={() => toggleGroup(group.id, true)}
                     >
                       <Text
                         style={[
                           styles.textGold,
-                          { fontSize: 11, opacity: saving || group.allEnabled ? 0.4 : 1 },
+                          { fontSize: 11, opacity: group.allEnabled ? 0.4 : 1 },
                         ]}
                       >
                         Enable all
                       </Text>
                     </Pressable>
                     <Pressable
-                      disabled={saving || group.noneEnabled}
+                      disabled={group.noneEnabled}
                       onPress={() => toggleGroup(group.id, false)}
                     >
                       <Text
                         style={[
                           styles.textSecondary,
-                          { fontSize: 11, opacity: saving || group.noneEnabled ? 0.4 : 1 },
+                          { fontSize: 11, opacity: group.noneEnabled ? 0.4 : 1 },
                         ]}
                       >
                         Mute all
@@ -134,9 +134,9 @@ export function NotificationPreferencesSection({ userPhone, role }: Notification
                       </View>
                       <Switch
                         value={typeItem.enabled}
-                        disabled={saving}
                         onValueChange={(value) => toggleType(typeItem.id, value)}
-                        trackColor={{ true: styles.tokens.goldStrong }}
+                        trackColor={{ false: styles.tokens.borderLight, true: styles.tokens.goldStrong }}
+                        thumbColor="#ffffff"
                       />
                     </View>
                   ))}

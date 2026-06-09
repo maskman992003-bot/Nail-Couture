@@ -27,7 +27,10 @@ export function getSettingsPath(role) {
       return '/cashier/settings';
     case 'technician':
       return '/technician/settings';
-    default: return '/customer/profile';
+    case 'customer':
+      return '/customer/settings';
+    default:
+      return '/customer/settings';
   }
 }
 

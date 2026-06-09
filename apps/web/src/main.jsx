@@ -10,6 +10,7 @@ import CustomerBooking from './components/CustomerBooking.jsx'
 import CustomerHistory from './components/CustomerHistory.jsx'
 import CustomerLoyalty from './components/CustomerLoyalty.jsx'
 import CustomerProfile from './components/CustomerProfile.jsx'
+import CustomerSettings from './components/CustomerSettings.jsx'
 import CustomerServices from './components/CustomerServices.jsx'
 import CustomerManagementHistory from './components/CustomerManagementHistory.jsx'
 import StaffCustomerDetail from './components/StaffCustomerDetail.jsx'
@@ -405,6 +406,11 @@ createRoot(document.getElementById('root')).render(
             <Route path="/customer/profile" element={
               <ProtectedRoute allowedRoles={['customer']}>
                 <CustomerProfile />
+              </ProtectedRoute>
+            } />
+            <Route path="/customer/settings" element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <CustomerSettings />
               </ProtectedRoute>
             } />
           </Routes>

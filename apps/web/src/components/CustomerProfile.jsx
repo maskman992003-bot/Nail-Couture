@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
-import { isRefreshmentAvailable } from '@nail-couture/shared/services/inventoryService';
-import { useAvailableRefreshments } from '@nail-couture/shared/hooks/useAvailableRefreshments';
 import {
   fetchCustomerStats,
   fetchCustomerReceipts,
@@ -19,11 +17,6 @@ import {
   receiptFilename,
 } from '@nail-couture/shared/utils/customerStats';
 import { getTierInfo, generateReferralCode, isBirthdayMonth, tierDetails } from '@nail-couture/shared/utils/loyaltyTier';
-import NotificationPreferencesPanel from '@nail-couture/shared/components/NotificationPreferencesPanel.jsx';
-import NotificationHistorySection from '@nail-couture/shared/components/NotificationHistorySection.jsx';
-import { getNotificationWebPath } from '@nail-couture/shared/constants/notificationRoutes.js';
-import { featureFlags } from '@nail-couture/shared/constants/featureFlags.js';
-import { useNotifications } from '@nail-couture/shared/hooks/useNotifications.js';
 import {
   parseProfilePreferences,
   buildProfilePreferences,
@@ -31,15 +24,12 @@ import {
   NAIL_LENGTHS,
   NAIL_FINISHES,
   VISIT_TIME_OPTIONS,
-  CONTACT_METHOD_OPTIONS,
   labelForOption,
 } from '@nail-couture/shared/utils/profilePreferences';
 import { fetchLoyaltyHistory, formatTransactionType } from '@nail-couture/shared/utils/loyaltyTransactions';
 import { computeAchievements } from '@nail-couture/shared/utils/customerAchievements';
 import { uploadProfileAvatar, getProfileInitials } from '@nail-couture/shared/utils/avatarUpload';
-import RefreshmentSelect from './RefreshmentSelect';
 import Sidebar from './Sidebar';
-import ScrollSelect from './ScrollSelect';
 import { modalBtnSecondary } from './AppModal';
 
 const TABS = [
@@ -50,33 +40,6 @@ const TABS = [
   { id: 'activity', label: 'Activity' },
   { id: 'security', label: 'Security' },
 ];
-
-const MONTHS = [
-  { value: '', label: 'Month' },
-  { value: '01', label: 'January' },
-  { value: '02', label: 'February' },
-  { value: '03', label: 'March' },
-  { value: '04', label: 'April' },
-  { value: '05', label: 'May' },
-  { value: '06', label: 'June' },
-  { value: '07', label: 'July' },
-  { value: '08', label: 'August' },
-  { value: '09', label: 'September' },
-  { value: '10', label: 'October' },
-  { value: '11', label: 'November' },
-  { value: '12', label: 'December' },
-];
-
-const DAYS = Array.from({ length: 31 }, (_, i) => ({
-  value: String(i + 1).padStart(2, '0'),
-  label: String(i + 1).padStart(2, '0'),
-}));
-
-const isValidDate = (month, day) => {
-  if (!month || !day) return false;
-  const date = new Date(2000, parseInt(month, 10) - 1, parseInt(day, 10));
-  return date.getMonth() === parseInt(month, 10) - 1 && date.getDate() === parseInt(day, 10);
-};
 
 const cardClass = (theme) =>
   theme === 'dark'
@@ -93,7 +56,6 @@ const valueClass = (theme) =>
 
 export default function CustomerProfile() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { user, login } = useAuth();
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
@@ -102,15 +64,13 @@ export default function CustomerProfile() {
   const [receipts, setReceipts] = useState([]);
   const [waiver, setWaiver] = useState(null);
   const [referralInfo, setReferralInfo] = useState(null);
+  const [notifications, setNotifications] = useState([]);
   const [showWaiverModal, setShowWaiverModal] = useState(false);
   const [preferencesAvailable, setPreferencesAvailable] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
-  const { refreshments, loading: refreshmentsLoading } = useAvailableRefreshments();
-  const [birthdayMonth, setBirthdayMonth] = useState('');
-  const [birthdayDay, setBirthdayDay] = useState('');
   const [error, setError] = useState('');
   const [showPinForm, setShowPinForm] = useState(false);
   const [pinMode, setPinMode] = useState('set');
@@ -126,53 +86,7 @@ export default function CustomerProfile() {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
-  const [commPrefsAvailable, setCommPrefsAvailable] = useState(true);
-  const [commPrefsSaving, setCommPrefsSaving] = useState(false);
   const avatarInputRef = useRef(null);
-
-  const {
-    notifications,
-    markOneRead,
-    deleteOne,
-    deleteAll,
-  } = useNotifications({
-    userPhone: user?.phone,
-    userId: user?.id,
-    enabled: Boolean(user?.phone),
-    localAlerts: featureFlags.global.notifications,
-  });
-
-  const handleNotificationPress = (notif) => {
-    const path = getNotificationWebPath(notif.type, user?.role);
-    if (path) navigate(path);
-  };
-
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab && TABS.some((item) => item.id === tab)) {
-      setActiveTab(tab);
-    }
-    if (searchParams.get('section') === 'notifications') {
-      requestAnimationFrame(() => {
-        document.getElementById('notification-preferences')?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
-      });
-    }
-  }, [searchParams]);
-
-  const setProfileTab = (tabId, section) => {
-    setActiveTab(tabId);
-    if (tabId !== 'preferences') setEditing(false);
-    if (tabId === 'overview') {
-      setSearchParams({}, { replace: true });
-      return;
-    }
-    const params = { tab: tabId };
-    if (section) params.section = section;
-    setSearchParams(params, { replace: true });
-  };
 
   const fetchProfile = useCallback(async () => {
     const userId = user?.id;
@@ -200,9 +114,6 @@ export default function CustomerProfile() {
       }
 
       setProfile(profileData);
-      const bd = profileData.birthday || '';
-      setBirthdayMonth(bd ? bd.split('-')[0] : '');
-      setBirthdayDay(bd ? bd.split('-')[1] : '');
       const journey = parseProfilePreferences(profileData.preferences);
       setForm({
         full_name: profileData.full_name || '',
@@ -213,15 +124,12 @@ export default function CustomerProfile() {
       });
       setPinMode(profileData.pin ? 'change' : 'set');
       setPreferencesAvailable('preferences' in profileData);
-      setCommPrefsAvailable(
-        'sms_reminders' in profileData || 'email_promotions' in profileData || 'preferred_contact' in profileData
-      );
-
-      const [statsData, waiverData, receiptsData, referralData, loyaltyData, photosData] = await Promise.all([
+      const [statsData, waiverData, receiptsData, referralData, notifRes, loyaltyData, photosData] = await Promise.all([
         fetchCustomerStats(userId, user?.phone),
         fetchCustomerWaiverDetail(userId),
         fetchCustomerReceipts(userId),
         fetchReferralInfo(profileData),
+        supabase.from('notifications').select('*').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(5),
         fetchLoyaltyHistory(userId),
         fetchCustomerVisitPhotos(userId),
       ]);
@@ -230,6 +138,7 @@ export default function CustomerProfile() {
       setWaiver(waiverData);
       setReceipts(receiptsData);
       setReferralInfo(referralData);
+      setNotifications(notifRes.data || []);
       setLoyaltyHistory(loyaltyData);
       setVisitPhotos(photosData);
     } catch (err) {
@@ -244,38 +153,17 @@ export default function CustomerProfile() {
     fetchProfile();
   }, [user, navigate, fetchProfile]);
 
-  const handleUpdateProfile = async (e) => {
+  const handleSaveJourney = async (e) => {
     e.preventDefault();
-    if (!profile) return;
+    if (!profile || !preferencesAvailable) return;
     setSaving(true);
     setError('');
 
-    const refreshmentPref = isRefreshmentAvailable(form.refreshment_pref, refreshments)
-      ? (form.refreshment_pref || null)
-      : null;
-
-    let birthday = profile.birthday || null;
-    if (birthdayMonth && birthdayDay) {
-      if (!isValidDate(birthdayMonth, birthdayDay)) {
-        setError('Please select a valid birthday');
-        setSaving(false);
-        return;
-      }
-      birthday = `${birthdayMonth}-${birthdayDay}`;
-    }
-
     const payload = {
-      full_name: form.full_name,
-      email: form.email.trim() || null,
-      refreshment_pref: refreshmentPref,
-      nail_goal: form.nail_goal || null,
-      birthday,
+      preferences: buildProfilePreferences(form.journey || {}),
     };
-    if (preferencesAvailable) {
-      payload.preferences = buildProfilePreferences(form.journey || {});
-    }
 
-    let { data, error: updateErr } = await supabase
+    const { data, error: updateErr } = await supabase
       .from('profiles')
       .update(payload)
       .eq('id', profile.id)
@@ -284,17 +172,9 @@ export default function CustomerProfile() {
 
     if (updateErr?.message?.includes('preferences')) {
       setPreferencesAvailable(false);
-      const { preferences: _omit, ...withoutPrefs } = payload;
-      const retry = await supabase.from('profiles').update(withoutPrefs).eq('id', profile.id).select().single();
-      data = retry.data;
-      updateErr = retry.error;
-      if (!retry.error) {
-        setError('Saved basic preferences. Run sql/023_add_profile_preferences.sql for nail journey fields.');
-      }
-    }
-
-    if (updateErr) {
-      setError('Failed to save preferences');
+      setError('Nail journey fields require migration sql/023_add_profile_preferences.sql in Supabase.');
+    } else if (updateErr) {
+      setError('Failed to save nail journey');
     } else if (data) {
       setProfile(data);
       if (user) login({ ...user, ...data });
@@ -402,32 +282,9 @@ export default function CustomerProfile() {
     setAvatarUploading(false);
   };
 
-  const handleCommPrefChange = async (field, value) => {
-    if (!profile || !commPrefsAvailable) return;
-    setCommPrefsSaving(true);
-    const payload = { [field]: value };
-    const { data, error: updateErr } = await supabase
-      .from('profiles')
-      .update(payload)
-      .eq('id', profile.id)
-      .select()
-      .single();
-
-    if (updateErr?.message?.includes(field)) {
-      setCommPrefsAvailable(false);
-    } else if (data) {
-      setProfile(data);
-      if (user) login({ ...user, ...data });
-    }
-    setCommPrefsSaving(false);
-  };
-
   const resetEditForm = () => {
     setEditing(false);
     setError('');
-    const bd = profile?.birthday || '';
-    setBirthdayMonth(bd ? bd.split('-')[0] : '');
-    setBirthdayDay(bd ? bd.split('-')[1] : '');
     setForm({
       full_name: profile?.full_name || '',
       email: profile?.email || '',
@@ -553,7 +410,7 @@ export default function CustomerProfile() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setProfileTab(tab.id)}
+              onClick={() => { setActiveTab(tab.id); if (tab.id !== 'preferences') setEditing(false); }}
               className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id
                   ? 'bg-gold text-charcoal'
@@ -623,100 +480,40 @@ export default function CustomerProfile() {
                 <span className="text-gold font-heading text-sm">Rewards & Redemption →</span>
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>Redeem points for perks</p>
               </Link>
-              <button
-                type="button"
-                onClick={() => setProfileTab('preferences', 'notifications')}
-                className={`${panelClass} hover:border-gold/30 transition-colors text-left sm:col-span-2`}
-              >
-                <span className="text-gold font-heading text-sm">Notification Preferences →</span>
+              <Link to="/customer/settings" className={`${panelClass} hover:border-gold/30 transition-colors sm:col-span-2`}>
+                <span className="text-gold font-heading text-sm">Account Settings →</span>
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>
-                  Choose which appointment, payment, and rewards alerts you receive
+                  Edit profile details and notification preferences
                 </p>
-              </button>
+              </Link>
             </div>
           </div>
         )}
 
         {activeTab === 'preferences' && (
           <div className="space-y-6">
-            <div id="notification-preferences">
-              <NotificationPreferencesPanel
-                userPhone={user?.phone || profile?.phone}
-                role="customer"
-                theme={theme}
-              />
-            </div>
-
             <div className={panelClass}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className={theme === 'dark' ? 'text-offwhite font-medium' : 'text-charcoal font-medium'}>Salon Preferences</h3>
-              {!editing && (
-                <button
-                  type="button"
-                  onClick={() => { setEditing(true); setError(''); }}
-                  className="px-4 py-2 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-xs font-medium"
-                >
-                  Edit
-                </button>
-              )}
-            </div>
-
-            {editing ? (
-              <form onSubmit={handleUpdateProfile} className="space-y-5">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <label className={labelClass(theme)}>Full Name</label>
-                  <input
-                    type="text"
-                    value={form.full_name}
-                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                    className={theme === 'dark' ? 'w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm' : 'w-full p-3 bg-charcoal/10 border border-charcoal/20 text-charcoal focus:border-gold focus:outline-none rounded-lg text-sm'}
-                    required
-                  />
+                  <h3 className={theme === 'dark' ? 'text-offwhite font-medium' : 'text-charcoal font-medium'}>Nail Journey</h3>
+                  <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>
+                    Shape, finish, allergies, and preferred visit times for your technicians
+                  </p>
                 </div>
-                <div>
-                  <label className={labelClass(theme)}>Email</label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className={theme === 'dark' ? 'w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm' : 'w-full p-3 bg-charcoal/10 border border-charcoal/20 text-charcoal focus:border-gold focus:outline-none rounded-lg text-sm'}
-                    placeholder="name@example.com"
-                  />
-                </div>
-                <RefreshmentSelect
-                  label="Complementary Drink"
-                  value={form.refreshment_pref}
-                  onChange={(e) => setForm({ ...form, refreshment_pref: e.target.value })}
-                  refreshments={refreshments}
-                  loading={refreshmentsLoading}
-                  showUnavailableNote
-                  emptyLabel="None / No Preference"
-                  className="p-3 text-sm"
-                />
-                <div>
-                  <label className={labelClass(theme)}>Nail Philosophy Goal</label>
-                  <select
-                    value={form.nail_goal}
-                    onChange={(e) => setForm({ ...form, nail_goal: e.target.value })}
-                    className={theme === 'dark' ? 'w-full p-3 bg-offwhite/10 border border-offwhite/20 text-offwhite focus:border-gold focus:outline-none rounded-lg text-sm' : 'w-full p-3 bg-charcoal/10 border border-charcoal/20 text-charcoal focus:border-gold focus:outline-none rounded-lg text-sm'}
+                {preferencesAvailable && !editing && (
+                  <button
+                    type="button"
+                    onClick={() => { setEditing(true); setError(''); }}
+                    className="px-4 py-2 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-xs font-medium"
                   >
-                    <option value="">Unset</option>
-                    <option value="Healthy Natural Nails">Healthy Natural Nails</option>
-                    <option value="Long Extensions">Long Extensions</option>
-                    <option value="Intricate Art">Intricate Art</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={labelClass(theme)}>Birthday (optional)</label>
-                  <div className="flex gap-3">
-                    <ScrollSelect value={birthdayMonth} onChange={setBirthdayMonth} options={MONTHS} placeholder="Month" className="flex-1" theme={theme} />
-                    <ScrollSelect value={birthdayDay} onChange={setBirthdayDay} options={DAYS} placeholder="Day" className="flex-1" theme={theme} />
-                  </div>
-                </div>
+                    Edit
+                  </button>
+                )}
+              </div>
 
-                {preferencesAvailable && (
-                  <div className="pt-2 border-t border-gold/10 space-y-4">
-                    <p className={theme === 'dark' ? 'text-offwhite/50 text-xs uppercase tracking-wider' : 'text-charcoal/50 text-xs uppercase tracking-wider'}>Nail journey</p>
+              {preferencesAvailable ? (
+                editing ? (
+              <form onSubmit={handleSaveJourney} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className={labelClass(theme)}>Shape</label>
@@ -757,102 +554,46 @@ export default function CustomerProfile() {
                         </select>
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {!preferencesAvailable && (
-                  <p className={theme === 'dark' ? 'text-offwhite/40 text-xs' : 'text-charcoal/40 text-xs'}>
-                    Nail journey fields require migration sql/023_add_profile_preferences.sql in Supabase.
-                  </p>
-                )}
-
                 {error && <p className="text-red-400 text-sm text-center">{error}</p>}
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={resetEditForm} className={modalBtnSecondary}>Cancel</button>
                   <button type="submit" disabled={saving} className="flex-1 py-3 bg-gold text-charcoal text-sm rounded-xl hover:bg-gold/90 transition-colors font-medium">
-                    {saving ? 'Saving...' : 'Save Preferences'}
+                    {saving ? 'Saving...' : 'Save Journey'}
                   </button>
                 </div>
               </form>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[
-                  { label: 'Full name', value: profile.full_name || 'Not set' },
-                  { label: 'Phone', value: profile.phone || 'Not set' },
-                  { label: 'Email', value: profile.email || 'Not set' },
-                  { label: 'Birthday', value: profile.birthday ? new Date(`2000-${profile.birthday}`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : 'Not set' },
-                  { label: 'Refreshment', value: profile.refreshment_pref || 'None' },
-                  { label: 'Nail goal', value: profile.nail_goal || 'Not specified', gold: true },
-                ].map((item) => (
-                  <div key={item.label} className={cardClass(theme)}>
-                    <span className={labelClass(theme)}>{item.label}</span>
-                    <span className={item.gold ? 'text-sm text-gold font-heading' : valueClass(theme)}>{item.value}</span>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {(() => {
+                      const journey = parseProfilePreferences(profile.preferences);
+                      return [
+                        { label: 'Nail shape', value: labelForOption(NAIL_SHAPES, journey.nail_shape) },
+                        { label: 'Nail length', value: labelForOption(NAIL_LENGTHS, journey.nail_length) },
+                        { label: 'Finish', value: labelForOption(NAIL_FINISHES, journey.nail_finish) },
+                        { label: 'Allergies / sensitivities', value: journey.allergies || 'None noted' },
+                        { label: 'Preferred visit times', value: labelForOption(VISIT_TIME_OPTIONS, journey.preferred_visit_time) },
+                      ].map((item) => (
+                        <div key={item.label} className={cardClass(theme)}>
+                          <span className={labelClass(theme)}>{item.label}</span>
+                          <span className={valueClass(theme)}>{item.value}</span>
+                        </div>
+                      ));
+                    })()}
                   </div>
-                ))}
-                {preferencesAvailable && (() => {
-                  const journey = parseProfilePreferences(profile.preferences);
-                  return [
-                    { label: 'Nail shape', value: labelForOption(NAIL_SHAPES, journey.nail_shape) },
-                    { label: 'Nail length', value: labelForOption(NAIL_LENGTHS, journey.nail_length) },
-                    { label: 'Finish', value: labelForOption(NAIL_FINISHES, journey.nail_finish) },
-                    { label: 'Allergies / sensitivities', value: journey.allergies || 'None noted' },
-                    { label: 'Preferred visit times', value: labelForOption(VISIT_TIME_OPTIONS, journey.preferred_visit_time) },
-                  ].map((item) => (
-                    <div key={item.label} className={cardClass(theme)}>
-                      <span className={labelClass(theme)}>{item.label}</span>
-                      <span className={valueClass(theme)}>{item.value}</span>
-                    </div>
-                  ));
-                })()}
-              </div>
-            )}
-
-            <div className={`${panelClass} mt-6`}>
-              <h3 className={theme === 'dark' ? 'text-offwhite font-medium mb-1' : 'text-charcoal font-medium mb-1'}>Communication Preferences</h3>
-              <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mb-4' : 'text-charcoal/40 text-xs mb-4'}>
-                How we reach you about visits and salon offers
-              </p>
-              {commPrefsAvailable ? (
-                <div className="space-y-4">
-                  <label className={`flex items-center justify-between gap-4 ${cardClass(theme)} cursor-pointer`}>
-                    <span className={valueClass(theme)}>SMS visit reminders</span>
-                    <input
-                      type="checkbox"
-                      checked={profile.sms_reminders !== false}
-                      disabled={commPrefsSaving}
-                      onChange={(e) => handleCommPrefChange('sms_reminders', e.target.checked)}
-                      className="w-5 h-5 accent-gold"
-                    />
-                  </label>
-                  <label className={`flex items-center justify-between gap-4 ${cardClass(theme)} cursor-pointer`}>
-                    <span className={valueClass(theme)}>Email promotions & offers</span>
-                    <input
-                      type="checkbox"
-                      checked={profile.email_promotions !== false}
-                      disabled={commPrefsSaving}
-                      onChange={(e) => handleCommPrefChange('email_promotions', e.target.checked)}
-                      className="w-5 h-5 accent-gold"
-                    />
-                  </label>
-                  <div className={cardClass(theme)}>
-                    <label className={labelClass(theme)}>Preferred contact method</label>
-                    <select
-                      value={profile.preferred_contact || 'phone'}
-                      disabled={commPrefsSaving}
-                      onChange={(e) => handleCommPrefChange('preferred_contact', e.target.value)}
-                      className={selectClass}
-                    >
-                      {CONTACT_METHOD_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </div>
-                </div>
+                )
               ) : (
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs' : 'text-charcoal/40 text-xs'}>
-                  Run sql/024_phase3_loyalty_engagement.sql in Supabase to enable communication preferences.
+                  Nail journey fields require migration sql/023_add_profile_preferences.sql in Supabase.
                 </p>
               )}
+
+              <Link
+                to="/customer/settings"
+                className="inline-block mt-6 text-xs text-gold hover:text-gold/80 transition-colors"
+              >
+                Edit profile details and notifications in Settings →
+              </Link>
             </div>
-          </div>
           </div>
         )}
 
@@ -1092,17 +833,19 @@ export default function CustomerProfile() {
               </div>
             </div>
 
-            <NotificationHistorySection
-              notifications={notifications}
-              theme={theme}
-              panelClass={panelClass}
-              cardClass={cardClass}
-              onMarkOneRead={markOneRead}
-              onDeleteOne={deleteOne}
-              onDeleteAll={deleteAll}
-              onNotificationPress={handleNotificationPress}
-              preferencesLink="/customer/profile?tab=preferences&section=notifications"
-            />
+            {notifications.length > 0 && (
+              <div className={panelClass}>
+                <h3 className={theme === 'dark' ? 'text-offwhite font-medium mb-4' : 'text-charcoal font-medium mb-4'}>Recent Notifications</h3>
+                <div className="space-y-3">
+                  {notifications.map((n) => (
+                    <div key={n.id} className={cardClass(theme)}>
+                      <div className="font-medium text-sm text-gold">{n.title}</div>
+                      <div className={theme === 'dark' ? 'text-offwhite/60 text-xs mt-1' : 'text-charcoal/60 text-xs mt-1'}>{n.body || n.message}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

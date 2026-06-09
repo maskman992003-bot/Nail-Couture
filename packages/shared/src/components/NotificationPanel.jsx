@@ -68,43 +68,60 @@ export default function NotificationPanel({
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="sticky top-0 z-10 flex items-center justify-between p-6 border-b"
+          className="sticky top-0 z-10 border-b"
           style={{ borderColor: border, backgroundColor: bg }}
         >
-          <div>
-            <h2 className="font-heading text-2xl text-gold">Notifications</h2>
-            {unreadCount > 0 ? (
-              <p className={`text-xs mt-1 ${textMuted}`}>{unreadCount} unread</p>
-            ) : null}
-          </div>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            {unreadCount > 0 ? (
-              <button
-                type="button"
-                onClick={onMarkAllRead}
-                className="px-3 py-1.5 text-xs text-gold border border-gold/40 rounded-xl hover:bg-gold/10 transition-colors"
-              >
-                Mark all read
-              </button>
-            ) : null}
-            {notifications.length > 0 ? (
-              <button
-                type="button"
-                onClick={handleClearAll}
-                className="px-3 py-1.5 text-xs text-red-400/80 border border-red-400/30 rounded-xl hover:bg-red-500/10 transition-colors"
-              >
-                Clear all
-              </button>
-            ) : null}
+          <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+            <div className="min-w-0">
+              <h2 className="font-heading text-2xl text-gold leading-tight">Notifications</h2>
+              <p className={`text-xs mt-1.5 ${textMuted}`}>
+                {unreadCount > 0 ? (
+                  <>
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold text-charcoal mr-1.5" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)' }}>
+                      {unreadCount} unread
+                    </span>
+                  </>
+                ) : (
+                  <span>All caught up</span>
+                )}
+                {notifications.length > 0 ? (
+                  <span>{unreadCount > 0 ? ' · ' : ''}{notifications.length} total</span>
+                ) : null}
+              </p>
+            </div>
             <button
               type="button"
               onClick={onClose}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors text-xl ${textMuted}`}
+              className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl border transition-colors hover:bg-white/5 ${textMuted}`}
+              style={{ borderColor: border }}
               aria-label="Close"
             >
               &times;
             </button>
           </div>
+
+          {(unreadCount > 0 || notifications.length > 0) ? (
+            <div className="flex gap-2 px-5 pb-4">
+              {unreadCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={onMarkAllRead}
+                  className="flex-1 px-3 py-2 text-xs font-medium text-gold border border-gold/40 rounded-xl hover:bg-gold/10 transition-colors text-center"
+                >
+                  Mark all read
+                </button>
+              ) : null}
+              {notifications.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="flex-1 px-3 py-2 text-xs font-medium text-red-400/90 border border-red-400/30 rounded-xl hover:bg-red-500/10 transition-colors text-center"
+                >
+                  Clear all
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="p-4 space-y-3">

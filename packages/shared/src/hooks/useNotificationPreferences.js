@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { featureFlags } from '../constants/featureFlags.js';
 import {
   applyNotificationGroupToggle,
@@ -17,9 +17,14 @@ export function useNotificationPreferences(userPhone, role) {
   const groups = useMemo(() => getNotificationGroupsForRole(role), [role]);
   const [mutedTypes, setMutedTypes] = useState(/** @type {string[]} */ ([]));
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [available, setAvailable] = useState(true);
+  const mutedTypesRef = useRef(mutedTypes);
+  const saveVersionRef = useRef(0);
+
+  useEffect(() => {
+    mutedTypesRef.current = mutedTypes;
+  }, [mutedTypes]);
 
   const enabled = Boolean(
     featureFlags.global.notificationPreferences && userPhone && groups.length > 0,
@@ -60,49 +65,60 @@ export function useNotificationPreferences(userPhone, role) {
     fetchPreferences();
   }, [fetchPreferences]);
 
-  const saveMutedTypes = useCallback(
-    async (nextMuted) => {
-      if (!userPhone) return false;
+  const persistMutedTypes = useCallback(
+    async (nextMuted, previousMuted) => {
+      if (!userPhone) return;
 
-      setSaving(true);
+      const saveVersion = ++saveVersionRef.current;
       setError('');
+
       try {
         const { data, error: rpcError } = await getSupabase().rpc('update_notification_preferences', {
           p_phone: userPhone,
           p_muted_types: nextMuted,
         });
         if (rpcError) throw rpcError;
+
         const list = data?.muted_types;
-        setMutedTypes(Array.isArray(list) ? list : nextMuted);
-        return true;
+        const saved = Array.isArray(list) ? list : nextMuted;
+        if (saveVersion === saveVersionRef.current) {
+          setMutedTypes(saved);
+          mutedTypesRef.current = saved;
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save preferences');
-        await fetchPreferences();
-        return false;
-      } finally {
-        setSaving(false);
+        if (saveVersion === saveVersionRef.current) {
+          setMutedTypes(previousMuted);
+          mutedTypesRef.current = previousMuted;
+          setError(err instanceof Error ? err.message : 'Failed to save preferences');
+        }
       }
     },
-    [userPhone, fetchPreferences],
+    [userPhone],
   );
 
   const toggleType = useCallback(
-    async (typeId, nextEnabled) => {
-      const nextMuted = applyNotificationTypeToggle(typeId, mutedTypes, nextEnabled);
-      await saveMutedTypes(nextMuted);
+    (typeId, nextEnabled) => {
+      const previousMuted = mutedTypesRef.current;
+      const nextMuted = applyNotificationTypeToggle(typeId, previousMuted, nextEnabled);
+      setMutedTypes(nextMuted);
+      mutedTypesRef.current = nextMuted;
+      void persistMutedTypes(nextMuted, previousMuted);
     },
-    [mutedTypes, saveMutedTypes],
+    [persistMutedTypes],
   );
 
   const toggleGroup = useCallback(
-    async (groupId, nextEnabled) => {
+    (groupId, nextEnabled) => {
       const group = groups.find((item) => item.id === groupId);
       if (!group) return;
 
-      const nextMuted = applyNotificationGroupToggle(group, mutedTypes, nextEnabled);
-      await saveMutedTypes(nextMuted);
+      const previousMuted = mutedTypesRef.current;
+      const nextMuted = applyNotificationGroupToggle(group, previousMuted, nextEnabled);
+      setMutedTypes(nextMuted);
+      mutedTypesRef.current = nextMuted;
+      void persistMutedTypes(nextMuted, previousMuted);
     },
-    [groups, mutedTypes, saveMutedTypes],
+    [groups, persistMutedTypes],
   );
 
   const groupStates = useMemo(
@@ -119,7 +135,6 @@ export function useNotificationPreferences(userPhone, role) {
     enabled,
     available,
     loading,
-    saving,
     error,
     groups: groupStates,
     toggleType,

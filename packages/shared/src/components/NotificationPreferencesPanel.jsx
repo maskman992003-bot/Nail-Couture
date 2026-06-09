@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { featureFlags } from '../constants/featureFlags.js';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences.js';
+import ToggleSwitch from './ToggleSwitch.jsx';
 
 /**
  * @param {Object} props
@@ -9,7 +10,7 @@ import { useNotificationPreferences } from '../hooks/useNotificationPreferences.
  * @param {'dark' | 'light'} [props.theme='dark']
  */
 export default function NotificationPreferencesPanel({ userPhone, role, theme = 'dark' }) {
-  const { enabled, available, loading, saving, error, groups, toggleType, toggleGroup } =
+  const { enabled, available, loading, error, groups, toggleType, toggleGroup } =
     useNotificationPreferences(userPhone, role);
   const [expandedGroups, setExpandedGroups] = useState(/** @type {Record<string, boolean>} */ ({}));
 
@@ -22,8 +23,8 @@ export default function NotificationPreferencesPanel({ userPhone, role, theme = 
 
   const itemClass =
     theme === 'dark'
-      ? 'flex items-start justify-between gap-4 rounded-lg border border-white/5 bg-black/20 p-3'
-      : 'flex items-start justify-between gap-4 rounded-lg border border-gold/10 bg-white/60 p-3';
+      ? 'flex items-center justify-between gap-4 rounded-lg border border-white/5 bg-black/20 p-3'
+      : 'flex items-center justify-between gap-4 rounded-lg border border-gold/10 bg-white/60 p-3';
 
   const toggleExpanded = (groupId) => {
     setExpandedGroups((current) => ({ ...current, [groupId]: !current[groupId] }));
@@ -82,7 +83,7 @@ export default function NotificationPreferencesPanel({ userPhone, role, theme = 
                     <div className="flex items-center justify-end gap-3 pt-3 pb-1">
                       <button
                         type="button"
-                        disabled={saving || group.allEnabled}
+                        disabled={group.allEnabled}
                         onClick={() => toggleGroup(group.id, true)}
                         className="text-xs text-gold hover:text-gold/80 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
@@ -90,7 +91,7 @@ export default function NotificationPreferencesPanel({ userPhone, role, theme = 
                       </button>
                       <button
                         type="button"
-                        disabled={saving || group.noneEnabled}
+                        disabled={group.noneEnabled}
                         onClick={() => toggleGroup(group.id, false)}
                         className="text-xs text-secondary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
                       >
@@ -99,21 +100,20 @@ export default function NotificationPreferencesPanel({ userPhone, role, theme = 
                     </div>
 
                     {group.types.map((typeItem) => (
-                      <label key={typeItem.id} className={`${itemClass} cursor-pointer`}>
+                      <div key={typeItem.id} className={itemClass}>
                         <div className="min-w-0">
                           <div className="text-primary font-medium text-sm">{typeItem.label}</div>
                           {typeItem.description ? (
                             <div className="text-secondary text-xs mt-1">{typeItem.description}</div>
                           ) : null}
                         </div>
-                        <input
-                          type="checkbox"
+                        <ToggleSwitch
                           checked={typeItem.enabled}
-                          disabled={saving}
-                          onChange={(e) => toggleType(typeItem.id, e.target.checked)}
-                          className="mt-1 w-5 h-5 shrink-0 accent-[#C5A059]"
+                          theme={theme}
+                          ariaLabel={`${typeItem.enabled ? 'Disable' : 'Enable'} ${typeItem.label}`}
+                          onChange={(value) => toggleType(typeItem.id, value)}
                         />
-                      </label>
+                      </div>
                     ))}
                   </div>
                 ) : null}

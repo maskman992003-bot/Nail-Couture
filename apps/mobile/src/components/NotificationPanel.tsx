@@ -62,56 +62,88 @@ export function NotificationPanel({
         >
           <View
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingHorizontal: 20,
-              paddingVertical: 16,
               borderBottomWidth: 1,
               borderBottomColor: styles.tokens.borderLight,
             }}
           >
-            <View>
-              <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600' }]}>Notifications</Text>
-              {unreadCount > 0 ? (
-                <Text style={[styles.textSecondary, { fontSize: 12, marginTop: 4 }]}>
-                  {unreadCount} unread
-                </Text>
-              ) : null}
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '55%' }}>
-              {unreadCount > 0 ? (
-                <Pressable
-                  onPress={onMarkAllRead}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: `${styles.tokens.goldStrong}66`,
-                  }}
-                >
-                  <Text style={[styles.textGold, { fontSize: 12 }]}>Mark all read</Text>
-                </Pressable>
-              ) : null}
-              {notifications.length > 0 ? (
-                <Pressable
-                  onPress={handleClearAll}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: 'rgba(248,113,113,0.4)',
-                  }}
-                >
-                  <Text style={{ color: '#f87171', fontSize: 12 }}>Clear all</Text>
-                </Pressable>
-              ) : null}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: 12,
+                gap: 12,
+              }}
+            >
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600' }]}>Notifications</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 6, gap: 6 }}>
+                  {unreadCount > 0 ? (
+                    <View
+                      style={{
+                        backgroundColor: styles.tokens.goldStrong,
+                        borderRadius: 999,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                      }}
+                    >
+                      <Text style={{ color: '#121212', fontSize: 10, fontWeight: '700' }}>
+                        {unreadCount} unread
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={[styles.textSecondary, { fontSize: 12 }]}>All caught up</Text>
+                  )}
+                  {notifications.length > 0 ? (
+                    <Text style={[styles.textSecondary, { fontSize: 12 }]}>
+                      {notifications.length} total
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
               <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close">
                 <Icon name="close" size={24} color={styles.tokens.textSecondary} />
               </Pressable>
             </View>
+
+            {(unreadCount > 0 || notifications.length > 0) ? (
+              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 16 }}>
+                {unreadCount > 0 ? (
+                  <Pressable
+                    onPress={onMarkAllRead}
+                    style={{
+                      flex: 1,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: `${styles.tokens.goldStrong}66`,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={[styles.textGold, { fontSize: 12, fontWeight: '600' }]}>Mark all read</Text>
+                  </Pressable>
+                ) : null}
+                {notifications.length > 0 ? (
+                  <Pressable
+                    onPress={handleClearAll}
+                    style={{
+                      flex: 1,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: 'rgba(248,113,113,0.4)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#f87171', fontSize: 12, fontWeight: '600' }}>Clear all</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 16 }}>

@@ -278,7 +278,7 @@ export function TechnicianFloorSnapshot({
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-          <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>Salon Floor</Text>
+          <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>Lobby</Text>
           {myAssigned.length > 0 ? (
             <View
               style={{
@@ -309,7 +309,6 @@ export function TechnicianFloorSnapshot({
               <Text style={{ color: '#fbbf24', fontSize: 11 }}>On break</Text>
             </View>
           ) : null}
-          <Text style={[styles.textSecondary, { fontSize: 11 }]}>Read-only</Text>
         </View>
       </View>
 

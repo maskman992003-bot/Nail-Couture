@@ -178,6 +178,11 @@ export default function Sidebar() {
     }
   };
 
+  const openNotifPanel = (e) => {
+    e.stopPropagation();
+    setNotifPanelOpen(true);
+  };
+
   const settingsPath = getSettingsPath(user?.role);
   const displayName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
   const initials = (user?.full_name || user?.email || '?').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -236,24 +241,23 @@ export default function Sidebar() {
         </div>
 
         {/* User Menu */}
-        <div className="p-4 border-t flex-shrink-0 flex justify-center lg:justify-start gap-2" style={{ borderColor }}>
-          <NotificationBell
-            unreadCount={unreadCount}
-            ring={bellRing}
-            theme={theme}
-            onClick={() => setNotifPanelOpen(true)}
-            className="hover:bg-gold/10"
-          />
-          <div className="relative desktop-user-menu w-full md:flex md:justify-center lg:block flex-1 min-w-0">
+        <div className="p-4 border-t flex-shrink-0 flex justify-center lg:justify-start" style={{ borderColor }}>
+          <div className="relative desktop-user-menu w-full md:flex md:justify-center lg:block">
             <button
               onClick={() => { setShowDesktopUserMenu((v) => !v); }}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity w-full md:justify-center lg:justify-start cursor-pointer"
+              className="flex items-center hover:opacity-80 transition-opacity w-full justify-center lg:justify-start cursor-pointer"
             >
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="relative w-8 h-8 lg:w-10 lg:h-10 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-gold text-xs lg:text-sm font-heading">{initials || '?'}</span>
-              </div>
-              <div className="text-left min-w-0 hidden lg:block">
-                <div className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>{displayName}</div>
+                <NotificationBell
+                  unreadCount={unreadCount}
+                  ring={bellRing}
+                  theme={theme}
+                  size="sm"
+                  overlay
+                  className="absolute -bottom-0.5 -right-0.5 z-10"
+                  onClick={openNotifPanel}
+                />
               </div>
             </button>
 
@@ -354,14 +358,7 @@ export default function Sidebar() {
             <div className="w-4 h-full flex-shrink-0" aria-hidden="true" />
           </div>
           
-          <div className="relative flex items-center gap-1 w-[72px] mobile-user-menu flex-shrink-0 border-l border-gold/10 pl-1">
-            <NotificationBell
-              unreadCount={unreadCount}
-              ring={bellRing}
-              theme={theme}
-              size="sm"
-              onClick={() => setNotifPanelOpen(true)}
-            />
+          <div className="relative flex flex-col items-center w-[60px] mobile-user-menu flex-shrink-0 border-l border-gold/10 pl-1">
             <button
               onClick={(e) => { 
                 e.stopPropagation();
@@ -369,8 +366,17 @@ export default function Sidebar() {
               }}
               className={`flex flex-col items-center gap-0.5 px-1 py-1.5 transition-colors rounded-lg w-full ${theme === 'dark' ? 'text-offwhite/55 hover:text-gold hover:bg-offwhite/5' : 'text-charcoal/75 hover:text-gold hover:bg-charcoal/5'}`}
             >
-              <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center">
+              <div className="relative w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center">
                 <span className="text-[10px] text-gold font-heading">{initials || '?'}</span>
+                <NotificationBell
+                  unreadCount={unreadCount}
+                  ring={bellRing}
+                  theme={theme}
+                  size="sm"
+                  overlay
+                  className="absolute -top-1 -right-1.5 z-10"
+                  onClick={openNotifPanel}
+                />
               </div>
               <span className={`text-[8px] font-medium truncate max-w-[50px] ${theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75'}`}>{displayName}</span>
             </button>
