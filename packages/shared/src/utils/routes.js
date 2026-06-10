@@ -59,6 +59,28 @@ export function getSalonActivityPath(role) {
   }
 }
 
+export function getAnnouncementsPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/announcements';
+    case 'owner': return '/owner/announcements';
+    case 'partner': return '/partner/announcements';
+    default: return '/portal';
+  }
+}
+
+export function getSalonUpdatesPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/salon-updates';
+    case 'owner': return '/owner/salon-updates';
+    case 'partner': return '/partner/salon-updates';
+    case 'admin': return '/admin/salon-updates';
+    case 'cashier': return '/cashier/salon-updates';
+    case 'technician': return '/technician/salon-updates';
+    case 'customer': return '/customer/salon-updates';
+    default: return '/portal';
+  }
+}
+
 export function getMySchedulePath(role) {
   switch (role) {
     case 'cashier': return '/cashier/schedule';

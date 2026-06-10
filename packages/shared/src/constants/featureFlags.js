@@ -38,6 +38,7 @@ export const featureFlags = {
     inventoryAutomation: false,     // Auto-low stock alerts (Phase 2/3)
     advancedReporting: false,       // Custom reports, analytics (Phase 3)
     employeeManagement: false,      // Add/remove staff, roles (Phase 3)
+    announcements: true,           // Management salon announcements tab
   },
   
   // Inventory & Operations
@@ -90,3 +91,4 @@ export const PUSH_NOTIFICATIONS = featureFlags.global.pushNotifications;
 export const EXTERNAL_MESSAGING = featureFlags.global.externalMessaging;
 export const NOTIFICATION_PREFERENCES = featureFlags.global.notificationPreferences;
 export const APPOINTMENT_REMINDERS = featureFlags.customer.appointmentReminders;
+export const STAFF_ANNOUNCEMENTS = featureFlags.staff.announcements;

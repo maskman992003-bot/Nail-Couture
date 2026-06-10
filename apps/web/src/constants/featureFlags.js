@@ -37,6 +37,7 @@ export const featureFlags = {
     inventoryAutomation: false,     // Auto-low stock alerts (Phase 2/3)
     advancedReporting: false,       // Custom reports, analytics (Phase 3)
     employeeManagement: false,      // Add/remove staff, roles (Phase 3)
+    announcements: false,           // Management salon announcements tab
   },
   
   // Inventory & Operations

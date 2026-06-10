@@ -134,6 +134,17 @@ export const NOTIFICATION_TYPE_LABELS = {
     label: 'Time-off decisions',
     description: 'When your time-off request is approved or denied',
   },
+  salon_announcement: {
+    label: 'Salon announcements',
+    description: 'Promotions and updates from the salon',
+  },
+};
+
+const SALON_UPDATES_GROUP = {
+  id: 'salon_updates',
+  label: 'Salon updates',
+  description: 'Promotions and news from the salon',
+  types: ['salon_announcement'],
 };
 
 const CUSTOMER_GROUPS = [
@@ -165,6 +176,7 @@ const CUSTOMER_GROUPS = [
     description: 'Waiver confirmations and requirements',
     types: ['waiver_signed', 'waiver_required'],
   },
+  SALON_UPDATES_GROUP,
 ];
 
 const ADMIN_GROUPS = [
@@ -186,6 +198,7 @@ const ADMIN_GROUPS = [
     description: 'Waivers and mid-visit service changes',
     types: ['waiver_signed', 'service_changed'],
   },
+  SALON_UPDATES_GROUP,
 ];
 
 const CASHIER_GROUPS = [
@@ -195,6 +208,7 @@ const CASHIER_GROUPS = [
     description: 'Clients ready to pay and price changes',
     types: ['checkout_ready', 'checkout_price_change', 'loyalty_at_checkout'],
   },
+  SALON_UPDATES_GROUP,
 ];
 
 const MANAGEMENT_GROUPS = [
@@ -220,6 +234,7 @@ const TECHNICIAN_GROUPS = [
     description: 'Shift changes and time-off decisions',
     types: ['schedule_changed', 'time_off_decision'],
   },
+  SALON_UPDATES_GROUP,
 ];
 
 const GROUPS_BY_ROLE = {

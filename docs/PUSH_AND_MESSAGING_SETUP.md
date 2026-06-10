@@ -45,6 +45,24 @@ supabase functions deploy send-notification-push
 | Events | INSERT |
 | Function | `send-notification-push` |
 
+### Salon announcements fan-out (after migrations 049 + 050)
+
+**Default (no webhook required):** After `send_salon_announcement`, the Announcements UI calls `drain_announcement_fanout` to create notifications in batches. On page load it also runs `resume_pending_announcement_fanouts` for any stuck `pending` rows.
+
+Run migration `sql/050_fix_announcement_fanout_delivery.sql` on your database.
+
+**Optional webhook** (background processing if the sender closes the tab immediately):
+
+```bash
+supabase functions deploy process-announcement-fanout
+```
+
+| Field | Value |
+|-------|--------|
+| Table | `announcement_fanout_queue` |
+| Events | INSERT |
+| Function | `process-announcement-fanout` |
+
 ### Mobile app
 
 Rebuild dev client (push does not work in Expo Go):

@@ -20,6 +20,8 @@ import { AdminServicesScreen } from '../screens/admin/AdminServicesScreen';
 import { AdminInventoryScreen } from '../screens/admin/AdminInventoryScreen';
 import { AdminReportsScreen } from '../screens/admin/AdminReportsScreen';
 import { SalonActivityScreen } from '../screens/admin/SalonActivityScreen';
+import { AnnouncementsScreen } from '../screens/admin/AnnouncementsScreen';
+import { SalonUpdatesScreen } from '../screens/shared/SalonUpdatesScreen';
 import { CustomersStackNavigator } from './CustomersStackNavigator';
 import { StaffStackNavigator } from './StaffStackNavigator';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
@@ -34,6 +36,7 @@ export const CUSTOMER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenCom
   Book: CustomerBookingScreen,
   Loyalty: CustomerLoyaltyScreen,
   History: CustomerHistoryScreen,
+  SalonUpdates: SalonUpdatesScreen,
   Settings: CustomerSettingsScreen,
 };
 
@@ -42,6 +45,7 @@ const TECHNICIAN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponen
   Schedule: ScheduleScreen,
   Tips: TechnicianTipsScreen,
   Customers: CustomersStackNavigator,
+  SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,
 };
 
@@ -53,6 +57,7 @@ const CASHIER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>>
   Transactions: CashierTransactionsScreen,
   Customers: CustomersStackNavigator,
   Reports: AdminReportsScreen,
+  SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,
 };
 
@@ -67,12 +72,15 @@ const ADMIN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> =
   Customers: CustomersStackNavigator,
   Staff: StaffStackNavigator,
   SalonActivity: SalonActivityScreen,
+  Announcements: AnnouncementsScreen,
+  SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,
 };
 
 const STAFF_SHARED_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> = {
   Schedule: ScheduleScreen,
   Customers: CustomersStackNavigator,
+  SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,
 };
 

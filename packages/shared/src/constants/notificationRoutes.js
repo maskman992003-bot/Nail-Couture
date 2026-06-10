@@ -1,7 +1,7 @@
 /**
  * Maps notification types to navigation targets (web paths and mobile screens).
  */
-import { getHomePath } from '../utils/routes.js';
+import { getHomePath, getSalonUpdatesPath } from '../utils/routes.js';
 
 const CHECKOUT_TYPES = new Set(['checkout_ready', 'checkout_price_change', 'loyalty_at_checkout']);
 const LOBBY_TYPES = new Set([
@@ -110,6 +110,10 @@ function staffPath(role) {
 export function getNotificationWebPath(type, role) {
   if (!type || !role) return null;
 
+  if (type === 'salon_announcement') {
+    return getSalonUpdatesPath(role);
+  }
+
   if (CHECKOUT_TYPES.has(type)) return checkoutPath(role);
   if (LOBBY_TYPES.has(type)) return lobbyPath(role);
   if (MANAGEMENT_TYPES.has(type)) {
@@ -137,6 +141,8 @@ export function getNotificationWebPath(type, role) {
  */
 export function getNotificationMobileScreen(type, role) {
   if (!type || !role) return null;
+
+  if (type === 'salon_announcement') return 'SalonUpdates';
 
   if (CHECKOUT_TYPES.has(type)) return 'Checkout';
   if (LOBBY_TYPES.has(type)) return 'Lobby';
