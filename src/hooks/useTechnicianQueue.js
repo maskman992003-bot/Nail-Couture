@@ -15,7 +15,6 @@ import {
   mapPaymentsByAppointment,
 } from '../utils/technicianQueue';
 import { toggleChecklistItem } from '../utils/serviceChecklist';
-import { logInventoryUsage } from '../utils/inventoryUsage';
 
 export function useTechnicianQueue(technicianId, callerPhoneFallback) {
   const [myAppointments, setMyAppointments] = useState([]);
@@ -245,30 +244,6 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     }
   }, [refetch, showToast, callerPhoneFallback]);
 
-  const logProductUsage = useCallback(async (appointment, { inventoryId, quantity, logType }) => {
-    setActionId(appointment.id);
-    try {
-      const phone = getCallerPhone(callerPhoneFallback);
-      const result = await logInventoryUsage(phone, {
-        inventoryId,
-        quantityChanged: -Math.abs(quantity),
-        appointmentId: appointment.id,
-        customerId: appointment.customer_id,
-        reason: logType === 'waste' ? 'Waste during service' : 'Used during service',
-        logType,
-      });
-      if (!result.success) throw new Error(result.error);
-      showToast(logType === 'waste' ? 'Waste logged' : 'Usage logged');
-      return result;
-    } catch (err) {
-      console.error('Error logging usage:', err);
-      showToast(err.message || 'Failed to log usage', 'error');
-      return { success: false, error: err.message };
-    } finally {
-      setActionId(null);
-    }
-  }, [showToast, callerPhoneFallback]);
-
   const declineAssignment = useCallback(async (appointment, reason = '') => {
     setActionId(appointment.id);
     try {
@@ -374,7 +349,6 @@ export function useTechnicianQueue(technicianId, callerPhoneFallback) {
     declineAssignment,
     updateServingServices,
     updateChecklistItem,
-    logProductUsage,
     priceConfirmAppt,
     confirmCompleteWithoutPrice,
     cancelPriceConfirm,

@@ -60,7 +60,6 @@ export function TechnicianHomeScreen() {
           queue.updateServingServices as TechnicianDashboardProps['updateServingServices']
         }
         updateChecklistItem={queue.updateChecklistItem}
-        logProductUsage={queue.logProductUsage}
         floorTechnicians={queue.floorTechnicians}
         dismissToast={queue.dismissToast}
         dismissNewAssignment={queue.dismissNewAssignment}

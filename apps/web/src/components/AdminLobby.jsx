@@ -16,7 +16,10 @@ import AppModal, {
   modalBtnDanger,
 } from './AppModal'
 import clsx from 'clsx'
+import { MULTI_TECH_VISITS } from '@nail-couture/shared/constants/featureFlags'
+import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCustomerAccess'
 import { getWorkstationStatus, WORKSTATION_ON_BREAK } from '@nail-couture/shared/utils/technicianWorkstation'
+import VisitTechnicianManager, { MultiTechBadge } from './VisitTechnicianManager'
 
 const LOBBY_DROP_ID = 'lobby'
 
@@ -75,7 +78,7 @@ const DraggablePendingCustomer = ({ appointment, children }) => {
   )
 }
 
-const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, isOnBreak, updating, onAccept, onSendToCheckout, wiggle, activeDragId, theme }) => {
+const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, isOnBreak, updating, onAccept, onSendToCheckout, onManageTechs, showManageTechs, wiggle, activeDragId, theme }) => {
   const isDraggingThisPending = activeDragId && pendingCustomer && String(pendingCustomer.id) === String(activeDragId)
   const dropDisabled = isBusy || isPending || isOnBreak || isDraggingThisPending
   const { isOver, setNodeRef } = useDroppable({
@@ -145,6 +148,16 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
             <div className="mb-2">{pendingCustomer.customer?.full_name || 'Customer'}</div>
             <div className="text-xs text-offwhite/50">{pendingCustomer.add_ons || pendingCustomer.services?.name}</div>
             <p className="text-[10px] text-gold/60 mt-1">Drag to reassign or back to waiting</p>
+            {showManageTechs && (
+              <button
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => onManageTechs(pendingCustomer)}
+                className="mt-2 text-xs text-gold hover:text-gold/80"
+              >
+                Manage techs
+              </button>
+            )}
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => onAccept(pendingCustomer.id, tech.id)}
@@ -168,7 +181,18 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
   )
 }
 
-const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, theme }) => {
+const ManageTechButton = ({ appointment, onManage, theme }) => (
+  <button
+    type="button"
+    onPointerDown={(e) => e.stopPropagation()}
+    onClick={(e) => { e.stopPropagation(); onManage(appointment) }}
+    className={clsx('text-xs text-gold hover:text-gold/80', theme === 'dark' ? '' : '')}
+  >
+    Manage techs
+  </button>
+)
+
+const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, onManageTechs, showManageTechs, theme }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: appointment.id,
     data: { type: 'appointment', appointment }
@@ -247,6 +271,7 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, theme }) => {
         <div className="flex items-start gap-2 shrink-0">
           <span className={timeTextClass}>{formatTime(appointment.checked_in_at)}</span>
           <div className="flex items-center gap-1">
+            {showManageTechs && <ManageTechButton appointment={appointment} onManage={onManageTechs} theme={theme} />}
             <button onPointerDown={stopProp} onClick={(e) => { e.stopPropagation(); onEdit(appointment) }} className={editBtnClass}>✎</button>
             <button onPointerDown={stopProp} onClick={(e) => { e.stopPropagation(); onCancel(appointment) }} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
           </div>
@@ -534,7 +559,9 @@ export default function AdminLobby() {
   const [cancelConfirm, setCancelConfirm] = useState(null)
   const [cancelReason, setCancelReason] = useState('')
   const [wiggleTechId, setWiggleTechId] = useState(null)
+  const [managingTechsFor, setManagingTechsFor] = useState(null)
   const { user } = useAuth()
+  const showManageTechs = MULTI_TECH_VISITS && canManageVisitTechnicians(user?.role)
   const { theme } = useTheme()
   const navigate = useNavigate()
 
@@ -893,6 +920,8 @@ export default function AdminLobby() {
                         appointment={appointment}
                         onEdit={setEditingAppointment}
                         onCancel={setCancelConfirm}
+                        onManageTechs={setManagingTechsFor}
+                        showManageTechs={showManageTechs}
                         theme={theme}
                       />
                     ))}
@@ -916,6 +945,9 @@ export default function AdminLobby() {
                           )}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
+                          {showManageTechs && (
+                            <button type="button" onClick={() => setManagingTechsFor(appointment)} className="text-xs text-gold hover:text-gold/80">Manage techs</button>
+                          )}
                           <button onClick={(e) => { e.stopPropagation(); setEditingAppointment(appointment) }} className={`text-sm ${theme === 'dark' ? 'text-offwhite/40 hover:text-offwhite' : 'text-charcoal/40 hover:text-charcoal'}`}>✎</button>
                           <button onClick={() => setCancelConfirm(appointment)} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
                         </div>
@@ -928,6 +960,7 @@ export default function AdminLobby() {
                         {appointment.technician && (
                           <span className="text-xs text-gold/70 ml-auto">with {appointment.technician.full_name}</span>
                         )}
+                        {showManageTechs && <MultiTechBadge appointment={appointment} theme={theme} />}
                       </div>
                       {appointment.add_ons && (
                         <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>+ {appointment.add_ons}</div>
@@ -963,7 +996,12 @@ export default function AdminLobby() {
                             <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>with {appointment.technician.full_name}</span>
                           )}
                         </div>
-                        <span className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400">Awaiting payment</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {showManageTechs && (
+                            <button type="button" onClick={() => setManagingTechsFor(appointment)} className="text-xs text-gold hover:text-gold/80">Manage techs</button>
+                          )}
+                          <span className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400">Awaiting payment</span>
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-2 text-sm items-center">
                         {appointment.services && <span className="text-gold font-heading">{appointment.services.name}</span>}
@@ -1010,6 +1048,8 @@ export default function AdminLobby() {
                         updating={updating}
                         onAccept={acceptAssignment}
                         onSendToCheckout={sendToCheckout}
+                        onManageTechs={setManagingTechsFor}
+                        showManageTechs={showManageTechs}
                         activeDragId={activeId}
                         theme={theme}
                       />
@@ -1100,6 +1140,46 @@ export default function AdminLobby() {
               <option value="Mistake check-in">Mistake check-in</option>
             </select>
           </div>
+        </AppModal>
+      )}
+
+      {managingTechsFor && (
+        <AppModal
+          open
+          onClose={() => setManagingTechsFor(null)}
+          title={`Technicians — ${managingTechsFor.customer?.full_name || 'Guest'}`}
+          maxWidth="max-w-lg"
+          zIndex="z-[200]"
+          scrollBody
+          footer={
+            <button
+              type="button"
+              onClick={() => setManagingTechsFor(null)}
+              className={modalBtnSecondary}
+            >
+              Done
+            </button>
+          }
+        >
+          <VisitTechnicianManager
+            appointment={managingTechsFor}
+            callerPhone={getCallerPhone()}
+            technicians={technicians}
+            theme={theme}
+            onUpdated={(result) => {
+              if (result?.primary_technician_id) {
+                setManagingTechsFor((prev) => prev
+                  ? { ...prev, technician_id: result.primary_technician_id }
+                  : prev);
+              }
+              Promise.all([
+                fetchAppointments(),
+                fetchServingAppointments(),
+                fetchCheckoutReadyAppointments(),
+                fetchPendingAppointments(),
+              ]).catch(() => {});
+            }}
+          />
         </AppModal>
       )}
     </DndContext>

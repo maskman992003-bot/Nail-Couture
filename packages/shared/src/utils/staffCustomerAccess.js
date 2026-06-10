@@ -1,5 +1,12 @@
 export const CRM_MANAGEMENT_ROLES = ['super_admin', 'owner', 'partner'];
 
+/** Roles that can manage multi-tech visit assignments (lobby + checkout). */
+export const MULTI_TECH_MANAGEMENT_ROLES = ['super_admin', 'owner', 'partner', 'admin'];
+
+export function canManageVisitTechnicians(role) {
+  return MULTI_TECH_MANAGEMENT_ROLES.includes(role);
+}
+
 export const CRM_STAFF_ROLES = ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'];
 
 export function canAccessStaffCrm(role) {

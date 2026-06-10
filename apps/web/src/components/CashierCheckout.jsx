@@ -3,11 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { CASHIER_CHECKOUT } from '@nail-couture/shared/constants/featureFlags';
+import { CASHIER_CHECKOUT, MULTI_TECH_VISITS } from '@nail-couture/shared/constants/featureFlags';
 import { LOYALTY_REWARDS } from '@nail-couture/shared/utils/loyaltyTransactions';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
+import {
+  getParticipatingTechnicians,
+  computeEqualTipSplit,
+  validateTipAllocations,
+  getParticipatingTechnicianLabels,
+} from '@nail-couture/shared/utils/appointmentServices';
+import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCustomerAccess';
+import { fetchVisitTechnicianData } from '@nail-couture/shared/utils/visitTechnicians';
 import Sidebar from './Sidebar';
 import CheckoutServiceSummary from './CheckoutServiceSummary';
+import VisitTechnicianManager from './VisitTechnicianManager';
 import clsx from 'clsx';
 
 const statusColors = {
@@ -40,15 +49,18 @@ function computeTotals(basePrice, extras, discountAmount, discountType) {
   return { serviceSubtotal, tip, discount, finalTotal };
 }
 
-const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
+const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, userRole, floorTechnicians }) => {
   const [extrasAmount, setExtrasAmount] = useState('');
   const [discountAmount, setDiscountAmount] = useState('');
-  const [discountType, setDiscountType] = useState('amount');
+  const [discountType, setDiscountType] = useState('percent');
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Card');
   const [loyaltyRewardId, setLoyaltyRewardId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [visitTechData, setVisitTechData] = useState(null);
+  const [tipAllocations, setTipAllocations] = useState([]);
+  const [showTechManager, setShowTechManager] = useState(false);
 
   const hasReservedReward = Boolean(appointment?.loyalty_reward_id && appointment?.loyalty_points_cost > 0);
   const basePrice = appointment?.final_price || appointment?.services?.price || 0;
@@ -57,6 +69,37 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
 
   const customerPoints = appointment?.customer?.loyalty_points || 0;
   const selectedReward = LOYALTY_REWARDS.find((r) => r.id === loyaltyRewardId);
+
+  const mergedAppointment = visitTechData
+    ? {
+      ...appointment,
+      visit_technicians: visitTechData.technicians,
+      technician_id: visitTechData.primary_technician_id ?? appointment?.technician_id,
+    }
+    : appointment;
+  const participatingIds = MULTI_TECH_VISITS
+    ? getParticipatingTechnicians(mergedAppointment)
+    : [];
+  const showTipSplit = MULTI_TECH_VISITS && participatingIds.length >= 2;
+  const techLabels = showTipSplit
+    ? getParticipatingTechnicianLabels(mergedAppointment, participatingIds)
+    : [];
+  const canManageTechs = MULTI_TECH_VISITS && canManageVisitTechnicians(userRole);
+
+  useEffect(() => {
+    if (!showTipSplit) {
+      setTipAllocations([]);
+      return;
+    }
+    setTipAllocations(computeEqualTipSplit(tip, participatingIds));
+  }, [extrasAmount, showTipSplit, participatingIds.join(',')]);
+
+  useEffect(() => {
+    if (!MULTI_TECH_VISITS || !appointment?.id || !callerPhone) return;
+    fetchVisitTechnicianData(callerPhone, appointment.id)
+      .then(setVisitTechData)
+      .catch(() => {});
+  }, [appointment?.id, callerPhone]);
 
   useEffect(() => {
     if (hasReservedReward) {
@@ -69,7 +112,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
       return;
     }
     setDiscountAmount('');
-    setDiscountType('amount');
+    setDiscountType('percent');
   }, [appointment?.id, hasReservedReward, appointment?.loyalty_discount_amount]);
 
   const isDark = theme === 'dark';
@@ -84,6 +127,10 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
   if (!appointment) return null;
 
   const handleConfirm = async () => {
+    if (showTipSplit && tip > 0 && !validateTipAllocations(tip, tipAllocations)) {
+      setError('Tip splits must sum to the total tip amount.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -97,12 +144,19 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
         payment_method: paymentMethod,
         loyalty_points_redeem: hasReservedReward ? 0 : (selectedReward?.points || 0),
         loyalty_reward_name: hasReservedReward ? null : (selectedReward?.name || null),
+        tip_allocations: showTipSplit && tip > 0 ? tipAllocations : null,
       });
     } catch (err) {
       setError(err.message || 'Checkout failed');
     } finally {
       setSaving(false);
     }
+  };
+
+  const updateTipAllocation = (technicianId, amount) => {
+    setTipAllocations((prev) => prev.map((a) =>
+      a.technician_id === technicianId ? { ...a, amount: parseFloat(amount) || 0 } : a,
+    ));
   };
 
   return (
@@ -153,6 +207,57 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
                 />
               </div>
             </div>
+
+            {showTipSplit && tip > 0 && (
+              <div className={clsx('rounded-lg p-3 border', isDark ? 'border-gold/20 bg-offwhite/5' : 'border-gold/30 bg-charcoal/5')}>
+                <p className={clsx('text-sm mb-3', mutedClass)}>Split tip between technicians</p>
+                <div className="space-y-2">
+                  {techLabels.map((tech) => {
+                    const alloc = tipAllocations.find((a) => a.technician_id === tech.technician_id);
+                    return (
+                      <div key={tech.technician_id} className="flex items-center gap-2">
+                        <span className={clsx('text-sm flex-1', textClass)}>{tech.full_name}</span>
+                        <div className="relative w-28">
+                          <span className={clsx('absolute left-3 top-1/2 -translate-y-1/2 text-xs', mutedClass)}>$</span>
+                          <input
+                            type="number"
+                            value={alloc?.amount ?? ''}
+                            onChange={(e) => updateTipAllocation(tech.technician_id, e.target.value)}
+                            className={clsx(inputClass, 'pl-6 py-2')}
+                            step="0.01"
+                            min="0"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {canManageTechs && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowTechManager((v) => !v)}
+                  className={clsx('text-sm text-gold hover:text-gold/80')}
+                >
+                  {showTechManager ? 'Hide technician manager' : 'Manage technicians'}
+                </button>
+                {showTechManager && (
+                  <div className="mt-3">
+                    <VisitTechnicianManager
+                      appointment={mergedAppointment}
+                      callerPhone={callerPhone}
+                      technicians={floorTechnicians}
+                      theme={theme}
+                      compact
+                      onUpdated={setVisitTechData}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -341,6 +446,7 @@ export default function CashierCheckout() {
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [floorTechnicians, setFloorTechnicians] = useState([]);
 
   const isDark = theme === 'dark';
   const bgClass = clsx(
@@ -383,6 +489,16 @@ export default function CashierCheckout() {
   };
 
   useEffect(() => {
+    if (!CASHIER_CHECKOUT || !MULTI_TECH_VISITS) return undefined;
+    supabase
+      .from('profiles')
+      .select('id, full_name, preferences')
+      .eq('role', 'technician')
+      .order('full_name')
+      .then(({ data }) => setFloorTechnicians(data || []));
+  }, []);
+
+  useEffect(() => {
     if (!CASHIER_CHECKOUT) return undefined;
     fetchQueues();
 
@@ -411,6 +527,7 @@ export default function CashierCheckout() {
       p_loyalty_points_redeem: checkoutData.loyalty_points_redeem || 0,
       p_loyalty_reward_name: checkoutData.loyalty_reward_name || null,
       p_extras_amount: checkoutData.extras_amount || 0,
+      p_tip_allocations: checkoutData.tip_allocations || null,
     });
 
     if (error) {
@@ -517,6 +634,9 @@ export default function CashierCheckout() {
             onConfirm={handleCheckout}
             onClose={() => setCheckingOut(null)}
             theme={theme}
+            callerPhone={user?.phone}
+            userRole={user?.role}
+            floorTechnicians={floorTechnicians}
           />
         )}
       </div>

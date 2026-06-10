@@ -20,7 +20,6 @@ import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import { TechnicianServiceEditor } from './TechnicianServiceEditor';
 import { TechnicianServiceChecklist } from './TechnicianServiceChecklist';
-import { TechnicianProductUsage } from './TechnicianProductUsage';
 import type { TechnicianAppointment, ServiceUpdatePayload } from './types';
 
 type StaffNote = {
@@ -41,10 +40,6 @@ type TechnicianInChairPanelProps = {
     itemId: string,
     completed: boolean,
   ) => Promise<{ success?: boolean; error?: string }>;
-  onLogProductUsage?: (
-    appt: TechnicianAppointment,
-    payload: { inventoryId: string; quantity: number; logType: string },
-  ) => Promise<{ success?: boolean; error?: string }>;
 };
 
 export function TechnicianInChairPanel({
@@ -53,7 +48,6 @@ export function TechnicianInChairPanel({
   onComplete,
   onUpdateServices,
   onToggleChecklistItem,
-  onLogProductUsage,
 }: TechnicianInChairPanelProps) {
   const { user } = useAuth();
   const styles = useThemeStyles();
@@ -413,14 +407,6 @@ export function TechnicianInChairPanel({
         <TechnicianServiceChecklist
           appointment={appointment}
           onToggleItem={(itemId, completed) => onToggleChecklistItem(appointment, itemId, completed)}
-          saving={isUpdating}
-        />
-      ) : null}
-
-      {onLogProductUsage ? (
-        <TechnicianProductUsage
-          appointment={appointment}
-          onLogUsage={(payload) => onLogProductUsage(appointment, payload)}
           saving={isUpdating}
         />
       ) : null}

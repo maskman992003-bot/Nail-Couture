@@ -158,6 +158,57 @@ export async function enrichAppointmentsWithServices(supabase, appointments) {
   });
 }
 
+/** Participating technician IDs — visit co-techs + primary, else lead tech only. */
+export function getParticipatingTechnicians(appointment) {
+  const visitTechs = appointment?.visit_technicians || [];
+  const fromVisit = [...new Set(
+    visitTechs.map((v) => v.technician_id).filter(Boolean),
+  )];
+  if (fromVisit.length > 0) return fromVisit;
+
+  return appointment?.technician_id ? [appointment.technician_id] : [];
+}
+
+/** Build display names for participating technicians from appointment payload. */
+export function getParticipatingTechnicianLabels(appointment, participatingIds) {
+  const nameById = new Map();
+  const lead = appointment?.technician || appointment?.technicians || appointment?.tech;
+  if (lead?.id) {
+    nameById.set(lead.id, lead.full_name);
+  }
+  (appointment?.visit_technicians || []).forEach((vt) => {
+    const name = vt.full_name || vt.profiles?.full_name;
+    if (vt.technician_id && name) nameById.set(vt.technician_id, name);
+  });
+  return (participatingIds || []).map((id) => ({
+    technician_id: id,
+    full_name: nameById.get(id) || 'Technician',
+  }));
+}
+
+/** Normalize appointment technician fields for participating-tech helpers. */
+export function normalizeAppointmentTechnicians(appointment) {
+  const lead = appointment?.technician || appointment?.technicians || appointment?.tech || null;
+  return {
+    technician_id: appointment?.technician_id,
+    technician: lead,
+    visit_technicians: (appointment?.visit_technicians || []).map((vt) => ({
+      ...vt,
+      full_name: vt.full_name || vt.profiles?.full_name || null,
+    })),
+  };
+}
+
+/** Display names for all technicians involved in a visit. */
+export function getAppointmentTechnicianNames(appointment) {
+  const normalized = normalizeAppointmentTechnicians(appointment);
+  const ids = getParticipatingTechnicians(normalized);
+  if (!ids.length) {
+    return normalized.technician?.full_name ? [normalized.technician.full_name] : [];
+  }
+  return getParticipatingTechnicianLabels(normalized, ids).map((t) => t.full_name);
+}
+
 export function buildAppointmentServicePayload(services = [], addOns = []) {
   const addOnNames = addOns.map((a) => a.name).filter(Boolean);
   const serviceNames = services.map((s) => s.name).filter(Boolean);

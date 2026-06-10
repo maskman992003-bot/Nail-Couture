@@ -15,7 +15,10 @@ import {
   receiptFilename,
   computeActualDurationMinutes,
 } from '@nail-couture/shared/utils/customerStats';
-import { enrichAppointmentsWithServices } from '@nail-couture/shared/utils/appointmentServices';
+import {
+  enrichAppointmentsWithServices,
+  getAppointmentTechnicianNames,
+} from '@nail-couture/shared/utils/appointmentServices';
 import Sidebar from './Sidebar';
 
 const statusConfigDark = {
@@ -233,15 +236,26 @@ export default function CustomerHistory() {
             </div>
             <div className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-0.5' : 'text-charcoal/40 text-xs mt-0.5'}>
               {durationMinutes ? `${durationMinutes} min` : ''}
-              {booking.tech && ` · ${booking.tech.full_name}`}
             </div>
             {(booking.addonDetails || []).map((addon) => (
               <div key={addon.id} className={theme === 'dark' ? 'text-offwhite/30 text-xs mt-1' : 'text-charcoal/30 text-xs mt-1'}>+ {addon.name} (+${addon.price})</div>
             ))}
           </div>
-          <span className={`px-2.5 py-1 text-[10px] rounded-full border flex-shrink-0 ${cfg?.color || ''}`}>
-            {cfg?.label || booking.status}
-          </span>
+          <div className="flex flex-col items-end gap-2 flex-shrink-0">
+            <span className={`px-2.5 py-1 text-[10px] rounded-full border ${cfg?.color || ''}`}>
+              {cfg?.label || booking.status}
+            </span>
+            {booking.status === 'completed' && (
+              <button
+                onClick={(e) => { e.stopPropagation(); generateReceipt(booking); }}
+                disabled={receiptLoadingId === booking.id}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors hover:border-gold/50 disabled:opacity-50"
+                style={{ borderColor: 'rgba(197,160,89,0.3)', color: '#c5a059' }}
+              >
+                {receiptLoadingId === booking.id ? 'Loading…' : 'Receipt'}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className={theme === 'dark' ? 'text-offwhite/50 text-sm mb-1' : 'text-charcoal/50 text-sm mb-1'}>
@@ -256,8 +270,8 @@ export default function CustomerHistory() {
           </div>
         )}
 
-        <div className="flex items-center gap-2 mt-3 flex-wrap">
-          {canCancel && (
+        {canCancel && (
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
             <button
               onClick={(e) => { e.stopPropagation(); setConfirmCancel(booking); }}
               disabled={isUpdating}
@@ -266,18 +280,8 @@ export default function CustomerHistory() {
             >
               Cancel
             </button>
-          )}
-          {booking.status === 'completed' && (
-            <button
-              onClick={(e) => { e.stopPropagation(); generateReceipt(booking); }}
-              disabled={receiptLoadingId === booking.id}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors hover:border-gold/50 disabled:opacity-50"
-              style={{ borderColor: 'rgba(197,160,89,0.3)', color: '#c5a059' }}
-            >
-              {receiptLoadingId === booking.id ? 'Loading…' : 'Receipt'}
-            </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -462,12 +466,18 @@ export default function CustomerHistory() {
                     </div>
                   </div>
                 )}
-                {selectedDetailBooking.tech?.full_name && (
-                  <div>
-                    <div className={`${labelMuted} text-xs uppercase tracking-widest mb-1`}>Technician</div>
-                    <div className={textPrimary}>{selectedDetailBooking.tech.full_name}</div>
-                  </div>
-                )}
+                {(() => {
+                  const names = getAppointmentTechnicianNames(selectedDetailBooking);
+                  if (!names.length) return null;
+                  return (
+                    <div>
+                      <div className={`${labelMuted} text-xs uppercase tracking-widest mb-1`}>
+                        {names.length === 1 ? 'Technician' : 'Technicians'}
+                      </div>
+                      <div className={textPrimary}>{names.join(', ')}</div>
+                    </div>
+                  );
+                })()}
                 <div>
                   <div className={`${labelMuted} text-xs uppercase tracking-widest mb-1`}>Status</div>
                   <span className={`px-3 py-1 text-xs border rounded-full ${statusConfig[selectedDetailBooking.status]?.color || ''}`}>{statusConfig[selectedDetailBooking.status]?.label || selectedDetailBooking.status}</span>

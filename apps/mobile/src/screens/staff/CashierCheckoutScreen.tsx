@@ -6,13 +6,22 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { CASHIER_CHECKOUT } from '@nail-couture/shared/constants/featureFlags.js';
+import { CASHIER_CHECKOUT, MULTI_TECH_VISITS } from '@nail-couture/shared/constants/featureFlags.js';
 import { LOYALTY_REWARDS } from '@nail-couture/shared/utils/loyaltyTransactions.js';
+import {
+  getParticipatingTechnicians,
+  computeEqualTipSplit,
+  validateTipAllocations,
+  getParticipatingTechnicianLabels,
+} from '@nail-couture/shared/utils/appointmentServices.js';
+import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCustomerAccess.js';
+import { fetchVisitTechnicianData } from '@nail-couture/shared/utils/visitTechnicians.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { ScrollSelect } from '../../components/forms/ScrollSelect';
+import { VisitTechnicianManager } from '../../components/admin/VisitTechnicianManager';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type AppointmentRecord = {
@@ -28,7 +37,9 @@ type AppointmentRecord = {
   loyalty_discount_amount?: number;
   loyalty_reward_name?: string;
   services?: { name?: string; price?: number };
-  technician?: { full_name?: string };
+  technician?: { id?: string; full_name?: string };
+  technician_id?: string;
+  visit_technicians?: Array<{ technician_id: string; full_name?: string; participation_type?: string }>;
   customer?: { full_name?: string; loyalty_points?: number };
 };
 
@@ -60,18 +71,26 @@ type CheckoutModalProps = {
   open: boolean;
   onClose: () => void;
   onConfirm: (appointmentId: string, data: Record<string, unknown>) => Promise<void>;
+  callerPhone?: string;
+  userRole?: string;
+  floorTechnicians?: Array<{ id: string; full_name?: string; preferences?: Record<string, unknown> }>;
 };
 
-function CheckoutModal({ appointment, open, onClose, onConfirm }: CheckoutModalProps) {
+function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, userRole, floorTechnicians }: CheckoutModalProps) {
   const styles = useThemeStyles();
   const [extrasAmount, setExtrasAmount] = useState('');
   const [discountAmount, setDiscountAmount] = useState('');
-  const [discountType, setDiscountType] = useState('amount');
+  const [discountType, setDiscountType] = useState('percent');
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Card');
   const [loyaltyRewardId, setLoyaltyRewardId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [visitTechData, setVisitTechData] = useState<{
+    technicians?: AppointmentRecord['visit_technicians'];
+  } | null>(null);
+  const [tipAllocations, setTipAllocations] = useState<Array<{ technician_id: string; amount: number }>>([]);
+  const [showTechManager, setShowTechManager] = useState(false);
 
   const hasReservedReward = Boolean(
     appointment?.loyalty_reward_id && appointment?.loyalty_points_cost,
@@ -87,6 +106,37 @@ function CheckoutModal({ appointment, open, onClose, onConfirm }: CheckoutModalP
   const customerPoints = appointment?.customer?.loyalty_points || 0;
   const selectedReward = LOYALTY_REWARDS.find((r) => r.id === loyaltyRewardId);
 
+  const mergedAppointment = visitTechData && appointment
+    ? {
+      ...appointment,
+      visit_technicians: visitTechData.technicians,
+      technician_id: visitTechData.primary_technician_id ?? appointment?.technician_id,
+    }
+    : appointment;
+  const participatingIds = MULTI_TECH_VISITS && mergedAppointment
+    ? getParticipatingTechnicians(mergedAppointment)
+    : [];
+  const showTipSplit = MULTI_TECH_VISITS && participatingIds.length >= 2;
+  const techLabels = showTipSplit && mergedAppointment
+    ? getParticipatingTechnicianLabels(mergedAppointment, participatingIds)
+    : [];
+  const canManageTechs = MULTI_TECH_VISITS && canManageVisitTechnicians(userRole || '');
+
+  useEffect(() => {
+    if (!showTipSplit) {
+      setTipAllocations([]);
+      return;
+    }
+    setTipAllocations(computeEqualTipSplit(tip, participatingIds));
+  }, [extrasAmount, showTipSplit, participatingIds.join(',')]);
+
+  useEffect(() => {
+    if (!MULTI_TECH_VISITS || !appointment?.id || !callerPhone) return;
+    fetchVisitTechnicianData(callerPhone, appointment.id)
+      .then(setVisitTechData)
+      .catch(() => {});
+  }, [appointment?.id, callerPhone]);
+
   useEffect(() => {
     if (!appointment) return;
     if (hasReservedReward) {
@@ -99,7 +149,7 @@ function CheckoutModal({ appointment, open, onClose, onConfirm }: CheckoutModalP
       return;
     }
     setDiscountAmount('');
-    setDiscountType('amount');
+    setDiscountType('percent');
     setExtrasAmount('');
     setNotes('');
     setPaymentMethod('Card');
@@ -108,6 +158,10 @@ function CheckoutModal({ appointment, open, onClose, onConfirm }: CheckoutModalP
 
   const handleConfirm = async () => {
     if (!appointment) return;
+    if (showTipSplit && tip > 0 && !validateTipAllocations(tip, tipAllocations)) {
+      setError('Tip splits must sum to the total tip amount.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -126,6 +180,7 @@ function CheckoutModal({ appointment, open, onClose, onConfirm }: CheckoutModalP
         payment_method: paymentMethod,
         loyalty_points_redeem: hasReservedReward ? 0 : selectedReward?.points || 0,
         loyalty_reward_name: hasReservedReward ? null : selectedReward?.name || null,
+        tip_allocations: showTipSplit && tip > 0 ? tipAllocations : null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Checkout failed');
@@ -181,6 +236,56 @@ function CheckoutModal({ appointment, open, onClose, onConfirm }: CheckoutModalP
         placeholderTextColor={styles.tokens.textMuted}
         style={[styles.input, { marginBottom: 12 }]}
       />
+
+      {showTipSplit && tip > 0 && (
+        <View style={[styles.card, { padding: 12, marginBottom: 12 }]}>
+          <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 8 }]}>
+            Split tip between technicians
+          </Text>
+          {techLabels.map((tech) => {
+            const alloc = tipAllocations.find((a) => a.technician_id === tech.technician_id);
+            return (
+              <View key={tech.technician_id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+                <Text style={[styles.textPrimary, { flex: 1 }]}>{tech.full_name}</Text>
+                <TextInput
+                  value={alloc?.amount != null ? String(alloc.amount) : ''}
+                  onChangeText={(val) => {
+                    setTipAllocations((prev) => prev.map((a) =>
+                      a.technician_id === tech.technician_id
+                        ? { ...a, amount: parseFloat(val) || 0 }
+                        : a,
+                    ));
+                  }}
+                  keyboardType="decimal-pad"
+                  placeholder="0.00"
+                  placeholderTextColor={styles.tokens.textMuted}
+                  style={[styles.input, { width: 96, marginBottom: 0 }]}
+                />
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {canManageTechs && appointment && callerPhone && (
+        <View style={{ marginBottom: 12 }}>
+          <Pressable onPress={() => setShowTechManager((v) => !v)}>
+            <Text style={styles.textGold}>
+              {showTechManager ? 'Hide technician manager' : 'Manage technicians'}
+            </Text>
+          </Pressable>
+          {showTechManager && (
+            <View style={{ marginTop: 8 }}>
+              <VisitTechnicianManager
+                appointment={mergedAppointment || appointment}
+                callerPhone={callerPhone}
+                technicians={floorTechnicians || []}
+                onUpdated={setVisitTechData}
+              />
+            </View>
+          )}
+        </View>
+      )}
 
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
         <View style={{ flex: 1 }}>
@@ -378,6 +483,9 @@ export function CashierCheckoutScreen() {
   const [servingAppointments, setServingAppointments] = useState<AppointmentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState<AppointmentRecord | null>(null);
+  const [floorTechnicians, setFloorTechnicians] = useState<
+    Array<{ id: string; full_name?: string; preferences?: Record<string, unknown> }>
+  >([]);
   const [notification, setNotification] = useState<{
     message: string;
     name?: string;
@@ -412,6 +520,16 @@ export function CashierCheckoutScreen() {
   }, [user?.phone]);
 
   useEffect(() => {
+    if (!CASHIER_CHECKOUT || !MULTI_TECH_VISITS) return undefined;
+    getSupabase()
+      .from('profiles')
+      .select('id, full_name, preferences')
+      .eq('role', 'technician')
+      .order('full_name')
+      .then(({ data }) => setFloorTechnicians(data || []));
+  }, []);
+
+  useEffect(() => {
     if (!CASHIER_CHECKOUT) return undefined;
     fetchQueues();
 
@@ -442,6 +560,7 @@ export function CashierCheckoutScreen() {
       p_loyalty_points_redeem: checkoutData.loyalty_points_redeem || 0,
       p_loyalty_reward_name: checkoutData.loyalty_reward_name || null,
       p_extras_amount: checkoutData.extras_amount || 0,
+      p_tip_allocations: checkoutData.tip_allocations || null,
     });
 
     if (error) {
@@ -544,6 +663,9 @@ export function CashierCheckoutScreen() {
         open={!!checkingOut}
         onClose={() => setCheckingOut(null)}
         onConfirm={handleCheckout}
+        callerPhone={user?.phone}
+        userRole={user?.role}
+        floorTechnicians={floorTechnicians}
       />
     </StaffScreenLayout>
   );

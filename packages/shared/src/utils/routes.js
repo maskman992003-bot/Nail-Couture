@@ -67,6 +67,16 @@ export function getMySchedulePath(role) {
   }
 }
 
+export function getMyTipsPath(role) {
+  if (role === 'technician') return '/technician/tips';
+  return '/technician/tips';
+}
+
+export function getCashierTransactionsPath(role) {
+  if (role === 'cashier') return '/cashier/transactions';
+  return '/cashier/transactions';
+}
+
 export function getStaffPlannerPath(role) {
   switch (role) {
     case 'super_admin': return '/superadmin/schedule';

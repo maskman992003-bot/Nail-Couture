@@ -43,8 +43,6 @@ export const featureFlags = {
   operations: {
     // Phase 1 (Currently Active)
     stockTracking: true,            // Manual inventory updates
-    usageLogging: true,             // Track product usage per service
-    wasteTracking: true,            // Track product waste
     supplierInfo: true,             // View supplier details
     
     // Phase 2 (Future)

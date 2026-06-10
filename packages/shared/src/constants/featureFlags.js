@@ -34,6 +34,7 @@ export const featureFlags = {
     staffShifts: true,              // Manage work schedules (Phase 2)
     timeOffRequests: true,          // Request time off (Phase 2)
     technicianLiveFloor: true,      // Read-only technician grid on dashboard (Phase 6)
+    multiTechVisits: true,         // Multi-technician visits + tip splitting (opt-in)
     inventoryAutomation: false,     // Auto-low stock alerts (Phase 2/3)
     advancedReporting: false,       // Custom reports, analytics (Phase 3)
     employeeManagement: false,      // Add/remove staff, roles (Phase 3)
@@ -43,8 +44,6 @@ export const featureFlags = {
   operations: {
     // Phase 1 (Currently Active)
     stockTracking: true,            // Manual inventory updates
-    usageLogging: true,             // Track product usage per service
-    wasteTracking: true,            // Track product waste
     supplierInfo: true,             // View supplier details
     
     // Phase 2 (Future)
@@ -83,6 +82,7 @@ export const TIME_OFF_REQUESTS = featureFlags.staff.timeOffRequests;
 export const INVENTORY_AUTOMATION = featureFlags.operations.autoReorder;
 export const LIVE_FLOOR_TRACKER = featureFlags.customer.liveFloorTracker;
 export const TECHNICIAN_LIVE_FLOOR = featureFlags.staff.technicianLiveFloor;
+export const MULTI_TECH_VISITS = featureFlags.staff.multiTechVisits;
 export const ADVANCED_REPORTING = featureFlags.staff.advancedReporting;
 export const MANAGEMENT_CUSTOMER_HISTORY = featureFlags.management.customerHistory;
 export const CASHIER_CHECKOUT = featureFlags.staff.cashierCheckout;

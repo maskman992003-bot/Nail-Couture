@@ -60,10 +60,6 @@ export type TechnicianDashboardProps = {
     itemId: string,
     completed: boolean,
   ) => Promise<{ success?: boolean; error?: string }>;
-  logProductUsage: (
-    appt: TechnicianAppointment,
-    payload: { inventoryId: string; quantity: number; logType: string },
-  ) => Promise<{ success?: boolean; error?: string }>;
   floorTechnicians: FloorTechnician[];
   dismissToast: () => void;
   dismissNewAssignment: (id: string) => void;
@@ -93,7 +89,6 @@ export function TechnicianDashboard({
   declineAssignment,
   updateServingServices,
   updateChecklistItem,
-  logProductUsage,
   floorTechnicians,
   dismissToast,
   dismissNewAssignment,
@@ -251,7 +246,6 @@ export function TechnicianDashboard({
             onComplete={markComplete}
             onUpdateServices={updateServingServices}
             onToggleChecklistItem={updateChecklistItem}
-            onLogProductUsage={logProductUsage}
           />
         ) : null}
 

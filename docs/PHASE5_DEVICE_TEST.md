@@ -97,7 +97,7 @@ For each role, open **every bottom-nav item** and confirm the screen loads data 
 | Customers → detail | ☐ | ☐ | — | ☐ |
 | Settings | ☐ | ☐ | — | ☐ |
 
-**In-chair panel:** waiver signature, service checklist, product usage, **photo upload**.
+**In-chair panel:** waiver signature, service checklist, **photo upload**.
 
 ### Cashier
 

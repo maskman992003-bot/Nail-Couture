@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { getCustomersPath, getMySchedulePath, getSettingsPath } from '@nail-couture/shared/utils/routes';
+import { getCustomersPath, getMySchedulePath, getMyTipsPath, getSettingsPath } from '@nail-couture/shared/utils/routes';
 import { TIME_OFF_REQUESTS } from '@nail-couture/shared/constants/featureFlags';
 
 const LINKS = [
   { key: 'schedule', label: 'My Schedule', desc: 'Week view & shifts', href: (role) => getMySchedulePath(role), icon: '📅' },
+  { key: 'tips', label: 'Tips', desc: 'Today & weekly earnings', href: (role) => getMyTipsPath(role), icon: '💵' },
   { key: 'customers', label: 'Customers', desc: 'Client history & notes', href: (role) => getCustomersPath(role), icon: '👥' },
   { key: 'timeoff', label: 'Time Off', desc: 'Request time off', href: (role) => `${getMySchedulePath(role)}?tab=timeoff`, icon: '🏖️', flag: TIME_OFF_REQUESTS },
   { key: 'settings', label: 'Settings', desc: 'Profile & preferences', href: (role) => getSettingsPath(role), icon: '⚙️' },

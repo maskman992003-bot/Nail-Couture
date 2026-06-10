@@ -16,6 +16,7 @@ type QuickLink = {
 
 const LINKS: QuickLink[] = [
   { key: 'schedule', label: 'My Schedule', desc: 'Week view & shifts', screen: 'Schedule', icon: '📅' },
+  { key: 'tips', label: 'Tips', desc: 'Today & weekly earnings', screen: 'Tips', icon: '💵' },
   { key: 'customers', label: 'Customers', desc: 'Client history & notes', screen: 'Customers', icon: '👥' },
   {
     key: 'timeoff',

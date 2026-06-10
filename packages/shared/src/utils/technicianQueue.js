@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { MULTI_TECH_VISITS } from '../constants/featureFlags';
 import { fetchTechnicianAppointments } from './staffSchedule';
 import { logRefreshmentUsage } from './inventoryUsage';
 import { getWorkstationStatus, WORKSTATION_ON_BREAK } from './technicianWorkstation';
@@ -64,12 +65,16 @@ export async function fetchMyQueue(technicianId, callerPhone) {
   if (!callerPhone) throw new Error('Missing caller phone for staff RPC');
   // No date_from — lobby assigns by technician_id; date filter on checked_in_at
   // would hide assigned_pending rows (AdminLobby fetches the same way).
-  const { data, error } = await supabase.rpc('get_appointments', {
+  const rpcParams = {
     caller_phone: callerPhone,
     technician_id_filter: technicianId,
     status_filter: 'assigned_pending,serving,ready_for_checkout,completed',
     order_asc: true,
-  });
+  };
+  if (MULTI_TECH_VISITS) {
+    rpcParams.p_include_co_technician_visits = true;
+  }
+  const { data, error } = await supabase.rpc('get_appointments', rpcParams);
   if (error) throw error;
   return filterMyQueueForToday(data || []);
 }
@@ -124,30 +129,146 @@ export function getTodayStartDate() {
   return today;
 }
 
-export async function fetchTechnicianDayPayments(technicianId) {
+/** @typedef {'today' | 'week' | 'month'} TipPeriod */
+
+export const TIP_PERIOD_OPTIONS = [
+  { id: 'today', label: 'Today' },
+  { id: 'week', label: 'This week' },
+  { id: 'month', label: 'This month' },
+];
+
+/** Inclusive start (midnight local) and exclusive end for tip queries. Week = Sun–Sat. */
+export function getTipPeriodRange(period = 'today') {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  let end = null;
+
+  if (period === 'week') {
+    start.setDate(start.getDate() - start.getDay());
+    end = new Date(start);
+    end.setDate(end.getDate() + 7);
+  } else if (period === 'month') {
+    start.setDate(1);
+    end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
+  }
+
+  return { start, end };
+}
+
+export function getTipPeriodLabel(period) {
+  const match = TIP_PERIOD_OPTIONS.find((o) => o.id === period);
+  return match?.label || 'Today';
+}
+
+export function formatTipPeriodRange(period) {
+  const { start, end } = getTipPeriodRange(period);
+  const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (period === 'today') return fmt(start);
+  if (period === 'week') {
+    const weekEnd = new Date(end);
+    weekEnd.setDate(weekEnd.getDate() - 1);
+    return `${fmt(start)} – ${fmt(weekEnd)}`;
+  }
+  if (period === 'month') {
+    const monthEnd = new Date(end);
+    monthEnd.setDate(monthEnd.getDate() - 1);
+    return `${fmt(start)} – ${fmt(monthEnd)}`;
+  }
+  return '';
+}
+
+function applyTipPeriodFilters(query, periodStart, periodEnd) {
+  let q = query.gte('created_at', periodStart);
+  if (periodEnd) q = q.lt('created_at', periodEnd);
+  return q;
+}
+
+export async function fetchTechnicianTipPayments(technicianId, period = 'today') {
   if (!technicianId) return [];
-  const todayStart = getTodayStartDate().toISOString();
-  const { data, error } = await supabase
-    .from('payment_transactions')
-    .select(`
+  const { start, end } = getTipPeriodRange(period);
+  const periodStart = start.toISOString();
+  const periodEnd = end?.toISOString() || null;
+
+  const { data: leadPayments, error: leadError } = await applyTipPeriodFilters(
+    supabase
+      .from('payment_transactions')
+      .select(`
       id,
       appointment_id,
+      technician_id,
       extras_amount,
       amount,
       final_amount,
       created_at,
       customer:profiles!payment_transactions_customer_id_fkey ( full_name )
     `)
-    .eq('technician_id', technicianId)
-    .eq('status', 'completed')
-    .gte('created_at', todayStart)
-    .order('created_at', { ascending: false });
+      .eq('technician_id', technicianId)
+      .eq('status', 'completed'),
+    periodStart,
+    periodEnd,
+  ).order('created_at', { ascending: false });
 
-  if (error) {
-    console.warn('Technician tips fetch failed:', error);
+  if (leadError) {
+    console.warn('Technician tips fetch failed:', leadError);
     return [];
   }
-  return data || [];
+
+  const { data: myAllocations } = await supabase
+    .from('payment_tip_allocations')
+    .select('payment_transaction_id, amount')
+    .eq('technician_id', technicianId);
+
+  const myAllocByPayment = new Map(
+    (myAllocations || []).map((a) => [a.payment_transaction_id, Number(a.amount || 0)]),
+  );
+
+  if (!myAllocByPayment.size) {
+    return (leadPayments || []).filter((p) => Number(p.extras_amount || 0) > 0);
+  }
+
+  const paymentIds = [...myAllocByPayment.keys()];
+  const { data: allocPayments } = await applyTipPeriodFilters(
+    supabase
+      .from('payment_transactions')
+      .select(`
+      id,
+      appointment_id,
+      technician_id,
+      extras_amount,
+      amount,
+      final_amount,
+      created_at,
+      customer:profiles!payment_transactions_customer_id_fkey ( full_name )
+    `)
+      .in('id', paymentIds)
+      .eq('status', 'completed'),
+    periodStart,
+    periodEnd,
+  );
+
+  const paymentsById = new Map();
+  for (const p of leadPayments || []) {
+    if (myAllocByPayment.has(p.id)) {
+      paymentsById.set(p.id, { ...p, extras_amount: myAllocByPayment.get(p.id) });
+    } else {
+      paymentsById.set(p.id, { ...p });
+    }
+  }
+
+  for (const p of allocPayments || []) {
+    if (!paymentsById.has(p.id)) {
+      paymentsById.set(p.id, { ...p, extras_amount: myAllocByPayment.get(p.id) ?? 0 });
+    }
+  }
+
+  return [...paymentsById.values()]
+    .filter((p) => Number(p.extras_amount || 0) > 0)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
+export async function fetchTechnicianDayPayments(technicianId) {
+  return fetchTechnicianTipPayments(technicianId, 'today');
 }
 
 export function sumTipsFromPayments(payments) {
@@ -269,7 +390,8 @@ export async function fetchWeekAppointments(technicianId) {
 export function computeQueueStats(myAppointments) {
   const completed = myAppointments.filter((a) => a.status === 'completed');
   const pending = myAppointments.filter((a) => a.status === 'assigned_pending');
-  const serving = myAppointments.find((a) => a.status === 'serving') || null;
+  const servingVisits = myAppointments.filter((a) => a.status === 'serving');
+  const serving = servingVisits[0] || null;
   const nextUp = pending[0] || null;
 
   const durations = completed

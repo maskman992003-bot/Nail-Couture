@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { enrichAppointmentsWithServices } from './appointmentServices';
+import { enrichAppointmentsWithServices, getAppointmentTechnicianNames } from './appointmentServices';
 
 function visitDate(appointment) {
   return appointment.checked_in_at || appointment.scheduled_at || appointment.created_at;
@@ -24,7 +24,11 @@ const APPOINTMENT_SELECT = `
   service_id, technician_id, add_ons, selected_service_names, notes,
   loyalty_reward_id, loyalty_reward_name, loyalty_points_cost, loyalty_redemption_code,
   services:appointments_service_id_fkey(id, name, price, duration_minutes),
-  technicians:profiles!appointments_technician_id_fkey!left(id, full_name, role)
+  technicians:profiles!appointments_technician_id_fkey!left(id, full_name, role),
+  visit_technicians:appointment_visit_technicians(
+    technician_id, participation_type, is_active,
+    profiles:profiles!appointment_visit_technicians_technician_id_fkey(full_name)
+  )
 `;
 
 export async function fetchCustomerVisitHistory(customerId, phone, { includeOnline = false } = {}) {
@@ -404,7 +408,12 @@ Services:
 ${serviceLines || '  N/A'}
 ${addOnLines ? `Add-Ons:\n${addOnLines}\n` : ''}Date: ${dateStr}
 Time: ${timeStr}
-${appointment.tech?.full_name || appointment.technicians?.full_name ? `Technician: ${appointment.tech?.full_name || appointment.technicians?.full_name}\n` : ''}Duration: ${actualMinutes != null ? `${actualMinutes} min (actual)` : catalogMinutes ? `${catalogMinutes} min (scheduled)` : 'N/A'}
+${(() => {
+    const techNames = getAppointmentTechnicianNames(appointment);
+    if (!techNames.length) return '';
+    const label = techNames.length === 1 ? 'Technician' : 'Technicians';
+    return `${label}: ${techNames.join(', ')}\n`;
+  })()}Duration: ${actualMinutes != null ? `${actualMinutes} min (actual)` : catalogMinutes ? `${catalogMinutes} min (scheduled)` : 'N/A'}
 ------------------------
 ${formatReceiptTotalsBlock({ ...totals, discountType })}
 ${loyaltyPointsEarned ? `Loyalty Points Earned: +${loyaltyPointsEarned}\n` : ''}Status: ${(appointment.status || '').toUpperCase()}

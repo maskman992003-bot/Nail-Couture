@@ -43,7 +43,7 @@ function computeTotals(basePrice, extras, discountAmount, discountType) {
 const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
   const [extrasAmount, setExtrasAmount] = useState('');
   const [discountAmount, setDiscountAmount] = useState('');
-  const [discountType, setDiscountType] = useState('amount');
+  const [discountType, setDiscountType] = useState('percent');
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Card');
   const [loyaltyRewardId, setLoyaltyRewardId] = useState('');
@@ -69,7 +69,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
       return;
     }
     setDiscountAmount('');
-    setDiscountType('amount');
+    setDiscountType('percent');
   }, [appointment?.id, hasReservedReward, appointment?.loyalty_discount_amount]);
 
   const isDark = theme === 'dark';

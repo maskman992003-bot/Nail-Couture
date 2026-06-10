@@ -7,14 +7,17 @@ import {
   Text,
   View,
 } from 'react-native';
+import { MULTI_TECH_VISITS } from '@nail-couture/shared/constants/featureFlags.js';
 import { getServices } from '@nail-couture/shared/services/services.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { formatAppointmentTime, getAppointmentTotalPrice } from '@nail-couture/shared/utils/appointmentHelpers.js';
+import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCustomerAccess.js';
 import { getWorkstationStatus, WORKSTATION_ON_BREAK } from '@nail-couture/shared/utils/technicianWorkstation.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { LobbyEditModal } from '../../components/admin/LobbyEditModal';
+import { VisitTechnicianManager } from '../../components/admin/VisitTechnicianManager';
 import { Icon } from '../../components/icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
@@ -58,7 +61,9 @@ export function AdminLobbyScreen() {
   const [assignTarget, setAssignTarget] = useState<AppointmentRecord | null>(null);
   const [draggingAppt, setDraggingAppt] = useState<AppointmentRecord | null>(null);
   const [dropHighlightTechId, setDropHighlightTechId] = useState<string | null>(null);
+  const [managingTechsFor, setManagingTechsFor] = useState<AppointmentRecord | null>(null);
   const dragPosition = useRef(new Animated.ValueXY()).current;
+  const showManageTechs = MULTI_TECH_VISITS && canManageVisitTechnicians(user?.role || '');
 
   const busyTechnicians = servingAppointments
     .filter((a) => a.status === 'serving' && a.technician_id)
@@ -284,6 +289,11 @@ export function AdminLobbyScreen() {
             <Pressable onPress={() => setAssignTarget(appt)}>
               <Text style={styles.textGold}>Assign</Text>
             </Pressable>
+            {showManageTechs && (
+              <Pressable onPress={() => setManagingTechsFor(appt)}>
+                <Text style={styles.textGold}>Manage techs</Text>
+              </Pressable>
+            )}
             <Pressable onPress={() => setEditingAppointment(appt)}>
               <Text style={styles.textSecondary}>Edit</Text>
             </Pressable>
@@ -333,15 +343,22 @@ export function AdminLobbyScreen() {
         {isBusy && servingAppt ? (
           <>
             <Text style={styles.textSecondary}>{servingAppt.customer?.full_name}</Text>
-            <Pressable
-              onPress={() => sendToCheckout(servingAppt.id)}
-              disabled={updating === servingAppt.id}
-              style={{ marginTop: 8, backgroundColor: styles.tokens.goldStrong, borderRadius: 8, padding: 10, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#121212', fontWeight: '600' }}>
-                {updating === servingAppt.id ? 'Sending...' : 'Send to Checkout'}
-              </Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+              {showManageTechs && (
+                <Pressable onPress={() => setManagingTechsFor(servingAppt)}>
+                  <Text style={styles.textGold}>Manage techs</Text>
+                </Pressable>
+              )}
+              <Pressable
+                onPress={() => sendToCheckout(servingAppt.id)}
+                disabled={updating === servingAppt.id}
+                style={{ backgroundColor: styles.tokens.goldStrong, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 }}
+              >
+                <Text style={{ color: '#121212', fontWeight: '600' }}>
+                  {updating === servingAppt.id ? 'Sending...' : 'Send to Checkout'}
+                </Text>
+              </Pressable>
+            </View>
           </>
         ) : pendingAppt ? (
           <>
@@ -350,6 +367,11 @@ export function AdminLobbyScreen() {
               <Pressable onPress={() => acceptAssignment(pendingAppt.id)} style={{ backgroundColor: '#22c55e', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
                 <Text style={{ color: '#fff', fontWeight: '600' }}>Confirm Start</Text>
               </Pressable>
+              {showManageTechs && (
+                <Pressable onPress={() => setManagingTechsFor(pendingAppt)}>
+                  <Text style={styles.textGold}>Manage techs</Text>
+                </Pressable>
+              )}
               <Pressable onPress={() => returnToWaiting(pendingAppt.id, pendingAppt)}>
                 <Text style={styles.textGold}>Return to Waiting</Text>
               </Pressable>
@@ -398,7 +420,14 @@ export function AdminLobbyScreen() {
       </Text>
       {checkoutReady.map((appt) => (
         <View key={appt.id} style={[styles.card, { padding: 12, marginBottom: 8 }]}>
-          <Text style={styles.textPrimary}>{appt.customer?.full_name || 'Guest'}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={styles.textPrimary}>{appt.customer?.full_name || 'Guest'}</Text>
+            {showManageTechs && (
+              <Pressable onPress={() => setManagingTechsFor(appt)}>
+                <Text style={styles.textGold}>Manage techs</Text>
+              </Pressable>
+            )}
+          </View>
           <Text style={styles.textGold}>
             ${getAppointmentTotalPrice(appt, services).toFixed(2)}
           </Text>
@@ -435,6 +464,30 @@ export function AdminLobbyScreen() {
             <Text style={styles.textPrimary}>{tech.full_name}</Text>
           </Pressable>
         ))}
+      </AppModal>
+
+      <AppModal
+        open={!!managingTechsFor}
+        onClose={() => setManagingTechsFor(null)}
+        title={`Technicians — ${managingTechsFor?.customer?.full_name || 'Guest'}`}
+        scrollBody
+        footer={<ModalButton label="Done" onPress={() => setManagingTechsFor(null)} />}
+      >
+        {managingTechsFor && user?.phone && (
+          <VisitTechnicianManager
+            appointment={managingTechsFor}
+            callerPhone={user.phone}
+            technicians={technicians}
+            onUpdated={(result) => {
+              if (result?.primary_technician_id) {
+                setManagingTechsFor((prev) => prev
+                  ? { ...prev, technician_id: result.primary_technician_id }
+                  : prev);
+              }
+              fetchAll();
+            }}
+          />
+        )}
       </AppModal>
 
       <AppModal

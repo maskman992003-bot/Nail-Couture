@@ -33,7 +33,6 @@ export default function TechnicianDashboard({
   declineAssignment,
   updateServingServices,
   updateChecklistItem,
-  logProductUsage,
   floorTechnicians,
   dismissToast,
   dismissNewAssignment,
@@ -155,7 +154,6 @@ export default function TechnicianDashboard({
               onComplete={markComplete}
               onUpdateServices={updateServingServices}
               onToggleChecklistItem={updateChecklistItem}
-              onLogProductUsage={logProductUsage}
               userRole={user?.role}
             />
           )}

@@ -25,10 +25,6 @@ export default function NotificationBell({
   const iconSize = overlay || size === 'sm' ? 'w-3.5 h-3.5' : 'w-5 h-5';
   const badgeSize = overlay || size === 'sm' ? 'min-w-[12px] h-3 text-[6px]' : 'min-w-[16px] h-4 text-[8px]';
   const iconColor = theme === 'dark' ? 'text-offwhite/55' : 'text-charcoal/75';
-  const overlayBg =
-    theme === 'dark'
-      ? 'bg-[#0a0a0a] border border-gold/30 shadow-sm'
-      : 'bg-white border border-gold/40 shadow-sm';
 
   if (unreadCount === 0 && !ring) {
     return null;
@@ -39,7 +35,7 @@ export default function NotificationBell({
       type="button"
       onClick={onClick}
       className={`relative flex items-center justify-center transition-colors hover:text-gold ${iconColor} ${
-        overlay ? `p-0.5 rounded-full ${overlayBg}` : 'p-1.5 rounded-lg'
+        overlay ? 'p-0' : 'p-1.5 rounded-lg'
       } ${className}`}
       aria-label={ariaLabel}
     >

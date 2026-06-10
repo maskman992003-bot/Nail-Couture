@@ -1,29 +1,5 @@
 import { supabase } from '../lib/supabase';
 
-export async function fetchMaterialInventory() {
-  const { data, error } = await supabase
-    .from('inventory')
-    .select('id, item_name, quantity, unit, category, reorder_threshold')
-    .eq('category', 'material')
-    .order('item_name');
-
-  if (error) throw error;
-  return data || [];
-}
-
-export async function fetchAppointmentUsageLogs(appointmentId) {
-  if (!appointmentId) return [];
-  const { data, error } = await supabase
-    .from('inventory_logs')
-    .select('id, quantity_changed, reason, created_at, inventory:inventory_id (item_name, unit)')
-    .eq('appointment_id', appointmentId)
-    .order('created_at', { ascending: false })
-    .limit(20);
-
-  if (error) return [];
-  return data || [];
-}
-
 export async function logInventoryUsage(callerPhone, {
   inventoryId,
   quantityChanged,

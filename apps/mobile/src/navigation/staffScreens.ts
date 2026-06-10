@@ -7,8 +7,10 @@ import { CustomerLoyaltyScreen } from '../screens/customer/CustomerLoyaltyScreen
 import { CustomerHistoryScreen } from '../screens/customer/CustomerHistoryScreen';
 import { CustomerSettingsScreen } from '../screens/customer/CustomerSettingsScreen';
 import { TechnicianHomeScreen } from '../screens/staff/TechnicianHomeScreen';
+import { TechnicianTipsScreen } from '../screens/staff/TechnicianTipsScreen';
 import { CashierHomeScreen } from '../screens/staff/CashierHomeScreen';
 import { CashierCheckoutScreen } from '../screens/staff/CashierCheckoutScreen';
+import { CashierTransactionsScreen } from '../screens/staff/CashierTransactionsScreen';
 import { EmployeeScheduleView as ScheduleScreen } from '../screens/staff/EmployeeScheduleScreen';
 import { StaffSettingsScreen } from '../screens/staff/StaffSettingsScreen';
 import { AdminHomeScreen } from '../screens/admin/AdminHomeScreen';
@@ -38,6 +40,7 @@ export const CUSTOMER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenCom
 const TECHNICIAN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> = {
   Home: TechnicianHomeScreen,
   Schedule: ScheduleScreen,
+  Tips: TechnicianTipsScreen,
   Customers: CustomersStackNavigator,
   Settings: StaffSettingsScreen,
 };
@@ -47,6 +50,7 @@ const CASHIER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>>
   Schedule: ScheduleScreen,
   Lobby: AdminLobbyScreen,
   Checkout: CashierCheckoutScreen,
+  Transactions: CashierTransactionsScreen,
   Customers: CustomersStackNavigator,
   Reports: AdminReportsScreen,
   Settings: StaffSettingsScreen,

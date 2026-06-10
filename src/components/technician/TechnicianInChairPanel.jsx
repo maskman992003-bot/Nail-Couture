@@ -14,7 +14,6 @@ import { getAppointmentServiceLabels } from '../../utils/appointmentServices';
 import WaiverModal from '../WaiverModal';
 import TechnicianServiceEditor from './TechnicianServiceEditor';
 import TechnicianServiceChecklist from './TechnicianServiceChecklist';
-import TechnicianProductUsage from './TechnicianProductUsage';
 
 export default function TechnicianInChairPanel({
   appointment,
@@ -22,7 +21,6 @@ export default function TechnicianInChairPanel({
   onComplete,
   onUpdateServices,
   onToggleChecklistItem,
-  onLogProductUsage,
   userRole,
 }) {
   const { user } = useAuth();
@@ -319,13 +317,6 @@ export default function TechnicianInChairPanel({
             />
           )}
 
-          {onLogProductUsage && (
-            <TechnicianProductUsage
-              appointment={appointment}
-              onLogUsage={(payload) => onLogProductUsage(appointment, payload)}
-              saving={isUpdating}
-            />
-          )}
         </div>
 
         {/* Desktop: client brief column */}

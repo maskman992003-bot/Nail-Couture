@@ -20,9 +20,11 @@ import SuperAdmin from './components/SuperAdmin.jsx'
 import Admin from './components/Admin.jsx'
 import Cashier from './components/Cashier.jsx'
 import Technician from './components/Technician.jsx'
+import TechnicianTips from './components/TechnicianTips.jsx'
 import AdminLobby from './components/AdminLobby.jsx'
 import AdminReports from './components/AdminReports.jsx'
 import CashierCheckout from './components/CashierCheckout.jsx'
+import CashierTransactions from './components/CashierTransactions.jsx'
 import StaffManagement from './components/StaffManagement.jsx'
 import StaffProfile from './components/StaffProfile.jsx'
 import StaffSchedule from './components/StaffSchedule.jsx'
@@ -331,6 +333,11 @@ createRoot(document.getElementById('root')).render(
                 <CashierCheckout />
               </ProtectedRoute>
             } />
+            <Route path="/cashier/transactions" element={
+              <ProtectedRoute allowedRoles={['cashier']}>
+                <CashierTransactions />
+              </ProtectedRoute>
+            } />
             <Route path="/cashier/reports" element={
               <ProtectedRoute allowedRoles={['cashier', 'super_admin', 'owner', 'partner']}>
                 <AdminReports />
@@ -360,6 +367,11 @@ createRoot(document.getElementById('root')).render(
             <Route path="/technician/settings" element={
               <ProtectedRoute allowedRoles={['technician']}>
                 <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/technician/tips" element={
+              <ProtectedRoute allowedRoles={['technician']}>
+                <TechnicianTips />
               </ProtectedRoute>
             } />
             <Route path="/technician/customers" element={
