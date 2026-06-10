@@ -904,43 +904,7 @@ export default function AdminLobby() {
                   </div>
                 </LobbyWaitingDropZone>
 
-                <h2 className="font-heading text-xl text-gold mt-8 mb-4 flex items-center gap-2">
-                  <span className="w-3 h-3 bg-amber-400 rounded-full"></span>
-                  Ready for Checkout ({checkoutReadyAppointments.length})
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                  {checkoutReadyAppointments.map(appointment => (
-                    <div key={appointment.id} className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className={`font-heading text-lg ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{appointment.customer?.full_name || 'Guest'}</h3>
-                          {appointment.technician && (
-                            <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>with {appointment.technician.full_name}</span>
-                          )}
-                        </div>
-                        <span className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400">Awaiting payment</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-sm items-center">
-                        {appointment.services && <span className="text-gold font-heading">{appointment.services.name}</span>}
-                        <span className="text-amber-400 font-medium">
-                          ${getAppointmentTotalPrice(appointment, services).toFixed(2)}
-                        </span>
-                      </div>
-                      {appointment.checkout_ready_at && (
-                        <div className={`text-xs mt-2 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>
-                          Ready since: {formatTime(appointment.checkout_ready_at)}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {checkoutReadyAppointments.length === 0 && (
-                    <div className={`col-span-1 sm:col-span-2 text-center py-8 border rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-offwhite/10' : 'bg-charcoal/5 border-charcoal/10'}`}>
-                      <p className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No clients waiting at checkout</p>
-                    </div>
-                  )}
-                </div>
-
-                <h2 className="font-heading text-xl text-gold mb-4">Currently Serving ({servingAppointments.length})</h2>
+                <h2 className="font-heading text-xl text-gold mt-8 mb-4">Currently Serving ({servingAppointments.length})</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {servingAppointments.map(appointment => (
                     <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
@@ -983,6 +947,42 @@ export default function AdminLobby() {
                       </button>
                     </div>
                   ))}
+                </div>
+
+                <h2 className="font-heading text-xl text-gold mt-8 mb-4 flex items-center gap-2">
+                  <span className="w-3 h-3 bg-amber-400 rounded-full"></span>
+                  Ready for Checkout ({checkoutReadyAppointments.length})
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                  {checkoutReadyAppointments.map(appointment => (
+                    <div key={appointment.id} className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className={`font-heading text-lg ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{appointment.customer?.full_name || 'Guest'}</h3>
+                          {appointment.technician && (
+                            <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>with {appointment.technician.full_name}</span>
+                          )}
+                        </div>
+                        <span className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400">Awaiting payment</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-sm items-center">
+                        {appointment.services && <span className="text-gold font-heading">{appointment.services.name}</span>}
+                        <span className="text-amber-400 font-medium">
+                          ${getAppointmentTotalPrice(appointment, services).toFixed(2)}
+                        </span>
+                      </div>
+                      {appointment.checkout_ready_at && (
+                        <div className={`text-xs mt-2 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>
+                          Ready since: {formatTime(appointment.checkout_ready_at)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {checkoutReadyAppointments.length === 0 && (
+                    <div className={`col-span-1 sm:col-span-2 text-center py-8 border rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-offwhite/10' : 'bg-charcoal/5 border-charcoal/10'}`}>
+                      <p className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No clients waiting at checkout</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

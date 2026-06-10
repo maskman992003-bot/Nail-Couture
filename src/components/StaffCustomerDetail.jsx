@@ -40,7 +40,10 @@ import {
   canUploadVisitPhotos,
   canDeleteVisitPhotos,
 } from '../utils/staffCustomerAccess';
-import TimelineEventRow, { formatTimelineDate } from './TimelineEventRow';
+import { formatTimelineDate } from './TimelineEventRow';
+import VirtualizedTimelineList from './VirtualizedTimelineList';
+import ThemeSelect from './ThemeSelect';
+import { getDateRangeForPreset } from '../utils/activityDateRange';
 import { enrichVisits, visitDate } from '../utils/visitEnrichment';
 
 const TABS = [
@@ -50,6 +53,25 @@ const TABS = [
   { id: 'notes', label: 'Notes' },
   { id: 'loyalty', label: 'Loyalty' },
   { id: 'photos', label: 'Photos' },
+];
+
+const TIMELINE_DATE_PRESETS = [
+  { id: 'today', label: 'Today' },
+  { id: '7_days', label: 'Last 7 days' },
+  { id: '30_days', label: 'Last 30 days' },
+  { id: 'custom', label: 'Custom' },
+  { id: 'all', label: 'All history' },
+];
+
+const TIMELINE_EVENT_TYPES = [
+  { id: 'all', label: 'All events' },
+  { id: 'visit', label: 'Visits' },
+  { id: 'payment', label: 'Payments' },
+  { id: 'service_change', label: 'Service changes' },
+  { id: 'note', label: 'Notes' },
+  { id: 'loyalty', label: 'Loyalty' },
+  { id: 'photo', label: 'Photos' },
+  { id: 'waiver', label: 'Waivers' },
 ];
 
 const VISIT_STATUS = {
@@ -83,7 +105,6 @@ export default function StaffCustomerDetail() {
   const [referralInfo, setReferralInfo] = useState(null);
   const [receipts, setReceipts] = useState([]);
   const [timeline, setTimeline] = useState([]);
-  const [notes, setNotes] = useState([]);
   const [notesAvailable, setNotesAvailable] = useState(true);
   const [loyaltyHistory, setLoyaltyHistory] = useState([]);
   const [photos, setPhotos] = useState([]);
@@ -106,6 +127,10 @@ export default function StaffCustomerDetail() {
   const [visitSearch, setVisitSearch] = useState('');
   const [timelineLoaded, setTimelineLoaded] = useState(false);
   const [timelineLoading, setTimelineLoading] = useState(false);
+  const [timelineDatePreset, setTimelineDatePreset] = useState('today');
+  const [timelineCustomStart, setTimelineCustomStart] = useState('');
+  const [timelineCustomEnd, setTimelineCustomEnd] = useState('');
+  const [timelineEventFilter, setTimelineEventFilter] = useState('visit');
   const [visitsLoaded, setVisitsLoaded] = useState(false);
   const [visitsLoading, setVisitsLoading] = useState(false);
 
@@ -131,6 +156,27 @@ export default function StaffCustomerDetail() {
         || (termDigits.length >= 3 && phoneDigits.includes(termDigits));
     });
   }, [visits, visitSearch, profile]);
+
+  const timelineDateRange = useMemo(() => {
+    if (timelineDatePreset === 'all') return null;
+    return getDateRangeForPreset(timelineDatePreset, timelineCustomStart, timelineCustomEnd);
+  }, [timelineDatePreset, timelineCustomStart, timelineCustomEnd]);
+
+  const filteredTimeline = useMemo(() => {
+    return timeline.filter((event) => {
+      if (timelineEventFilter !== 'all' && event.type !== timelineEventFilter) return false;
+      if (!timelineDateRange) return true;
+      const eventTime = new Date(event.date).getTime();
+      return eventTime >= new Date(timelineDateRange.fromDate).getTime()
+        && eventTime <= new Date(timelineDateRange.toDate).getTime();
+    });
+  }, [timeline, timelineEventFilter, timelineDateRange]);
+
+  const allNoteEvents = useMemo(() => (
+    [...timeline]
+      .filter((event) => event.type === 'note')
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+  ), [timeline]);
 
   const resetEditForm = useCallback((profileData) => {
     setEditForm({
@@ -172,7 +218,6 @@ export default function StaffCustomerDetail() {
     setStats(statsData);
     setReferralInfo(referral);
     setReceipts(receiptRows);
-    setNotes(notesData.rows);
     setNotesAvailable(notesData.available);
     setLoyaltyHistory(loyaltyData.rows);
 
@@ -243,7 +288,7 @@ export default function StaffCustomerDetail() {
 
   useEffect(() => {
     if (!profile || loading) return;
-    if ((activeTab === 'timeline' || activeTab === 'photos') && !timelineLoaded && !timelineLoading) {
+    if ((activeTab === 'timeline' || activeTab === 'photos' || activeTab === 'notes') && !timelineLoaded && !timelineLoading) {
       loadTimelineData(profile);
     }
     if (activeTab === 'history' && !visitsLoaded && !visitsLoading) {
@@ -308,15 +353,14 @@ export default function StaffCustomerDetail() {
       setSaveMsg(result.error);
       return;
     }
-    setNotes((prev) => [result.note, ...prev]);
     setTimeline((prev) => [{
       id: `note-${result.note.id}`,
       type: 'note',
       date: result.note.created_at,
       title: 'Staff note',
-      subtitle: `By ${result.note.author_name}`,
+      subtitle: result.note.author_name,
       body: result.note.note,
-      meta: result.note,
+      meta: { ...result.note, noteSource: 'staff' },
     }, ...prev]);
     setNewNote('');
   };
@@ -429,22 +473,28 @@ export default function StaffCustomerDetail() {
           )}
         </div>
 
-        <div className="bg-secondary border-card rounded-xl border p-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="flex items-start gap-4">
+        <div className="@container bg-secondary border-card rounded-xl border p-4 sm:p-5 lg:p-6">
+          <div className="flex flex-col @3xl:flex-row gap-4 sm:gap-6">
+            <div className="flex items-start gap-3 sm:gap-4 min-w-0 @3xl:flex-shrink-0 @3xl:max-w-sm">
               {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="w-16 h-16 rounded-full object-cover border border-gold/30" />
+                <img
+                  src={profile.avatar_url}
+                  alt=""
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border border-gold/30 flex-shrink-0"
+                />
               ) : (
-                <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center text-gold font-heading text-2xl">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gold/20 rounded-full flex items-center justify-center text-gold font-heading text-xl sm:text-2xl flex-shrink-0">
                   {initials}
                 </div>
               )}
-              <div>
-                <h2 className="font-heading text-2xl text-primary capitalize">{profile.full_name}</h2>
-                <p className="text-secondary text-sm">{profile.email}</p>
-                <p className="text-secondary text-sm">{profile.phone}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span className={clsx('px-2 py-0.5 text-xs rounded-full border', tier.color, 'border-current')}>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-heading text-lg sm:text-xl lg:text-2xl text-primary capitalize break-words">
+                  {profile.full_name}
+                </h2>
+                <p className="text-secondary text-sm truncate">{profile.email}</p>
+                <p className="text-secondary text-sm truncate">{profile.phone}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5 sm:gap-2">
+                  <span className={clsx('px-2 py-0.5 text-xs rounded-full border max-w-full truncate', tier.color, 'border-current')}>
                     {tier.name} · {profile.loyalty_points || 0} pts
                   </span>
                   {profile.birthday && (
@@ -456,7 +506,7 @@ export default function StaffCustomerDetail() {
               </div>
             </div>
             {stats && (
-              <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="w-full min-w-0 @3xl:flex-1 grid grid-cols-2 @sm:grid-cols-4 @3xl:grid-cols-2 @5xl:grid-cols-4 gap-2 sm:gap-3">
                 <StatCard label="Visits" value={stats.totalVisits} />
                 <StatCard label="Total spent" value={`$${stats.totalSpent.toFixed(2)}`} />
                 <StatCard label="Last visit" value={stats.lastVisit ? new Date(stats.lastVisit).toLocaleDateString() : '—'} small />
@@ -679,25 +729,87 @@ export default function StaffCustomerDetail() {
         )}
 
         {activeTab === 'timeline' && (
-          <Section title="Full activity timeline">
+          <Section title="Activity timeline">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-4">
+              <div className="flex flex-wrap gap-2">
+                {TIMELINE_DATE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => setTimelineDatePreset(preset.id)}
+                    className={clsx(
+                      'px-3 py-2 rounded-lg text-sm border transition-colors',
+                      timelineDatePreset === preset.id
+                        ? 'border-gold bg-gold/10 text-gold'
+                        : 'border-light text-secondary hover:border-gold/30',
+                    )}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+              <ThemeSelect
+                value={timelineEventFilter}
+                onChange={setTimelineEventFilter}
+                options={TIMELINE_EVENT_TYPES.map((type) => ({ value: type.id, label: type.label }))}
+                className="min-w-[140px]"
+              />
+            </div>
+
+            {timelineDatePreset === 'custom' && (
+              <div className="flex flex-wrap gap-3 mb-4">
+                <label className="text-secondary text-xs uppercase tracking-widest">
+                  From
+                  <input
+                    type="date"
+                    value={timelineCustomStart}
+                    onChange={(e) => setTimelineCustomStart(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 bg-input border border-input rounded-lg text-primary text-sm"
+                  />
+                </label>
+                <label className="text-secondary text-xs uppercase tracking-widest">
+                  To
+                  <input
+                    type="date"
+                    value={timelineCustomEnd}
+                    onChange={(e) => setTimelineCustomEnd(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 bg-input border border-input rounded-lg text-primary text-sm"
+                  />
+                </label>
+              </div>
+            )}
+
+            {timelineDatePreset === 'custom' && !timelineDateRange && (
+              <p className="text-secondary text-sm mb-4">Select a start and end date to load activity.</p>
+            )}
+
             {timelineLoading && timeline.length === 0 ? (
               <p className="text-secondary text-center py-8">Loading activity…</p>
             ) : timeline.length === 0 ? (
               <p className="text-secondary text-center py-8">No activity recorded yet</p>
+            ) : timelineDatePreset === 'custom' && !timelineDateRange ? null : filteredTimeline.length === 0 ? (
+              <p className="text-secondary text-center py-8">No activity matches your filters</p>
             ) : (
-              <div className="space-y-3">
-                {timeline.map((event) => (
-                  <TimelineEventRow key={event.id} event={event} profile={profile} />
-                ))}
-              </div>
+              <>
+                <p className="text-secondary text-sm mb-4">
+                  {filteredTimeline.length} event{filteredTimeline.length !== 1 ? 's' : ''}
+                  {timelineEventFilter !== 'visit' || timelineDatePreset !== 'today' ? ' matching filters' : ''}
+                </p>
+                <VirtualizedTimelineList
+                  events={filteredTimeline}
+                  profile={profile}
+                  customerDetail
+                />
+              </>
             )}
           </Section>
         )}
 
         {activeTab === 'notes' && (
-          <Section title="Internal staff notes">
+          <Section title="Notes">
+            <p className="text-secondary text-sm mb-4">Staff, checkout, and visit record notes</p>
             {!notesAvailable && (
-              <p className="text-secondary text-sm mb-4">Run sql/025_phase4_staff_crm.sql to enable notes.</p>
+              <p className="text-secondary text-sm mb-4">Run sql/025_phase4_staff_crm.sql to enable staff notes.</p>
             )}
             {canAddStaffNotes(user?.role) && notesAvailable && (
               <div className="mb-6">
@@ -714,19 +826,24 @@ export default function StaffCustomerDetail() {
                   disabled={noteSaving || !newNote.trim()}
                   className="mt-2 px-4 py-2 bg-gold text-charcoal rounded-lg text-sm font-semibold disabled:opacity-50"
                 >
-                  {noteSaving ? 'Saving…' : 'Add note'}
+                  {noteSaving ? 'Saving…' : 'Add staff note'}
                 </button>
               </div>
             )}
-            {notes.length === 0 ? (
-              <p className="text-secondary text-center py-6">No staff notes yet</p>
+            {timelineLoading && allNoteEvents.length === 0 ? (
+              <p className="text-secondary text-center py-6">Loading notes…</p>
+            ) : allNoteEvents.length === 0 ? (
+              <p className="text-secondary text-center py-6">No notes recorded yet</p>
             ) : (
               <div className="space-y-3">
-                {notes.map((n) => (
-                  <div key={n.id} className="p-4 bg-secondary rounded-lg border border-light">
-                    <p className="text-primary">{n.note}</p>
+                {allNoteEvents.map((event) => (
+                  <div key={event.id} className="p-4 bg-secondary rounded-lg border border-light">
+                    <div className="text-gold text-xs font-heading uppercase tracking-wider mb-1">
+                      {event.title}
+                    </div>
+                    <p className="text-primary whitespace-pre-wrap">{event.body}</p>
                     <p className="text-secondary text-xs mt-2">
-                      {n.author_name} · {formatDate(n.created_at)}
+                      {[event.subtitle, formatDate(event.date)].filter(Boolean).join(' · ')}
                     </p>
                   </div>
                 ))}
@@ -1120,9 +1237,16 @@ export function VisitHistoryDetail({ visit, summary, finalServices }) {
 
 function StatCard({ label, value, small }) {
   return (
-    <div className="bg-secondary border border-light rounded-lg p-3 text-center">
-      <div className="text-secondary text-xs uppercase tracking-widest">{label}</div>
-      <div className={clsx('font-heading text-gold mt-1', small ? 'text-sm' : 'text-xl')}>{value}</div>
+    <div className="bg-primary/20 border border-light rounded-lg p-2.5 sm:p-3 text-center min-w-0 flex flex-col justify-center">
+      <div className="text-secondary text-[10px] sm:text-xs uppercase tracking-widest leading-tight">{label}</div>
+      <div
+        className={clsx(
+          'font-heading text-gold mt-0.5 sm:mt-1 min-w-0 break-words leading-tight',
+          small ? 'text-xs sm:text-sm' : 'text-base sm:text-lg @sm:text-xl',
+        )}
+      >
+        {value}
+      </div>
     </div>
   );
 }

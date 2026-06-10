@@ -63,9 +63,9 @@ RETURNS TABLE(
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   RETURN QUERY
-  SELECT t.id, t.staff_id, t.start_date, t.end_date, t.reason, t.status, t.reviewed_by, p.full_name
+  SELECT t.id, t.employee_id, t.start_date, t.end_date, t.reason, t.status, t.reviewed_by, p.full_name
   FROM time_off_requests t
-  JOIN profiles p ON p.id = t.staff_id
+  JOIN profiles p ON p.id = t.employee_id
   WHERE (p_status IS NULL OR t.status = p_status)
   ORDER BY t.start_date;
 END;
@@ -155,7 +155,7 @@ CREATE OR REPLACE FUNCTION create_time_off_request(
 )
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  INSERT INTO time_off_requests (staff_id, start_date, end_date, reason, status)
+  INSERT INTO time_off_requests (employee_id, start_date, end_date, reason, status)
   VALUES (p_staff_id, p_start_date, p_end_date, p_reason, 'pending');
 END;
 $$;

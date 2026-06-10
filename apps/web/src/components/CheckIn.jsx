@@ -53,9 +53,6 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [refreshmentList, setRefreshmentList] = useState([])
-  const [refreshmentsLoading, setRefreshmentsLoading] = useState(true)
-  const [refreshmentPref, setRefreshmentPref] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [expandedCategory, setExpandedCategory] = useState(null)
   const [selectedServices, setSelectedServices] = useState(initialServices || [])
@@ -66,16 +63,14 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
     setLoading(true)
     Promise.all([
       getServices(),
-      getAvailableRefreshments(),
       fetchServiceCategories(supabase),
     ])
-      .then(([svcData, refData, catData]) => {
+      .then(([svcData, catData]) => {
         setServices(svcData)
-        setRefreshmentList(refData)
         setDbCategories(catData)
       })
       .catch((err) => { setError(err.message) })
-      .finally(() => { setLoading(false); setRefreshmentsLoading(false) })
+      .finally(() => { setLoading(false) })
   }, [])
 
   useEffect(() => {
@@ -267,18 +262,6 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
               </div>
             )}
 
-            <RefreshmentSelect
-              label="Refreshment"
-              labelClassName="block text-secondary text-xs uppercase tracking-wider mb-2"
-              value={refreshmentPref}
-              onChange={(e) => setRefreshmentPref(e.target.value)}
-              refreshments={refreshmentList}
-              loading={refreshmentsLoading}
-              emptyLabel="No refreshment"
-              hideWhenEmpty
-              className="px-3 py-2 text-sm"
-            />
-
           </div>
         )}
 
@@ -295,7 +278,7 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
             </button>
             <button
               onClick={() => {
-                onSelect({ services: selectedServices, addOns: selectedAddOnDetails, refreshmentPref })
+                onSelect({ services: selectedServices, addOns: selectedAddOnDetails })
               }}
               className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all"
             >

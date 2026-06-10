@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
-import { modalSelectClass } from '../AppModal';
+import ThemeSelect from '../ThemeSelect';
 import { getCustomerDetailPath } from '@nail-couture/shared/utils/routes';
 import { formatElapsedMinutes } from '@nail-couture/shared/utils/technicianQueue';
 import { parseProfilePreferences, labelForOption, NAIL_SHAPES, NAIL_LENGTHS, NAIL_FINISHES } from '@nail-couture/shared/utils/profilePreferences';
@@ -206,14 +206,15 @@ export default function TechnicianInChairPanel({
 
       {canUploadVisitPhotos(user?.role) && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <select
+          <ThemeSelect
             value={photoType}
-            onChange={(e) => setPhotoType(e.target.value)}
-            className={clsx('text-xs', modalSelectClass)}
-          >
-            <option value="before">Before</option>
-            <option value="after">After</option>
-          </select>
+            onChange={setPhotoType}
+            options={[
+              { value: 'before', label: 'Before' },
+              { value: 'after', label: 'After' },
+            ]}
+            className="w-auto min-w-[7.5rem]"
+          />
           <input
             ref={photoInputRef}
             type="file"

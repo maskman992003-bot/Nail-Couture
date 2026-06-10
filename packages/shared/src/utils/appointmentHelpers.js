@@ -44,18 +44,50 @@ export function getAppointmentTotalPrice(appointment, availableServices = []) {
 }
 
 export function getAppointmentServices(appt) {
-  const serviceNames = [];
+  if (!appt) return [];
+  const names = new Set();
+
+  if (appt.selected_service_names) {
+    appt.selected_service_names.split(',').map((n) => n.trim()).filter(Boolean).forEach((n) => names.add(n));
+  }
   if (appt.add_ons) {
-    serviceNames.push(...appt.add_ons.split(',').map((name) => name.trim()).filter(Boolean));
+    appt.add_ons.split(',').map((n) => n.trim()).filter(Boolean).forEach((n) => names.add(n));
   }
   if (appt.services) {
     if (Array.isArray(appt.services)) {
-      serviceNames.push(...appt.services.map((service) => service?.name).filter(Boolean));
+      appt.services.map((service) => service?.name).filter(Boolean).forEach((n) => names.add(n));
     } else if (appt.services?.name) {
-      serviceNames.push(appt.services.name);
+      names.add(appt.services.name);
     }
   }
-  return [...new Set(serviceNames)];
+
+  return [...names];
+}
+
+/** Split appointment fields into main services vs add-ons when available. */
+export function getAppointmentServiceGroups(appt) {
+  if (!appt) return { main: [], addons: [] };
+
+  let main = appt.selected_service_names
+    ? appt.selected_service_names.split(',').map((n) => n.trim()).filter(Boolean)
+    : [];
+  let addons = appt.add_ons
+    ? appt.add_ons.split(',').map((n) => n.trim()).filter(Boolean)
+    : [];
+
+  if (!main.length) {
+    if (Array.isArray(appt.services)) {
+      main = appt.services.map((service) => service?.name).filter(Boolean);
+    } else if (appt.services?.name) {
+      main.push(appt.services.name);
+    }
+  }
+
+  if (!appt.selected_service_names && !main.length && addons.length) {
+    return { main: [...new Set(addons)], addons: [] };
+  }
+
+  return { main: [...new Set(main)], addons: [...new Set(addons)] };
 }
 
 export function getAppointmentFinalPrice(appt) {

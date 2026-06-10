@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import TimelineEventRow from './TimelineEventRow';
 
-export default function VirtualizedTimelineList({ events, profile }) {
+export default function VirtualizedTimelineList({ events, profile, customerDetail = false }) {
   const parentRef = useRef(null);
 
   const virtualizer = useVirtualizer({
@@ -33,7 +33,7 @@ export default function VirtualizedTimelineList({ events, profile }) {
               className="absolute left-0 top-0 w-full px-1 pb-3"
               style={{ transform: `translateY(${virtualRow.start}px)` }}
             >
-              <TimelineEventRow event={event} profile={profile} lazyImages />
+              <TimelineEventRow event={event} profile={profile} lazyImages customerDetail={customerDetail} />
             </div>
           );
         })}

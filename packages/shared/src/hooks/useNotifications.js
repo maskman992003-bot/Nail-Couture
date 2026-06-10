@@ -61,7 +61,9 @@ export function useNotifications({ userPhone, userId, enabled = true, getIsActiv
         p_limit: 50,
         p_unread_only: false,
       });
-      if (!error) {
+      if (error) {
+        console.error('Failed to load notifications:', error.message || error);
+      } else {
         const rows = data || [];
         if (localAlerts) {
           const { seenIds, newUnreadCount } = alertNewNotifications(
@@ -73,8 +75,8 @@ export function useNotifications({ userPhone, userId, enabled = true, getIsActiv
         }
         setNotifications(rows);
       }
-    } catch {
-      /* ignore */
+    } catch (err) {
+      console.error('Failed to load notifications:', err);
     }
     setLoading(false);
   }, [userPhone, localAlerts, triggerBellRing]);

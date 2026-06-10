@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import { useTheme } from '../../contexts/ThemeContext';
 import TechnicianQuickLinks from './TechnicianQuickLinks';
-import TechnicianStats from './TechnicianStats';
 import TechnicianFloorSnapshot from './TechnicianFloorSnapshot';
 import TechnicianQueue from './TechnicianQueue';
 import TechnicianInChairPanel from './TechnicianInChairPanel';
@@ -161,6 +160,18 @@ export default function TechnicianDashboard({
             />
           )}
 
+          <div id="my-assignments">
+            <TechnicianQueue
+              pendingAssignments={stats.pendingAssignments}
+              actionId={actionId}
+              onAccept={acceptAssignment}
+              onDecline={declineAssignment}
+              onDismissNew={dismissNewAssignment}
+              userRole={user?.role}
+              newAssignmentIds={newAssignmentIds}
+            />
+          </div>
+
           <TechnicianFloorSnapshot
             floorAppointments={floorAppointments}
             floorTechnicians={floorTechnicians}
@@ -178,34 +189,6 @@ export default function TechnicianDashboard({
               </p>
             </div>
           )}
-
-          {!stats.currentAppointment && stats.pendingCount > 0 && (
-            <div className="bg-card border border-dashed border-theme rounded-xl p-6 text-center">
-              <p className="text-secondary text-sm">
-                You have {stats.pendingCount} assignment{stats.pendingCount !== 1 ? 's' : ''} waiting — accept one below to start.
-              </p>
-            </div>
-          )}
-
-          <div id="my-assignments">
-            <TechnicianQueue
-              pendingAssignments={stats.pendingAssignments}
-              actionId={actionId}
-              onAccept={acceptAssignment}
-              onDecline={declineAssignment}
-              onDismissNew={dismissNewAssignment}
-              userRole={user?.role}
-              newAssignmentIds={newAssignmentIds}
-            />
-          </div>
-
-          <TechnicianStats
-            stats={stats}
-            weekStats={weekStats}
-            tipsToday={tipsToday}
-            paymentsByAppointment={paymentsByAppointment}
-            userRole={user?.role}
-          />
 
           <TechnicianQuickLinks role={user?.role} />
         </div>

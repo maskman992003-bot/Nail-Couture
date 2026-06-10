@@ -16,6 +16,11 @@ function formatVisitDate(d) {
   });
 }
 
+function formatNoteVisitSubtitle(appointmentDateMap, appointmentId) {
+  const visitDateStr = appointmentId ? appointmentDateMap[appointmentId] : null;
+  return visitDateStr ? `During visit · ${formatVisitDate(visitDateStr)}` : null;
+}
+
 const CUSTOMER_SELECT = 'id, full_name, email, phone';
 
 function attachCustomer(events, customer) {
@@ -39,10 +44,11 @@ function buildTimelineEvents({
 
   appointments.forEach((a) => {
     const serviceName = a.selected_service_names || a.services?.name || a.add_ons || 'Visit';
+    const visitAt = visitDate(a);
     events.push({
       id: `visit-${a.id}`,
       type: 'visit',
-      date: visitDate(a),
+      date: visitAt,
       title: serviceName,
       subtitle: a.technicians?.full_name ? `Technician: ${a.technicians.full_name}` : null,
       status: a.status,
@@ -50,6 +56,19 @@ function buildTimelineEvents({
       customer: a.customer || resolveCustomer(a.customer_id),
       meta: a,
     });
+
+    if (a.notes?.trim()) {
+      events.push({
+        id: `visit-record-note-${a.id}`,
+        type: 'note',
+        date: visitAt,
+        title: 'Visit record',
+        subtitle: formatVisitDate(visitAt),
+        body: a.notes.trim(),
+        customer: a.customer || resolveCustomer(a.customer_id),
+        meta: { noteSource: 'visit_record', appointment_id: a.id },
+      });
+    }
   });
 
   payments.forEach((p) => {
@@ -63,6 +82,20 @@ function buildTimelineEvents({
       customer: p.customer || resolveCustomer(p.customer_id),
       meta: p,
     });
+
+    if (p.notes?.trim()) {
+      const visitSubtitle = formatNoteVisitSubtitle(appointmentDateMap, p.appointment_id);
+      events.push({
+        id: `checkout-note-${p.id}`,
+        type: 'note',
+        date: p.created_at,
+        title: 'Checkout',
+        subtitle: ['Cashier', visitSubtitle].filter(Boolean).join(' · '),
+        body: p.notes.trim(),
+        customer: p.customer || resolveCustomer(p.customer_id),
+        meta: { noteSource: 'checkout', appointment_id: p.appointment_id },
+      });
+    }
   });
 
   waivers.forEach((w) => {
@@ -78,16 +111,16 @@ function buildTimelineEvents({
   });
 
   notes.forEach((n) => {
-    const visitDateStr = n.appointment_id ? appointmentDateMap[n.appointment_id] : null;
+    const visitSubtitle = formatNoteVisitSubtitle(appointmentDateMap, n.appointment_id);
     events.push({
       id: `note-${n.id}`,
       type: 'note',
       date: n.created_at,
-      title: `Note by ${n.author_name}`,
-      subtitle: visitDateStr ? `During visit · ${formatVisitDate(visitDateStr)}` : null,
+      title: 'Staff note',
+      subtitle: [n.author_name, visitSubtitle].filter(Boolean).join(' · '),
       body: n.note,
       customer: n.customer || resolveCustomer(n.customer_id),
-      meta: n,
+      meta: { ...n, noteSource: 'staff' },
     });
   });
 
@@ -157,7 +190,7 @@ export async function fetchCustomerTimeline(customerId, phone) {
       .limit(100),
     supabase
       .from('payment_transactions')
-      .select('id, final_amount, amount, discount_amount, payment_method, created_at, service_id, status')
+      .select('id, final_amount, amount, discount_amount, payment_method, notes, appointment_id, created_at, service_id, status')
       .eq('customer_id', customerId)
       .eq('status', 'completed')
       .order('created_at', { ascending: false })
@@ -172,8 +205,8 @@ export async function fetchCustomerTimeline(customerId, phone) {
       )
       .order('signed_at', { ascending: false })
       .limit(20),
-    fetchStaffNotes(customerId, 30),
-    fetchLoyaltyHistory(customerId, 30),
+    fetchStaffNotes(customerId, 100),
+    fetchLoyaltyHistory(customerId, 100),
     supabase
       .from('visit_photos')
       .select(`
@@ -258,7 +291,7 @@ export async function fetchGlobalTimeline({
       supabase
         .from('payment_transactions')
         .select(`
-          id, customer_id, final_amount, payment_method, created_at, service_id, status,
+          id, customer_id, final_amount, payment_method, notes, appointment_id, created_at, service_id, status,
           customer:profiles!payment_transactions_customer_id_fkey(${CUSTOMER_SELECT})
         `)
         .eq('status', 'completed')

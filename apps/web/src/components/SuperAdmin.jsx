@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,6 +6,20 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from './Sidebar';
 import AppModal from './AppModal';
+import AppointmentServicesPanel from './AppointmentServicesPanel';
+import AppointmentVisitNotesPanel from './AppointmentVisitNotesPanel';
+import {
+  getAppointmentFinalPrice,
+  getAppointmentServices,
+} from '@nail-couture/shared/utils/appointmentHelpers';
+import { loadVisitServiceSummary } from '@nail-couture/shared/utils/appointmentServiceHistory';
+import { fetchAppointmentVisitNotes } from '@nail-couture/shared/utils/appointmentVisitNotes';
+
+function prefetchAppointmentDetails(appointment) {
+  if (!appointment?.id) return;
+  void loadVisitServiceSummary(appointment);
+  void fetchAppointmentVisitNotes(appointment);
+}
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -36,53 +50,61 @@ export default function SuperAdmin() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    const phone = user?.phone;
+    if (!phone) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const caller = localStorage.getItem('salon_user_data');
-      const phone = caller ? JSON.parse(caller).phone : '';
-      
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(todayStart);
+      todayEnd.setDate(todayEnd.getDate() + 1);
+
       const [apptsRes, waitingRes, staffRes] = await Promise.all([
-        supabase
-          .rpc('get_appointments', { caller_phone: phone, date_from: `${today}T00:00:00` }),
-        supabase
-          .rpc('get_appointments_count', { caller_phone: phone, status_filter: 'waiting' }),
+        supabase.rpc('get_appointments', {
+          caller_phone: phone,
+          date_from: todayStart.toISOString(),
+          date_to: todayEnd.toISOString(),
+        }),
+        supabase.rpc('get_appointments_count', {
+          caller_phone: phone,
+          status_filter: 'waiting',
+        }),
         supabase
           .from('profiles')
           .select('*')
           .in('role', ['admin', 'cashier', 'technician'])
           .order('full_name'),
       ]);
-      
-      // Log any errors
+
       if (apptsRes.error) console.error('Error fetching appointments:', apptsRes.error);
       if (waitingRes.error) console.error('Error fetching waiting count:', waitingRes.error);
       if (staffRes.error) console.error('Error fetching staff:', staffRes.error);
-      
-      const appointments = apptsRes.data;
-      const staffData = staffRes.data;
-      const waitingCount = typeof waitingRes.data === 'object' ? (waitingRes.data?.count || 0) : 0;
 
-      if (appointments) {
-        const completed = appointments.filter(a => a.status === 'completed');
-        const revenue = completed.reduce((sum, a) => sum + (a.final_price || a.services?.price || 0), 0);
-        
-        setStats({
-          todayRevenue: revenue,
-          activeTechnicians: staffData?.filter(s => s.role === 'technician').length || 5,
-          waitingCustomers: waitingCount,
-          completedToday: completed.length,
-        });
-        setRecentAppointments(appointments.slice(0, 10));
-      }
-      
-      if (staffData) setStaff(staffData);
+      const appointments = apptsRes.data || [];
+      const staffData = staffRes.data || [];
+      const waitingCount = typeof waitingRes.data === 'number' ? waitingRes.data : 0;
+
+      const completed = appointments.filter((a) => a.status === 'completed');
+      const revenue = completed.reduce((sum, a) => sum + getAppointmentFinalPrice(a), 0);
+
+      setStats({
+        todayRevenue: revenue,
+        activeTechnicians: staffData.filter((s) => s.role === 'technician').length || 5,
+        waitingCustomers: waitingCount,
+        completedToday: completed.length,
+      });
+      setRecentAppointments(appointments.slice(0, 10));
+      setStaff(staffData);
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.phone]);
 
   const getAppointmentActivityLabel = (appt) => {
     if (appt.booking_type) return appt.booking_type;
@@ -122,29 +144,6 @@ export default function SuperAdmin() {
     return 'Unassigned';
   };
 
-  const getAppointmentFinalPrice = (appt) => {
-    if (appt.final_price != null) return appt.final_price;
-    if (Array.isArray(appt.services)) {
-      return appt.services.reduce((sum, item) => sum + (item?.price || 0), 0);
-    }
-    return appt.services?.price || 0;
-  };
-
-  const getAppointmentServices = (appt) => {
-    const serviceNames = [];
-    if (appt.add_ons) {
-      serviceNames.push(...appt.add_ons.split(',').map((name) => name.trim()).filter(Boolean));
-    }
-    if (appt.services) {
-      if (Array.isArray(appt.services)) {
-        serviceNames.push(...appt.services.map((service) => service?.name).filter(Boolean));
-      } else if (appt.services?.name) {
-        serviceNames.push(appt.services.name);
-      }
-    }
-    return [...new Set(serviceNames)];
-  };
-
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
     if (!['super_admin', 'owner', 'partner'].includes(user.role)) {
@@ -152,7 +151,16 @@ export default function SuperAdmin() {
       return;
     }
     fetchData();
-  }, [user, navigate]);
+
+    const channel = supabase
+      .channel('superadmin-dashboard')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => fetchData())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, navigate, fetchData]);
 
   useEffect(() => {
     const path = location.pathname;
@@ -241,6 +249,7 @@ export default function SuperAdmin() {
                         type="button"
                         key={appt.id}
                         onClick={() => {
+                          prefetchAppointmentDetails(appt);
                           setSelectedAppointment(appt);
                           setIsDetailsModalOpen(true);
                         }}
@@ -305,21 +314,22 @@ export default function SuperAdmin() {
                         <div className="rounded-2xl border border-card bg-secondary p-4">
                           <div className="flex items-center justify-between mb-3 gap-3">
                             <div className="text-secondary text-xs uppercase tracking-[0.2em]">Services & Add-ons</div>
-                            <div className="text-muted text-xs">{getAppointmentServices(selectedAppointment).length} item(s)</div>
+                            <div className="text-muted text-xs">
+                              {getAppointmentServices(selectedAppointment).length} item(s)
+                            </div>
                           </div>
-                          <ul className="list-disc list-inside space-y-2 text-primary">
-                            {getAppointmentServices(selectedAppointment).map((service, idx) => (
-                              <li key={`${service}-${idx}`} className="truncate">{service}</li>
-                            ))}
-                            {getAppointmentServices(selectedAppointment).length === 0 && (
-                              <li className="text-secondary">No services listed</li>
-                            )}
-                          </ul>
+                          <AppointmentServicesPanel
+                            appointment={selectedAppointment}
+                            tone="admin"
+                            theme={theme}
+                            showHistory
+                            showFinalServices={false}
+                          />
                         </div>
 
                         <div className="rounded-2xl border border-card bg-secondary p-4">
-                          <div className="text-secondary text-xs uppercase tracking-[0.2em] mb-2">Notes</div>
-                          <div className="text-primary min-h-[52px]">{selectedAppointment.notes || 'No notes provided'}</div>
+                          <div className="text-secondary text-xs uppercase tracking-[0.2em] mb-3">Notes</div>
+                          <AppointmentVisitNotesPanel appointment={selectedAppointment} tone="admin" theme={theme} />
                         </div>
                       </div>
 

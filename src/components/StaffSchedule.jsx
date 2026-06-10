@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -48,6 +48,8 @@ export default function StaffSchedule() {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'timeoff' ? 'timeoff' : 'schedule';
 
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -56,7 +58,7 @@ export default function StaffSchedule() {
   const [shifts, setShifts] = useState([]);
   const [timeOffRequests, setTimeOffRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('schedule');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedStaffId, setSelectedStaffId] = useState(null);
   const [roleFilter, setRoleFilter] = useState('all');
   const [weekPattern, setWeekPattern] = useState(emptyWeekPattern());
@@ -173,6 +175,20 @@ export default function StaffSchedule() {
   }, [user, fetchData]);
 
   useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'timeoff') setActiveTab('timeoff');
+    else if (tab !== 'timeoff') setActiveTab('schedule');
+  }, [searchParams]);
+
+  const setTab = (tab) => {
+    setActiveTab(tab);
+    const next = new URLSearchParams(searchParams);
+    if (tab === 'timeoff') next.set('tab', 'timeoff');
+    else next.delete('tab');
+    setSearchParams(next, { replace: true });
+  };
+
+  useEffect(() => {
     if (!loading && staff.length > 0 && !selectedStaffId) {
       selectStaff(staff[0].id);
     }
@@ -276,7 +292,7 @@ export default function StaffSchedule() {
 
   const handleViewScheduleFromTimeOff = (staffId, startDate) => {
     selectStaff(staffId);
-    setActiveTab('schedule');
+    setTab('schedule');
     setCalendarView('month');
     if (startDate) {
       const d = parseDateStr(startDate);
@@ -462,8 +478,8 @@ export default function StaffSchedule() {
     }
   };
 
-  const handleReviewTimeOff = async (requestId, status) => {
-    await reviewTimeOffRequest(requestId, status, user.id);
+  const handleReviewTimeOff = async (requestId, status, reviewNote = null) => {
+    await reviewTimeOffRequest(requestId, status, user.id, reviewNote);
     await fetchData();
   };
 
@@ -522,7 +538,7 @@ export default function StaffSchedule() {
           </div>
           <ScheduleTabToggle
             activeTab={activeTab}
-            onChange={setActiveTab}
+            onChange={setTab}
             tabs={[
               { id: 'schedule', label: 'Calendar' },
               { id: 'timeoff', label: 'Time-Off', badge: pendingTimeOff.length },

@@ -22,7 +22,7 @@ export function normalizeTimeOffRequest(row) {
   if (!row) return null;
   return {
     id: row.id || row.request_id,
-    staff_id: row.staff_id,
+    staff_id: row.staff_id || row.employee_id,
     staff_name: row.staff_name,
     start_date: row.start_date,
     end_date: row.end_date,
@@ -31,6 +31,7 @@ export function normalizeTimeOffRequest(row) {
     reviewed_by: row.reviewed_by,
     reviewer_name: row.reviewer_name,
     reviewed_at: row.reviewed_at,
+    review_note: row.review_note,
     created_at: row.created_at,
   };
 }
@@ -62,14 +63,13 @@ export async function fetchStaffShifts(staffId, startDate, endDate) {
 
 /**
  * PostgREST cannot resolve overloaded get_time_off_requests signatures.
- * Use the 2-arg overload when filtering by staff; otherwise call with no args.
+ * Always target the 2-arg overload (null = no filter).
  */
 export async function fetchTimeOffRequests({ status = null, staffId = null } = {}) {
-  const rpcCall = staffId
-    ? supabase.rpc('get_time_off_requests', { p_status: status, p_staff_id: staffId })
-    : supabase.rpc('get_time_off_requests');
-
-  const { data, error } = await rpcCall;
+  const { data, error } = await supabase.rpc('get_time_off_requests', {
+    p_status: status,
+    p_staff_id: staffId,
+  });
   if (error) throw error;
   return (data || []).map(normalizeTimeOffRequest).filter(Boolean);
 }
@@ -83,11 +83,12 @@ export async function submitTimeOffRequest(staffId, startDate, endDate, reason) 
   if (error) throw error;
 }
 
-export async function reviewTimeOffRequest(requestId, status, reviewedBy) {
+export async function reviewTimeOffRequest(requestId, status, reviewedBy, reviewNote = null) {
   const { error } = await supabase.rpc('review_time_off_request', {
     p_request_id: requestId,
     p_status: status,
     p_reviewed_by: reviewedBy,
+    p_review_note: reviewNote || null,
   });
   if (error) throw error;
 }

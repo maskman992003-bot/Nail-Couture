@@ -7,6 +7,7 @@ import { CASHIER_CHECKOUT } from '../constants/featureFlags';
 import { LOYALTY_REWARDS } from '../utils/loyaltyTransactions';
 import { getHomePath } from '../utils/routes';
 import Sidebar from './Sidebar';
+import CheckoutServiceSummary from './CheckoutServiceSummary';
 import clsx from 'clsx';
 
 const statusColors = {
@@ -106,7 +107,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className={clsx('w-full max-w-md flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border shadow-2xl', modalBg)}>
+      <div className={clsx('w-full max-w-lg flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border shadow-2xl', modalBg)}>
         <div className={clsx('flex items-center justify-between gap-4 p-4 sm:p-6 border-b', isDark ? 'border-gold/10' : 'border-gold/20')}>
           <h3 className="font-heading text-2xl text-gold">Settle Payment</h3>
           <button type="button" onClick={onClose} className={clsx(isDark ? 'text-offwhite/50 hover:text-offwhite' : 'text-charcoal/50 hover:text-charcoal', 'text-2xl')}>&times;</button>
@@ -117,19 +118,16 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
               <span className={mutedClass}>Customer</span>
               <span className={clsx('font-heading', textClass)}>{appointment.customer?.full_name || 'Guest'}</span>
             </div>
-            <div className="flex justify-between items-center mb-2">
-              <span className={mutedClass}>Service</span>
-              <span className="text-gold font-heading">{appointment.selected_service_names || appointment.add_ons || appointment.services?.name || 'Service'}</span>
-            </div>
+            <CheckoutServiceSummary appointment={appointment} theme={theme} />
             {hasReservedReward && (
               <div className="flex justify-between items-center mb-2 pt-2 border-t border-gold/10">
                 <span className={mutedClass}>Reserved reward</span>
                 <span className="text-gold text-sm">{appointment.loyalty_reward_name}</span>
               </div>
             )}
-            <div className="flex justify-between items-center">
+            <div className={clsx('flex justify-between items-center mt-2 pt-2 border-t', isDark ? 'border-offwhite/10' : 'border-charcoal/10')}>
               <span className={mutedClass}>Estimated Price</span>
-              <span className={mutedClass}>${basePrice.toFixed(2)}</span>
+              <span className={clsx('font-heading text-gold', textClass)}>${basePrice.toFixed(2)}</span>
             </div>
             {customerPoints > 0 && (
               <div className="flex justify-between items-center mt-2 pt-2 border-t border-gold/10">

@@ -115,7 +115,7 @@ export function getNotificationWebPath(type, role) {
   if (MANAGEMENT_TYPES.has(type)) {
     if (type === 'staff_added') return staffPath(role);
     if (type === 'inventory_low') return inventoryPath(role);
-    if (type === 'time_off_request') return schedulePath(role);
+    if (type === 'time_off_request') return `${schedulePath(role)}?tab=timeoff`;
   }
   if (TECHNICIAN_TYPES.has(type) && role === 'technician') return '/technician';
   if (SCHEDULE_TYPES.has(type)) return schedulePath(role);

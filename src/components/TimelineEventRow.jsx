@@ -18,7 +18,32 @@ export function formatTimelineDate(d) {
   });
 }
 
-export function formatTimelineEventDisplay(event, profile) {
+export function formatTimelineEventDisplay(event, profile, { customerDetail = false } = {}) {
+  if (customerDetail) {
+    switch (event.type) {
+      case 'visit':
+        return {
+          title: event.title || 'Visit',
+          subtitle: [event.subtitle, event.status].filter(Boolean).join(' · ') || null,
+          body: null,
+        };
+      case 'payment':
+        return {
+          title: 'Payment',
+          subtitle: event.subtitle || null,
+          body: event.title && event.title !== 'Payment' ? event.title : null,
+        };
+      case 'loyalty':
+        return {
+          title: 'Loyalty',
+          subtitle: event.subtitle || null,
+          body: event.title || null,
+        };
+      default:
+        return { title: event.title, subtitle: event.subtitle, body: event.body };
+    }
+  }
+
   const customer = event.customer || profile;
   if (!customer) {
     return { title: event.title, subtitle: event.subtitle, body: event.body };
@@ -44,8 +69,14 @@ export function formatTimelineEventDisplay(event, profile) {
   };
 }
 
-export default function TimelineEventRow({ event, profile, lazyImages = false, className }) {
-  const display = formatTimelineEventDisplay(event, profile);
+export default function TimelineEventRow({
+  event,
+  profile,
+  lazyImages = false,
+  customerDetail = false,
+  className,
+}) {
+  const display = formatTimelineEventDisplay(event, profile, { customerDetail });
 
   return (
     <div className={clsx('flex gap-3 p-3 bg-secondary rounded-lg border border-light', className)}>

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { getInitials, sortTimeOffRequests } from '@nail-couture/shared/utils/scheduleUtils.js';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
@@ -11,6 +12,7 @@ export type TimeOffRequest = {
   reason?: string;
   status: string;
   reviewed_at?: string;
+  review_note?: string;
 };
 
 type RequestForm = {
@@ -192,6 +194,11 @@ function EmployeeTimeOffTab({
                     })}
                   </Text>
                 ) : null}
+                {request.status === 'rejected' && request.review_note ? (
+                  <Text style={{ color: '#fca5a5', fontSize: 14, marginTop: 8 }}>
+                    Note from manager: {request.review_note}
+                  </Text>
+                ) : null}
               </View>
               <StatusBadge status={request.status} />
             </View>
@@ -204,13 +211,30 @@ function EmployeeTimeOffTab({
 
 type ManagerTimeOffTabProps = {
   requests: TimeOffRequest[];
-  onReview: (requestId: string, status: 'approved' | 'rejected') => void;
+  onReview: (requestId: string, status: 'approved' | 'rejected', reviewNote?: string | null) => void;
   onViewSchedule?: (staffId: string, startDate: string) => void;
 };
 
 function ManagerTimeOffTab({ requests, onReview, onViewSchedule }: ManagerTimeOffTabProps) {
   const styles = useThemeStyles();
   const sorted = sortTimeOffRequests(requests);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectNote, setRejectNote] = useState('');
+
+  const startReject = (requestId: string) => {
+    setRejectingId(requestId);
+    setRejectNote('');
+  };
+
+  const cancelReject = () => {
+    setRejectingId(null);
+    setRejectNote('');
+  };
+
+  const confirmReject = (requestId: string) => {
+    onReview(requestId, 'rejected', rejectNote.trim() || null);
+    cancelReject();
+  };
 
   return (
     <View style={{ gap: 12 }}>
@@ -258,6 +282,9 @@ function ManagerTimeOffTab({ requests, onReview, onViewSchedule }: ManagerTimeOf
                 {request.reason ? (
                   <Text style={[styles.textSecondary, { marginTop: 4 }]}>{request.reason}</Text>
                 ) : null}
+                {request.status === 'rejected' && request.review_note ? (
+                  <Text style={{ color: '#fca5a5', fontSize: 14, marginTop: 4 }}>Note: {request.review_note}</Text>
+                ) : null}
                 <View style={{ marginTop: 8, gap: 8 }}>
                   <StatusBadge status={request.status} />
                   {onViewSchedule ? (
@@ -265,7 +292,7 @@ function ManagerTimeOffTab({ requests, onReview, onViewSchedule }: ManagerTimeOf
                       <Text style={[styles.textGold, { fontSize: 12 }]}>View schedule →</Text>
                     </Pressable>
                   ) : null}
-                  {request.status === 'pending' ? (
+                  {request.status === 'pending' && rejectingId !== request.id ? (
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <Pressable
                         onPress={() => onReview(request.id, 'approved')}
@@ -281,7 +308,7 @@ function ManagerTimeOffTab({ requests, onReview, onViewSchedule }: ManagerTimeOf
                         <Text style={{ color: '#4ade80', fontSize: 14 }}>Approve</Text>
                       </Pressable>
                       <Pressable
-                        onPress={() => onReview(request.id, 'rejected')}
+                        onPress={() => startReject(request.id)}
                         style={{
                           paddingHorizontal: 16,
                           paddingVertical: 8,
@@ -298,6 +325,49 @@ function ManagerTimeOffTab({ requests, onReview, onViewSchedule }: ManagerTimeOf
                 </View>
               </View>
             </View>
+            {request.status === 'pending' && rejectingId === request.id ? (
+              <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: styles.tokens.cardBorder, gap: 12 }}>
+                <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 1 }]}>
+                  REJECTION NOTE (OPTIONAL)
+                </Text>
+                <TextInput
+                  value={rejectNote}
+                  onChangeText={setRejectNote}
+                  placeholder="e.g. Short-staffed that week..."
+                  placeholderTextColor={styles.tokens.textMuted}
+                  multiline
+                  numberOfLines={3}
+                  style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]}
+                />
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Pressable
+                    onPress={() => confirmReject(request.id)}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      borderColor: 'rgba(239, 68, 68, 0.2)',
+                    }}
+                  >
+                    <Text style={{ color: '#f87171', fontSize: 14 }}>Confirm reject</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={cancelReject}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: styles.tokens.cardBorder,
+                    }}
+                  >
+                    <Text style={styles.textSecondary}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
           </View>
         ))
       )}

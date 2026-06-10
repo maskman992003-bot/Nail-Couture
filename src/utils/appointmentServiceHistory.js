@@ -6,7 +6,7 @@ const CHECK_IN_SOURCES = new Set(['check_in', 'kiosk', 'customer_kiosk']);
 const SOURCE_LABELS = {
   check_in: 'Check-in',
   kiosk: 'Kiosk',
-  customer_kiosk: 'Customer kiosk',
+  customer_kiosk: 'Lobby',
   technician: 'Technician',
   admin_lobby: 'Admin',
 };

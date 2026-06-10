@@ -459,9 +459,13 @@ export function ManagerScheduleView() {
     }
   };
 
-  const handleReviewTimeOff = async (requestId: string, status: 'approved' | 'rejected') => {
+  const handleReviewTimeOff = async (
+    requestId: string,
+    status: 'approved' | 'rejected',
+    reviewNote: string | null = null,
+  ) => {
     if (!user?.id) return;
-    await reviewTimeOffRequest(requestId, status, user.id);
+    await reviewTimeOffRequest(requestId, status, user.id, reviewNote);
     await fetchData();
   };
 

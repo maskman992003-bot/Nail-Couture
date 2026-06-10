@@ -6,7 +6,7 @@ const CHECK_IN_SOURCES = new Set(['check_in', 'kiosk', 'customer_kiosk']);
 const SOURCE_LABELS = {
   check_in: 'Check-in',
   kiosk: 'Kiosk',
-  customer_kiosk: 'Customer kiosk',
+  customer_kiosk: 'Lobby',
   technician: 'Technician',
   admin_lobby: 'Admin',
 };
@@ -61,21 +61,58 @@ export function namesFromVisit(visit) {
   return [...names];
 }
 
+const CATALOG_TTL_MS = 5 * 60 * 1000;
+const HISTORY_TTL_MS = 60 * 1000;
+
+const catalogCache = { map: null, fetchedAt: 0, promise: null };
+const appointmentHistoryCache = new Map();
+
+export function invalidateServicePriceCache() {
+  catalogCache.map = null;
+  catalogCache.fetchedAt = 0;
+  catalogCache.promise = null;
+}
+
+async function getFullServicePriceMap() {
+  const now = Date.now();
+  if (catalogCache.map && now - catalogCache.fetchedAt < CATALOG_TTL_MS) {
+    return catalogCache.map;
+  }
+
+  if (!catalogCache.promise) {
+    catalogCache.promise = supabase
+      .from('services')
+      .select('name, price, is_addon')
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Failed to load service prices:', error);
+          return catalogCache.map || {};
+        }
+        const map = Object.fromEntries(
+          (data || []).map((s) => [s.name, { price: Number(s.price) || 0, is_addon: s.is_addon }]),
+        );
+        catalogCache.map = map;
+        catalogCache.fetchedAt = Date.now();
+        return map;
+      })
+      .finally(() => {
+        catalogCache.promise = null;
+      });
+  }
+
+  return catalogCache.promise;
+}
+
 export async function fetchServicePriceMap(serviceNames) {
   const unique = [...new Set((serviceNames || []).filter(Boolean))];
   if (!unique.length) return {};
 
-  const { data, error } = await supabase
-    .from('services')
-    .select('name, price, is_addon')
-    .in('name', unique);
-
-  if (error) {
-    console.error('Failed to load service prices:', error);
-    return {};
-  }
-
-  return Object.fromEntries((data || []).map((s) => [s.name, { price: Number(s.price) || 0, is_addon: s.is_addon }]));
+  const catalog = await getFullServicePriceMap();
+  const result = {};
+  unique.forEach((name) => {
+    if (catalog[name]) result[name] = catalog[name];
+  });
+  return result;
 }
 
 export function lineItemsFromNames(names, priceMap) {
@@ -204,6 +241,21 @@ export function formatVisitCardTitle(visit, summary) {
 export async function fetchAppointmentServiceHistory(appointmentIds) {
   if (!appointmentIds?.length) return {};
 
+  const now = Date.now();
+  const result = {};
+  const uncachedIds = [];
+
+  appointmentIds.forEach((id) => {
+    const cached = appointmentHistoryCache.get(id);
+    if (cached && now - cached.fetchedAt < HISTORY_TTL_MS) {
+      result[id] = cached.rows;
+    } else {
+      uncachedIds.push(id);
+    }
+  });
+
+  if (!uncachedIds.length) return result;
+
   const { data, error } = await supabase
     .from('appointment_service_history')
     .select(`
@@ -213,20 +265,41 @@ export async function fetchAppointmentServiceHistory(appointmentIds) {
       previous_final_price, new_final_price,
       created_at
     `)
-    .in('appointment_id', appointmentIds)
+    .in('appointment_id', uncachedIds)
     .order('created_at', { ascending: true });
 
   if (error) {
     console.error('Failed to load appointment service history:', error);
-    return {};
+    return result;
   }
 
-  const byAppointment = {};
+  const fetched = {};
+  uncachedIds.forEach((id) => { fetched[id] = []; });
+
   (data || []).forEach((row) => {
-    if (!byAppointment[row.appointment_id]) byAppointment[row.appointment_id] = [];
-    byAppointment[row.appointment_id].push(row);
+    if (!fetched[row.appointment_id]) fetched[row.appointment_id] = [];
+    fetched[row.appointment_id].push(row);
   });
-  return byAppointment;
+
+  uncachedIds.forEach((id) => {
+    const rows = fetched[id] || [];
+    appointmentHistoryCache.set(id, { rows, fetchedAt: now });
+    result[id] = rows;
+  });
+
+  return result;
+}
+
+/** Load history + prices in parallel for a single visit (modal/detail panels). */
+export async function loadVisitServiceSummary(visit) {
+  if (!visit?.id) return null;
+
+  const [historyMap, priceMap] = await Promise.all([
+    fetchAppointmentServiceHistory([visit.id]),
+    getFullServicePriceMap(),
+  ]);
+
+  return buildVisitServiceSummary(visit, historyMap[visit.id] || [], priceMap);
 }
 
 export async function fetchCustomerServiceHistory(customerId) {

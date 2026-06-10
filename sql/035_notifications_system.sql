@@ -687,9 +687,11 @@ SET search_path = public
 AS $$
 DECLARE
   v_staff_name text;
+  v_request_id uuid;
 BEGIN
-  INSERT INTO time_off_requests (staff_id, start_date, end_date, reason, status)
-  VALUES (p_staff_id, p_start_date, p_end_date, p_reason, 'pending');
+  INSERT INTO time_off_requests (employee_id, start_date, end_date, reason, status)
+  VALUES (p_staff_id, p_start_date, p_end_date, p_reason, 'pending')
+  RETURNING id INTO v_request_id;
 
   SELECT full_name INTO v_staff_name FROM profiles WHERE id = p_staff_id;
 
@@ -698,7 +700,7 @@ BEGIN
     'Time-off request',
     format('%s requested time off (%s to %s).', COALESCE(v_staff_name, 'Staff'), p_start_date, p_end_date),
     'time_off_request',
-    p_staff_id
+    v_request_id
   );
 END;
 $$;
@@ -707,7 +709,8 @@ $$;
 CREATE OR REPLACE FUNCTION review_time_off_request(
   p_request_id uuid,
   p_status text,
-  p_reviewed_by uuid
+  p_reviewed_by uuid,
+  p_review_note text DEFAULT NULL
 )
 RETURNS void
 LANGUAGE plpgsql
@@ -719,20 +722,28 @@ DECLARE
   v_start date;
   v_end date;
   v_decision text;
+  v_note text;
+  v_message text;
 BEGIN
-  SELECT staff_id, start_date, end_date INTO v_staff_id, v_start, v_end
+  SELECT employee_id, start_date, end_date INTO v_staff_id, v_start, v_end
   FROM time_off_requests WHERE id = p_request_id;
 
+  v_note := NULLIF(trim(p_review_note), '');
+
   UPDATE time_off_requests
-  SET status = p_status, reviewed_by = p_reviewed_by
+  SET status = p_status, reviewed_by = p_reviewed_by, reviewed_at = now(), review_note = v_note
   WHERE id = p_request_id;
 
   IF v_staff_id IS NOT NULL THEN
     v_decision := CASE WHEN lower(p_status) IN ('approved', 'denied', 'rejected') THEN lower(p_status) ELSE p_status END;
+    v_message := format('Your time-off request (%s to %s) was %s.', v_start, v_end, v_decision);
+    IF v_note IS NOT NULL THEN
+      v_message := v_message || ' Note: ' || v_note;
+    END IF;
     PERFORM create_notification(
       v_staff_id,
       format('Time off %s', v_decision),
-      format('Your time-off request (%s to %s) was %s.', v_start, v_end, v_decision),
+      v_message,
       'time_off_decision',
       p_request_id
     );
