@@ -1,7 +1,9 @@
+import { Link } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
 
 export default function Footer({ onNavigate }) {
   const { theme } = useTheme()
+  const linkClass = `block hover:text-gold transition-colors text-sm ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`
   return (
     <footer className={`border-t border-gold/30 mt-auto ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
@@ -64,9 +66,18 @@ export default function Footer({ onNavigate }) {
         <div>
           <h4 className="text-gold text-sm tracking-wider mb-4">QUICK LINKS</h4>
           <div className="space-y-3">
+            <Link to="/services" className={linkClass}>
+              Services & Pricing
+            </Link>
+            <Link to="/fitness-assessment" className={linkClass}>
+              Fitness Assessment
+            </Link>
+            <Link to="/nail-assessment" className={linkClass}>
+              Nail Health Assessment
+            </Link>
             <button 
               onClick={() => onNavigate('about')}
-              className={`block hover:text-gold transition-colors text-sm ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}
+              className={linkClass}
             >
               About & Contact
             </button>

@@ -6,4 +6,6 @@ export const publicSitemapRoutes = [
   '/booking',
   '/about',
   '/check-in',
+  '/fitness-assessment',
+  '/nail-assessment',
 ];

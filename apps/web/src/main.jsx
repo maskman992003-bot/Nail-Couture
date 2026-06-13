@@ -34,6 +34,10 @@ import StaffSchedule from './components/StaffSchedule.jsx'
 import TechnicianSchedule from './components/TechnicianSchedule.jsx'
 import Settings from './components/Settings.jsx'
 import Services from './components/Services.jsx'
+import FitnessAssessmentPublicPage from './components/fitness/FitnessAssessmentPublicPage.jsx'
+import FitnessAssessmentPortalPage from './components/fitness/FitnessAssessmentPortalPage.jsx'
+import NailAssessmentPublicPage from './components/nails/NailAssessmentPublicPage.jsx'
+import NailAssessmentPortalPage from './components/nails/NailAssessmentPortalPage.jsx'
 import AdminInventory from './components/AdminInventory.jsx'
 import AdminServices from './components/AdminServices.jsx'
 import AdminBookings from './components/AdminBookings.jsx'
@@ -51,6 +55,8 @@ createRoot(document.getElementById('root')).render(
             <Route path="/" element={<App />} />
             <Route path="/lookbook" element={<App />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/fitness-assessment" element={<FitnessAssessmentPublicPage />} />
+            <Route path="/nail-assessment" element={<NailAssessmentPublicPage />} />
             <Route path="/booking" element={<App />} />
             <Route path="/about" element={<App />} />
             <Route path="/check-in" element={<App />} />
@@ -167,6 +173,16 @@ createRoot(document.getElementById('root')).render(
                   <SalonUpdates />
                 </ProtectedRoute>
               } />
+              <Route path="/superadmin/fitness-assessment" element={
+                <ProtectedRoute allowedRoles={['super_admin']}>
+                  <FitnessAssessmentPortalPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/superadmin/nail-assessment" element={
+                <ProtectedRoute allowedRoles={['super_admin']}>
+                  <NailAssessmentPortalPage />
+                </ProtectedRoute>
+              } />
             
               {/* Owner Routes */}
              <Route path="/owner" element={
@@ -240,6 +256,16 @@ createRoot(document.getElementById('root')).render(
                   <SalonUpdates />
                 </ProtectedRoute>
               } />
+              <Route path="/owner/fitness-assessment" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <FitnessAssessmentPortalPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/owner/nail-assessment" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <NailAssessmentPortalPage />
+                </ProtectedRoute>
+              } />
             
               {/* Partner Routes */}
              <Route path="/partner" element={
@@ -285,6 +311,16 @@ createRoot(document.getElementById('root')).render(
               <Route path="/partner/salon-updates" element={
                 <ProtectedRoute allowedRoles={['partner']}>
                   <SalonUpdates />
+                </ProtectedRoute>
+              } />
+              <Route path="/partner/fitness-assessment" element={
+                <ProtectedRoute allowedRoles={['partner']}>
+                  <FitnessAssessmentPortalPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/partner/nail-assessment" element={
+                <ProtectedRoute allowedRoles={['partner']}>
+                  <NailAssessmentPortalPage />
                 </ProtectedRoute>
               } />
               <Route path="/partner/staff" element={
@@ -356,6 +392,16 @@ createRoot(document.getElementById('root')).render(
                  <SalonUpdates />
                </ProtectedRoute>
              } />
+             <Route path="/admin/fitness-assessment" element={
+               <ProtectedRoute allowedRoles={['admin']}>
+                 <FitnessAssessmentPortalPage />
+               </ProtectedRoute>
+             } />
+             <Route path="/admin/nail-assessment" element={
+               <ProtectedRoute allowedRoles={['admin']}>
+                 <NailAssessmentPortalPage />
+               </ProtectedRoute>
+             } />
 
             <Route path="/cashier" element={
               <ProtectedRoute allowedRoles={['cashier']}>
@@ -402,6 +448,16 @@ createRoot(document.getElementById('root')).render(
                 <SalonUpdates />
               </ProtectedRoute>
             } />
+            <Route path="/cashier/fitness-assessment" element={
+              <ProtectedRoute allowedRoles={['cashier']}>
+                <FitnessAssessmentPortalPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/cashier/nail-assessment" element={
+              <ProtectedRoute allowedRoles={['cashier']}>
+                <NailAssessmentPortalPage />
+              </ProtectedRoute>
+            } />
 
             <Route path="/technician" element={
               <ProtectedRoute allowedRoles={['technician']}>
@@ -431,6 +487,16 @@ createRoot(document.getElementById('root')).render(
             <Route path="/technician/salon-updates" element={
               <ProtectedRoute allowedRoles={['technician']}>
                 <SalonUpdates />
+              </ProtectedRoute>
+            } />
+            <Route path="/technician/fitness-assessment" element={
+              <ProtectedRoute allowedRoles={['technician']}>
+                <FitnessAssessmentPortalPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/technician/nail-assessment" element={
+              <ProtectedRoute allowedRoles={['technician']}>
+                <NailAssessmentPortalPage />
               </ProtectedRoute>
             } />
 
@@ -477,6 +543,16 @@ createRoot(document.getElementById('root')).render(
             <Route path="/customer/salon-updates" element={
               <ProtectedRoute allowedRoles={['customer']}>
                 <SalonUpdates />
+              </ProtectedRoute>
+            } />
+            <Route path="/customer/fitness-assessment" element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <FitnessAssessmentPortalPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/customer/nail-assessment" element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <NailAssessmentPortalPage />
               </ProtectedRoute>
             } />
           </Routes>

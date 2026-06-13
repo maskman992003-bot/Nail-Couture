@@ -1,11 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { getFitnessAssessmentPath, getNailAssessmentPath } from '@nail-couture/shared/utils/routes';
 import { supabase } from '../lib/supabase';
 import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '@nail-couture/shared/utils/serviceCategories';
 import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
 
 export default function ServicesPublic() {
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const fitnessHref = user?.role ? getFitnessAssessmentPath(user.role) : '/fitness-assessment';
+  const nailHref = user?.role ? getNailAssessmentPath(user.role) : '/nail-assessment';
   const [services, setServices] = useState([]);
   const [dbCategories, setDbCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -153,6 +159,34 @@ export default function ServicesPublic() {
             })}
           </div>
         )}
+
+        <div className="mt-16">
+          <div className={`rounded-2xl border p-8 md:p-10 ${theme === 'dark' ? 'border-gold/20 bg-offwhite/[0.02]' : 'border-gold/30 bg-white'}`}>
+            <div className="text-center mb-8">
+              <p className="text-[10px] uppercase tracking-[0.28em] text-gold mb-3">Wellness Tools</p>
+              <h3 className="font-heading text-2xl md:text-3xl text-gold mb-2">Not sure what your nails or body need?</h3>
+              <p className={`max-w-2xl mx-auto ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>
+                Use our free assessment dashboards for personalized recommendations before your visit.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+              <Link
+                to={nailHref}
+                className={`rounded-xl border px-5 py-4 text-center transition-all hover:border-gold/40 ${theme === 'dark' ? 'border-gold/20 bg-charcoal/40' : 'border-gold/30 bg-cream/50'}`}
+              >
+                <span className="font-heading text-gold block mb-1">Nail Health Assessment</span>
+                <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Chemistry & maintenance</span>
+              </Link>
+              <Link
+                to={fitnessHref}
+                className={`rounded-xl border px-5 py-4 text-center transition-all hover:border-gold/40 ${theme === 'dark' ? 'border-gold/20 bg-charcoal/40' : 'border-gold/30 bg-cream/50'}`}
+              >
+                <span className="font-heading text-gold block mb-1">Fitness Assessment</span>
+                <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>BMI, TDEE & body fat</span>
+              </Link>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-16 text-center">
           <div className="bg-gold/10 border border-gold/30 rounded-xl p-8 max-w-2xl mx-auto">

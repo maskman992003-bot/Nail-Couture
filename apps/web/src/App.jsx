@@ -7,6 +7,7 @@ import Footer from './components/Footer'
 import Services from './components/Services'
 import BookingWizard from './components/BookingWizard'
 import Lookbook from './components/Lookbook'
+import WellnessToolsPromo from './components/marketing/WellnessToolsPromo'
 import AboutContact from './components/AboutContact'
 import CheckIn from './components/CheckIn'
 import PageHelmet from './components/PageHelmet'
@@ -139,6 +140,7 @@ function App() {
               </div>
             </section>
             <Lookbook />
+            <WellnessToolsPromo />
             <Services />
             {bookingEnabled && <BookingWizard />}
           </>

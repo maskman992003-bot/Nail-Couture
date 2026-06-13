@@ -7,7 +7,7 @@ import { PublicNavbar } from './PublicNavbar';
 
 type PublicScreenLayoutProps = {
   children: ReactNode;
-  onNavigateTab?: (tab: 'Home' | 'Lookbook' | 'Services' | 'About') => void;
+  onNavigateTab?: (tab: 'Home' | 'Lookbook' | 'Services' | 'About' | 'FitnessAssessment') => void;
   scroll?: boolean;
   scrollRef?: RefObject<ScrollView | null>;
 };

@@ -31,11 +31,15 @@ import { computeAchievements } from '@nail-couture/shared/utils/customerAchievem
 import { uploadProfileAvatar, getProfileInitials } from '@nail-couture/shared/utils/avatarUpload';
 import Sidebar from './Sidebar';
 import { modalBtnSecondary } from './AppModal';
+import FitnessProfileSection from './fitness/FitnessProfileSection';
+import NailProfileSection from './nails/NailProfileSection';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'preferences', label: 'Preferences' },
   { id: 'loyalty', label: 'Loyalty' },
+  { id: 'fitness', label: 'Fitness' },
+  { id: 'nails', label: 'Nail Health' },
   { id: 'gallery', label: 'Gallery' },
   { id: 'activity', label: 'Activity' },
   { id: 'security', label: 'Security' },
@@ -480,6 +484,14 @@ export default function CustomerProfile() {
                 <span className="text-gold font-heading text-sm">Rewards & Redemption →</span>
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>Redeem points for perks</p>
               </Link>
+              <Link to="/customer/fitness-assessment" className={`${panelClass} hover:border-gold/30 transition-colors`}>
+                <span className="text-gold font-heading text-sm">Fitness Assessment →</span>
+                <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>View saved measurements and metrics</p>
+              </Link>
+              <Link to="/customer/nail-assessment" className={`${panelClass} hover:border-gold/30 transition-colors`}>
+                <span className="text-gold font-heading text-sm">Nail Health Assessment →</span>
+                <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>View chemistry and maintenance recommendations</p>
+              </Link>
               <Link to="/customer/settings" className={`${panelClass} hover:border-gold/30 transition-colors sm:col-span-2`}>
                 <span className="text-gold font-heading text-sm">Account Settings →</span>
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>
@@ -692,6 +704,24 @@ export default function CustomerProfile() {
               <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>Redeem during your next salon check-in</p>
             </Link>
           </div>
+        )}
+
+        {activeTab === 'fitness' && profile && (
+          <FitnessProfileSection
+            profileId={profile.id}
+            callerPhone={profile.phone}
+            theme={theme}
+            panelClass={panelClass}
+          />
+        )}
+
+        {activeTab === 'nails' && profile && (
+          <NailProfileSection
+            profileId={profile.id}
+            callerPhone={profile.phone}
+            theme={theme}
+            panelClass={panelClass}
+          />
         )}
 
         {activeTab === 'gallery' && (

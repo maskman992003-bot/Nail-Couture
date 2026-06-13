@@ -5,6 +5,7 @@ import { CustomerServicesScreen } from '../screens/customer/CustomerServicesScre
 import { CustomerBookingScreen } from '../screens/customer/CustomerBookingScreen';
 import { CustomerLoyaltyScreen } from '../screens/customer/CustomerLoyaltyScreen';
 import { CustomerHistoryScreen } from '../screens/customer/CustomerHistoryScreen';
+import { CustomerFitnessAssessmentScreen } from '../screens/customer/CustomerFitnessAssessmentScreen';
 import { CustomerSettingsScreen } from '../screens/customer/CustomerSettingsScreen';
 import { TechnicianHomeScreen } from '../screens/staff/TechnicianHomeScreen';
 import { TechnicianTipsScreen } from '../screens/staff/TechnicianTipsScreen';
@@ -36,6 +37,7 @@ export const CUSTOMER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenCom
   Book: CustomerBookingScreen,
   Loyalty: CustomerLoyaltyScreen,
   History: CustomerHistoryScreen,
+  FitnessAssessment: CustomerFitnessAssessmentScreen,
   SalonUpdates: SalonUpdatesScreen,
   Settings: CustomerSettingsScreen,
 };
@@ -45,6 +47,7 @@ const TECHNICIAN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponen
   Schedule: ScheduleScreen,
   Tips: TechnicianTipsScreen,
   Customers: CustomersStackNavigator,
+  FitnessAssessment: CustomerFitnessAssessmentScreen,
   SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,
 };
@@ -57,6 +60,7 @@ const CASHIER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>>
   Transactions: CashierTransactionsScreen,
   Customers: CustomersStackNavigator,
   Reports: AdminReportsScreen,
+  FitnessAssessment: CustomerFitnessAssessmentScreen,
   SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,
 };
@@ -73,6 +77,7 @@ const ADMIN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> =
   Staff: StaffStackNavigator,
   SalonActivity: SalonActivityScreen,
   Announcements: AnnouncementsScreen,
+  FitnessAssessment: CustomerFitnessAssessmentScreen,
   SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,
 };
@@ -80,6 +85,7 @@ const ADMIN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> =
 const STAFF_SHARED_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> = {
   Schedule: ScheduleScreen,
   Customers: CustomersStackNavigator,
+  FitnessAssessment: CustomerFitnessAssessmentScreen,
   SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,
 };

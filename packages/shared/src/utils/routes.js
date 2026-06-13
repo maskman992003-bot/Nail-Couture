@@ -81,6 +81,32 @@ export function getSalonUpdatesPath(role) {
   }
 }
 
+export function getFitnessAssessmentPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/fitness-assessment';
+    case 'owner': return '/owner/fitness-assessment';
+    case 'partner': return '/partner/fitness-assessment';
+    case 'admin': return '/admin/fitness-assessment';
+    case 'cashier': return '/cashier/fitness-assessment';
+    case 'technician': return '/technician/fitness-assessment';
+    case 'customer': return '/customer/fitness-assessment';
+    default: return '/fitness-assessment';
+  }
+}
+
+export function getNailAssessmentPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/nail-assessment';
+    case 'owner': return '/owner/nail-assessment';
+    case 'partner': return '/partner/nail-assessment';
+    case 'admin': return '/admin/nail-assessment';
+    case 'cashier': return '/cashier/nail-assessment';
+    case 'technician': return '/technician/nail-assessment';
+    case 'customer': return '/customer/nail-assessment';
+    default: return '/nail-assessment';
+  }
+}
+
 export function getMySchedulePath(role) {
   switch (role) {
     case 'cashier': return '/cashier/schedule';

@@ -43,6 +43,7 @@ import {
 import { formatTimelineDate } from './TimelineEventRow';
 import VirtualizedTimelineList from './VirtualizedTimelineList';
 import ThemeSelect from './ThemeSelect';
+import TechnicianNailSummary from './nails/TechnicianNailSummary';
 import { getDateRangeForPreset } from '@nail-couture/shared/utils/activityDateRange';
 import { enrichVisits, visitDate } from '@nail-couture/shared/utils/visitEnrichment';
 
@@ -611,6 +612,8 @@ export default function StaffCustomerDetail() {
                   <Row label="Services tried" value={stats?.servicesTried ?? '—'} />
                 </dl>
               </Section>
+
+              <TechnicianNailSummary profileId={profile.id} />
 
               <Section title="Referrals">
                 <dl className="space-y-2 text-sm">

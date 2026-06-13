@@ -3,6 +3,7 @@ export type PublicTabParamList = {
   Lookbook: undefined;
   Services: undefined;
   About: undefined;
+  FitnessAssessment: undefined;
 };
 
 export type RootStackParamList = {

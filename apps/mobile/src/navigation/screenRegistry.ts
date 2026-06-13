@@ -20,7 +20,8 @@ export type AppScreenName =
   | 'Book'
   | 'Loyalty'
   | 'History'
-  | 'Settings';
+  | 'Settings'
+  | 'FitnessAssessment';
 
 export function resolveScreenName(navItemId: string): AppScreenName {
   return getScreenNameForNavItem(navItemId) as AppScreenName;
@@ -47,4 +48,5 @@ export const ALL_SCREEN_NAMES: AppScreenName[] = [
   'Loyalty',
   'History',
   'Settings',
+  'FitnessAssessment',
 ];

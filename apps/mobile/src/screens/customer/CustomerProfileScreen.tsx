@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import * as Clipboard from 'expo-clipboard';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { isRefreshmentAvailable } from '@nail-couture/shared/services/inventoryService.js';
@@ -17,6 +19,8 @@ import { NotificationPreferencesSection } from '../../components/NotificationPre
 import { NotificationHistorySection } from '../../components/NotificationHistorySection';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import { useAvailableRefreshments } from '../../hooks/useAvailableRefreshments';
+import { FitnessProfileSection } from '../../components/fitness/FitnessProfileSection';
+import type { AppScreenName } from '../../navigation/screenRegistry';
 
 type ProfileRecord = Record<string, unknown> & {
   id: string;
@@ -34,6 +38,7 @@ type ProfileRecord = Record<string, unknown> & {
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'preferences', label: 'Preferences' },
+  { id: 'fitness', label: 'Fitness' },
   { id: 'security', label: 'Security' },
 ] as const;
 
@@ -46,6 +51,7 @@ function isValidDate(month: string, day: string) {
 export function CustomerProfileScreen() {
   const { user, login } = useAuth();
   const styles = useThemeStyles();
+  const navigation = useNavigation<BottomTabNavigationProp<Record<AppScreenName, undefined>>>();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileRecord | null>(null);
   const [stats, setStats] = useState<Awaited<ReturnType<typeof fetchCustomerStats>> | null>(null);
@@ -305,6 +311,14 @@ export function CustomerProfileScreen() {
           />
           <NotificationHistorySection />
         </View>
+      ) : null}
+
+      {activeTab === 'fitness' ? (
+        <FitnessProfileSection
+          profileId={profile.id}
+          callerPhone={profile.phone}
+          onOpenAssessment={() => navigation.navigate('FitnessAssessment')}
+        />
       ) : null}
 
       {activeTab === 'preferences' ? (

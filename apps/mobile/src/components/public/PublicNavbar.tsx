@@ -9,7 +9,7 @@ import type { RootStackParamList } from '../../navigation/publicTypes';
 import { NavIcon } from '../NavIcon';
 
 type PublicNavbarProps = {
-  onNavigateTab?: (tab: 'Home' | 'Lookbook' | 'Services' | 'About') => void;
+  onNavigateTab?: (tab: 'Home' | 'Lookbook' | 'Services' | 'About' | 'FitnessAssessment') => void;
 };
 
 export function PublicNavbar({ onNavigateTab }: PublicNavbarProps) {
@@ -23,7 +23,7 @@ export function PublicNavbar({ onNavigateTab }: PublicNavbarProps) {
     navigation.navigate('Login');
   };
 
-  const goToTab = (tab: 'Home' | 'Lookbook' | 'Services' | 'About') => {
+  const goToTab = (tab: 'Home' | 'Lookbook' | 'Services' | 'About' | 'FitnessAssessment') => {
     setMenuOpen(false);
     onNavigateTab?.(tab);
   };
@@ -118,8 +118,14 @@ export function PublicNavbar({ onNavigateTab }: PublicNavbarProps) {
             gap: 4,
           }}
         >
-          {(['Services', 'Lookbook', 'About'] as const).map((tab) => (
-            <Pressable key={tab} onPress={() => goToTab(tab)} style={{ paddingVertical: 12 }}>
+          {(['Services', 'Lookbook', 'Fitness', 'About'] as const).map((tab) => (
+            <Pressable
+              key={tab}
+              onPress={() =>
+                goToTab(tab === 'Fitness' ? 'FitnessAssessment' : tab)
+              }
+              style={{ paddingVertical: 12 }}
+            >
               <Text style={[styles.textPrimary, { letterSpacing: 2, fontSize: 13 }]}>{tab.toUpperCase()}</Text>
             </Pressable>
           ))}

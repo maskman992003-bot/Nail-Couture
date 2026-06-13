@@ -1,0 +1,2 @@
+-- Deprecated: superseded by sql/061_assessment_security.sql
+-- Run 061 instead. It removes permissive anon policies and adds caller_phone RPCs.
