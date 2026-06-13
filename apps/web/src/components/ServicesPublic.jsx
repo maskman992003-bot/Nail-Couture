@@ -86,7 +86,7 @@ export default function ServicesPublic() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="text-center mb-12">
-          <h1 className="font-heading text-4xl sm:text-5xl text-gold mb-4">Our Services</h1>
+          <h2 className="font-heading text-4xl sm:text-5xl text-gold mb-4">Our Services</h2>
           <p className={`text-lg max-w-2xl mx-auto ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>
             Expert craftsmanship in nail couture. Each service is performed with precision,
             medical-grade sterilization, and premium non-toxic products.
