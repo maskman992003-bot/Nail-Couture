@@ -141,7 +141,7 @@ function App() {
             </section>
             <Lookbook />
             <WellnessToolsPromo />
-            <Services />
+            <Services embedded />
             {bookingEnabled && <BookingWizard />}
           </>
         )}

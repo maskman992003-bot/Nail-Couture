@@ -1,16 +1,15 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags';
-import { getHomePath, getFitnessAssessmentPath, getNailAssessmentPath } from '@nail-couture/shared/utils/routes';
+import { getHomePath } from '@nail-couture/shared/utils/routes';
 import { modalBtnPrimary, modalBtnSecondary } from './AppModal';
 
 export default function Navbar({ currentPage, onNavigate }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -72,23 +71,6 @@ export default function Navbar({ currentPage, onNavigate }) {
   };
 
   const firstName = user?.full_name ? user.full_name.split(' ')[0] : '';
-  const fitnessHref = user?.role ? getFitnessAssessmentPath(user.role) : '/fitness-assessment';
-  const nailHref = user?.role ? getNailAssessmentPath(user.role) : '/nail-assessment';
-
-  const goToFitness = () => {
-    setMobileMenuOpen(false);
-    navigate(fitnessHref);
-  };
-
-  const goToNails = () => {
-    setMobileMenuOpen(false);
-    navigate(nailHref);
-  };
-
-  const goToServices = () => {
-    setMobileMenuOpen(false);
-    navigate('/services');
-  };
 
   return (
     <nav className={`sticky top-0 z-50 border-b border-gold/30 ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
@@ -119,24 +101,6 @@ export default function Navbar({ currentPage, onNavigate }) {
             </button>
             
             <div className="flex items-center gap-4">
-              <button
-                onClick={goToServices}
-                className={`text-sm tracking-wider transition-colors hover:text-gold ${location.pathname === '/services' ? 'text-gold' : theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}`}
-              >
-                SERVICES
-              </button>
-              <button
-                onClick={goToNails}
-                className={`text-sm tracking-wider transition-colors hover:text-gold ${location.pathname.includes('nail-assessment') ? 'text-gold' : theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}`}
-              >
-                NAIL HEALTH
-              </button>
-              <button
-                onClick={goToFitness}
-                className={`text-sm tracking-wider transition-colors hover:text-gold ${location.pathname.includes('fitness-assessment') ? 'text-gold' : theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}`}
-              >
-                FITNESS
-              </button>
               {user ? (
                 <>
                   <span className="text-gold font-heading text-sm">Hi, {firstName}</span>
@@ -229,20 +193,14 @@ export default function Navbar({ currentPage, onNavigate }) {
               {currentPage === 'portal' ? (
                 <>
                   <button onClick={handleHomeClick} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>HOME</button>
-                  <button onClick={() => { setMobileMenuOpen(false); navigate('/services'); }} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider w-full ${location.pathname === '/services' ? 'text-gold' : theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>SERVICES</button>
                   <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>LOOKBOOK</Link>
-                  <button onClick={goToFitness} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider w-full ${currentPage === 'fitness' ? 'text-gold' : theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>FITNESS</button>
-                  <button onClick={goToNails} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider w-full ${currentPage === 'nails' ? 'text-gold' : theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>NAIL HEALTH</button>
                 </>
               ) : (
                 user && user.is_staff ? (
                   <button onClick={() => { setMobileMenuOpen(false); navigate(getHomeHref()); }} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>STAFF HOME</button>
                 ) : (
                   <>
-                    <button onClick={goToServices} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider w-full ${location.pathname === '/services' ? 'text-gold' : theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>SERVICES</button>
                     <button onClick={() => scrollToSection('gallery')} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>LOOKBOOK</button>
-                    <button onClick={goToFitness} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider w-full ${currentPage === 'fitness' ? 'text-gold' : theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>FITNESS</button>
-                  <button onClick={goToNails} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider w-full ${currentPage === 'nails' ? 'text-gold' : theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>NAIL HEALTH</button>
                     <button onClick={() => { setMobileMenuOpen(false); onNavigate('about'); }} className={`py-3 hover:text-gold text-left px-2 text-sm tracking-wider ${theme === 'dark' ? 'text-offwhite/80' : 'text-charcoal/80'}`}>ABOUT</button>
                     {currentPage === 'home' ? (
                       CUSTOMER_ONLINE_BOOKING ? (
