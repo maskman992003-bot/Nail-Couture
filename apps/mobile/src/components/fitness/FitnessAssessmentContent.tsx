@@ -282,10 +282,7 @@ export function FitnessAssessmentContent({ onLoginPress }: FitnessAssessmentCont
       />
 
       <View style={[styles.card, { padding: 16 }]}>
-        <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600', marginBottom: 4 }]}>Core Information</Text>
-        <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 12 }]}>
-          Basic details used for metabolic calculations
-        </Text>
+        <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600', marginBottom: 12 }]}>Basic Information</Text>
 
         <FieldLabel>Gender</FieldLabel>
         <SegmentedControl

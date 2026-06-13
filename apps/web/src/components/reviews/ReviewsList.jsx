@@ -6,11 +6,16 @@ import StarRatingDisplay from './StarRatingDisplay';
 export default function ReviewsList({
   reviews = [],
   emptyMessage = 'No reviews yet.',
+  showCustomerName = true,
   showService = false,
   showTechnician = false,
+  hiddenBadgeLabel = 'Hidden',
   canModerate = false,
   onModerate,
   moderatingId = null,
+  canPublish = false,
+  onPublish,
+  onDeleteRequest,
 }) {
   const { theme } = useTheme();
 
@@ -43,10 +48,12 @@ export default function ReviewsList({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className={nameClass}>{review.customer_name || 'Customer'}</div>
+                  {showCustomerName && (
+                    <div className={nameClass}>{review.customer_name || 'Customer'}</div>
+                  )}
                   {hidden && (
                     <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-amber-500/40 text-amber-400">
-                      Hidden
+                      {hiddenBadgeLabel}
                     </span>
                   )}
                 </div>
@@ -65,28 +72,45 @@ export default function ReviewsList({
               </div>
             )}
             {review.comment && <p className={commentClass}>{review.comment}</p>}
-            {canModerate && onModerate && (
+            {(canModerate || canPublish) && (
               <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gold/10">
-                <button
-                  type="button"
-                  disabled={moderatingId === review.id}
-                  onClick={() => onModerate(review, hidden ? 'unhide' : 'hide')}
-                  className="px-3 py-1.5 text-xs rounded-lg border border-gold/30 text-gold hover:bg-gold/10 disabled:opacity-50"
-                >
-                  {moderatingId === review.id ? 'Saving…' : hidden ? 'Unhide' : 'Hide'}
-                </button>
-                <button
-                  type="button"
-                  disabled={moderatingId === review.id}
-                  onClick={() => {
-                    if (window.confirm('Permanently delete this review?')) {
-                      onModerate(review, 'delete');
-                    }
-                  }}
-                  className="px-3 py-1.5 text-xs rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 disabled:opacity-50"
-                >
-                  Delete
-                </button>
+                {canModerate && onModerate && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={moderatingId === review.id}
+                      onClick={() => onModerate(review, hidden ? 'unhide' : 'hide')}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-gold/30 text-gold hover:bg-gold/10 disabled:opacity-50"
+                    >
+                      {moderatingId === review.id ? 'Saving…' : hidden ? 'Unhide' : 'Hide'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={moderatingId === review.id}
+                      onClick={() => {
+                        if (onDeleteRequest) {
+                          onDeleteRequest(review);
+                          return;
+                        }
+                        if (window.confirm('Permanently delete this review? This cannot be undone.')) {
+                          onModerate(review, 'delete');
+                        }
+                      }}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+                {canPublish && onPublish && (
+                  <button
+                    type="button"
+                    onClick={() => onPublish(review)}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                  >
+                    Publish
+                  </button>
+                )}
               </div>
             )}
           </div>

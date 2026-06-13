@@ -23,6 +23,7 @@ import { AdminReportsScreen } from '../screens/admin/AdminReportsScreen';
 import { SalonActivityScreen } from '../screens/admin/SalonActivityScreen';
 import { AnnouncementsScreen } from '../screens/admin/AnnouncementsScreen';
 import { SalonUpdatesScreen } from '../screens/shared/SalonUpdatesScreen';
+import { StaffReviewsScreen } from '../screens/shared/StaffReviewsScreen';
 import { CustomersStackNavigator } from './CustomersStackNavigator';
 import { StaffStackNavigator } from './StaffStackNavigator';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
@@ -47,6 +48,7 @@ const TECHNICIAN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponen
   Schedule: ScheduleScreen,
   Tips: TechnicianTipsScreen,
   Customers: CustomersStackNavigator,
+  Reviews: StaffReviewsScreen,
   FitnessAssessment: CustomerFitnessAssessmentScreen,
   SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,
@@ -59,6 +61,7 @@ const CASHIER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>>
   Checkout: CashierCheckoutScreen,
   Transactions: CashierTransactionsScreen,
   Customers: CustomersStackNavigator,
+  Reviews: StaffReviewsScreen,
   Reports: AdminReportsScreen,
   FitnessAssessment: CustomerFitnessAssessmentScreen,
   SalonUpdates: SalonUpdatesScreen,
@@ -75,6 +78,7 @@ const ADMIN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> =
   Reports: AdminReportsScreen,
   Customers: CustomersStackNavigator,
   Staff: StaffStackNavigator,
+  Reviews: StaffReviewsScreen,
   SalonActivity: SalonActivityScreen,
   Announcements: AnnouncementsScreen,
   FitnessAssessment: CustomerFitnessAssessmentScreen,
@@ -85,6 +89,7 @@ const ADMIN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> =
 const STAFF_SHARED_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> = {
   Schedule: ScheduleScreen,
   Customers: CustomersStackNavigator,
+  Reviews: StaffReviewsScreen,
   FitnessAssessment: CustomerFitnessAssessmentScreen,
   SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,

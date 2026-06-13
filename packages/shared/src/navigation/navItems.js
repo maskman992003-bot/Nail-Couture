@@ -1,5 +1,5 @@
 import { featureFlags } from '../constants/featureFlags.js';
-import { getMySchedulePath, getMyTipsPath, getStaffPlannerPath, getFitnessAssessmentPath, getNailAssessmentPath } from '../utils/routes.js';
+import { getMySchedulePath, getMyTipsPath, getReviewsPath, getStaffPlannerPath, getFitnessAssessmentPath, getNailAssessmentPath } from '../utils/routes.js';
 
 const FITNESS_NAV_ITEM = {
   id: 'fitness-assessment',
@@ -15,6 +15,13 @@ const NAIL_NAV_ITEM = {
   icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
 };
 
+const REVIEWS_NAV_ITEM = {
+  id: 'reviews',
+  label: 'Reviews',
+  href: '/technician/reviews',
+  icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
+};
+
 export const navItemsByRole = {
   super_admin: [
     { id: 'home', label: 'Home', href: '/superadmin', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -26,6 +33,7 @@ export const navItemsByRole = {
     { id: 'services', label: 'Services', href: '/superadmin/services', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
     { id: 'reports', label: 'Reports', href: '/superadmin/reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     { id: 'customers', label: 'Customers', href: '/superadmin/customers', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v3' },
+    REVIEWS_NAV_ITEM,
     { id: 'salon-activity', label: 'Salon Activity', href: '/superadmin/salon-activity', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id: 'announcements', label: 'Announcements', href: '/superadmin/announcements', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z' },
     FITNESS_NAV_ITEM,
@@ -41,6 +49,7 @@ export const navItemsByRole = {
     { id: 'inventory', label: 'Inventory', href: '/owner/inventory', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
     { id: 'services', label: 'Services', href: '/owner/services', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 002-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
     { id: 'customers', label: 'Customers', href: '/owner/customers', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v3' },
+    REVIEWS_NAV_ITEM,
     { id: 'salon-activity', label: 'Salon Activity', href: '/owner/salon-activity', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id: 'reports', label: 'Reports', href: '/owner/reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     { id: 'announcements', label: 'Announcements', href: '/owner/announcements', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z' },
@@ -58,6 +67,7 @@ export const navItemsByRole = {
     { id: 'services', label: 'Services', href: '/partner/services', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 002-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
     { id: 'reports', label: 'Reports', href: '/partner/reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 002-2v6a2 2 0 002-2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     { id: 'customers', label: 'Customers', href: '/partner/customers', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v3' },
+    REVIEWS_NAV_ITEM,
     { id: 'salon-activity', label: 'Salon Activity', href: '/partner/salon-activity', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id: 'announcements', label: 'Announcements', href: '/partner/announcements', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z' },
     FITNESS_NAV_ITEM,
@@ -71,6 +81,7 @@ export const navItemsByRole = {
     { id: 'bookings', label: 'Bookings', href: '/admin/bookings', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { id: 'services', label: 'Services', href: '/admin/services', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
     { id: 'customers', label: 'Customers', href: '/admin/customers', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v3' },
+    REVIEWS_NAV_ITEM,
     FITNESS_NAV_ITEM,
     NAIL_NAV_ITEM,
     { id: 'salon-updates', label: 'Salon Updates', href: '/admin/salon-updates', icon: 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4' },
@@ -82,6 +93,7 @@ export const navItemsByRole = {
     { id: 'checkout', label: 'Checkout', href: '/cashier/checkout', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     { id: 'transactions', label: 'Transactions', href: '/cashier/transactions', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
     { id: 'customers', label: 'Customers', href: '/cashier/customers', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v3' },
+    REVIEWS_NAV_ITEM,
     { id: 'reports', label: 'Reports', href: '/cashier/reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     FITNESS_NAV_ITEM,
     NAIL_NAV_ITEM,
@@ -92,6 +104,7 @@ export const navItemsByRole = {
     { id: 'schedule', label: 'My Schedule', href: '/technician/schedule', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { id: 'tips', label: 'Tips', href: '/technician/tips', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id: 'customers', label: 'Customers', href: '/technician/customers', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v3' },
+    REVIEWS_NAV_ITEM,
     FITNESS_NAV_ITEM,
     NAIL_NAV_ITEM,
     { id: 'salon-updates', label: 'Salon Updates', href: '/technician/salon-updates', icon: 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4' },
@@ -140,6 +153,7 @@ export const navItemScreenMap = {
   book: 'Book',
   loyalty: 'Loyalty',
   history: 'History',
+  reviews: 'Reviews',
   'fitness-assessment': 'FitnessAssessment',
   'nail-assessment': 'NailAssessment',
 };
@@ -184,6 +198,9 @@ export function getNavItemsForRole(role) {
     }
     if (item.id === 'nail-assessment') {
       return { ...item, href: getNailAssessmentPath(actualUserRole) };
+    }
+    if (item.id === 'reviews') {
+      return { ...item, href: getReviewsPath(actualUserRole) };
     }
     return item;
   });

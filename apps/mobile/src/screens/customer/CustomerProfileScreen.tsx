@@ -20,6 +20,7 @@ import { NotificationHistorySection } from '../../components/NotificationHistory
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import { useAvailableRefreshments } from '../../hooks/useAvailableRefreshments';
 import { FitnessProfileSection } from '../../components/fitness/FitnessProfileSection';
+import { CustomerReviewsSection } from '../../components/reviews/CustomerReviewsSection';
 import type { AppScreenName } from '../../navigation/screenRegistry';
 
 type ProfileRecord = Record<string, unknown> & {
@@ -39,6 +40,7 @@ const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'preferences', label: 'Preferences' },
   { id: 'fitness', label: 'Fitness' },
+  { id: 'reviews', label: 'Reviews' },
   { id: 'security', label: 'Security' },
 ] as const;
 
@@ -321,6 +323,13 @@ export function CustomerProfileScreen() {
         />
       ) : null}
 
+      {activeTab === 'reviews' ? (
+        <CustomerReviewsSection
+          callerPhone={profile.phone}
+          onOpenHistory={() => navigation.navigate('History')}
+        />
+      ) : null}
+
       {activeTab === 'preferences' ? (
         <>
           <View style={[styles.card, { padding: 16, gap: 14 }]}>
@@ -415,7 +424,7 @@ export function CustomerProfileScreen() {
 
       {activeTab === 'security' ? (
         <View style={[styles.card, { padding: 16 }]}>
-          <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Kiosk Self-Service PIN</Text>
+          <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Nail Couture Self-Service PIN</Text>
           <Text style={[styles.textSecondary, { marginTop: 6 }]}>
             Use a 4-digit code for quick check-in at salon kiosks.
           </Text>

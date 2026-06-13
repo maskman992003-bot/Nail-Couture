@@ -66,8 +66,7 @@ export default function FitnessInputSection({ inputs, errors, onChange, theme })
       </div>
 
       <section className={sectionCardClass(theme)}>
-        <h3 className="font-heading text-lg text-gold-strong mb-1">Core Information</h3>
-        <p className="text-xs text-muted mb-4">Basic details used for metabolic calculations</p>
+        <h3 className="font-heading text-lg text-gold-strong mb-4">Basic Information</h3>
 
         <div className="space-y-4">
           <Field label="Gender" error={null}>

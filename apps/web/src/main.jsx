@@ -18,6 +18,7 @@ import StaffCustomerDetail from './components/StaffCustomerDetail.jsx'
 import SalonActivity from './components/SalonActivity.jsx'
 import Announcements from './components/Announcements.jsx'
 import SalonUpdates from './components/SalonUpdates.jsx'
+import StaffReviews from './components/StaffReviews.jsx'
 import EditBooking from './components/EditBooking.jsx'
 import SuperAdmin from './components/SuperAdmin.jsx'
 import Admin from './components/Admin.jsx'
@@ -168,6 +169,11 @@ createRoot(document.getElementById('root')).render(
                   <Announcements />
                 </ProtectedRoute>
               } />
+              <Route path="/superadmin/reviews" element={
+                <ProtectedRoute allowedRoles={['super_admin']}>
+                  <StaffReviews />
+                </ProtectedRoute>
+              } />
               <Route path="/superadmin/salon-updates" element={
                 <ProtectedRoute allowedRoles={['super_admin']}>
                   <SalonUpdates />
@@ -251,6 +257,11 @@ createRoot(document.getElementById('root')).render(
                   <Announcements />
                 </ProtectedRoute>
               } />
+              <Route path="/owner/reviews" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <StaffReviews />
+                </ProtectedRoute>
+              } />
               <Route path="/owner/salon-updates" element={
                 <ProtectedRoute allowedRoles={['owner']}>
                   <SalonUpdates />
@@ -306,6 +317,11 @@ createRoot(document.getElementById('root')).render(
               <Route path="/partner/announcements" element={
                 <ProtectedRoute allowedRoles={['partner']}>
                   <Announcements />
+                </ProtectedRoute>
+              } />
+              <Route path="/partner/reviews" element={
+                <ProtectedRoute allowedRoles={['partner']}>
+                  <StaffReviews />
                 </ProtectedRoute>
               } />
               <Route path="/partner/salon-updates" element={
@@ -387,6 +403,11 @@ createRoot(document.getElementById('root')).render(
                  <StaffCustomerDetail />
                </ProtectedRoute>
              } />
+             <Route path="/admin/reviews" element={
+               <ProtectedRoute allowedRoles={['admin']}>
+                 <StaffReviews />
+               </ProtectedRoute>
+             } />
              <Route path="/admin/salon-updates" element={
                <ProtectedRoute allowedRoles={['admin']}>
                  <SalonUpdates />
@@ -443,6 +464,11 @@ createRoot(document.getElementById('root')).render(
                 <StaffCustomerDetail />
               </ProtectedRoute>
             } />
+            <Route path="/cashier/reviews" element={
+              <ProtectedRoute allowedRoles={['cashier']}>
+                <StaffReviews />
+              </ProtectedRoute>
+            } />
             <Route path="/cashier/salon-updates" element={
               <ProtectedRoute allowedRoles={['cashier']}>
                 <SalonUpdates />
@@ -482,6 +508,11 @@ createRoot(document.getElementById('root')).render(
             <Route path="/technician/customers/:id" element={
               <ProtectedRoute allowedRoles={['technician']}>
                 <StaffCustomerDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/technician/reviews" element={
+              <ProtectedRoute allowedRoles={['technician']}>
+                <StaffReviews />
               </ProtectedRoute>
             } />
             <Route path="/technician/salon-updates" element={

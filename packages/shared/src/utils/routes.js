@@ -134,3 +134,15 @@ export function getStaffPlannerPath(role) {
     default: return `/${role}/staff/schedule`;
   }
 }
+
+export function getReviewsPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/reviews';
+    case 'owner': return '/owner/reviews';
+    case 'partner': return '/partner/reviews';
+    case 'admin': return '/admin/reviews';
+    case 'cashier': return '/cashier/reviews';
+    case 'technician': return '/technician/reviews';
+    default: return '/login';
+  }
+}

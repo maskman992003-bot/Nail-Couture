@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import clsx from 'clsx';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags';
+import { getDateRangeForPreset } from '@nail-couture/shared/utils/activityDateRange';
 import {
   fetchCustomerVisitHistory,
   fetchVisitLoyaltyPoints,
@@ -41,11 +43,15 @@ const statusConfigLight = {
   cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800 border-red-300' },
 };
 
-const tabs = [
-  { key: 'all', label: 'All' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'cancelled', label: 'Cancelled' },
+const DATE_PRESETS = [
+  { id: 'today', label: 'Today' },
+  { id: '7_days', label: 'Last 7 days' },
+  { id: '30_days', label: 'Last 30 days' },
+  { id: 'custom', label: 'Custom' },
+  { id: 'all', label: 'All history' },
 ];
+
+const getBookingDate = (booking) => booking.checked_in_at || booking.scheduled_at || booking.created_at;
 
 const ACTIVE_STATUSES = ['waiting', 'assigned_pending', 'serving', 'ready_for_checkout', 'pending', 'confirmed', 'in_progress'];
 const HISTORY_STATUSES = ['completed', 'cancelled'];
@@ -73,7 +79,6 @@ export default function CustomerHistory() {
   const [bookings, setBookings] = useState([]);
   const [activeVisits, setActiveVisits] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [activeTab, setActiveTab] = useState('all');
   const [updatingId, setUpdatingId] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -82,6 +87,15 @@ export default function CustomerHistory() {
   const [reviewableIds, setReviewableIds] = useState(new Set());
   const [reviewedIds, setReviewedIds] = useState(new Set());
   const [reviewModalBooking, setReviewModalBooking] = useState(null);
+  const [datePreset, setDatePreset] = useState('today');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const dateRange = useMemo(() => {
+    if (datePreset === 'all') return null;
+    return getDateRangeForPreset(datePreset, customStart, customEnd);
+  }, [datePreset, customStart, customEnd]);
 
   const fetchData = useCallback(async () => {
     const userId = user?.id;
@@ -171,6 +185,38 @@ export default function CustomerHistory() {
     }
   };
 
+  const getBookingTechnicianName = (booking) => {
+    const names = getAppointmentTechnicianNames(booking);
+    if (names.length) return names.join(', ');
+    return booking.tech?.full_name || booking.technicians?.full_name || null;
+  };
+
+  const matchesSearch = useCallback((booking, term) => {
+    if (!term) return true;
+    const service = (booking.mainServiceLabel || booking.service?.name || '').toLowerCase();
+    const tech = (getBookingTechnicianName(booking) || '').toLowerCase();
+    const addons = (booking.addonDetails || []).map((addon) => addon.name).join(' ').toLowerCase();
+    return service.includes(term) || tech.includes(term) || addons.includes(term);
+  }, []);
+
+  const bookingsInPeriod = useMemo(() => {
+    if (datePreset === 'custom' && !dateRange) return [];
+    let result = bookings;
+    if (dateRange) {
+      const from = new Date(dateRange.fromDate).getTime();
+      const to = new Date(dateRange.toDate).getTime();
+      result = result.filter((booking) => {
+        const visitTime = new Date(getBookingDate(booking)).getTime();
+        return visitTime >= from && visitTime <= to;
+      });
+    }
+    const term = searchTerm.trim().toLowerCase();
+    if (term) {
+      result = result.filter((booking) => matchesSearch(booking, term));
+    }
+    return result;
+  }, [bookings, datePreset, dateRange, searchTerm, matchesSearch]);
+
   const getEmptyHistoryState = () => {
     if (bookings.length === 0) {
       return {
@@ -181,17 +227,31 @@ export default function CustomerHistory() {
         showAction: true,
       };
     }
-    if (activeTab === 'completed') {
+    if (datePreset === 'custom' && !dateRange) {
       return {
-        title: 'No Completed Visits',
-        message: 'You do not have any completed visits yet.',
+        title: 'Select a date range',
+        message: 'Choose a start and end date to filter your visit history.',
         showAction: false,
       };
     }
-    if (activeTab === 'cancelled') {
+    if (searchTerm.trim()) {
       return {
-        title: 'No Cancelled Visits',
-        message: 'You have not cancelled any visits.',
+        title: 'No matching visits',
+        message: 'No visits match your search for this period. Try a different keyword or wider date range.',
+        showAction: false,
+      };
+    }
+    if (datePreset === 'today') {
+      return {
+        title: 'No Visits Today',
+        message: 'You do not have any visits today. Try Last 7 days or Last 30 days.',
+        showAction: false,
+      };
+    }
+    if (dateRange) {
+      return {
+        title: 'No Visits in This Period',
+        message: 'Try Last 30 days or All history to see more visits.',
         showAction: false,
       };
     }
@@ -204,14 +264,7 @@ export default function CustomerHistory() {
 
   const emptyState = getEmptyHistoryState();
 
-  const tabCounts = tabs.reduce((acc, t) => {
-    acc[t.key] = t.key === 'all' ? bookings.length : bookings.filter((b) => b.status === t.key).length;
-    return acc;
-  }, {});
-
-  const filteredBookings = activeTab === 'all'
-    ? bookings
-    : bookings.filter((b) => b.status === activeTab);
+  const filteredBookings = bookingsInPeriod;
 
   const statusConfig = theme === 'dark' ? statusConfigDark : statusConfigLight;
   const modalBg = theme === 'dark' ? '#1a1a1a' : '#ffffff';
@@ -241,12 +294,6 @@ export default function CustomerHistory() {
     booking.status === 'completed'
     && reviewableIds.has(booking.id)
     && !reviewedIds.has(booking.id);
-
-  const getBookingTechnicianName = (booking) => {
-    const names = getAppointmentTechnicianNames(booking);
-    if (names.length) return names.join(', ');
-    return booking.tech?.full_name || booking.technicians?.full_name || null;
-  };
 
   const renderCard = (booking) => {
     const cfg = statusConfig[booking.status];
@@ -387,21 +434,89 @@ export default function CustomerHistory() {
           </div>
         )}
 
-        <div>
-          <div className="relative w-full sm:w-56">
-            <select
-              value={activeTab}
-              onChange={(e) => setActiveTab(e.target.value)}
-              className={theme === 'dark' ? 'w-full p-3 pr-10 bg-offwhite/10 border border-offwhite/10 text-offwhite rounded-lg focus:border-gold focus:outline-none text-sm appearance-none cursor-pointer' : 'w-full p-3 pr-10 bg-charcoal/10 border border-charcoal/10 text-charcoal rounded-lg focus:border-gold focus:outline-none text-sm appearance-none cursor-pointer'}
-              style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23c5a059' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
-            >
-              {tabs.map((tab) => (
-                <option key={tab.key} value={tab.key} style={{ backgroundColor: theme === 'dark' ? '#111' : '#fff', color: theme === 'dark' ? '#e2e8f0' : '#000' }}>
-                  {tab.label} ({tabCounts[tab.key]})
-                </option>
+        <div
+          className="rounded-2xl p-4 sm:p-6 border space-y-4"
+          style={{
+            backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+            borderColor: 'rgba(197,160,89,0.15)',
+          }}
+        >
+          <div className="flex flex-col lg:flex-row lg:items-end gap-4">
+            <div className="flex flex-wrap gap-2">
+              {DATE_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => setDatePreset(preset.id)}
+                  className={clsx(
+                    'px-3 py-2 rounded-lg text-sm border transition-colors',
+                    datePreset === preset.id
+                      ? 'border-gold bg-gold/10 text-gold'
+                      : theme === 'dark'
+                        ? 'border-offwhite/10 text-offwhite/60 hover:border-gold/30'
+                        : 'border-charcoal/10 text-charcoal/60 hover:border-gold/30',
+                  )}
+                >
+                  {preset.label}
+                </button>
               ))}
-            </select>
+            </div>
+
+            <div className="relative flex-1 min-w-[200px]">
+              <svg className={clsx('absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none', theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 8a3 3 0 100 6 3 3 0 000-6z" />
+              </svg>
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search service or technician…"
+                className={theme === 'dark'
+                  ? 'w-full pl-9 pr-4 py-2.5 bg-offwhite/10 border border-offwhite/10 rounded-xl text-offwhite text-sm placeholder:text-offwhite/30 focus:border-gold focus:outline-none'
+                  : 'w-full pl-9 pr-4 py-2.5 bg-charcoal/10 border border-charcoal/10 rounded-xl text-charcoal text-sm placeholder:text-charcoal/30 focus:border-gold focus:outline-none'}
+              />
+            </div>
           </div>
+
+          {datePreset === 'custom' && (
+            <div className="flex flex-wrap gap-3">
+              <label className={theme === 'dark' ? 'text-offwhite/50 text-xs uppercase tracking-widest' : 'text-charcoal/50 text-xs uppercase tracking-widest'}>
+                From
+                <input
+                  type="date"
+                  value={customStart}
+                  onChange={(e) => setCustomStart(e.target.value)}
+                  className={theme === 'dark'
+                    ? 'mt-1 block w-full px-3 py-2 bg-offwhite/10 border border-offwhite/10 rounded-lg text-offwhite text-sm'
+                    : 'mt-1 block w-full px-3 py-2 bg-charcoal/10 border border-charcoal/10 rounded-lg text-charcoal text-sm'}
+                />
+              </label>
+              <label className={theme === 'dark' ? 'text-offwhite/50 text-xs uppercase tracking-widest' : 'text-charcoal/50 text-xs uppercase tracking-widest'}>
+                To
+                <input
+                  type="date"
+                  value={customEnd}
+                  onChange={(e) => setCustomEnd(e.target.value)}
+                  className={theme === 'dark'
+                    ? 'mt-1 block w-full px-3 py-2 bg-offwhite/10 border border-offwhite/10 rounded-lg text-offwhite text-sm'
+                    : 'mt-1 block w-full px-3 py-2 bg-charcoal/10 border border-charcoal/10 rounded-lg text-charcoal text-sm'}
+                />
+              </label>
+            </div>
+          )}
+
+          {datePreset === 'custom' && !dateRange && (
+            <p className={theme === 'dark' ? 'text-offwhite/50 text-sm' : 'text-charcoal/50 text-sm'}>
+              Select a start and end date to filter your visits.
+            </p>
+          )}
+
+          {!loading && (dateRange || datePreset === 'all') && (
+            <p className={theme === 'dark' ? 'text-offwhite/40 text-sm' : 'text-charcoal/40 text-sm'}>
+              {filteredBookings.length} visit{filteredBookings.length !== 1 ? 's' : ''}
+              {searchTerm.trim() ? ' matching search' : datePreset === 'all' ? '' : ' in this period'}
+            </p>
+          )}
         </div>
 
         {filteredBookings.length === 0 ? (

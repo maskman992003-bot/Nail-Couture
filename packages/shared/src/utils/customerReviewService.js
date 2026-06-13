@@ -8,6 +8,8 @@ const SERVICE_REVIEWS_RPC = 'get_reviews_for_service';
 const SERVICE_SUMMARIES_RPC = 'get_service_review_summaries';
 const FEATURED_REVIEWS_RPC = 'get_featured_reviews';
 const MODERATE_REVIEW_RPC = 'moderate_customer_review';
+const STAFF_REVIEWS_RPC = 'get_staff_customer_reviews';
+const MY_REVIEWS_RPC = 'get_my_customer_reviews';
 
 function isReviewUnavailable(error) {
   const msg = (error?.message || '').toLowerCase();
@@ -17,6 +19,60 @@ function isReviewUnavailable(error) {
     msg.includes('could not find the function') ||
     msg.includes('customer_reviews')
   );
+}
+
+function isRpcSignatureMismatch(error) {
+  const msg = (error?.message || '').toLowerCase();
+  return (
+    msg.includes('could not find the function') ||
+    msg.includes('without a matching') ||
+    msg.includes('pgrst202')
+  );
+}
+
+function phoneMatchesSearch(phone, search) {
+  const digits = (search || '').replace(/\D/g, '');
+  if (!digits) return false;
+  return (phone || '').replace(/\D/g, '').includes(digits);
+}
+
+function excludeHiddenStaffReviews(reviews, includeHidden = false) {
+  if (includeHidden) return reviews || [];
+  return (reviews || []).filter((row) => !row.is_hidden);
+}
+
+function filterReviewsClientSide(reviews, { fromDate, toDate, search, includeHidden = false } = {}) {
+  let filtered = includeHidden ? reviews || [] : (reviews || []).filter((row) => !row.is_hidden);
+  if (fromDate) {
+    const from = new Date(fromDate).getTime();
+    filtered = filtered.filter((row) => new Date(row.created_at).getTime() >= from);
+  }
+  if (toDate) {
+    const to = new Date(toDate).getTime();
+    filtered = filtered.filter((row) => new Date(row.created_at).getTime() <= to);
+  }
+  const term = (search || '').trim().toLowerCase();
+  if (term) {
+    filtered = filtered.filter(
+      (row) =>
+        [row.customer_name, row.comment, row.service_name, row.technician_name].some((field) =>
+          (field || '').toLowerCase().includes(term),
+        ) || phoneMatchesSearch(row.customer_phone, search),
+    );
+  }
+  return filtered;
+}
+
+function summarizeReviewsClientSide(reviews) {
+  const rows = reviews || [];
+  if (!rows.length) {
+    return { avgRating: null, reviewCount: 0 };
+  }
+  const sum = rows.reduce((total, row) => total + Number(row.rating || 0), 0);
+  return {
+    avgRating: Math.round((sum / rows.length) * 10) / 10,
+    reviewCount: rows.length,
+  };
 }
 
 function normalizeRpcObject(data) {
@@ -94,33 +150,82 @@ export async function fetchReviewableAppointments(callerPhone, limit = 20) {
 }
 
 /** Reviews for a technician profile (public read; staff may see fuller names). */
-export async function fetchTechnicianReviews(technicianId, { limit = 20, offset = 0, callerPhone = null } = {}) {
-  if (!technicianId) return { summary: null, reviews: [], available: false };
+export async function fetchTechnicianReviews(
+  technicianId,
+  {
+    limit = 20,
+    offset = 0,
+    callerPhone = null,
+    fromDate = null,
+    toDate = null,
+    search = null,
+    includeHidden = false,
+  } = {},
+) {
+  if (!technicianId) return { summary: null, reviews: [], hasMore: false, available: false };
 
   try {
-    const { data, error } = await getSupabase().rpc(TECHNICIAN_REVIEWS_RPC, {
+    const baseArgs = {
       p_technician_id: technicianId,
       p_limit: limit,
       p_offset: offset,
       caller_phone: callerPhone,
-    });
+    };
+    const filterArgs = {
+      ...baseArgs,
+      p_from_date: fromDate,
+      p_to_date: toDate,
+      p_search: search || null,
+    };
+
+    let { data, error } = await getSupabase().rpc(TECHNICIAN_REVIEWS_RPC, filterArgs);
+    let filtersClientSide = false;
+
+    if (error && isRpcSignatureMismatch(error)) {
+      ({ data, error } = await getSupabase().rpc(TECHNICIAN_REVIEWS_RPC, {
+        ...baseArgs,
+        p_limit: Math.min(limit + offset, 100),
+        p_offset: 0,
+      }));
+      filtersClientSide = true;
+    }
 
     if (error) {
-      if (isReviewUnavailable(error)) return { summary: null, reviews: [], available: false };
-      return { summary: null, reviews: [], available: true, error };
+      if (isReviewUnavailable(error)) return { summary: null, reviews: [], hasMore: false, available: false };
+      return { summary: null, reviews: [], hasMore: false, available: true, error };
     }
 
     const payload = normalizeRpcObject(data) || {};
+    let reviews = excludeHiddenStaffReviews(normalizeRpcArray(payload.reviews), includeHidden);
+
+    if (filtersClientSide) {
+      reviews = filterReviewsClientSide(reviews, { fromDate, toDate, search, includeHidden });
+      if (offset > 0) reviews = reviews.slice(offset);
+      if (limit) reviews = reviews.slice(0, limit);
+      return {
+        summary: summarizeReviewsClientSide(
+          filterReviewsClientSide(normalizeRpcArray(payload.reviews), { fromDate, toDate, search, includeHidden }),
+        ),
+        reviews,
+        hasMore: false,
+        totalCount: reviews.length,
+        filtersClientSide: true,
+        available: true,
+      };
+    }
+
     return {
       summary: {
         avgRating: payload.avg_rating,
         reviewCount: payload.review_count || 0,
       },
-      reviews: normalizeRpcArray(payload.reviews),
+      reviews,
+      hasMore: Boolean(payload.has_more),
+      totalCount: payload.total_count || 0,
       available: true,
     };
   } catch (err) {
-    return { summary: null, reviews: [], available: false, error: err };
+    return { summary: null, reviews: [], hasMore: false, available: false, error: err };
   }
 }
 
@@ -224,6 +329,120 @@ export async function fetchFeaturedReviews(limit = 6) {
     return { reviews: normalizeRpcArray(data), available: true };
   } catch (err) {
     return { reviews: [], available: false, error: err };
+  }
+}
+
+/** Customer profile — reviews the signed-in customer has submitted. */
+export async function fetchMyCustomerReviews(
+  callerPhone,
+  { limit = 50, offset = 0, fromDate = null, toDate = null } = {},
+) {
+  if (!callerPhone) return { summary: null, reviews: [], hasMore: false, available: false };
+
+  try {
+    const { data, error } = await getSupabase().rpc(MY_REVIEWS_RPC, {
+      caller_phone: callerPhone,
+      p_limit: limit,
+      p_offset: offset,
+      p_from_date: fromDate,
+      p_to_date: toDate,
+    });
+
+    if (error) {
+      if (isReviewUnavailable(error)) return { summary: null, reviews: [], hasMore: false, available: false };
+      return { summary: null, reviews: [], hasMore: false, available: true, error };
+    }
+
+    const payload = normalizeRpcObject(data) || {};
+    return {
+      summary: {
+        avgRating: payload.avg_rating,
+        reviewCount: payload.review_count || 0,
+      },
+      reviews: normalizeRpcArray(payload.reviews),
+      hasMore: Boolean(payload.has_more),
+      totalCount: payload.total_count || 0,
+      available: true,
+    };
+  } catch (err) {
+    return { summary: null, reviews: [], hasMore: false, available: false, error: err };
+  }
+}
+
+/** Staff Reviews tab — salon-wide or filtered by technician. */
+export async function fetchStaffCustomerReviews(
+  callerPhone,
+  {
+    limit = 50,
+    offset = 0,
+    technicianId = null,
+    fromDate = null,
+    toDate = null,
+    search = null,
+    includeHidden = false,
+  } = {},
+) {
+  if (!callerPhone) return { summary: null, reviews: [], hasMore: false, available: false };
+
+  try {
+    const baseArgs = {
+      caller_phone: callerPhone,
+      p_limit: limit,
+      p_offset: offset,
+      p_technician_id: technicianId,
+    };
+    const filterArgs = {
+      ...baseArgs,
+      p_from_date: fromDate,
+      p_to_date: toDate,
+      p_search: search || null,
+    };
+
+    let { data, error } = await getSupabase().rpc(STAFF_REVIEWS_RPC, filterArgs);
+    let filtersClientSide = false;
+
+    if (error && isRpcSignatureMismatch(error)) {
+      ({ data, error } = await getSupabase().rpc(STAFF_REVIEWS_RPC, {
+        ...baseArgs,
+        p_limit: Math.min(limit + offset, 100),
+        p_offset: 0,
+      }));
+      filtersClientSide = true;
+    }
+
+    if (error) {
+      if (isReviewUnavailable(error)) return { summary: null, reviews: [], hasMore: false, available: false };
+      return { summary: null, reviews: [], hasMore: false, available: true, error };
+    }
+
+    const payload = normalizeRpcObject(data) || {};
+    let reviews = excludeHiddenStaffReviews(normalizeRpcArray(payload.reviews), includeHidden);
+
+    if (filtersClientSide) {
+      const filteredAll = filterReviewsClientSide(reviews, { fromDate, toDate, search, includeHidden });
+      reviews = filteredAll.slice(offset, offset + limit);
+      return {
+        summary: summarizeReviewsClientSide(filteredAll),
+        reviews,
+        hasMore: offset + limit < filteredAll.length,
+        totalCount: filteredAll.length,
+        filtersClientSide: true,
+        available: true,
+      };
+    }
+
+    return {
+      summary: {
+        avgRating: payload.avg_rating,
+        reviewCount: payload.review_count || 0,
+      },
+      reviews,
+      hasMore: Boolean(payload.has_more),
+      totalCount: payload.total_count || 0,
+      available: true,
+    };
+  } catch (err) {
+    return { summary: null, reviews: [], hasMore: false, available: false, error: err };
   }
 }
 

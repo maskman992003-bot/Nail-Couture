@@ -20,6 +20,7 @@ export type AppScreenName =
   | 'Book'
   | 'Loyalty'
   | 'History'
+  | 'Reviews'
   | 'Settings'
   | 'FitnessAssessment';
 
@@ -47,6 +48,7 @@ export const ALL_SCREEN_NAMES: AppScreenName[] = [
   'Book',
   'Loyalty',
   'History',
+  'Reviews',
   'Settings',
   'FitnessAssessment',
 ];

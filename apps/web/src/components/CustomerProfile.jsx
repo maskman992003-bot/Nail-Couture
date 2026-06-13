@@ -6,15 +6,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import {
   fetchCustomerStats,
-  fetchCustomerReceipts,
-  fetchCustomerWaiverDetail,
   fetchReferralInfo,
   fetchCustomerVisitPhotos,
-  fetchVisitReceipt,
-  formatReceiptContent,
-  formatPaymentReceiptRow,
-  downloadTextFile,
-  receiptFilename,
 } from '@nail-couture/shared/utils/customerStats';
 import { getTierInfo, generateReferralCode, isBirthdayMonth, tierDetails } from '@nail-couture/shared/utils/loyaltyTier';
 import {
@@ -31,17 +24,14 @@ import { computeAchievements } from '@nail-couture/shared/utils/customerAchievem
 import { uploadProfileAvatar, getProfileInitials } from '@nail-couture/shared/utils/avatarUpload';
 import Sidebar from './Sidebar';
 import { modalBtnSecondary } from './AppModal';
-import FitnessProfileSection from './fitness/FitnessProfileSection';
-import NailProfileSection from './nails/NailProfileSection';
+import CustomerReviewsSection from './reviews/CustomerReviewsSection';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'preferences', label: 'Preferences' },
   { id: 'loyalty', label: 'Loyalty' },
-  { id: 'fitness', label: 'Fitness' },
-  { id: 'nails', label: 'Nail Health' },
   { id: 'gallery', label: 'Gallery' },
-  { id: 'activity', label: 'Activity' },
+  { id: 'reviews', label: 'Reviews' },
   { id: 'security', label: 'Security' },
 ];
 
@@ -65,11 +55,7 @@ export default function CustomerProfile() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
-  const [receipts, setReceipts] = useState([]);
-  const [waiver, setWaiver] = useState(null);
   const [referralInfo, setReferralInfo] = useState(null);
-  const [notifications, setNotifications] = useState([]);
-  const [showWaiverModal, setShowWaiverModal] = useState(false);
   const [preferencesAvailable, setPreferencesAvailable] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [editing, setEditing] = useState(false);
@@ -83,7 +69,6 @@ export default function CustomerProfile() {
   const [pinSuccess, setPinSuccess] = useState('');
   const [pinLoading, setPinLoading] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [receiptLoadingId, setReceiptLoadingId] = useState(null);
   const [loyaltyHistory, setLoyaltyHistory] = useState({ rows: [], available: false });
   const [visitPhotos, setVisitPhotos] = useState({ rows: [], available: false });
   const [photoFilter, setPhotoFilter] = useState('all');
@@ -128,21 +113,15 @@ export default function CustomerProfile() {
       });
       setPinMode(profileData.pin ? 'change' : 'set');
       setPreferencesAvailable('preferences' in profileData);
-      const [statsData, waiverData, receiptsData, referralData, notifRes, loyaltyData, photosData] = await Promise.all([
+      const [statsData, referralData, loyaltyData, photosData] = await Promise.all([
         fetchCustomerStats(userId, user?.phone),
-        fetchCustomerWaiverDetail(userId),
-        fetchCustomerReceipts(userId),
         fetchReferralInfo(profileData),
-        supabase.from('notifications').select('*').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(5),
         fetchLoyaltyHistory(userId),
         fetchCustomerVisitPhotos(userId),
       ]);
 
       setStats(statsData);
-      setWaiver(waiverData);
-      setReceipts(receiptsData);
       setReferralInfo(referralData);
-      setNotifications(notifRes.data || []);
       setLoyaltyHistory(loyaltyData);
       setVisitPhotos(photosData);
     } catch (err) {
@@ -244,28 +223,6 @@ export default function CustomerProfile() {
     navigator.clipboard.writeText(profile.referral_code);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
-  };
-
-  const downloadReceipt = async (receiptRow) => {
-    if (!user?.id) return;
-    setReceiptLoadingId(receiptRow.id);
-    try {
-      let content = formatPaymentReceiptRow(receiptRow);
-      if (receiptRow.appointmentId) {
-        try {
-          const receipt = await fetchVisitReceipt(receiptRow.appointmentId, user.id, user?.phone);
-          if (receipt?.appointment) content = formatReceiptContent(receipt);
-        } catch (detailErr) {
-          console.warn('Full receipt lookup failed, using payment summary:', detailErr);
-        }
-      }
-      downloadTextFile(content, receiptFilename(receiptRow.date, receiptRow.appointmentId || receiptRow.id));
-    } catch (err) {
-      console.error('Receipt download error:', err);
-      window.alert('Unable to download receipt. Please try again.');
-    } finally {
-      setReceiptLoadingId(null);
-    }
   };
 
   const handleAvatarChange = async (e) => {
@@ -706,24 +663,6 @@ export default function CustomerProfile() {
           </div>
         )}
 
-        {activeTab === 'fitness' && profile && (
-          <FitnessProfileSection
-            profileId={profile.id}
-            callerPhone={profile.phone}
-            theme={theme}
-            panelClass={panelClass}
-          />
-        )}
-
-        {activeTab === 'nails' && profile && (
-          <NailProfileSection
-            profileId={profile.id}
-            callerPhone={profile.phone}
-            theme={theme}
-            panelClass={panelClass}
-          />
-        )}
-
         {activeTab === 'gallery' && (
           <div className={panelClass}>
             <h3 className={theme === 'dark' ? 'text-offwhite font-medium mb-4' : 'text-charcoal font-medium mb-4'}>Before & After Gallery</h3>
@@ -781,108 +720,18 @@ export default function CustomerProfile() {
           </div>
         )}
 
-        {activeTab === 'activity' && (
-          <div className="space-y-6">
-            {stats?.recentVisits?.length > 0 ? (
-              <div className={panelClass}>
-                <h3 className={theme === 'dark' ? 'text-offwhite font-medium mb-4' : 'text-charcoal font-medium mb-4'}>Recent Visits</h3>
-                <div className="space-y-3">
-                  {stats.recentVisits.map((visit) => (
-                    <div key={visit.id} className={`flex justify-between items-center py-3 border-b last:border-0 ${theme === 'dark' ? 'border-white/5' : 'border-charcoal/5'}`}>
-                      <div>
-                        <div className={valueClass(theme)}>{visit.serviceName}</div>
-                        <div className={theme === 'dark' ? 'text-offwhite/40 text-xs' : 'text-charcoal/40 text-xs'}>
-                          {visit.date ? new Date(visit.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
-                        </div>
-                      </div>
-                      {visit.price != null && <span className="text-gold font-heading text-sm">${Number(visit.price).toFixed(2)}</span>}
-                    </div>
-                  ))}
-                </div>
-                <Link to="/customer/history" className="inline-block mt-4 text-gold text-sm font-medium hover:underline">View full history →</Link>
-              </div>
-            ) : (
-              <div className={`${panelClass} text-center py-8`}>
-                <p className={theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}>No completed visits yet. Check in at the salon to start your journey.</p>
-              </div>
-            )}
-
-            {receipts.length > 0 && (
-              <div className={panelClass}>
-                <h3 className={theme === 'dark' ? 'text-offwhite font-medium mb-4' : 'text-charcoal font-medium mb-4'}>Payment History</h3>
-                <div className="space-y-3">
-                  {receipts.map((r) => (
-                    <div key={r.id} className={`flex justify-between items-start gap-3 py-3 border-b last:border-0 ${theme === 'dark' ? 'border-white/5' : 'border-charcoal/5'}`}>
-                      <div className="min-w-0">
-                        <div className={valueClass(theme)}>{r.serviceName}</div>
-                        <div className={theme === 'dark' ? 'text-offwhite/40 text-xs' : 'text-charcoal/40 text-xs'}>
-                          {new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          {' · '}{r.paymentMethod}
-                          {r.discount > 0 && ` · -$${r.discount.toFixed(2)} ${r.discountType || ''}`}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        <span className="text-gold font-heading text-sm">${r.finalAmount.toFixed(2)}</span>
-                        <button
-                          type="button"
-                          onClick={() => downloadReceipt(r)}
-                          disabled={receiptLoadingId === r.id}
-                          className="px-2.5 py-1 text-[10px] font-medium rounded-lg border border-gold/30 text-gold hover:bg-gold/10 transition-colors disabled:opacity-50"
-                        >
-                          {receiptLoadingId === r.id ? '…' : 'Receipt'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className={panelClass}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <span className={labelClass(theme)}>Salon waiver</span>
-                  {waiver?.signed_at ? (
-                    <p className={valueClass(theme)}>
-                      Signed {new Date(waiver.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                    </p>
-                  ) : (
-                    <p className={theme === 'dark' ? 'text-offwhite/50 text-sm' : 'text-charcoal/50 text-sm'}>No waiver on file</p>
-                  )}
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  {waiver?.signature_image && (
-                    <button type="button" onClick={() => setShowWaiverModal(true)} className="px-3 py-2 text-xs border border-gold/30 text-gold rounded-lg hover:bg-gold/10">
-                      View signature
-                    </button>
-                  )}
-                  <Link to="/check-in" className="px-3 py-2 text-xs border border-white/10 rounded-lg hover:border-gold/30 text-gold">
-                    Update at kiosk
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {notifications.length > 0 && (
-              <div className={panelClass}>
-                <h3 className={theme === 'dark' ? 'text-offwhite font-medium mb-4' : 'text-charcoal font-medium mb-4'}>Recent Notifications</h3>
-                <div className="space-y-3">
-                  {notifications.map((n) => (
-                    <div key={n.id} className={cardClass(theme)}>
-                      <div className="font-medium text-sm text-gold">{n.title}</div>
-                      <div className={theme === 'dark' ? 'text-offwhite/60 text-xs mt-1' : 'text-charcoal/60 text-xs mt-1'}>{n.body || n.message}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+        {activeTab === 'reviews' && profile && (
+          <CustomerReviewsSection
+            callerPhone={profile.phone}
+            theme={theme}
+            panelClass={panelClass}
+          />
         )}
 
         {activeTab === 'security' && (
           <div className={`${panelClass} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4`}>
             <div>
-              <h3 className={theme === 'dark' ? 'text-offwhite font-medium text-base' : 'text-charcoal font-medium text-base'}>Kiosk Self-Service PIN</h3>
+              <h3 className={theme === 'dark' ? 'text-offwhite font-medium text-base' : 'text-charcoal font-medium text-base'}>Nail Couture Self-Service PIN</h3>
               <p className={theme === 'dark' ? 'text-xs text-offwhite/40 mt-1 max-w-md' : 'text-xs text-charcoal/40 mt-1 max-w-md'}>
                 Use a 4-digit code for quick check-in at salon kiosks.
               </p>
@@ -900,21 +749,6 @@ export default function CustomerProfile() {
           </div>
         )}
       </div>
-
-      {showWaiverModal && waiver?.signature_image && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowWaiverModal(false)}>
-          <div className={theme === 'dark' ? 'w-full max-w-lg bg-[#1a1a1a] rounded-xl border border-gold/10 p-6' : 'w-full max-w-lg bg-white rounded-xl border border-gold/10 p-6'} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-heading text-xl text-gold">Signed Waiver</h2>
-              <button type="button" onClick={() => setShowWaiverModal(false)} className={theme === 'dark' ? 'text-offwhite/40 hover:text-offwhite text-2xl' : 'text-charcoal/40 hover:text-charcoal text-2xl'}>&times;</button>
-            </div>
-            <p className={theme === 'dark' ? 'text-offwhite/50 text-xs mb-4' : 'text-charcoal/50 text-xs mb-4'}>
-              Signed {waiver.signed_at ? new Date(waiver.signed_at).toLocaleString() : ''}
-            </p>
-            <img src={waiver.signature_image} alt="Your signature" className="w-full max-h-48 object-contain bg-white rounded-lg border border-charcoal/10" />
-          </div>
-        </div>
-      )}
 
       {showPinForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowPinForm(false)}>

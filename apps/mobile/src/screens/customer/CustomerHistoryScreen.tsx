@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags.js';
 import { fetchCustomerVisitHistory, fetchVisitLoyaltyPoints } from '@nail-couture/shared/utils/customerStats.js';
 import { enrichAppointmentsWithServices } from '@nail-couture/shared/utils/appointmentServices.js';
 import { getAppointmentTechnicianNames } from '@nail-couture/shared/utils/appointmentServices.js';
 import { fetchReviewableAppointments } from '@nail-couture/shared/utils/customerReviewService.js';
+import { getDateRangeForPreset } from '@nail-couture/shared/utils/activityDateRange.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
@@ -27,13 +28,18 @@ type VisitRecord = {
   loyaltyPointsEarned?: number | null;
   technicians?: { full_name?: string };
   mainServiceLabel?: string;
+  addonDetails?: { id: string; name: string }[];
 };
 
-const TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'cancelled', label: 'Cancelled' },
+const DATE_PRESETS = [
+  { id: 'today', label: 'Today' },
+  { id: '7_days', label: '7 days' },
+  { id: '30_days', label: '30 days' },
+  { id: 'custom', label: 'Custom' },
+  { id: 'all', label: 'All history' },
 ] as const;
+
+const getVisitDate = (visit: VisitRecord) => visit.checked_in_at || visit.scheduled_at || visit.created_at;
 
 const ACTIVE_STATUSES = ['waiting', 'assigned_pending', 'serving', 'ready_for_checkout', 'pending', 'confirmed', 'in_progress'];
 const HISTORY_STATUSES = ['completed', 'cancelled'];
@@ -57,12 +63,20 @@ export function CustomerHistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [activeVisits, setActiveVisits] = useState<VisitRecord[]>([]);
   const [bookings, setBookings] = useState<VisitRecord[]>([]);
-  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]['key']>('all');
   const [selectedVisit, setSelectedVisit] = useState<VisitRecord | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [reviewableIds, setReviewableIds] = useState<Set<string>>(new Set());
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
   const [reviewVisit, setReviewVisit] = useState<VisitRecord | null>(null);
+  const [datePreset, setDatePreset] = useState<(typeof DATE_PRESETS)[number]['id']>('today');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const dateRange = useMemo(() => {
+    if (datePreset === 'all') return null;
+    return getDateRangeForPreset(datePreset, customStart, customEnd);
+  }, [datePreset, customStart, customEnd]);
 
   const fetchData = useCallback(async () => {
     const userId = user?.id;
@@ -108,10 +122,51 @@ export function CustomerHistoryScreen() {
     fetchData();
   }, [fetchData]);
 
+  const getVisitTechnicianName = (visit: VisitRecord) => {
+    const names = getAppointmentTechnicianNames(visit as Parameters<typeof getAppointmentTechnicianNames>[0]);
+    if (names.length) return names.join(', ');
+    return visit.technicians?.full_name || null;
+  };
+
+  const matchesSearch = useCallback((visit: VisitRecord, term: string) => {
+    if (!term) return true;
+    const service = (
+      visit.mainServiceLabel ||
+      visit.selected_service_names ||
+      visit.add_ons ||
+      visit.services?.name ||
+      ''
+    ).toLowerCase();
+    const tech = (getVisitTechnicianName(visit) || '').toLowerCase();
+    const addons = (visit.addonDetails || []).map((addon) => addon.name).join(' ').toLowerCase();
+    return service.includes(term) || tech.includes(term) || addons.includes(term);
+  }, []);
+
   const filteredBookings = useMemo(() => {
-    if (activeTab === 'all') return bookings;
-    return bookings.filter((visit) => visit.status === activeTab);
-  }, [bookings, activeTab]);
+    if (datePreset === 'custom' && !dateRange) return [];
+    let result = bookings;
+    if (dateRange) {
+      const from = new Date(dateRange.fromDate).getTime();
+      const to = new Date(dateRange.toDate).getTime();
+      result = result.filter((visit) => {
+        const visitTime = new Date(getVisitDate(visit) || 0).getTime();
+        return visitTime >= from && visitTime <= to;
+      });
+    }
+    const term = searchTerm.trim().toLowerCase();
+    if (term) {
+      result = result.filter((visit) => matchesSearch(visit, term));
+    }
+    return result;
+  }, [bookings, datePreset, dateRange, searchTerm, matchesSearch]);
+
+  const emptyMessage = useMemo(() => {
+    if (bookings.length === 0) return 'No visits yet.';
+    if (datePreset === 'custom' && !dateRange) return 'Select start and end dates.';
+    if (searchTerm.trim()) return 'No visits match your search for this period.';
+    if (datePreset === 'today') return 'No visits today. Try 7 days or 30 days.';
+    return 'No visits for this period. Try a wider date range.';
+  }, [bookings.length, datePreset, dateRange, searchTerm]);
 
   const cancelBooking = async (visit: VisitRecord) => {
     if (!user?.phone) return;
@@ -132,12 +187,6 @@ export function CustomerHistoryScreen() {
 
   const canReviewVisit = (visit: VisitRecord) =>
     visit.status === 'completed' && reviewableIds.has(visit.id) && !reviewedIds.has(visit.id);
-
-  const getVisitTechnicianName = (visit: VisitRecord) => {
-    const names = getAppointmentTechnicianNames(visit as Parameters<typeof getAppointmentTechnicianNames>[0]);
-    if (names.length) return names.join(', ');
-    return visit.technicians?.full_name || null;
-  };
 
   const renderVisitRow = (visit: VisitRecord) => {
     const serviceName =
@@ -215,31 +264,85 @@ export function CustomerHistoryScreen() {
         </View>
       ) : null}
 
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-        {TABS.map((tab) => (
-          <Pressable
-            key={tab.key}
-            onPress={() => setActiveTab(tab.key)}
-            style={{
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 999,
-              backgroundColor: activeTab === tab.key ? styles.tokens.goldStrong : 'transparent',
-              borderWidth: activeTab === tab.key ? 0 : 1,
-              borderColor: styles.tokens.borderColor,
-            }}
-          >
-            <Text style={{ color: activeTab === tab.key ? '#121212' : styles.tokens.textSecondary, fontSize: 12 }}>
-              {tab.label}
-            </Text>
-          </Pressable>
-        ))}
+      <View style={[styles.card, { padding: 14, marginBottom: 12, gap: 10 }]}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {DATE_PRESETS.map((preset) => (
+            <Pressable
+              key={preset.id}
+              onPress={() => setDatePreset(preset.id)}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: datePreset === preset.id ? styles.tokens.goldStrong : styles.tokens.borderColor,
+                backgroundColor: datePreset === preset.id ? 'rgba(197,160,89,0.12)' : 'transparent',
+              }}
+            >
+              <Text style={{ color: datePreset === preset.id ? styles.tokens.goldStrong : styles.tokens.textSecondary, fontSize: 12 }}>
+                {preset.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {datePreset === 'custom' ? (
+          <View style={{ gap: 8 }}>
+            <TextInput
+              value={customStart}
+              onChangeText={setCustomStart}
+              placeholder="Start date YYYY-MM-DD"
+              placeholderTextColor={styles.tokens.textMuted}
+              style={{
+                borderWidth: 1,
+                borderColor: styles.tokens.borderColor,
+                borderRadius: 10,
+                padding: 10,
+                color: styles.tokens.textPrimary,
+              }}
+            />
+            <TextInput
+              value={customEnd}
+              onChangeText={setCustomEnd}
+              placeholder="End date YYYY-MM-DD"
+              placeholderTextColor={styles.tokens.textMuted}
+              style={{
+                borderWidth: 1,
+                borderColor: styles.tokens.borderColor,
+                borderRadius: 10,
+                padding: 10,
+                color: styles.tokens.textPrimary,
+              }}
+            />
+          </View>
+        ) : null}
+
+        <TextInput
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+          placeholder="Search service or technician…"
+          placeholderTextColor={styles.tokens.textMuted}
+          style={{
+            borderWidth: 1,
+            borderColor: styles.tokens.borderColor,
+            borderRadius: 10,
+            padding: 10,
+            color: styles.tokens.textPrimary,
+          }}
+        />
+
+        {(dateRange || datePreset === 'all') && !loading ? (
+          <Text style={[styles.textSecondary, { fontSize: 12 }]}>
+            {filteredBookings.length} visit{filteredBookings.length !== 1 ? 's' : ''}
+            {searchTerm.trim() ? ' matching search' : datePreset === 'all' ? '' : ' in this period'}
+          </Text>
+        ) : null}
       </View>
 
       <View style={[styles.card, { padding: 16 }]}>
         {filteredBookings.length === 0 ? (
           <Text style={[styles.textSecondary, { textAlign: 'center', paddingVertical: 24 }]}>
-            No visits in this category yet.
+            {emptyMessage}
           </Text>
         ) : (
           filteredBookings.map(renderVisitRow)
