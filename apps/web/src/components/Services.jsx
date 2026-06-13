@@ -4,27 +4,31 @@ import ServicesPublic from './ServicesPublic';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import PageHelmet from './PageHelmet';
-import { SERVICES_PAGE_SEO } from '../constants/pageSeo';
+import { APP_PAGE_SEO } from '../constants/pageSeo';
 
-export default function Services() {
+export default function Services({ embedded = false }) {
   const { user } = useAuth();
   const isStaff = user?.is_staff || false;
 
   const helmet = (
     <PageHelmet
-      title={SERVICES_PAGE_SEO.title}
-      description={SERVICES_PAGE_SEO.description}
-      path={SERVICES_PAGE_SEO.path}
+      title={APP_PAGE_SEO['/services'].title}
+      description={APP_PAGE_SEO['/services'].description}
+      path={APP_PAGE_SEO['/services'].path}
     />
   );
 
   if (isStaff) {
     return (
       <>
-        {helmet}
+        {!embedded && helmet}
         <ServicesAdmin />
       </>
     );
+  }
+
+  if (embedded) {
+    return <ServicesPublic />;
   }
 
   return (

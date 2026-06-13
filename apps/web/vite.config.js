@@ -3,7 +3,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import Sitemap from 'vite-plugin-sitemap';
-import { publicSitemapRoutes } from './sitemap.routes.js';
+import {
+  publicSitemapRoutes,
+  sitemapChangefreq,
+  sitemapPriority,
+} from './sitemap.routes.js';
 
 export default defineConfig({
   base: './',
@@ -16,8 +20,8 @@ export default defineConfig({
       dynamicRoutes: publicSitemapRoutes,
       generateRobotsTxt: true,
       outDir: 'dist',
-      changefreq: 'weekly',
-      priority: { '*': 0.8, '/': 1.0 },
+      changefreq: sitemapChangefreq,
+      priority: sitemapPriority,
       robots: [
         {
           userAgent: '*',

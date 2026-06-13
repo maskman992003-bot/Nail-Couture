@@ -33,25 +33,22 @@ export const APP_PAGE_SEO = {
       'Check in for your Nail Couture appointment. Use our guest kiosk portal for fast salon arrivals, service selection, and visit registration.',
     path: '/check-in',
   },
-};
-
-export const FITNESS_ASSESSMENT_PAGE_SEO = {
-  title: 'Fitness Assessment Dashboard | Nail Couture',
-  description:
-    'Calculate your BMI, BMR, TDEE, and body fat percentage with our free fitness assessment tool. Real-time results with personalized calorie targets.',
-  path: '/fitness-assessment',
-};
-
-export const NAIL_ASSESSMENT_PAGE_SEO = {
-  title: 'Nail Health Assessment Dashboard | Nail Couture',
-  description:
-    'Assess nail structure, surface health, and lifestyle to receive personalized chemistry recommendations, prep protocols, and maintenance timelines.',
-  path: '/nail-assessment',
-};
-
-export const SERVICES_PAGE_SEO = {
-  title: 'Premium Russian Manicure & Nail Art Services | Nail Couture',
-  description:
-    'View premium Russian manicure and nail art services at Nail Couture. Medical-grade sterilization, luxury press-on nails, and custom couture pricing.',
-  path: '/services',
+  '/fitness-assessment': {
+    title: 'Fitness Assessment Dashboard | Nail Couture',
+    description:
+      'Calculate your BMI, BMR, TDEE, and body fat percentage with our free fitness assessment tool. Real-time results with personalized calorie targets.',
+    path: '/fitness-assessment',
+  },
+  '/nail-assessment': {
+    title: 'Nail Health Assessment Dashboard | Nail Couture',
+    description:
+      'Assess nail structure, surface health, and lifestyle to receive personalized chemistry recommendations, prep protocols, and maintenance timelines.',
+    path: '/nail-assessment',
+  },
+  '/services': {
+    title: 'Premium Russian Manicure & Nail Art Services | Nail Couture',
+    description:
+      'View premium Russian manicure and nail art services at Nail Couture. Medical-grade sterilization, luxury press-on nails, and custom couture pricing.',
+    path: '/services',
+  },
 };

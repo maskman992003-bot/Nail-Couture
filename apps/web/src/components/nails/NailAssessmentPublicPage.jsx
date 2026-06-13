@@ -1,16 +1,16 @@
 import Navbar from '../Navbar';
 import Footer from '../Footer';
 import PageHelmet from '../PageHelmet';
-import { NAIL_ASSESSMENT_PAGE_SEO } from '../../constants/pageSeo';
+import { APP_PAGE_SEO } from '../../constants/pageSeo';
 import NailAssessmentDashboard from './NailAssessmentDashboard';
 
 export default function NailAssessmentPublicPage() {
   return (
     <>
       <PageHelmet
-        title={NAIL_ASSESSMENT_PAGE_SEO.title}
-        description={NAIL_ASSESSMENT_PAGE_SEO.description}
-        path={NAIL_ASSESSMENT_PAGE_SEO.path}
+        title={APP_PAGE_SEO['/nail-assessment'].title}
+        description={APP_PAGE_SEO['/nail-assessment'].description}
+        path={APP_PAGE_SEO['/nail-assessment'].path}
       />
       <div className="min-h-screen bg-primary text-primary">
         <Navbar currentPage="nails" onNavigate={() => {}} />

@@ -1,16 +1,16 @@
 import Navbar from '../Navbar';
 import Footer from '../Footer';
 import PageHelmet from '../PageHelmet';
-import { FITNESS_ASSESSMENT_PAGE_SEO } from '../../constants/pageSeo';
+import { APP_PAGE_SEO } from '../../constants/pageSeo';
 import FitnessAssessmentDashboard from './FitnessAssessmentDashboard';
 
 export default function FitnessAssessmentPublicPage() {
   return (
     <>
       <PageHelmet
-        title={FITNESS_ASSESSMENT_PAGE_SEO.title}
-        description={FITNESS_ASSESSMENT_PAGE_SEO.description}
-        path={FITNESS_ASSESSMENT_PAGE_SEO.path}
+        title={APP_PAGE_SEO['/fitness-assessment'].title}
+        description={APP_PAGE_SEO['/fitness-assessment'].description}
+        path={APP_PAGE_SEO['/fitness-assessment'].path}
       />
       <div className="min-h-screen bg-primary text-primary">
         <Navbar currentPage="fitness" onNavigate={() => {}} />
