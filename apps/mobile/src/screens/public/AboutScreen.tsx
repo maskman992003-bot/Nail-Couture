@@ -10,6 +10,7 @@ const PHONE_LINK = 'tel:+15044817879';
 const WHATSAPP_LINK = 'https://wa.me/15044817879';
 const INSTAGRAM_LINK =
   'https://www.instagram.com/nailcouturenola?igsh=MWRsYzR5c3dnaGVpbw%3D%3D&utm_source=qr';
+const FACEBOOK_LINK = 'https://www.facebook.com/profile.php?id=61584007934987';
 const MAP_LINK =
   'https://www.google.com/maps?q=5300+Tchoupitoulas+St+%2332-34+New+Orleans+LA+70115';
 
@@ -126,6 +127,12 @@ export function AboutScreen({ navigation }: AboutScreenProps) {
             label="Instagram"
             value="@nailcouture"
             onPress={() => Linking.openURL(INSTAGRAM_LINK)}
+            gold
+          />
+          <ContactRow
+            label="Facebook"
+            value="Facebook"
+            onPress={() => Linking.openURL(FACEBOOK_LINK)}
             gold
           />
           <ContactRow

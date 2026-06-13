@@ -9,6 +9,8 @@ import BookingWizard from './components/BookingWizard'
 import Lookbook from './components/Lookbook'
 import AboutContact from './components/AboutContact'
 import CheckIn from './components/CheckIn'
+import PageHelmet from './components/PageHelmet'
+import { APP_PAGE_SEO } from './constants/pageSeo'
 import './index.css'
 
 function App() {
@@ -62,7 +64,11 @@ function App() {
     }, 100)
   }
 
+  const pageSeo = APP_PAGE_SEO[location.pathname] ?? APP_PAGE_SEO['/']
+
   return (
+    <>
+      <PageHelmet title={pageSeo.title} description={pageSeo.description} path={pageSeo.path} />
     <div className="min-h-screen flex flex-col relative">
       <img 
         src="/NC.jfif.png" 
@@ -144,6 +150,7 @@ function App() {
       
       {currentPage !== 'check-in' && <Footer onNavigate={setCurrentPage} />}
     </div>
+    </>
   )
 }
 
