@@ -46,6 +46,10 @@ export const NOTIFICATION_TYPE_LABELS = {
     label: 'Payment receipts',
     description: 'After checkout and payment',
   },
+  review_request: {
+    label: 'Review requests',
+    description: 'Reminder to rate your visit after checkout',
+  },
   loyalty_earned: {
     label: 'Points earned',
     description: 'When you earn loyalty points',
@@ -168,7 +172,7 @@ const CUSTOMER_GROUPS = [
     id: 'payments_loyalty',
     label: 'Payments & rewards',
     description: 'Receipts, points earned, and referral bonuses',
-    types: ['payment_receipt', 'loyalty_earned', 'loyalty_redeemed', 'referral_bonus'],
+    types: ['payment_receipt', 'review_request', 'loyalty_earned', 'loyalty_redeemed', 'referral_bonus'],
   },
   {
     id: 'waivers',

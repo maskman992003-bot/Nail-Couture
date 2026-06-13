@@ -76,3 +76,17 @@ export function getStaffPlannerPath(role) {
     default: return `/${role}/staff/schedule`;
   }
 }
+
+export function getStaffListPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/staff';
+    case 'owner': return '/owner/staff';
+    case 'partner': return '/partner/staff';
+    case 'admin': return '/admin/staff';
+    default: return '/admin/staff';
+  }
+}
+
+export function getStaffProfilePath(role, staffId) {
+  return `${getStaffListPath(role)}/${staffId}`;
+}

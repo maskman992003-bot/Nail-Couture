@@ -3,11 +3,14 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags.js';
 import { fetchCustomerVisitHistory, fetchVisitLoyaltyPoints } from '@nail-couture/shared/utils/customerStats.js';
 import { enrichAppointmentsWithServices } from '@nail-couture/shared/utils/appointmentServices.js';
+import { getAppointmentTechnicianNames } from '@nail-couture/shared/utils/appointmentServices.js';
+import { fetchReviewableAppointments } from '@nail-couture/shared/utils/customerReviewService.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
 import { AppointmentStatusBadge } from '../../components/customer/AppointmentStatusBadge';
 import { AppModal, ModalButton } from '../../components/AppModal';
+import { ReviewFormModal } from '../../components/reviews/ReviewFormModal';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type VisitRecord = {
@@ -22,6 +25,8 @@ type VisitRecord = {
   booking_type?: string;
   services?: { name?: string; price?: number };
   loyaltyPointsEarned?: number | null;
+  technicians?: { full_name?: string };
+  mainServiceLabel?: string;
 };
 
 const TABS = [
@@ -55,6 +60,9 @@ export function CustomerHistoryScreen() {
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]['key']>('all');
   const [selectedVisit, setSelectedVisit] = useState<VisitRecord | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [reviewableIds, setReviewableIds] = useState<Set<string>>(new Set());
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
+  const [reviewVisit, setReviewVisit] = useState<VisitRecord | null>(null);
 
   const fetchData = useCallback(async () => {
     const userId = user?.id;
@@ -65,11 +73,12 @@ export function CustomerHistoryScreen() {
 
     try {
       const customerIds = await resolveCustomerIds(userId, user?.phone as string | undefined);
-      const [allData, loyaltyByAppt] = await Promise.all([
+      const [allData, loyaltyByAppt, reviewableRes] = await Promise.all([
         fetchCustomerVisitHistory(userId, user?.phone as string | undefined, {
           includeOnline: CUSTOMER_ONLINE_BOOKING,
         }),
         fetchVisitLoyaltyPoints(customerIds),
+        fetchReviewableAppointments(user?.phone as string | undefined),
       ]);
 
       const enriched = await enrichAppointmentsWithServices(getSupabase(), allData as VisitRecord[]);
@@ -86,6 +95,9 @@ export function CustomerHistoryScreen() {
 
       setActiveVisits(combined.filter((visit: VisitRecord) => ACTIVE_STATUSES.includes(visit.status)));
       setBookings(combined.filter((visit: VisitRecord) => HISTORY_STATUSES.includes(visit.status)));
+      if (reviewableRes.available) {
+        setReviewableIds(new Set((reviewableRes.rows || []).map((row) => row.appointment_id)));
+      }
     } catch (err) {
       console.error('Error loading visit history:', err);
     }
@@ -118,6 +130,15 @@ export function CustomerHistoryScreen() {
     setCancellingId(null);
   };
 
+  const canReviewVisit = (visit: VisitRecord) =>
+    visit.status === 'completed' && reviewableIds.has(visit.id) && !reviewedIds.has(visit.id);
+
+  const getVisitTechnicianName = (visit: VisitRecord) => {
+    const names = getAppointmentTechnicianNames(visit as Parameters<typeof getAppointmentTechnicianNames>[0]);
+    if (names.length) return names.join(', ');
+    return visit.technicians?.full_name || null;
+  };
+
   const renderVisitRow = (visit: VisitRecord) => {
     const serviceName =
       visit.selected_service_names || visit.add_ons || visit.services?.name || 'Visit';
@@ -148,6 +169,26 @@ export function CustomerHistoryScreen() {
             <AppointmentStatusBadge status={visit.status} />
             {visit.final_price != null ? (
               <Text style={styles.textGold}>${Number(visit.final_price).toFixed(2)}</Text>
+            ) : null}
+            {canReviewVisit(visit) ? (
+              <Pressable
+                onPress={(event) => {
+                  event.stopPropagation?.();
+                  setReviewVisit(visit);
+                }}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: styles.tokens.goldStrong,
+                }}
+              >
+                <Text style={[styles.textGold, { fontSize: 11, fontWeight: '600' }]}>Review</Text>
+              </Pressable>
+            ) : null}
+            {reviewedIds.has(visit.id) ? (
+              <Text style={[styles.textSecondary, { fontSize: 10 }]}>Review submitted</Text>
             ) : null}
           </View>
         </View>
@@ -211,7 +252,19 @@ export function CustomerHistoryScreen() {
         title="Visit Details"
         scrollBody
         footer={
-          selectedVisit && ACTIVE_STATUSES.includes(selectedVisit.status) ? (
+          selectedVisit && selectedVisit.status === 'completed' && canReviewVisit(selectedVisit) ? (
+            <>
+              <ModalButton label="Close" onPress={() => setSelectedVisit(null)} />
+              <ModalButton
+                label="Leave Review"
+                variant="primary"
+                onPress={() => {
+                  setReviewVisit(selectedVisit);
+                  setSelectedVisit(null);
+                }}
+              />
+            </>
+          ) : selectedVisit && ACTIVE_STATUSES.includes(selectedVisit.status) ? (
             <>
               <ModalButton label="Close" onPress={() => setSelectedVisit(null)} />
               <ModalButton
@@ -258,6 +311,24 @@ export function CustomerHistoryScreen() {
           </View>
         ) : null}
       </AppModal>
+
+      <ReviewFormModal
+        open={Boolean(reviewVisit)}
+        onClose={() => setReviewVisit(null)}
+        appointmentId={reviewVisit?.id || ''}
+        serviceName={reviewVisit?.mainServiceLabel || reviewVisit?.services?.name}
+        technicianName={reviewVisit ? getVisitTechnicianName(reviewVisit) || undefined : undefined}
+        callerPhone={user?.phone as string | undefined}
+        onSuccess={(appointmentId) => {
+          setReviewableIds((prev) => {
+            const next = new Set(prev);
+            next.delete(appointmentId);
+            return next;
+          });
+          setReviewedIds((prev) => new Set(prev).add(appointmentId));
+          setReviewVisit(null);
+        }}
+      />
     </CustomerScreenLayout>
   );
 }

@@ -12,6 +12,7 @@ import AppModal, {
   modalBtnSecondary,
   modalBtnPrimary,
 } from './AppModal';
+import { getStaffProfilePath } from '../utils/routes';
 import clsx from 'clsx';
 
 const roleColorsDark = {
@@ -145,9 +146,13 @@ export default function StaffManagement() {
   );
 
   const staffCardClass = clsx(
-    'border rounded-2xl p-5 flex flex-col justify-between hover:border-gold/20 transition-all group',
+    'border rounded-2xl p-5 flex flex-col justify-between hover:border-gold/20 transition-all group cursor-pointer',
     theme === 'dark' ? 'bg-offwhite/5 border-white/5' : 'bg-charcoal/5 border-charcoal/5'
   );
+
+  const openStaffProfile = (staffId) => {
+    navigate(getStaffProfilePath(user.role, staffId));
+  };
 
   const staffNameClass = clsx(
     'font-medium text-base truncate group-hover:text-gold transition-colors',
@@ -195,7 +200,16 @@ export default function StaffManagement() {
             {filteredStaff.map((member) => (
               <div
                 key={member.id}
+                role="button"
+                tabIndex={0}
                 className={staffCardClass}
+                onClick={() => openStaffProfile(member.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openStaffProfile(member.id);
+                  }
+                }}
               >
                 <div>
                   <div className="flex items-start justify-between gap-4 mb-3">
@@ -222,6 +236,7 @@ export default function StaffManagement() {
                     {STAFF_SHIFTS && member.role !== 'owner' && (
                       <Link
                         to={`/${user.role}/staff/schedule?staff=${member.id}`}
+                        onClick={(e) => e.stopPropagation()}
                         className="text-gold text-xs font-medium hover:underline flex items-center gap-1"
                       >
                         Schedule →

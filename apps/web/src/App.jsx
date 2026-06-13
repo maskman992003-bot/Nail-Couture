@@ -8,6 +8,7 @@ import Services from './components/Services'
 import BookingWizard from './components/BookingWizard'
 import Lookbook from './components/Lookbook'
 import WellnessToolsPromo from './components/marketing/WellnessToolsPromo'
+import CustomerTestimonials from './components/marketing/CustomerTestimonials'
 import AboutContact from './components/AboutContact'
 import CheckIn from './components/CheckIn'
 import PageHelmet from './components/PageHelmet'
@@ -141,6 +142,7 @@ function App() {
             </section>
             <Lookbook />
             <WellnessToolsPromo />
+            <CustomerTestimonials />
             <Services embedded />
             {bookingEnabled && <BookingWizard />}
           </>

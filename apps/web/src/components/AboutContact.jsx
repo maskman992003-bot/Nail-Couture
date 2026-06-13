@@ -1,4 +1,5 @@
 import { useTheme } from '../contexts/ThemeContext'
+import CustomerTestimonials from './marketing/CustomerTestimonials'
 
 export default function AboutContact() {
   const sectionTitle = 'Get in Touch'
@@ -24,6 +25,8 @@ export default function AboutContact() {
           </p>
         </div>
       </section>
+
+      <CustomerTestimonials showCta={false} className={theme === 'dark' ? 'bg-offwhite/[0.02]' : 'bg-white'} />
 
        <section id="contact" className={`py-16 sm:py-24 px-4 sm:px-6 ${theme === 'dark' ? 'bg-offwhite' : 'bg-cream'}`}>
         <div className="max-w-6xl mx-auto">

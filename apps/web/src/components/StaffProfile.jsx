@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { fetchTechnicianReviews, moderateCustomerReview } from '@nail-couture/shared/utils/customerReviewService';
 import Sidebar from './Sidebar';
+import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
+import ReviewsList from './reviews/ReviewsList';
 import clsx from 'clsx';
 
 const roleColorsDark = {
@@ -44,6 +47,12 @@ export default function StaffProfile() {
   const [todayStats, setTodayStats] = useState({ servicesCompleted: 0, revenueProcessed: 0 });
   const [weekStats, setWeekStats] = useState({ servicesCompleted: 0, revenueProcessed: 0 });
   const [updatingRole, setUpdatingRole] = useState(false);
+  const [technicianReviews, setTechnicianReviews] = useState([]);
+  const [reviewSummary, setReviewSummary] = useState({ avgRating: null, reviewCount: 0 });
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [moderatingReviewId, setModeratingReviewId] = useState(null);
+
+  const canModerateReviews = ['admin', 'super_admin', 'owner', 'partner'].includes(user?.role);
 
   const roleColors = theme === 'dark' ? roleColorsDark : roleColorsLight;
 
@@ -68,6 +77,9 @@ export default function StaffProfile() {
 
       if (error) throw error;
       setProfile(data);
+      if (data?.role === 'technician') {
+        fetchTechnicianReviewsForProfile(data.id);
+      }
     } catch (err) {
       console.error('Error fetching profile:', err);
       navigate(getStaffPath(user?.role));
@@ -85,6 +97,38 @@ export default function StaffProfile() {
       .limit(10);
 
     setCashierActivity((data || []).map(t => ({ ...t.appointments, payment: t })));
+  };
+
+  const fetchTechnicianReviewsForProfile = async (technicianId) => {
+    setReviewsLoading(true);
+    const { summary, reviews, available } = await fetchTechnicianReviews(technicianId, {
+      limit: 20,
+      callerPhone: user?.phone,
+    });
+    if (available) {
+      setReviewSummary(summary || { avgRating: null, reviewCount: 0 });
+      setTechnicianReviews(reviews || []);
+    }
+    setReviewsLoading(false);
+  };
+
+  const handleModerateReview = async (review, action) => {
+    if (!user?.phone || !review?.id) return;
+    setModeratingReviewId(review.id);
+    const { data, error, available } = await moderateCustomerReview(user.phone, review.id, action);
+    if (available && !error) {
+      if (action === 'delete') {
+        setTechnicianReviews((prev) => prev.filter((item) => item.id !== review.id));
+      } else {
+        setTechnicianReviews((prev) =>
+          prev.map((item) =>
+            item.id === review.id ? { ...item, is_hidden: data?.is_hidden ?? action === 'hide' } : item,
+          ),
+        );
+      }
+      if (profile?.id) fetchTechnicianReviewsForProfile(profile.id);
+    }
+    setModeratingReviewId(null);
   };
 
   const fetchPerformanceStats = async () => {
@@ -294,6 +338,15 @@ export default function StaffProfile() {
               <span className={`px-4 py-2 text-sm border rounded-full inline-block ${roleColors[profile?.role] || ''}`}>
                 {roleLabels[profile?.role] || profile?.role}
               </span>
+              {profile?.role === 'technician' && reviewSummary.reviewCount > 0 && (
+                <div className="mt-4">
+                  <ReviewSummaryBadge
+                    avgRating={reviewSummary.avgRating}
+                    reviewCount={reviewSummary.reviewCount}
+                    size="md"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex-1 space-y-6">
@@ -328,6 +381,30 @@ export default function StaffProfile() {
                   </div>
                 </div>
               </div>
+
+              {profile?.role === 'technician' && (
+                <div className={sectionCardClass}>
+                  <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+                    <h3 className="font-heading text-xl text-gold">Customer Reviews</h3>
+                    <ReviewSummaryBadge
+                      avgRating={reviewSummary.avgRating}
+                      reviewCount={reviewSummary.reviewCount}
+                    />
+                  </div>
+                  {reviewsLoading ? (
+                    <p className={emptyActivityText}>Loading reviews…</p>
+                  ) : (
+                    <ReviewsList
+                      reviews={technicianReviews}
+                      showService
+                      emptyMessage="No customer reviews yet."
+                      canModerate={canModerateReviews}
+                      onModerate={handleModerateReview}
+                      moderatingId={moderatingReviewId}
+                    />
+                  )}
+                </div>
+              )}
 
               <div className={sectionCardClass}>
                 <h3 className="font-heading text-xl text-gold mb-4">Role Management</h3>

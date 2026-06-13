@@ -5,6 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
 import NotificationPreferencesPanel from '@nail-couture/shared/components/NotificationPreferencesPanel.jsx';
+import { fetchTechnicianReviews } from '@nail-couture/shared/utils/customerReviewService';
+import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
+import ReviewsList from './reviews/ReviewsList';
 import clsx from 'clsx';
 
 const roleLabels = {
@@ -66,6 +69,9 @@ export default function Settings() {
   const [confirmPin, setConfirmPin] = useState('');
   const [pinError, setPinError] = useState('');
   const [pinSaving, setPinSaving] = useState(false);
+  const [technicianReviews, setTechnicianReviews] = useState([]);
+  const [reviewSummary, setReviewSummary] = useState({ avgRating: null, reviewCount: 0 });
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -101,6 +107,18 @@ export default function Settings() {
         email: data.email || '',
       });
       await fetchWorkStats(data.id, data.role);
+      if (data.role === 'technician') {
+        setReviewsLoading(true);
+        const { summary, reviews, available } = await fetchTechnicianReviews(data.id, {
+          limit: 10,
+          callerPhone: user?.phone,
+        });
+        if (available) {
+          setReviewSummary(summary || { avgRating: null, reviewCount: 0 });
+          setTechnicianReviews(reviews || []);
+        }
+        setReviewsLoading(false);
+      }
     }
 
     setLoading(false);
@@ -485,6 +503,27 @@ export default function Settings() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {isTechnician && !editing && (
+          <div className="rounded-2xl border border-card bg-card p-6 mb-6">
+            <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+              <h3 className="font-heading text-xl text-gold">Your Customer Reviews</h3>
+              <ReviewSummaryBadge
+                avgRating={reviewSummary.avgRating}
+                reviewCount={reviewSummary.reviewCount}
+              />
+            </div>
+            {reviewsLoading ? (
+              <p className="text-secondary text-sm animate-pulse">Loading reviews…</p>
+            ) : (
+              <ReviewsList
+                reviews={technicianReviews}
+                showService
+                emptyMessage="No reviews yet — they will appear here after clients rate completed visits."
+              />
+            )}
           </div>
         )}
 

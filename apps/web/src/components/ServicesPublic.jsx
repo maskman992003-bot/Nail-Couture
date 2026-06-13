@@ -5,7 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { getFitnessAssessmentPath, getNailAssessmentPath } from '@nail-couture/shared/utils/routes';
 import { supabase } from '../lib/supabase';
 import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '@nail-couture/shared/utils/serviceCategories';
+import { fetchServiceReviewSummaries } from '@nail-couture/shared/utils/customerReviewService';
 import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
+import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
 
 export default function ServicesPublic() {
   const { theme } = useTheme();
@@ -18,6 +20,7 @@ export default function ServicesPublic() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [contentVisible, setContentVisible] = useState(true);
+  const [reviewSummaries, setReviewSummaries] = useState({});
   const isFirstCategoryRender = useRef(true);
 
   useEffect(() => {
@@ -57,8 +60,13 @@ export default function ServicesPublic() {
       .select('*')
       .order('category', { ascending: true })
       .order('price', { ascending: true });
-    setServices(data || []);
+    const list = data || [];
+    setServices(list);
     setLoading(false);
+
+    const serviceIds = list.filter((s) => !s.is_addon).map((s) => s.id);
+    const { summaries, available } = await fetchServiceReviewSummaries(serviceIds);
+    if (available) setReviewSummaries(summaries);
   };
 
   const fetchCategories = async () => {
@@ -140,6 +148,14 @@ export default function ServicesPublic() {
                           </div>
                           {service.description && (
                             <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>{service.description}</p>
+                          )}
+                          {reviewSummaries[service.id]?.reviewCount > 0 && (
+                            <div className="mb-3">
+                              <ReviewSummaryBadge
+                                avgRating={reviewSummaries[service.id].avgRating}
+                                reviewCount={reviewSummaries[service.id].reviewCount}
+                              />
+                            </div>
                           )}
                           <div className="flex items-center justify-between">
                             <span className={`text-sm ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>~{service.duration_minutes} min</span>

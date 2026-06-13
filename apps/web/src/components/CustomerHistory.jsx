@@ -19,7 +19,9 @@ import {
   enrichAppointmentsWithServices,
   getAppointmentTechnicianNames,
 } from '@nail-couture/shared/utils/appointmentServices';
+import { fetchReviewableAppointments } from '@nail-couture/shared/utils/customerReviewService';
 import Sidebar from './Sidebar';
+import ReviewForm from './reviews/ReviewForm';
 
 const statusConfigDark = {
   waiting: { label: 'Waiting', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' },
@@ -77,16 +79,20 @@ export default function CustomerHistory() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedDetailBooking, setSelectedDetailBooking] = useState(null);
   const [receiptLoadingId, setReceiptLoadingId] = useState(null);
+  const [reviewableIds, setReviewableIds] = useState(new Set());
+  const [reviewedIds, setReviewedIds] = useState(new Set());
+  const [reviewModalBooking, setReviewModalBooking] = useState(null);
 
   const fetchData = useCallback(async () => {
     const userId = user?.id;
     if (!userId) { setLoading(false); navigate('/login'); return; }
     try {
       const customerIds = await resolveCustomerIds(userId, user?.phone);
-      const [allData, notifRes, loyaltyByAppt] = await Promise.all([
+      const [allData, notifRes, loyaltyByAppt, reviewableRes] = await Promise.all([
         fetchCustomerVisitHistory(userId, user?.phone, { includeOnline: CUSTOMER_ONLINE_BOOKING }),
         supabase.from('notifications').select('*').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(10),
         fetchVisitLoyaltyPoints(customerIds),
+        fetchReviewableAppointments(user?.phone),
       ]);
 
       const onlineList = CUSTOMER_ONLINE_BOOKING ? allData.filter((a) => a.booking_type === 'online') : [];
@@ -109,6 +115,9 @@ export default function CustomerHistory() {
       setActiveVisits(combined.filter((b) => ACTIVE_STATUSES.includes(b.status)));
       setBookings(combined.filter((b) => HISTORY_STATUSES.includes(b.status)));
       setNotifications(notifRes.data || []);
+      if (reviewableRes.available) {
+        setReviewableIds(new Set((reviewableRes.rows || []).map((row) => row.appointment_id)));
+      }
     } catch (err) {
       console.error('Error loading visit history:', err);
     }
@@ -212,6 +221,33 @@ export default function CustomerHistory() {
   const textHeading = theme === 'dark' ? 'text-offwhite font-heading' : 'text-charcoal font-heading';
   const closeBtn = theme === 'dark' ? 'text-offwhite/40 hover:text-gold' : 'text-charcoal/40 hover:text-gold';
 
+  const openReviewModal = (booking, e) => {
+    e?.stopPropagation?.();
+    setReviewModalBooking(booking);
+  };
+
+  const handleReviewSuccess = (appointmentId) => {
+    setReviewableIds((prev) => {
+      const next = new Set(prev);
+      next.delete(appointmentId);
+      return next;
+    });
+    setReviewedIds((prev) => new Set(prev).add(appointmentId));
+    setReviewModalBooking(null);
+    if (showDetailModal) setShowDetailModal(false);
+  };
+
+  const canReviewBooking = (booking) =>
+    booking.status === 'completed'
+    && reviewableIds.has(booking.id)
+    && !reviewedIds.has(booking.id);
+
+  const getBookingTechnicianName = (booking) => {
+    const names = getAppointmentTechnicianNames(booking);
+    if (names.length) return names.join(', ');
+    return booking.tech?.full_name || booking.technicians?.full_name || null;
+  };
+
   const renderCard = (booking) => {
     const cfg = statusConfig[booking.status];
     const isUpdating = updatingId === booking.id;
@@ -246,14 +282,27 @@ export default function CustomerHistory() {
               {cfg?.label || booking.status}
             </span>
             {booking.status === 'completed' && (
-              <button
-                onClick={(e) => { e.stopPropagation(); generateReceipt(booking); }}
-                disabled={receiptLoadingId === booking.id}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors hover:border-gold/50 disabled:opacity-50"
-                style={{ borderColor: 'rgba(197,160,89,0.3)', color: '#c5a059' }}
-              >
-                {receiptLoadingId === booking.id ? 'Loading…' : 'Receipt'}
-              </button>
+              <div className="flex flex-col items-end gap-1.5">
+                {canReviewBooking(booking) && (
+                  <button
+                    onClick={(e) => openReviewModal(booking, e)}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gold/40 text-gold hover:bg-gold/10 transition-colors"
+                  >
+                    Leave Review
+                  </button>
+                )}
+                {reviewedIds.has(booking.id) && (
+                  <span className="text-[10px] text-gold/70">Review submitted</span>
+                )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); generateReceipt(booking); }}
+                  disabled={receiptLoadingId === booking.id}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors hover:border-gold/50 disabled:opacity-50"
+                  style={{ borderColor: 'rgba(197,160,89,0.3)', color: '#c5a059' }}
+                >
+                  {receiptLoadingId === booking.id ? 'Loading…' : 'Receipt'}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -427,6 +476,26 @@ export default function CustomerHistory() {
           </div>
         )}
 
+        {reviewModalBooking && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setReviewModalBooking(null)}>
+            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-xl overflow-hidden border border-gold/10 shadow-2xl" style={{ backgroundColor: modalBg }}>
+              <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-gold/10">
+                <h2 className="font-heading text-2xl text-gold">Leave a Review</h2>
+                <button onClick={() => setReviewModalBooking(null)} className={`${closeBtn} text-xl leading-none`}>&times;</button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                <ReviewForm
+                  appointmentId={reviewModalBooking.id}
+                  serviceName={reviewModalBooking.mainServiceLabel || reviewModalBooking.service?.name}
+                  technicianName={getBookingTechnicianName(reviewModalBooking)}
+                  onSuccess={() => handleReviewSuccess(reviewModalBooking.id)}
+                  onCancel={() => setReviewModalBooking(null)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {showDetailModal && selectedDetailBooking && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowDetailModal(false)}>
             <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-gold/10 shadow-2xl" style={{ backgroundColor: modalBg }}>
@@ -484,6 +553,18 @@ export default function CustomerHistory() {
                 </div>
               </div>
               <div className="p-4 sm:p-6 pt-0 flex flex-col sm:flex-row gap-3">
+                {selectedDetailBooking.status === 'completed' && canReviewBooking(selectedDetailBooking) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      setReviewModalBooking(selectedDetailBooking);
+                    }}
+                    className="flex-1 py-3 border border-gold/40 text-gold font-heading text-sm rounded-xl hover:bg-gold/10 transition-colors"
+                  >
+                    Leave Review
+                  </button>
+                )}
                 {selectedDetailBooking.status === 'completed' && (
                   <button
                     type="button"
