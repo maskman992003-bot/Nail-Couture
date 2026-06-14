@@ -138,19 +138,23 @@ export function formatAttachmentSize(bytes) {
 
 /**
  * @param {string} profileId
- * @param {Blob | File} file
+ * @param {Blob | File | ArrayBuffer | ArrayBufferView} file
  * @param {string} [fileName]
  * @param {string} [mimeType]
+ * @param {{ sizeBytes?: number }} [options]
  * @returns {Promise<AnnouncementAttachment>}
  */
-export async function uploadAnnouncementAttachment(profileId, file, fileName, mimeType) {
+export async function uploadAnnouncementAttachment(profileId, file, fileName, mimeType, options = {}) {
   if (!profileId || !file) {
     throw new Error('Missing profile or file.');
   }
 
   const resolvedName = fileName || file.name || `attachment_${Date.now()}`;
   const resolvedMime = resolveAnnouncementMimeType(resolvedName, mimeType || file.type);
-  const sizeBytes = file.size ?? 0;
+  const inferredSize = typeof file === 'object' && file !== null && 'byteLength' in file
+    ? file.byteLength
+    : file.size;
+  const sizeBytes = options.sizeBytes ?? inferredSize ?? 0;
 
   const validationError = validateAnnouncementAttachment(resolvedMime || file.type, sizeBytes);
   if (validationError) {

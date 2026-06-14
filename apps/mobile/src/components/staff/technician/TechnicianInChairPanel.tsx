@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import {
   parseProfilePreferences,
@@ -15,7 +15,11 @@ import { getAppointmentServiceLabels } from '@nail-couture/shared/utils/appointm
 import { useAuth } from '../../../contexts/AuthContext';
 import { WaiverModal } from '../../kiosk/WaiverModal';
 import { ScrollSelect } from '../../forms/ScrollSelect';
-import { pickAndUploadVisitPhoto } from '../../../utils/visitPhotoUpload';
+import {
+  pickVisitPhotoFromLibrary,
+  takeVisitPhotoFromCamera,
+  uploadVisitPhotoFromAsset,
+} from '../../../utils/visitPhotoUpload';
 import { Icon } from '../../icons/Icon';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import { TechnicianServiceEditor } from './TechnicianServiceEditor';
@@ -139,19 +143,30 @@ export function TechnicianInChairPanel({
     }
   };
 
-  const handlePhotoUpload = async () => {
+  const handlePhotoUpload = async (source: 'library' | 'camera') => {
     if (!canUploadVisitPhotos(user?.role) || !appointment.customer_id) return;
+
+    const picker = source === 'camera' ? takeVisitPhotoFromCamera : pickVisitPhotoFromLibrary;
+    const picked = await picker();
+    if (picked.canceled) return;
+
     setPhotoUploading(true);
     setPhotoMsg('');
-    const result = await pickAndUploadVisitPhoto(
+    const result = await uploadVisitPhotoFromAsset(
       appointment.customer_id,
       appointment.id,
+      picked.asset,
       photoType,
       user?.id,
     );
     setPhotoUploading(false);
-    if ('canceled' in result && result.canceled) return;
-    setPhotoMsg(result.success ? 'Photo uploaded' : result.error || 'Upload failed');
+    if (!result.success) {
+      const message = result.error || 'Upload failed';
+      setPhotoMsg(message);
+      Alert.alert('Upload failed', message);
+      return;
+    }
+    setPhotoMsg('Photo uploaded');
   };
 
   const prefItems = [
@@ -260,7 +275,7 @@ export function TechnicianInChairPanel({
             />
           </View>
           <Pressable
-            onPress={handlePhotoUpload}
+            onPress={() => handlePhotoUpload('camera')}
             disabled={photoUploading}
             style={{
               paddingHorizontal: 12,
@@ -272,7 +287,23 @@ export function TechnicianInChairPanel({
             }}
           >
             <Text style={[styles.textPrimary, { fontSize: 12 }]}>
-              {photoUploading ? 'Uploading…' : 'Upload photo'}
+              {photoUploading ? 'Uploading…' : 'Camera'}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => handlePhotoUpload('library')}
+            disabled={photoUploading}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: styles.tokens.borderLight,
+              opacity: photoUploading ? 0.5 : 1,
+            }}
+          >
+            <Text style={[styles.textPrimary, { fontSize: 12 }]}>
+              {photoUploading ? 'Uploading…' : 'Photos'}
             </Text>
           </Pressable>
           {photoMsg ? (

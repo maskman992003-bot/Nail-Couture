@@ -7,6 +7,7 @@ import { getCustomerDetailPath } from '@nail-couture/shared/utils/routes';
 import { addStaffNote } from '@nail-couture/shared/utils/staffCustomerNotes';
 import { uploadVisitPhoto } from '@nail-couture/shared/utils/staffCustomerTimeline';
 import { canUploadVisitPhotos } from '@nail-couture/shared/utils/staffCustomerAccess';
+import { clickFileInput, openWebCameraPicker } from '../../utils/mobileFilePickers.js';
 import TechnicianRebookModal from './TechnicianRebookModal';
 
 export default function TechnicianPostCompletePrompt({ data, onDismiss, userRole }) {
@@ -19,6 +20,7 @@ export default function TechnicianPostCompletePrompt({ data, onDismiss, userRole
   const [messageIsError, setMessageIsError] = useState(false);
   const [showRebook, setShowRebook] = useState(false);
   const photoInputRef = useRef(null);
+  const cameraCaptureInputRef = useRef(null);
 
   if (!data) return null;
 
@@ -83,6 +85,13 @@ export default function TechnicianPostCompletePrompt({ data, onDismiss, userRole
     }
   };
 
+  const openCamera = () => {
+    if (photoUploading) return;
+    openWebCameraPicker({
+      nativeCameraInputRef: cameraCaptureInputRef,
+    });
+  };
+
   return (
     <div className="bg-card border-2 border-gold/40 rounded-xl p-5 shadow-lg">
       <div className="flex items-start justify-between gap-3 mb-4">
@@ -138,13 +147,29 @@ export default function TechnicianPostCompletePrompt({ data, onDismiss, userRole
               className="hidden"
               onChange={handlePhotoUpload}
             />
+            <input
+              ref={cameraCaptureInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
             <button
               type="button"
-              onClick={() => photoInputRef.current?.click()}
+              onClick={openCamera}
               disabled={photoUploading}
               className="px-4 py-2 text-sm bg-secondary border border-light rounded-lg text-primary hover:border-theme disabled:opacity-50"
             >
-              {photoUploading ? 'Uploading…' : 'Upload photo'}
+              {photoUploading ? 'Uploading…' : 'Camera'}
+            </button>
+            <button
+              type="button"
+              onClick={() => clickFileInput(photoInputRef)}
+              disabled={photoUploading}
+              className="px-4 py-2 text-sm bg-secondary border border-light rounded-lg text-primary hover:border-theme disabled:opacity-50"
+            >
+              {photoUploading ? 'Uploading…' : 'Photos'}
             </button>
           </div>
         )}

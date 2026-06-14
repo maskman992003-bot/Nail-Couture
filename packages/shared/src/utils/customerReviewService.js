@@ -8,6 +8,7 @@ const SERVICE_REVIEWS_RPC = 'get_reviews_for_service';
 const SERVICE_SUMMARIES_RPC = 'get_service_review_summaries';
 const FEATURED_REVIEWS_RPC = 'get_featured_reviews';
 const MODERATE_REVIEW_RPC = 'moderate_customer_review';
+const PUBLISH_REVIEW_RPC = 'publish_customer_review';
 const STAFF_REVIEWS_RPC = 'get_staff_customer_reviews';
 const MY_REVIEWS_RPC = 'get_my_customer_reviews';
 
@@ -314,11 +315,14 @@ export async function fetchServiceReviews(serviceId, { limit = 10, offset = 0 } 
   }
 }
 
-/** Top public reviews for marketing sections. */
-export async function fetchFeaturedReviews(limit = 6) {
+const FEATURED_REVIEWS_HOME_MAX = 9;
+
+/** Top public reviews for marketing sections (home page cap: 9). */
+export async function fetchFeaturedReviews(limit = FEATURED_REVIEWS_HOME_MAX) {
+  const safeLimit = Math.max(1, Math.min(limit, FEATURED_REVIEWS_HOME_MAX));
   try {
     const { data, error } = await getSupabase().rpc(FEATURED_REVIEWS_RPC, {
-      p_limit: limit,
+      p_limit: safeLimit,
     });
 
     if (error) {
@@ -443,6 +447,30 @@ export async function fetchStaffCustomerReviews(
     };
   } catch (err) {
     return { summary: null, reviews: [], hasMore: false, available: false, error: err };
+  }
+}
+
+/** Publish or unpublish a review for public marketing (management roles only). */
+export async function publishCustomerReview(callerPhone, reviewId, action = 'publish') {
+  if (!callerPhone || !reviewId) {
+    return { data: null, error: new Error('Phone and review ID are required'), available: true };
+  }
+
+  try {
+    const { data, error } = await getSupabase().rpc(PUBLISH_REVIEW_RPC, {
+      caller_phone: callerPhone,
+      p_review_id: reviewId,
+      p_action: action,
+    });
+
+    if (error) {
+      if (isReviewUnavailable(error)) return { data: null, error, available: false };
+      return { data: null, error, available: true };
+    }
+
+    return { data: normalizeRpcObject(data), error: null, available: true };
+  } catch (err) {
+    return { data: null, error: err, available: true };
   }
 }
 

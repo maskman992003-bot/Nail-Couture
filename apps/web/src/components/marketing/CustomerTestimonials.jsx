@@ -5,7 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { fetchFeaturedReviews, formatReviewDate } from '@nail-couture/shared/utils/customerReviewService';
 import StarRatingDisplay from '../reviews/StarRatingDisplay';
 
-export default function CustomerTestimonials({ className, limit = 6, showCta = true }) {
+export default function CustomerTestimonials({ className, limit = 9, showCta = true }) {
   const { theme } = useTheme();
   const [reviews, setReviews] = useState([]);
   const [loaded, setLoaded] = useState(false);

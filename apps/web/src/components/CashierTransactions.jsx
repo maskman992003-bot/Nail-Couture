@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
-import { downloadTextFile } from '@nail-couture/shared/utils/customerStats';
 import {
   buildCashierReceiptContent,
   fetchCashierTransactions,
@@ -13,6 +12,7 @@ import {
 } from '@nail-couture/shared/utils/cashierTransactions';
 import { getCallerPhone } from '@nail-couture/shared/utils/technicianQueue';
 import Sidebar from './Sidebar';
+import ReceiptPreviewModal from './ReceiptPreviewModal';
 
 function formatTransactionTime(timestamp) {
   if (!timestamp) return '';
@@ -39,6 +39,7 @@ export default function CashierTransactions() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [receiptLoadingId, setReceiptLoadingId] = useState(null);
+  const [receiptPreview, setReceiptPreview] = useState(null);
 
   const isDark = theme === 'dark';
   const bgClass = clsx(
@@ -87,7 +88,7 @@ export default function CashierTransactions() {
     try {
       const callerPhone = getCallerPhone(user?.phone);
       const { content, filename } = await buildCashierReceiptContent(tx, callerPhone);
-      downloadTextFile(content, filename);
+      setReceiptPreview({ content, filename });
     } catch (err) {
       console.error('Receipt download error:', err);
       window.alert('Unable to download receipt. Please try again.');
@@ -245,6 +246,14 @@ export default function CashierTransactions() {
           </p>
         )}
       </div>
+
+      <ReceiptPreviewModal
+        open={Boolean(receiptPreview)}
+        content={receiptPreview?.content || ''}
+        filename={receiptPreview?.filename || 'receipt.txt'}
+        onClose={() => setReceiptPreview(null)}
+        theme={theme}
+      />
     </div>
   );
 }

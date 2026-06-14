@@ -1,7 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { DndContext, DragOverlay, useDraggable, useDroppable, pointerWithin, rectIntersection } from '@dnd-kit/core'
+import {
+  DndContext,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  pointerWithin,
+  rectIntersection,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '../services/services'
 import { useAuth } from '../contexts/AuthContext'
@@ -16,9 +27,38 @@ import AppModal, {
   modalBtnDanger,
 } from './AppModal'
 import clsx from 'clsx'
+import usePullToRefresh from '../hooks/usePullToRefresh'
+import PullToRefreshIndicator from './PullToRefreshIndicator'
 import { getWorkstationStatus, WORKSTATION_ON_BREAK } from '../utils/technicianWorkstation'
 
 const LOBBY_DROP_ID = 'lobby'
+
+const stopDragActivation = (e) => { e.stopPropagation() }
+
+const DragHandle = ({ listeners, attributes, compact = false }) => (
+  <button
+    type="button"
+    data-drag-handle
+    aria-label="Drag to assign technician"
+    className={clsx(
+      'touch-none select-none shrink-0 inline-flex items-center justify-center rounded-lg cursor-grab active:cursor-grabbing',
+      'text-gold/60 hover:text-gold active:text-gold hover:bg-gold/10 active:bg-gold/15',
+      compact ? 'w-9 h-9' : 'w-10 h-10'
+    )}
+    style={{ touchAction: 'none' }}
+    {...listeners}
+    {...attributes}
+  >
+    <svg viewBox="0 0 20 20" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <circle cx="7" cy="5" r="1.5" />
+      <circle cx="13" cy="5" r="1.5" />
+      <circle cx="7" cy="10" r="1.5" />
+      <circle cx="13" cy="10" r="1.5" />
+      <circle cx="7" cy="15" r="1.5" />
+      <circle cx="13" cy="15" r="1.5" />
+    </svg>
+  </button>
+)
 
 const floorManagerCollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args)
@@ -69,8 +109,11 @@ const DraggablePendingCustomer = ({ appointment, children }) => {
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
-      {children}
+    <div ref={setNodeRef} style={style}>
+      <div className="flex items-start gap-2">
+        <DragHandle listeners={listeners} attributes={attributes} compact />
+        <div className="flex-1 min-w-0">{children}</div>
+      </div>
     </div>
   )
 }
@@ -115,6 +158,9 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
 
   const activeCustomerTextClass = clsx('text-sm', theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60')
   const activeCustomerDetailClass = clsx('text-xs', theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40')
+  const pendingCustomerTextClass = clsx('text-sm', theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70')
+  const pendingCustomerDetailClass = clsx('text-xs', theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50')
+  const dropHintTextClass = clsx('text-sm', theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40')
 
   return (
     <div
@@ -141,12 +187,13 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
         </div>
       ) : showAcceptButton ? (
         <DraggablePendingCustomer appointment={pendingCustomer}>
-          <div className="text-sm text-offwhite/70">
+          <div className={pendingCustomerTextClass}>
             <div className="mb-2">{pendingCustomer.customer?.full_name || 'Customer'}</div>
-            <div className="text-xs text-offwhite/50">{pendingCustomer.add_ons || pendingCustomer.services?.name}</div>
-            <p className="text-[10px] text-gold/60 mt-1">Drag to reassign or back to waiting</p>
+            <div className={pendingCustomerDetailClass}>{pendingCustomer.add_ons || pendingCustomer.services?.name}</div>
+            <p className="text-[10px] text-gold/60 mt-1">Hold grip and drag to reassign or return to waiting</p>
             <button
-              onPointerDown={(e) => e.stopPropagation()}
+              onPointerDown={stopDragActivation}
+              onTouchStart={stopDragActivation}
               onClick={() => onAccept(pendingCustomer.id, tech.id)}
               disabled={updating === pendingCustomer.id}
               className="mt-3 w-full py-2 bg-green-500 text-white font-heading text-sm hover:bg-green-600 disabled:opacity-50 rounded-lg"
@@ -160,7 +207,7 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
           On break — cannot assign
         </div>
       ) : (
-        <div className="text-sm text-offwhite/40">
+        <div className={dropHintTextClass}>
           {dropHighlight ? 'Release to assign' : 'Drop here to assign'}
         </div>
       )}
@@ -181,9 +228,7 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, theme }) => {
     overflow: 'hidden'
   }
 
-  const stopProp = (e) => { e.stopPropagation() }
-
-  const cardClass = clsx('border rounded-xl p-4 sm:p-5 cursor-grab active:cursor-grabbing transition-all', 
+  const cardClass = clsx('border rounded-xl p-4 sm:p-5 transition-all',
     theme === 'dark' ? 'bg-offwhite/5 border-offwhite/10' : 'bg-charcoal/5 border-charcoal/10'
   )
 
@@ -223,32 +268,33 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, theme }) => {
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
       className={cardClass}
     >
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className={customerNameClass}>
-              {appointment.customer?.full_name || 'Guest'}
-            </h3>
-            {appointment.booking_type === 'walk_in' ? (
-              <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded shrink-0">Walk-in</span>
-            ) : (
-              <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded shrink-0">Online</span>
-            )}
+      <div className="flex items-start gap-2 mb-2">
+        <DragHandle listeners={listeners} attributes={attributes} />
+        <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className={customerNameClass}>
+                {appointment.customer?.full_name || 'Guest'}
+              </h3>
+              {appointment.booking_type === 'walk_in' ? (
+                <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded shrink-0">Walk-in</span>
+              ) : (
+                <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded shrink-0">Online</span>
+              )}
+            </div>
+            <div className={customerDetailClass}>
+              {appointment.customer?.phone && <span>📞 {appointment.customer.phone}</span>}
+              {appointment.customer?.refreshment_pref && <span>☕ {appointment.customer.refreshment_pref}</span>}
+            </div>
           </div>
-          <div className={customerDetailClass}>
-            {appointment.customer?.phone && <span>📞 {appointment.customer.phone}</span>}
-            {appointment.customer?.refreshment_pref && <span>☕ {appointment.customer.refreshment_pref}</span>}
-          </div>
-        </div>
-        <div className="flex items-start gap-2 shrink-0">
-          <span className={timeTextClass}>{formatTime(appointment.checked_in_at)}</span>
-          <div className="flex items-center gap-1">
-            <button onPointerDown={stopProp} onClick={(e) => { e.stopPropagation(); onEdit(appointment) }} className={editBtnClass}>✎</button>
-            <button onPointerDown={stopProp} onClick={(e) => { e.stopPropagation(); onCancel(appointment) }} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
+          <div className="flex items-start gap-2 shrink-0">
+            <span className={timeTextClass}>{formatTime(appointment.checked_in_at)}</span>
+            <div className="flex items-center gap-1">
+              <button onPointerDown={stopDragActivation} onTouchStart={stopDragActivation} onClick={(e) => { e.stopPropagation(); onEdit(appointment) }} className={editBtnClass}>✎</button>
+              <button onPointerDown={stopDragActivation} onTouchStart={stopDragActivation} onClick={(e) => { e.stopPropagation(); onCancel(appointment) }} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
+            </div>
           </div>
         </div>
       </div>
@@ -538,6 +584,15 @@ export default function AdminLobby() {
   const { theme } = useTheme()
   const navigate = useNavigate()
 
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 8 },
+    }),
+  )
+
   const busyTechnicians = servingAppointments
     .filter(a => a.status === 'serving' && a.technician_id)
     .map(a => a.technician_id)
@@ -628,6 +683,29 @@ export default function AdminLobby() {
       })
     setTodayTotal(data || 0)
   }, [])
+
+  const refreshFloorManager = useCallback(async () => {
+    await Promise.all([
+      fetchAppointments(),
+      fetchServingAppointments(),
+      fetchCheckoutReadyAppointments(),
+      fetchPendingAppointments(),
+      fetchTechnicians(),
+      fetchTodayTotal(),
+    ])
+  }, [
+    fetchAppointments,
+    fetchServingAppointments,
+    fetchCheckoutReadyAppointments,
+    fetchPendingAppointments,
+    fetchTechnicians,
+    fetchTodayTotal,
+  ])
+
+  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+    onRefresh: refreshFloorManager,
+    disabled: Boolean(activeId),
+  })
 
   const decrementRefreshmentInventory = async (refreshmentName) => {
     try {
@@ -863,13 +941,24 @@ export default function AdminLobby() {
   }
 
   return (
-    <DndContext collisionDetection={floorManagerCollisionDetection} onDragStart={({active}) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={floorManagerCollisionDetection}
+      onDragStart={({ active }) => setActiveId(active.id)}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
       <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
         <Sidebar />
+        <PullToRefreshIndicator
+          pullDistance={pullDistance}
+          isRefreshing={isRefreshing}
+          pullProgress={pullProgress}
+        />
         <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
             <div className="mb-6">
               <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
-              <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Drag to assign, reassign, or return pending customers to waiting</p>
+              <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Hold the grip handle and drag to assign, reassign, or return customers to waiting. Pull down to refresh on mobile.</p>
             </div>
 
             {notification && (
@@ -988,7 +1077,7 @@ export default function AdminLobby() {
 
               <div>
                 <h2 className="font-heading text-xl text-gold mb-4">Technician Grid</h2>
-                <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>Drop a customer on a technician to assign or reassign</p>
+                <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>Hold grip on a waiting customer, then drop on a technician to assign or reassign</p>
                 <div className="space-y-4">
                   {technicians.map(tech => {
                     const activeCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')

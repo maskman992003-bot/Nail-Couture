@@ -9,6 +9,7 @@ import {
   fetchStaffCustomerReviews,
   fetchTechnicianReviews,
   moderateCustomerReview,
+  publishCustomerReview,
 } from '@nail-couture/shared/utils/customerReviewService';
 import Sidebar from './Sidebar';
 import ThemeSelect from './ThemeSelect';
@@ -38,6 +39,7 @@ export default function StaffReviews() {
   const [technicians, setTechnicians] = useState([]);
   const [technicianFilter, setTechnicianFilter] = useState('');
   const [moderatingReviewId, setModeratingReviewId] = useState(null);
+  const [publishingReviewId, setPublishingReviewId] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [filtersClientSide, setFiltersClientSide] = useState(false);
   const [datePreset, setDatePreset] = useState('today');
@@ -171,7 +173,7 @@ export default function StaffReviews() {
         }));
       } else if (action === 'hide') {
         setReviews((prev) =>
-          prev.map((r) => (r.id === review.id ? { ...r, is_hidden: true } : r)),
+          prev.map((r) => (r.id === review.id ? { ...r, is_hidden: true, is_published: false } : r)),
         );
       } else if (action === 'unhide') {
         setReviews((prev) =>
@@ -183,8 +185,24 @@ export default function StaffReviews() {
     setModeratingReviewId(null);
   };
 
-  const handlePublish = (_review) => {
-    // Social media publish integration coming soon
+  const handlePublish = async (review, action = 'publish') => {
+    if (!user?.phone || !canPublish) return;
+    setPublishingReviewId(review.id);
+    const { error, available, data } = await publishCustomerReview(user.phone, review.id, action);
+    if (available && !error) {
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === review.id
+            ? {
+                ...r,
+                is_published: action === 'publish',
+                published_at: data?.published_at ?? (action === 'publish' ? new Date().toISOString() : null),
+              }
+            : r,
+        ),
+      );
+    }
+    setPublishingReviewId(null);
   };
 
   const handleConfirmDelete = async () => {
@@ -326,6 +344,7 @@ export default function StaffReviews() {
                 moderatingId={moderatingReviewId}
                 canPublish={canPublish}
                 onPublish={handlePublish}
+                publishingId={publishingReviewId}
                 onDeleteRequest={canModerate ? setReviewToDelete : undefined}
               />
               {hasMore && (

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -52,7 +53,11 @@ import { AppModal, ModalButton } from '../../components/AppModal';
 import { Icon } from '../../components/icons/Icon';
 import { APPOINTMENT_STATUS_COLORS, APPOINTMENT_STATUS_LABELS, TIER_COLORS } from '../../constants/customerConstants';
 import { useThemeStyles } from '../../theme/useThemeStyles';
-import { pickAndUploadVisitPhoto } from '../../utils/visitPhotoUpload';
+import {
+  pickVisitPhotoFromLibrary,
+  takeVisitPhotoFromCamera,
+  uploadVisitPhotoFromAsset,
+} from '../../utils/visitPhotoUpload';
 import type { CustomersStackParamList } from '../../navigation/staffTypes';
 
 const TABS = [
@@ -504,15 +509,27 @@ export function StaffCustomerDetailScreen() {
     setTimeout(() => setSaveMsg(''), 2500);
   };
 
-  const handlePhotoUpload = async () => {
+  const handlePhotoUpload = async (source: 'library' | 'camera') => {
     if (!canUploadPhotos) return;
+
+    const picker = source === 'camera' ? takeVisitPhotoFromCamera : pickVisitPhotoFromLibrary;
+    const picked = await picker();
+    if (picked.canceled) return;
+
     setPhotoUploading(true);
     setSaveMsg('');
-    const result = await pickAndUploadVisitPhoto(customerId, null, photoType, user?.id);
+    const result = await uploadVisitPhotoFromAsset(
+      customerId,
+      null,
+      picked.asset,
+      photoType,
+      user?.id,
+    );
     setPhotoUploading(false);
-    if ('canceled' in result && result.canceled) return;
     if (!result.success) {
-      setSaveMsg(result.error || 'Upload failed');
+      const message = result.error || 'Upload failed';
+      setSaveMsg(message);
+      Alert.alert('Upload failed', message);
       return;
     }
     if (!('photo' in result) || !result.photo) return;
@@ -1110,7 +1127,7 @@ export function StaffCustomerDetailScreen() {
                 />
               </View>
               <Pressable
-                onPress={handlePhotoUpload}
+                onPress={() => handlePhotoUpload('camera')}
                 disabled={photoUploading}
                 style={[
                   styles.buttonPrimary,
@@ -1118,7 +1135,19 @@ export function StaffCustomerDetailScreen() {
                 ]}
               >
                 <Text style={styles.buttonPrimaryText}>
-                  {photoUploading ? 'Uploading…' : 'Upload photo'}
+                  {photoUploading ? 'Uploading…' : 'Camera'}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => handlePhotoUpload('library')}
+                disabled={photoUploading}
+                style={[
+                  styles.buttonPrimary,
+                  { paddingHorizontal: 20, borderRadius: 10, opacity: photoUploading ? 0.6 : 1 },
+                ]}
+              >
+                <Text style={styles.buttonPrimaryText}>
+                  {photoUploading ? 'Uploading…' : 'Photos'}
                 </Text>
               </Pressable>
             </View>

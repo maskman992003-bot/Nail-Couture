@@ -337,17 +337,37 @@ export function receiptFilename(bookingOrDate, appointmentId) {
 
 export function downloadTextFile(content, filename) {
   if (!content?.trim()) throw new Error('Receipt content is empty');
+  if (typeof document === 'undefined') {
+    throw new Error('Receipt download is only available in the browser.');
+  }
 
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+
+  if (typeof navigator !== 'undefined' && typeof navigator.msSaveOrOpenBlob === 'function') {
+    navigator.msSaveOrOpenBlob(blob, filename);
+    return true;
+  }
+
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
+  anchor.rel = 'noopener';
   anchor.style.display = 'none';
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
-  window.setTimeout(() => URL.revokeObjectURL(url), 250);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return true;
+}
+
+export async function copyTextToClipboard(content) {
+  if (!content?.trim()) throw new Error('Nothing to copy');
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(content);
+    return true;
+  }
+  throw new Error('Clipboard is not available in this browser.');
 }
 
 export function formatPaymentReceiptRow(row) {

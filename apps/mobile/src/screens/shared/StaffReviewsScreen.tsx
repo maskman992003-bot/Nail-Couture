@@ -5,6 +5,7 @@ import {
   fetchTechnicianReviews,
   formatReviewDate,
   moderateCustomerReview,
+  publishCustomerReview,
 } from '@nail-couture/shared/utils/customerReviewService.js';
 import { getDateRangeForPreset } from '@nail-couture/shared/utils/activityDateRange.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
@@ -32,6 +33,8 @@ type ReviewRow = {
   service_name?: string;
   technician_name?: string;
   is_hidden?: boolean;
+  is_published?: boolean;
+  published_at?: string | null;
 };
 
 type TechnicianOption = { id: string; full_name?: string | null };
@@ -47,6 +50,7 @@ export function StaffReviewsScreen() {
   const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
   const [technicianFilter, setTechnicianFilter] = useState('');
   const [moderatingId, setModeratingId] = useState<string | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
   const [datePreset, setDatePreset] = useState<(typeof DATE_PRESETS)[number]['id']>('today');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -159,7 +163,7 @@ export function StaffReviewsScreen() {
         }));
       } else if (action === 'hide') {
         setReviews((prev) =>
-          prev.map((r) => (r.id === review.id ? { ...r, is_hidden: true } : r)),
+          prev.map((r) => (r.id === review.id ? { ...r, is_hidden: true, is_published: false } : r)),
         );
       } else if (action === 'unhide') {
         setReviews((prev) =>
@@ -171,8 +175,25 @@ export function StaffReviewsScreen() {
     setModeratingId(null);
   };
 
-  const handlePublish = (_review: ReviewRow) => {
-    // Social media publish integration coming soon
+  const handlePublish = async (review: ReviewRow, action: 'publish' | 'unpublish' = 'publish') => {
+    if (!user?.phone || !canPublish) return;
+    setPublishingId(review.id);
+    const { error, available, data } = await publishCustomerReview(user.phone, review.id, action);
+    if (available && !error) {
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === review.id
+            ? {
+                ...r,
+                is_published: action === 'publish',
+                published_at:
+                  data?.published_at ?? (action === 'publish' ? new Date().toISOString() : null),
+              }
+            : r,
+        ),
+      );
+    }
+    setPublishingId(null);
   };
 
   const handleDeleteRequest = (review: ReviewRow) => {
@@ -377,6 +398,9 @@ export function StaffReviewsScreen() {
               {review.is_hidden ? (
                 <Text style={{ color: '#fbbf24', fontSize: 11, marginTop: 8 }}>Hidden from public</Text>
               ) : null}
+              {review.is_published ? (
+                <Text style={{ color: '#34d399', fontSize: 11, marginTop: 8 }}>Published on website</Text>
+              ) : null}
               {canModerate || canPublish ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
                   {canModerate ? (
@@ -411,18 +435,22 @@ export function StaffReviewsScreen() {
                       </Pressable>
                     </>
                   ) : null}
-                  {canPublish ? (
+                  {canPublish && !review.is_hidden && review.comment ? (
                     <Pressable
-                      onPress={() => handlePublish(review)}
+                      disabled={publishingId === review.id}
+                      onPress={() => handlePublish(review, review.is_published ? 'unpublish' : 'publish')}
                       style={{
                         paddingHorizontal: 10,
                         paddingVertical: 6,
                         borderRadius: 8,
                         borderWidth: 1,
-                        borderColor: '#34d399',
+                        borderColor: review.is_published ? 'rgba(255,255,255,0.2)' : '#34d399',
+                        opacity: publishingId === review.id ? 0.5 : 1,
                       }}
                     >
-                      <Text style={{ color: '#34d399', fontSize: 11 }}>Publish</Text>
+                      <Text style={{ color: review.is_published ? 'rgba(255,255,255,0.6)' : '#34d399', fontSize: 11 }}>
+                        {publishingId === review.id ? 'Saving…' : review.is_published ? 'Unpublish' : 'Publish'}
+                      </Text>
                     </Pressable>
                   ) : null}
                 </View>

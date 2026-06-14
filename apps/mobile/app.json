@@ -26,9 +26,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -47,9 +45,11 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow Nail Couture to access your photos for visit documentation.",
-          "cameraPermission": "Allow Nail Couture to take photos for visit documentation."
+          "cameraPermission": "Allow Nail Couture to take photos for visit documentation.",
+          "microphonePermission": false
         }
-      ]
+      ],
+      "expo-document-picker"
     ],
     "extra": {
       "eas": {

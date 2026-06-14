@@ -1,106 +1,56 @@
-import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
 import {
   isValidAnnouncementDocumentFile,
   MAX_ANNOUNCEMENT_ATTACHMENTS,
   uploadAnnouncementAttachment,
 } from '@nail-couture/shared/utils/announcementAttachments.js';
+import { readLocalUriForUpload } from './localFileUpload';
+import {
+  pickDocument,
+  pickImageFromLibrary,
+  takePhotoWithCamera,
+  type PickedMediaAsset,
+} from './mediaPicker';
 
 export type AnnouncementAttachment = Awaited<ReturnType<typeof uploadAnnouncementAttachment>>;
 
-type PickedAsset = {
-  uri: string;
-  fileName: string;
-  mimeType: string;
-  size?: number;
-};
-
-async function assetToAttachment(profileId: string, asset: PickedAsset): Promise<AnnouncementAttachment> {
-  const response = await fetch(asset.uri);
-  const blob = await response.blob();
-  const file = Object.assign(blob, { name: asset.fileName });
-  return uploadAnnouncementAttachment(
-    profileId,
-    file,
+async function assetToAttachment(profileId: string, asset: PickedMediaAsset): Promise<AnnouncementAttachment> {
+  const payload = await readLocalUriForUpload(
+    asset.uri,
     asset.fileName,
     asset.mimeType,
+    asset.size,
+  );
+  return uploadAnnouncementAttachment(
+    profileId,
+    payload.body,
+    payload.fileName,
+    payload.mimeType,
+    { sizeBytes: payload.sizeBytes },
   );
 }
 
-export async function pickAnnouncementPhotoFromLibrary(): Promise<PickedAsset | null> {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) {
-    throw new Error('Photo library permission denied.');
-  }
-
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
-    allowsEditing: false,
-    quality: 0.85,
-  });
-
-  if (result.canceled || !result.assets[0]) return null;
-
-  const asset = result.assets[0];
-  return {
-    uri: asset.uri,
-    fileName: asset.fileName || `photo_${Date.now()}.jpg`,
-    mimeType: asset.mimeType || 'image/jpeg',
-    size: asset.fileSize,
-  };
+export async function pickAnnouncementPhotoFromLibrary(): Promise<PickedMediaAsset | null> {
+  return pickImageFromLibrary();
 }
 
-export async function takeAnnouncementPhoto(): Promise<PickedAsset | null> {
-  const permission = await ImagePicker.requestCameraPermissionsAsync();
-  if (!permission.granted) {
-    throw new Error('Camera permission denied.');
-  }
-
-  const result = await ImagePicker.launchCameraAsync({
-    mediaTypes: ['images'],
-    allowsEditing: false,
-    quality: 0.85,
-  });
-
-  if (result.canceled || !result.assets[0]) return null;
-
-  const asset = result.assets[0];
-  return {
-    uri: asset.uri,
-    fileName: asset.fileName || `camera_${Date.now()}.jpg`,
-    mimeType: asset.mimeType || 'image/jpeg',
-    size: asset.fileSize,
-  };
+export async function takeAnnouncementPhoto(): Promise<PickedMediaAsset | null> {
+  return takePhotoWithCamera();
 }
 
-export async function pickAnnouncementDocument(): Promise<PickedAsset | null> {
-  const result = await DocumentPicker.getDocumentAsync({
-    type: ['application/pdf', 'text/plain'],
-    copyToCacheDirectory: true,
-    multiple: false,
-  });
+export async function pickAnnouncementDocument(): Promise<PickedMediaAsset | null> {
+  const asset = await pickDocument(['application/pdf', 'text/plain']);
+  if (!asset) return null;
 
-  if (result.canceled || !result.assets?.[0]) return null;
-
-  const asset = result.assets[0];
-  const fileName = asset.name || `file_${Date.now()}`;
-  const mimeType = asset.mimeType || 'application/pdf';
-
-  if (!isValidAnnouncementDocumentFile({ name: fileName, type: mimeType })) {
+  if (!isValidAnnouncementDocumentFile({ name: asset.fileName, type: asset.mimeType })) {
     throw new Error('File attachments must be PDF or TXT. Use Photos for images.');
   }
 
-  return {
-    uri: asset.uri,
-    fileName,
-    mimeType,
-    size: asset.size,
-  };
+  return asset;
 }
 
 export async function uploadPickedAnnouncementAsset(
   profileId: string,
-  asset: PickedAsset,
+  asset: PickedMediaAsset,
 ): Promise<AnnouncementAttachment> {
   return assetToAttachment(profileId, asset);
 }

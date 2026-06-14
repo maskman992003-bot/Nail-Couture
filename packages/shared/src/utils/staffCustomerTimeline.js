@@ -442,13 +442,23 @@ export async function adjustCustomerLoyalty(profileId, delta, reason, staffId) {
   return data || { success: false, error: 'Unexpected response' };
 }
 
-export async function uploadVisitPhoto(customerId, appointmentId, file, photoType, uploadedBy) {
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+export async function uploadVisitPhoto(
+  customerId,
+  appointmentId,
+  file,
+  photoType,
+  uploadedBy,
+  { fileName, mimeType } = {},
+) {
+  const resolvedName = fileName || file.name || `photo_${Date.now()}.jpg`;
+  const ext = resolvedName.split('.').pop()?.toLowerCase() || 'jpg';
   const path = `${customerId}/${appointmentId || 'general'}/${Date.now()}.${ext}`;
+  const contentType = mimeType || file.type || (ext === 'jpg' ? 'image/jpeg' : `image/${ext}`);
 
   const { error: uploadError } = await supabase.storage.from('visit-photos').upload(path, file, {
     cacheControl: '3600',
     upsert: false,
+    contentType,
   });
 
   if (uploadError) {

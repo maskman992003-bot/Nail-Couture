@@ -46,6 +46,8 @@ import ThemeSelect from './ThemeSelect';
 import TechnicianNailSummary from './nails/TechnicianNailSummary';
 import { getDateRangeForPreset } from '@nail-couture/shared/utils/activityDateRange';
 import { enrichVisits, visitDate } from '@nail-couture/shared/utils/visitEnrichment';
+import WebCameraCapture from './WebCameraCapture.jsx';
+import { clickFileInput, openWebCameraPicker } from '../utils/mobileFilePickers.js';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -99,6 +101,7 @@ export default function StaffCustomerDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const photoInputRef = useRef(null);
+  const cameraCaptureInputRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
@@ -121,6 +124,7 @@ export default function StaffCustomerDetail() {
   const [loyaltySaving, setLoyaltySaving] = useState(false);
   const [photoType, setPhotoType] = useState('after');
   const [photoViewFilter, setPhotoViewFilter] = useState('all');
+  const [showCamera, setShowCamera] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoDeletingId, setPhotoDeletingId] = useState(null);
   const [editForm, setEditForm] = useState(null);
@@ -390,13 +394,11 @@ export default function StaffCustomerDetail() {
     setTimeout(() => setSaveMsg(''), 2500);
   };
 
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
+  const uploadPhotoFile = async (file) => {
     if (!file || !canUploadVisitPhotos(user?.role)) return;
     setPhotoUploading(true);
     const result = await uploadVisitPhoto(customerId, null, file, photoType, user?.id);
     setPhotoUploading(false);
-    e.target.value = '';
     if (!result.success) {
       setSaveMsg(result.error);
       return;
@@ -414,6 +416,24 @@ export default function StaffCustomerDetail() {
     };
     setPhotos((prev) => [entry, ...prev]);
     setTimeline((prev) => [entry, ...prev]);
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    await uploadPhotoFile(file);
+  };
+
+  const handleCameraCapture = async (file) => {
+    await uploadPhotoFile(file);
+  };
+
+  const openCamera = () => {
+    if (photoUploading) return;
+    openWebCameraPicker({
+      nativeCameraInputRef: cameraCaptureInputRef,
+      onDesktopCamera: () => setShowCamera(true),
+    });
   };
 
   const handlePhotoDelete = async (photoEvent) => {
@@ -934,13 +954,29 @@ export default function StaffCustomerDetail() {
                   <option value="after">After</option>
                 </select>
                 <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoUpload} />
+                <input
+                  ref={cameraCaptureInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                />
                 <button
                   type="button"
-                  onClick={() => photoInputRef.current?.click()}
+                  onClick={openCamera}
+                  disabled={photoUploading}
+                  className="px-4 py-2 bg-secondary border border-light text-primary rounded-lg text-sm font-semibold disabled:opacity-50"
+                >
+                  {photoUploading ? 'Uploading…' : 'Camera'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => clickFileInput(photoInputRef)}
                   disabled={photoUploading}
                   className="px-4 py-2 bg-gold text-charcoal rounded-lg text-sm font-semibold disabled:opacity-50"
                 >
-                  {photoUploading ? 'Uploading…' : 'Upload photo'}
+                  {photoUploading ? 'Uploading…' : 'Photos'}
                 </button>
               </div>
             )}
@@ -999,6 +1035,12 @@ export default function StaffCustomerDetail() {
           </Section>
         )}
       </div>
+
+      <WebCameraCapture
+        open={showCamera}
+        onClose={() => setShowCamera(false)}
+        onCapture={handleCameraCapture}
+      />
     </div>
   );
 }

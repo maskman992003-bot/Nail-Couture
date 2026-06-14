@@ -14,6 +14,8 @@ import { getAppointmentServiceLabels } from '@nail-couture/shared/utils/appointm
 import WaiverModal from '../WaiverModal';
 import TechnicianServiceEditor from './TechnicianServiceEditor';
 import TechnicianServiceChecklist from './TechnicianServiceChecklist';
+import WebCameraCapture from '../WebCameraCapture.jsx';
+import { clickFileInput, openWebCameraPicker } from '../../utils/mobileFilePickers.js';
 
 export default function TechnicianInChairPanel({
   appointment,
@@ -37,7 +39,9 @@ export default function TechnicianInChairPanel({
   const [showWaiver, setShowWaiver] = useState(false);
   const [waiverSaving, setWaiverSaving] = useState(false);
   const [showServiceEditor, setShowServiceEditor] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const photoInputRef = useRef(null);
+  const cameraCaptureInputRef = useRef(null);
 
   const serviceLabels = getAppointmentServiceLabels(appointment);
   const isUpdating = actionId === appointment.id;
@@ -108,8 +112,7 @@ export default function TechnicianInChairPanel({
     }
   };
 
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
+  const uploadPhotoFile = async (file) => {
     if (!file || !canUploadVisitPhotos(user?.role)) return;
     setPhotoUploading(true);
     setPhotoMsg('');
@@ -121,8 +124,25 @@ export default function TechnicianInChairPanel({
       user?.id
     );
     setPhotoUploading(false);
-    e.target.value = '';
     setPhotoMsg(result.success ? 'Photo uploaded' : (result.error || 'Upload failed'));
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    await uploadPhotoFile(file);
+  };
+
+  const handleCameraCapture = async (file) => {
+    await uploadPhotoFile(file);
+  };
+
+  const openCamera = () => {
+    if (photoUploading) return;
+    openWebCameraPicker({
+      nativeCameraInputRef: cameraCaptureInputRef,
+      onDesktopCamera: () => setShowCamera(true),
+    });
   };
 
   const prefItems = [
@@ -220,13 +240,29 @@ export default function TechnicianInChairPanel({
             className="hidden"
             onChange={handlePhotoUpload}
           />
+          <input
+            ref={cameraCaptureInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handlePhotoUpload}
+          />
           <button
             type="button"
-            onClick={() => photoInputRef.current?.click()}
+            onClick={openCamera}
             disabled={photoUploading}
             className="px-3 py-1.5 text-xs bg-secondary border border-light rounded-lg text-primary hover:border-theme disabled:opacity-50"
           >
-            {photoUploading ? 'Uploading…' : 'Upload photo'}
+            {photoUploading ? 'Uploading…' : 'Camera'}
+          </button>
+          <button
+            type="button"
+            onClick={() => clickFileInput(photoInputRef)}
+            disabled={photoUploading}
+            className="px-3 py-1.5 text-xs bg-secondary border border-light rounded-lg text-primary hover:border-theme disabled:opacity-50"
+          >
+            {photoUploading ? 'Uploading…' : 'Photos'}
           </button>
           {photoMsg && (
             <span className={clsx('text-xs', photoMsg.includes('fail') ? 'text-red-400' : 'text-green-400')}>
@@ -373,6 +409,12 @@ export default function TechnicianInChairPanel({
           saving={isUpdating}
         />
       )}
+
+      <WebCameraCapture
+        open={showCamera}
+        onClose={() => setShowCamera(false)}
+        onCapture={handleCameraCapture}
+      />
     </div>
   );
 }

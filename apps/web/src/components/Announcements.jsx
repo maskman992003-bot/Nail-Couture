@@ -27,6 +27,7 @@ import { getSupabaseErrorMessage } from '@nail-couture/shared/utils/supabaseErro
 import { getHomePath } from '@nail-couture/shared/utils/routes.js';
 import { featureFlags } from '@nail-couture/shared/constants/featureFlags.js';
 import WebCameraCapture from './WebCameraCapture.jsx';
+import { clickFileInput, openWebCameraPicker } from '../utils/mobileFilePickers.js';
 
 const AUDIENCE_OPTIONS = [
   { id: 'customers', label: 'Customers' },
@@ -217,20 +218,20 @@ export default function Announcements() {
     }
   };
 
+  const attachmentDisabled = attachments.length >= MAX_ANNOUNCEMENT_ATTACHMENTS || isUploadingAttachment;
+
   const openCamera = () => {
-    if (attachments.length >= MAX_ANNOUNCEMENT_ATTACHMENTS || isUploadingAttachment) return;
-    if (navigator.mediaDevices?.getUserMedia) {
-      setShowCamera(true);
-      return;
-    }
-    cameraFallbackInputRef.current?.click();
+    if (attachmentDisabled) return;
+    openWebCameraPicker({
+      nativeCameraInputRef: cameraFallbackInputRef,
+      onDesktopCamera: () => setShowCamera(true),
+    });
   };
 
   const handleCameraCapture = async (file) => {
     await uploadFiles([file]);
   };
 
-  const attachmentDisabled = attachments.length >= MAX_ANNOUNCEMENT_ATTACHMENTS || isUploadingAttachment;
   const attachBtnClass = clsx(
     'rounded-xl border border-card px-4 py-2 text-sm text-secondary transition-colors',
     'hover:border-theme hover:text-gold-strong',
@@ -385,7 +386,7 @@ export default function Announcements() {
               <button
                 type="button"
                 disabled={attachmentDisabled}
-                onClick={() => photoInputRef.current?.click()}
+                onClick={() => clickFileInput(photoInputRef)}
                 className={attachBtnClass}
               >
                 Photos
@@ -393,7 +394,7 @@ export default function Announcements() {
               <button
                 type="button"
                 disabled={attachmentDisabled}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => clickFileInput(fileInputRef)}
                 className={attachBtnClass}
               >
                 File

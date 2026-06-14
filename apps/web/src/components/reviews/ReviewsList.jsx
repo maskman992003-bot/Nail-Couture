@@ -15,6 +15,7 @@ export default function ReviewsList({
   moderatingId = null,
   canPublish = false,
   onPublish,
+  publishingId = null,
   onDeleteRequest,
 }) {
   const { theme } = useTheme();
@@ -40,6 +41,8 @@ export default function ReviewsList({
     <div className="space-y-3">
       {reviews.map((review) => {
         const hidden = Boolean(review.is_hidden);
+        const published = Boolean(review.is_published);
+        const canPublishReview = canPublish && onPublish && !hidden && review.comment;
         return (
           <div
             key={review.id}
@@ -54,6 +57,11 @@ export default function ReviewsList({
                   {hidden && (
                     <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-amber-500/40 text-amber-400">
                       {hiddenBadgeLabel}
+                    </span>
+                  )}
+                  {published && (
+                    <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-emerald-500/40 text-emerald-400">
+                      Published
                     </span>
                   )}
                 </div>
@@ -102,13 +110,21 @@ export default function ReviewsList({
                     </button>
                   </>
                 )}
-                {canPublish && onPublish && (
+                {canPublishReview && (
                   <button
                     type="button"
-                    onClick={() => onPublish(review)}
-                    className="px-3 py-1.5 text-xs rounded-lg border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                    disabled={publishingId === review.id}
+                    onClick={() => onPublish(review, published ? 'unpublish' : 'publish')}
+                    className={clsx(
+                      'px-3 py-1.5 text-xs rounded-lg border disabled:opacity-50',
+                      published
+                        ? theme === 'dark'
+                          ? 'border-white/20 text-offwhite/60 hover:bg-white/5'
+                          : 'border-charcoal/20 text-charcoal/60 hover:bg-charcoal/5'
+                        : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10',
+                    )}
                   >
-                    Publish
+                    {publishingId === review.id ? 'Saving…' : published ? 'Unpublish' : 'Publish'}
                   </button>
                 )}
               </div>

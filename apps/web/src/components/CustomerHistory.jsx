@@ -13,7 +13,6 @@ import {
   buildReceiptFromBooking,
   formatReceiptContent,
   formatPaymentReceiptRow,
-  downloadTextFile,
   receiptFilename,
   computeActualDurationMinutes,
 } from '@nail-couture/shared/utils/customerStats';
@@ -24,6 +23,7 @@ import {
 import { fetchReviewableAppointments } from '@nail-couture/shared/utils/customerReviewService';
 import Sidebar from './Sidebar';
 import ReviewForm from './reviews/ReviewForm';
+import ReceiptPreviewModal from './ReceiptPreviewModal';
 
 const statusConfigDark = {
   waiting: { label: 'Waiting', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' },
@@ -87,6 +87,7 @@ export default function CustomerHistory() {
   const [reviewableIds, setReviewableIds] = useState(new Set());
   const [reviewedIds, setReviewedIds] = useState(new Set());
   const [reviewModalBooking, setReviewModalBooking] = useState(null);
+  const [receiptPreview, setReceiptPreview] = useState(null);
   const [datePreset, setDatePreset] = useState('today');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -173,10 +174,10 @@ export default function CustomerHistory() {
       }
       const receipt = buildReceiptFromBooking(booking, payment);
       const receiptContent = formatReceiptContent(receipt);
-      downloadTextFile(
-        receiptContent,
-        receiptFilename(booking.checked_in_at || booking.scheduled_at, booking.id),
-      );
+      setReceiptPreview({
+        content: receiptContent,
+        filename: receiptFilename(booking.checked_in_at || booking.scheduled_at, booking.id),
+      });
     } catch (err) {
       console.error('Receipt error:', err);
       window.alert('Unable to generate receipt. Please try again.');
@@ -696,6 +697,14 @@ export default function CustomerHistory() {
           </div>
         )}
       </div>
+
+      <ReceiptPreviewModal
+        open={Boolean(receiptPreview)}
+        content={receiptPreview?.content || ''}
+        filename={receiptPreview?.filename || 'receipt.txt'}
+        onClose={() => setReceiptPreview(null)}
+        theme={theme}
+      />
     </div>
   );
 }

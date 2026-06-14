@@ -1,15 +1,14 @@
-import * as ImagePicker from 'expo-image-picker';
 import { uploadVisitPhoto } from '@nail-couture/shared/utils/staffCustomerTimeline.js';
-
-type PickedAsset = {
-  uri: string;
-  fileName: string;
-  mimeType: string;
-};
+import { readLocalUriForUpload } from './localFileUpload';
+import {
+  pickImageFromLibrary,
+  takePhotoWithCamera,
+  type PickedMediaAsset,
+} from './mediaPicker';
 
 type PickResult =
   | { canceled: true; reason?: 'permission' | 'picker' }
-  | { canceled: false; asset: PickedAsset };
+  | { canceled: false; asset: PickedMediaAsset };
 
 type UploadVisitPhotoResult = Awaited<ReturnType<typeof uploadVisitPhoto>>;
 
@@ -17,44 +16,78 @@ export type PickAndUploadVisitPhotoResult =
   | (UploadVisitPhotoResult & { canceled?: false })
   | { success: false; canceled: true; error?: string };
 
-export async function pickVisitPhotoFromLibrary(): Promise<PickResult> {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) {
-    return { canceled: true, reason: 'permission' };
-  }
+async function pickImageAsset(source: 'library' | 'camera'): Promise<PickResult> {
+  const asset = source === 'camera'
+    ? await takePhotoWithCamera()
+    : await pickImageFromLibrary();
 
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
-    allowsEditing: false,
-    quality: 0.85,
-  });
-
-  if (result.canceled || !result.assets[0]) {
+  if (!asset) {
     return { canceled: true, reason: 'picker' };
   }
 
-  const asset = result.assets[0];
-  return {
-    canceled: false,
-    asset: {
-      uri: asset.uri,
-      fileName: asset.fileName || `photo_${Date.now()}.jpg`,
-      mimeType: asset.mimeType || 'image/jpeg',
-    },
-  };
+  return { canceled: false, asset };
+}
+
+export async function pickVisitPhotoFromLibrary(): Promise<PickResult> {
+  return pickImageAsset('library');
+}
+
+export async function takeVisitPhotoFromCamera(): Promise<PickResult> {
+  return pickImageAsset('camera');
 }
 
 export async function uploadVisitPhotoFromAsset(
   customerId: string,
   appointmentId: string | null,
-  asset: PickedAsset,
+  asset: PickedMediaAsset,
   photoType: string,
   uploadedBy?: string,
 ) {
-  const response = await fetch(asset.uri);
-  const blob = await response.blob();
-  const file = Object.assign(blob, { name: asset.fileName });
-  return uploadVisitPhoto(customerId, appointmentId, file, photoType, uploadedBy);
+  try {
+    const payload = await readLocalUriForUpload(
+      asset.uri,
+      asset.fileName,
+      asset.mimeType,
+      asset.size,
+    );
+    return uploadVisitPhoto(
+      customerId,
+      appointmentId,
+      payload.body,
+      photoType,
+      uploadedBy,
+      {
+        fileName: payload.fileName,
+        mimeType: payload.mimeType,
+      },
+    );
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Upload failed',
+    };
+  }
+}
+
+async function pickAndUpload(
+  picker: () => Promise<PickResult>,
+  customerId: string,
+  appointmentId: string | null,
+  photoType: string,
+  uploadedBy?: string,
+): Promise<PickAndUploadVisitPhotoResult> {
+  const picked = await picker();
+  if (picked.canceled) {
+    return { success: false, canceled: true };
+  }
+
+  return uploadVisitPhotoFromAsset(
+    customerId,
+    appointmentId,
+    picked.asset,
+    photoType,
+    uploadedBy,
+  );
 }
 
 export async function pickAndUploadVisitPhoto(
@@ -63,18 +96,25 @@ export async function pickAndUploadVisitPhoto(
   photoType: string,
   uploadedBy?: string,
 ): Promise<PickAndUploadVisitPhotoResult> {
-  const picked = await pickVisitPhotoFromLibrary();
-  if (picked.canceled) {
-    if (picked.reason === 'permission') {
-      return { success: false, canceled: true, error: 'Photo library permission denied' };
-    }
-    return { success: false, canceled: true };
-  }
-
-  return uploadVisitPhotoFromAsset(
+  return pickAndUpload(
+    pickVisitPhotoFromLibrary,
     customerId,
     appointmentId,
-    picked.asset,
+    photoType,
+    uploadedBy,
+  );
+}
+
+export async function takeAndUploadVisitPhoto(
+  customerId: string,
+  appointmentId: string | null,
+  photoType: string,
+  uploadedBy?: string,
+): Promise<PickAndUploadVisitPhotoResult> {
+  return pickAndUpload(
+    takeVisitPhotoFromCamera,
+    customerId,
+    appointmentId,
     photoType,
     uploadedBy,
   );

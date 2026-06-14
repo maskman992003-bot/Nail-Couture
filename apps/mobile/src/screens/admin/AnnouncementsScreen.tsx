@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -155,19 +156,36 @@ export function AnnouncementsScreen() {
   const addAttachment = async (
     picker: () => Promise<{ uri: string; fileName: string; mimeType: string; size?: number } | null>,
   ) => {
-    if (!user?.id || !canAddMoreAttachments(attachments.length)) {
+    if (!user?.id) {
+      Alert.alert('Sign in required', 'Your profile is missing. Sign out and sign in again, then retry.');
+      return;
+    }
+    if (!canAddMoreAttachments(attachments.length)) {
       setError(`You can attach up to ${MAX_ANNOUNCEMENT_ATTACHMENTS} files.`);
       return;
     }
-    setIsUploadingAttachment(true);
+
     setError('');
+    let asset: { uri: string; fileName: string; mimeType: string; size?: number } | null = null;
     try {
-      const asset = await picker();
-      if (!asset) return;
+      asset = await picker();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not open picker.';
+      setError(message);
+      Alert.alert('Attachment failed', message);
+      return;
+    }
+
+    if (!asset) return;
+
+    setIsUploadingAttachment(true);
+    try {
       const uploaded = await uploadPickedAnnouncementAsset(user.id, asset);
       setAttachments((prev) => [...prev, uploaded]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload attachment.');
+      const message = err instanceof Error ? err.message : 'Failed to upload attachment.';
+      setError(message);
+      Alert.alert('Upload failed', message);
     } finally {
       setIsUploadingAttachment(false);
     }

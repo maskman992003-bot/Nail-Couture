@@ -13,6 +13,7 @@ import { AppointmentStatusBadge } from '../../components/customer/AppointmentSta
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { ReviewFormModal } from '../../components/reviews/ReviewFormModal';
 import { useThemeStyles } from '../../theme/useThemeStyles';
+import { shareVisitReceiptWithAlert } from '../../utils/receiptShare';
 
 type VisitRecord = {
   id: string;
@@ -72,6 +73,7 @@ export function CustomerHistoryScreen() {
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [receiptLoadingId, setReceiptLoadingId] = useState<string | null>(null);
 
   const dateRange = useMemo(() => {
     if (datePreset === 'all') return null;
@@ -188,6 +190,15 @@ export function CustomerHistoryScreen() {
   const canReviewVisit = (visit: VisitRecord) =>
     visit.status === 'completed' && reviewableIds.has(visit.id) && !reviewedIds.has(visit.id);
 
+  const shareReceipt = async (visit: VisitRecord) => {
+    setReceiptLoadingId(visit.id);
+    try {
+      await shareVisitReceiptWithAlert(visit);
+    } finally {
+      setReceiptLoadingId(null);
+    }
+  };
+
   const renderVisitRow = (visit: VisitRecord) => {
     const serviceName =
       visit.selected_service_names || visit.add_ons || visit.services?.name || 'Visit';
@@ -234,6 +245,27 @@ export function CustomerHistoryScreen() {
                 }}
               >
                 <Text style={[styles.textGold, { fontSize: 11, fontWeight: '600' }]}>Review</Text>
+              </Pressable>
+            ) : null}
+            {visit.status === 'completed' ? (
+              <Pressable
+                onPress={(event) => {
+                  event.stopPropagation?.();
+                  shareReceipt(visit);
+                }}
+                disabled={receiptLoadingId === visit.id}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: styles.tokens.goldStrong,
+                  opacity: receiptLoadingId === visit.id ? 0.5 : 1,
+                }}
+              >
+                <Text style={[styles.textGold, { fontSize: 11, fontWeight: '600' }]}>
+                  {receiptLoadingId === visit.id ? '…' : 'Receipt'}
+                </Text>
               </Pressable>
             ) : null}
             {reviewedIds.has(visit.id) ? (
@@ -355,16 +387,24 @@ export function CustomerHistoryScreen() {
         title="Visit Details"
         scrollBody
         footer={
-          selectedVisit && selectedVisit.status === 'completed' && canReviewVisit(selectedVisit) ? (
+          selectedVisit && selectedVisit.status === 'completed' ? (
             <>
               <ModalButton label="Close" onPress={() => setSelectedVisit(null)} />
+              {canReviewVisit(selectedVisit) ? (
+                <ModalButton
+                  label="Leave Review"
+                  variant="primary"
+                  onPress={() => {
+                    setReviewVisit(selectedVisit);
+                    setSelectedVisit(null);
+                  }}
+                />
+              ) : null}
               <ModalButton
-                label="Leave Review"
-                variant="primary"
-                onPress={() => {
-                  setReviewVisit(selectedVisit);
-                  setSelectedVisit(null);
-                }}
+                label={receiptLoadingId === selectedVisit.id ? 'Preparing…' : 'Share Receipt'}
+                variant={canReviewVisit(selectedVisit) ? 'secondary' : 'primary'}
+                disabled={receiptLoadingId === selectedVisit.id}
+                onPress={() => shareReceipt(selectedVisit)}
               />
             </>
           ) : selectedVisit && ACTIVE_STATUSES.includes(selectedVisit.status) ? (
