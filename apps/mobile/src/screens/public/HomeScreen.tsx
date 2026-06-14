@@ -7,6 +7,10 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags.js';
 import { BookingWizard } from '../../components/BookingWizard';
 import { PublicScreenLayout } from '../../components/public/PublicScreenLayout';
+import { PromoSlideIn } from '../../components/marketing/PromoSlideIn';
+import { PromoDetailModal } from '../../components/marketing/PromoDetailModal';
+import { useAuth } from '../../contexts/AuthContext';
+import { usePublicHomePromotions } from '../../hooks/usePublicHomePromotions';
 import { useLayout } from '../../theme/useLayout';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import type { PublicTabParamList, RootStackParamList } from '../../navigation/publicTypes';
@@ -59,11 +63,36 @@ function HeroButton({
 export function HomeScreen({ navigation }: HomeScreenProps) {
   const styles = useThemeStyles();
   const layout = useLayout();
+  const { user } = useAuth();
   const { height: windowHeight } = useWindowDimensions();
   const rootNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const heroMinHeight = Math.round(windowHeight * 0.7);
   const scrollRef = useRef<import('react-native').ScrollView>(null);
   const bookingOffsetRef = useRef(0);
+
+  const handleBookingScroll = () => {
+    if (CUSTOMER_ONLINE_BOOKING) {
+      scrollRef.current?.scrollTo({ y: bookingOffsetRef.current, animated: true });
+      return;
+    }
+    navigation.navigate('About');
+  };
+
+  const {
+    enabled: promosEnabled,
+    currentSlideInPromo,
+    chipReady,
+    detailPromo,
+    copyCode,
+    advanceSlideInQueue,
+    openSlideInDetail,
+    closeSlideInDetail,
+    toast: promoToast,
+  } = usePublicHomePromotions({
+    userPhone: user?.is_staff ? undefined : user?.phone,
+    isStaff: false,
+    scrollToBooking: handleBookingScroll,
+  });
 
   const navigateTab = (tab: keyof PublicTabParamList) => {
     navigation.navigate(tab);
@@ -72,14 +101,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const bookingLabel = CUSTOMER_ONLINE_BOOKING ? 'BOOK NOW' : 'SALON INFO';
 
   const handleBooking = () => {
-    if (CUSTOMER_ONLINE_BOOKING) {
-      scrollRef.current?.scrollTo({ y: bookingOffsetRef.current, animated: true });
-      return;
-    }
-    navigateTab('About');
+    handleBookingScroll();
   };
 
   return (
+    <View style={{ flex: 1 }}>
     <PublicScreenLayout
       scrollRef={scrollRef}
       onNavigateTab={(tab) => navigation.navigate(tab)}
@@ -169,7 +195,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             variant="primary"
             onPress={() => rootNavigation.navigate('CheckIn')}
           />
-          <HeroButton label={bookingLabel} onPress={handleBooking} />
+          <HeroButton
+            label={bookingLabel}
+            onPress={handleBooking}
+            variant="secondary"
+          />
         </View>
       </View>
 
@@ -208,5 +238,40 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         </View>
       ) : null}
     </PublicScreenLayout>
+    {promosEnabled ? (
+      <>
+        <PromoSlideIn
+          promo={currentSlideInPromo}
+          visible={chipReady}
+          detailOpen={Boolean(detailPromo)}
+          onOpenDetail={openSlideInDetail}
+          onAutoHide={advanceSlideInQueue}
+        />
+        <PromoDetailModal
+          promo={detailPromo}
+          visible={Boolean(detailPromo)}
+          onClose={closeSlideInDetail}
+          onCopy={copyCode}
+        />
+      </>
+    ) : null}
+    {promoToast ? (
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 120,
+          alignSelf: 'center',
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: `${styles.tokens.goldStrong}40`,
+          backgroundColor: styles.tokens.cardBg,
+          paddingHorizontal: 16,
+          paddingVertical: 10,
+        }}
+      >
+        <Text style={styles.textGold}>{promoToast}</Text>
+      </View>
+    ) : null}
+    </View>
   );
 }

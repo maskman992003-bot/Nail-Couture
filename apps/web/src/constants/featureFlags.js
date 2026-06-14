@@ -38,6 +38,7 @@ export const featureFlags = {
     advancedReporting: false,       // Custom reports, analytics (Phase 3)
     employeeManagement: false,      // Add/remove staff, roles (Phase 3)
     announcements: false,           // Management salon announcements tab
+    promotions: true,               // Management home-screen promotions tab
   },
   
   // Inventory & Operations

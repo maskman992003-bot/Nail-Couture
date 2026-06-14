@@ -9,10 +9,13 @@ import BookingWizard from './components/BookingWizard'
 import Lookbook from './components/Lookbook'
 import WellnessToolsPromo from './components/marketing/WellnessToolsPromo'
 import CustomerTestimonials from './components/marketing/CustomerTestimonials'
+import PromoSlideIn from './components/marketing/PromoSlideIn'
+import PromoDetailModal from './components/marketing/PromoDetailModal'
 import AboutContact from './components/AboutContact'
 import CheckIn from './components/CheckIn'
 import PageHelmet from './components/PageHelmet'
 import { APP_PAGE_SEO } from './constants/pageSeo'
+import { usePublicHomePromotions } from './hooks/usePublicHomePromotions'
 import './index.css'
 
 function App() {
@@ -68,6 +71,22 @@ function App() {
 
   const pageSeo = APP_PAGE_SEO[location.pathname] ?? APP_PAGE_SEO['/']
 
+  const {
+    enabled: promosEnabled,
+    currentSlideInPromo,
+    detailPromo,
+    copyCode,
+    advanceSlideInQueue,
+    openSlideInDetail,
+    closeSlideInDetail,
+    toast: promoToast,
+    error: promoError,
+  } = usePublicHomePromotions({
+    scrollToBooking,
+  })
+
+  const bookingCtaLabel = bookingEnabled ? 'BOOK NOW' : 'SALON INFO'
+
   return (
     <>
       <PageHelmet title={pageSeo.title} description={pageSeo.description} path={pageSeo.path} />
@@ -83,7 +102,7 @@ function App() {
       <main className="flex-1 relative z-10">
         {currentPage === 'home' && (
           <>
-            <section className={`min-h-[70vh] sm:min-h-[80vh] flex items-center justify-center relative overflow-hidden px-4 sm:px-6 ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
+            <section className={`min-h-[70vh] sm:min-h-[80vh] flex items-center justify-center relative z-10 px-4 sm:px-6 ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
               <div className={`absolute inset-0 bg-gradient-to-b ${theme === 'dark' ? 'from-charcoal via-charcoal/95 to-charcoal' : 'from-cream via-cream/95 to-cream'}`} />
               <div className="text-center z-10 max-w-4xl mx-auto">
                 <div className={`inline-flex items-center justify-center gap-2 mb-8 rounded-full border border-gold/20 px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-gold font-semibold ${theme === 'dark' ? 'bg-white/5' : 'bg-gold/5'}`}>
@@ -135,7 +154,7 @@ function App() {
                         <path d="M12 8v4l3 2" />
                       </svg>
                     </span>
-                    SALON INFO
+                    {bookingCtaLabel}
                   </button>
                 </div>
               </div>
@@ -153,6 +172,40 @@ function App() {
       </main>
       
       {currentPage !== 'check-in' && <Footer onNavigate={setCurrentPage} />}
+
+      {promosEnabled && currentSlideInPromo && !detailPromo ? (
+        <PromoSlideIn
+          promo={currentSlideInPromo}
+          visible
+          detailOpen={false}
+          onOpenDetail={openSlideInDetail}
+          onAutoHide={advanceSlideInQueue}
+        />
+      ) : null}
+      {promosEnabled ? (
+        <PromoDetailModal
+          promo={detailPromo}
+          onClose={closeSlideInDetail}
+          onCopy={copyCode}
+        />
+      ) : null}
+
+      {promoError && import.meta.env.DEV ? (
+        <div
+          role="status"
+          className="fixed bottom-36 right-6 z-[70] max-w-sm rounded-xl bg-red-950 border border-red-400/40 px-4 py-2 text-sm text-red-200"
+        >
+          Promo load error: {promoError}
+        </div>
+      ) : null}
+      {promoToast ? (
+        <div
+          role="status"
+          className="fixed bottom-24 right-6 z-[70] rounded-xl bg-charcoal border border-gold/30 px-4 py-2 text-sm text-gold shadow-lg"
+        >
+          {promoToast}
+        </div>
+      ) : null}
     </div>
     </>
   )

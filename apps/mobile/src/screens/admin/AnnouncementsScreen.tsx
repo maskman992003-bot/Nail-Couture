@@ -28,6 +28,7 @@ import {
 import { featureFlags } from '@nail-couture/shared/constants/featureFlags.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { AnnouncementAttachmentsList } from '../../components/AnnouncementAttachmentsList';
+import { PromotionsAdminPanel } from '../../components/admin/PromotionsAdminPanel';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import {
@@ -56,6 +57,13 @@ type StaffMode = typeof STAFF_MODE_OPTIONS[number]['id'];
 
 const MANAGEMENT_ROLES = new Set(['super_admin', 'owner', 'partner']);
 
+const ANNOUNCEMENT_TABS = [
+  { id: 'broadcasts', label: 'Broadcasts' },
+  { id: 'home-offers', label: 'Promotions' },
+] as const;
+
+type AnnouncementTab = typeof ANNOUNCEMENT_TABS[number]['id'];
+
 function audienceLabel(audience: string) {
   if (audience === 'customers') return 'Customers';
   if (audience === 'staff') return 'Staff';
@@ -76,6 +84,7 @@ export function AnnouncementsScreen() {
   const [sendSuccess, setSendSuccess] = useState('');
   const [attachments, setAttachments] = useState<AnnouncementAttachment[]>([]);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const [activeTab, setActiveTab] = useState<AnnouncementTab>('broadcasts');
 
   const enabledForRole = Boolean(
     user?.phone
@@ -259,8 +268,26 @@ export function AnnouncementsScreen() {
   return (
     <StaffScreenLayout
       title="Announcements"
-      subtitle="Send promotions and salon updates"
+      subtitle={activeTab === 'home-offers'
+        ? 'Manage home-screen offers'
+        : 'Send promotions and salon updates'}
     >
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        {ANNOUNCEMENT_TABS.map((tab) => (
+          <Pressable
+            key={tab.id}
+            onPress={() => setActiveTab(tab.id)}
+            style={chipStyle(activeTab === tab.id)}
+          >
+            <Text style={activeTab === tab.id ? styles.textGold : styles.textSecondary}>{tab.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {activeTab === 'home-offers' ? (
+        <PromotionsAdminPanel userPhone={user?.phone} userRole={user?.role} />
+      ) : (
+        <>
       {error ? (
         <View style={[styles.card, { borderColor: '#7f1d1d', marginBottom: 12 }]}>
           <Text style={{ color: '#fca5a5' }}>{error}</Text>
@@ -527,6 +554,8 @@ export function AnnouncementsScreen() {
           </Pressable>
         ) : null}
       </View>
+        </>
+      )}
 
       <Modal visible={showConfirm} transparent animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20 }}>

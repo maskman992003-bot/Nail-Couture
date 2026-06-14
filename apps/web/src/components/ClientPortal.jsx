@@ -9,6 +9,9 @@ import { getTierInfo, tierDetails, generateReferralCode } from '@nail-couture/sh
 import { getProfileInitials } from '@nail-couture/shared/utils/avatarUpload';
 import Sidebar from './Sidebar';
 import AppModal, { modalBtnPrimary, modalLabelClass } from './AppModal';
+import PromoSlideIn from './marketing/PromoSlideIn';
+import PromoDetailModal from './marketing/PromoDetailModal';
+import { useCustomerHomePromotions } from '../hooks/useCustomerHomePromotions';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -37,6 +40,17 @@ export default function ClientPortal() {
   const [copiedCode, setCopiedCode] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const { theme } = useTheme();
+  const {
+    enabled: promosEnabled,
+    currentSlideInPromo,
+    chipReady,
+    detailPromo,
+    copyCode,
+    advanceSlideInQueue,
+    openSlideInDetail,
+    closeSlideInDetail,
+    toast: promoToast,
+  } = useCustomerHomePromotions(user?.phone);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -330,6 +344,30 @@ export default function ClientPortal() {
           </AppModal>
 
       </div>
+      {promosEnabled ? (
+        <>
+          <PromoSlideIn
+            promo={currentSlideInPromo}
+            visible={chipReady}
+            detailOpen={Boolean(detailPromo)}
+            onOpenDetail={openSlideInDetail}
+            onAutoHide={advanceSlideInQueue}
+          />
+          <PromoDetailModal
+            promo={detailPromo}
+            onClose={closeSlideInDetail}
+            onCopy={copyCode}
+          />
+        </>
+      ) : null}
+      {promoToast ? (
+        <div
+          role="status"
+          className="fixed bottom-24 right-6 z-50 rounded-xl bg-charcoal border border-gold/30 px-4 py-2 text-sm text-gold shadow-lg"
+        >
+          {promoToast}
+        </div>
+      ) : null}
     </div>
   );
 }

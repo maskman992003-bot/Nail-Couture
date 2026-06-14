@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import './index.css'
+import './lib/supabase.js'
 import App from './App.jsx'
 import ClientLogin from './components/ClientLogin.jsx'
 import ClientRegister from './components/ClientRegister.jsx'
@@ -17,6 +18,7 @@ import CustomerManagementHistory from './components/CustomerManagementHistory.js
 import StaffCustomerDetail from './components/StaffCustomerDetail.jsx'
 import SalonActivity from './components/SalonActivity.jsx'
 import Announcements from './components/Announcements.jsx'
+import Promotions from './components/Promotions.jsx'
 import SalonUpdates from './components/SalonUpdates.jsx'
 import StaffReviews from './components/StaffReviews.jsx'
 import EditBooking from './components/EditBooking.jsx'
@@ -169,6 +171,11 @@ createRoot(document.getElementById('root')).render(
                   <Announcements />
                 </ProtectedRoute>
               } />
+              <Route path="/superadmin/promotions" element={
+                <ProtectedRoute allowedRoles={['super_admin']}>
+                  <Promotions />
+                </ProtectedRoute>
+              } />
               <Route path="/superadmin/reviews" element={
                 <ProtectedRoute allowedRoles={['super_admin']}>
                   <StaffReviews />
@@ -257,6 +264,11 @@ createRoot(document.getElementById('root')).render(
                   <Announcements />
                 </ProtectedRoute>
               } />
+              <Route path="/owner/promotions" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <Promotions />
+                </ProtectedRoute>
+              } />
               <Route path="/owner/reviews" element={
                 <ProtectedRoute allowedRoles={['owner']}>
                   <StaffReviews />
@@ -317,6 +329,11 @@ createRoot(document.getElementById('root')).render(
               <Route path="/partner/announcements" element={
                 <ProtectedRoute allowedRoles={['partner']}>
                   <Announcements />
+                </ProtectedRoute>
+              } />
+              <Route path="/partner/promotions" element={
+                <ProtectedRoute allowedRoles={['partner']}>
+                  <Promotions />
                 </ProtectedRoute>
               } />
               <Route path="/partner/reviews" element={

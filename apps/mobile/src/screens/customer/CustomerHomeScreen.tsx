@@ -10,7 +10,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
 import { MembershipCard } from '../../components/customer/MembershipCard';
 import { AppointmentStatusBadge } from '../../components/customer/AppointmentStatusBadge';
-import { AppModal, ModalButton } from '../../components/AppModal';
+import { PromoSlideIn } from '../../components/marketing/PromoSlideIn';
+import { PromoDetailModal } from '../../components/marketing/PromoDetailModal';
+import { useCustomerHomePromotions } from '../../hooks/useCustomerHomePromotions';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import type { AppScreenName } from '../../navigation/screenRegistry';
 
@@ -43,6 +45,17 @@ export function CustomerHomeScreen() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<AppointmentRecord | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
+  const {
+    enabled: promosEnabled,
+    currentSlideInPromo,
+    chipReady,
+    detailPromo,
+    copyCode,
+    advanceSlideInQueue,
+    openSlideInDetail,
+    closeSlideInDetail,
+    toast: promoToast,
+  } = useCustomerHomePromotions(user?.phone);
 
   const fetchUserData = useCallback(async () => {
     const userId = user?.id;
@@ -115,6 +128,7 @@ export function CustomerHomeScreen() {
   const firstName = profile.full_name?.split(' ')[0] || 'back';
 
   return (
+    <View style={{ flex: 1 }}>
     <CustomerScreenLayout
       title={`Welcome, ${firstName}`}
       subtitle="We're glad to have you here"
@@ -293,5 +307,40 @@ export function CustomerHomeScreen() {
         ) : null}
       </AppModal>
     </CustomerScreenLayout>
+    {promosEnabled ? (
+      <>
+        <PromoSlideIn
+          promo={currentSlideInPromo}
+          visible={chipReady}
+          detailOpen={Boolean(detailPromo)}
+          onOpenDetail={openSlideInDetail}
+          onAutoHide={advanceSlideInQueue}
+        />
+        <PromoDetailModal
+          promo={detailPromo}
+          visible={Boolean(detailPromo)}
+          onClose={closeSlideInDetail}
+          onCopy={copyCode}
+        />
+      </>
+    ) : null}
+    {promoToast ? (
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 120,
+          alignSelf: 'center',
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: `${styles.tokens.goldStrong}40`,
+          backgroundColor: styles.tokens.cardBg,
+          paddingHorizontal: 16,
+          paddingVertical: 10,
+        }}
+      >
+        <Text style={styles.textGold}>{promoToast}</Text>
+      </View>
+    ) : null}
+    </View>
   );
 }

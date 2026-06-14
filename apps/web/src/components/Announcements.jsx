@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
+import PromotionsAdminPanel from './marketing/PromotionsAdminPanel';
 import AnnouncementAttachmentsList from '@nail-couture/shared/components/AnnouncementAttachmentsList.jsx';
 import { useAnnouncements } from '@nail-couture/shared/hooks/useAnnouncements.js';
 import {
@@ -43,6 +44,11 @@ const STAFF_MODE_OPTIONS = [
 
 const MANAGEMENT_ROLES = new Set(['super_admin', 'owner', 'partner']);
 
+const ANNOUNCEMENT_TABS = [
+  { id: 'broadcasts', label: 'Broadcasts' },
+  { id: 'home-offers', label: 'Promotions' },
+];
+
 function audienceLabel(audience) {
   if (audience === 'customers') return 'Customers';
   if (audience === 'staff') return 'Staff';
@@ -60,8 +66,10 @@ function statusClass(status) {
 
 export default function Announcements() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const activeTab = searchParams.get('tab') === 'home-offers' ? 'home-offers' : 'broadcasts';
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -301,14 +309,32 @@ export default function Announcements() {
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
-        <div className="max-w-3xl mx-auto">
+        <div className={clsx('mx-auto', activeTab === 'home-offers' ? 'max-w-6xl' : 'max-w-3xl')}>
           <header className="mb-8">
             <h1 className="font-heading text-2xl text-gold mb-2">Announcements</h1>
-            <p className="text-secondary text-sm">
-              Send promotions and salon updates to customers, staff, or both.
+            <p className="text-secondary text-sm mb-5">
+              {activeTab === 'home-offers'
+                ? 'Manage home-screen offers and promo codes without redeploying the app.'
+                : 'Send promotions and salon updates to customers, staff, or both.'}
             </p>
+            <div className="flex flex-wrap gap-2">
+              {ANNOUNCEMENT_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSearchParams(tab.id === 'broadcasts' ? {} : { tab: tab.id })}
+                  className={chipClass(activeTab === tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </header>
 
+        {activeTab === 'home-offers' ? (
+          <PromotionsAdminPanel userPhone={user?.phone} userRole={user?.role} />
+        ) : (
+          <>
         {error && (
           <div className="mb-4 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-red-300 text-sm">
             {error}
@@ -615,6 +641,8 @@ export default function Announcements() {
             </button>
           )}
         </section>
+          </>
+        )}
         </div>
       </div>
 
