@@ -1,6 +1,9 @@
+import { isServiceBookable } from './serviceVisibility.js';
+
 /** Parse comma-separated add_ons + service_id into main services and add-on names. */
 export function parseAppointmentLineItems(appointment, allServices = []) {
-  const mainServices = allServices.filter((s) => !s.is_addon);
+  const allMainServices = allServices.filter((s) => !s.is_addon);
+  const mainServices = allMainServices.filter(isServiceBookable);
   const addOnServices = allServices.filter((s) => s.is_addon);
 
   if (appointment.selected_service_names) {
@@ -9,7 +12,7 @@ export function parseAppointmentLineItems(appointment, allServices = []) {
       ? appointment.add_ons.split(',').map((n) => n.trim()).filter(Boolean)
       : [];
     const selectedMain = mainNames
-      .map((name) => mainServices.find((s) => s.name === name))
+      .map((name) => allMainServices.find((s) => s.name === name))
       .filter(Boolean);
     return { mainServices, addOnServices, selectedMain, selectedAddons: addonNames };
   }
@@ -20,11 +23,11 @@ export function parseAppointmentLineItems(appointment, allServices = []) {
 
   const initialMainId = appointment.service_id;
   const fromId = initialMainId
-    ? mainServices.filter((s) => s.id === Number(initialMainId))
+    ? allMainServices.filter((s) => s.id === Number(initialMainId))
     : [];
   const fromAddOnsAsMain = currentNames
-    .filter((name) => mainServices.some((s) => s.name === name))
-    .map((name) => mainServices.find((s) => s.name === name))
+    .filter((name) => allMainServices.some((s) => s.name === name))
+    .map((name) => allMainServices.find((s) => s.name === name))
     .filter(Boolean);
   const selectedMain = fromId.length > 0 ? fromId : fromAddOnsAsMain;
   const selectedAddons = currentNames.filter((name) => addOnServices.some((s) => s.name === name));

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
+import { isServiceBookable, isAddOnBookable } from '@nail-couture/shared/utils/serviceVisibility';
 import Sidebar from './Sidebar';
 
 export default function CustomerBooking() {
@@ -133,6 +134,7 @@ export default function CustomerBooking() {
   const categories = ['All', ...categoryOrder];
 
   const groupedServices = services.reduce((acc, service) => {
+    if (!isServiceBookable(service)) return acc;
     const cat = service.category || 'Other';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(service);
@@ -149,7 +151,7 @@ export default function CustomerBooking() {
     ? sortedCategories
     : sortedCategories.filter((c) => c === activeCategory);
 
-  const addOns = services.filter((s) => s.category === 'Add-on');
+  const addOns = services.filter((s) => isAddOnBookable(s));
   const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id));
 
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0);

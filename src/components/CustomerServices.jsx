@@ -2,13 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { getHomePath } from '../utils/routes';
-import { CUSTOMER_ONLINE_BOOKING } from '../constants/featureFlags';
-import { getServices } from '../services/services';
+import { getHomePath } from '@nail-couture/shared/utils/routes';
+import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags';
+import { getServices } from '@nail-couture/shared/services/services';
 import { supabase } from '../lib/supabase';
-import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '../utils/serviceCategories';
+import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '@nail-couture/shared/utils/serviceCategories';
+import { isServiceBookable, isServiceMenuVisible } from '@nail-couture/shared/utils/serviceVisibility';
+import { fetchServiceReviewSummaries, fetchServiceReviews } from '@nail-couture/shared/utils/customerReviewService';
 import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
 import Sidebar from './Sidebar';
+import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
+import ReviewsList from './reviews/ReviewsList';
 
 export default function CustomerServices() {
   const navigate = useNavigate();
@@ -21,6 +25,10 @@ export default function CustomerServices() {
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [contentVisible, setContentVisible] = useState(true);
+  const [reviewSummaries, setReviewSummaries] = useState({});
+  const [expandedServiceReviews, setExpandedServiceReviews] = useState(null);
+  const [serviceReviewsCache, setServiceReviewsCache] = useState({});
+  const [loadingServiceReviews, setLoadingServiceReviews] = useState(null);
   const isFirstCategoryRender = useRef(true);
 
   useEffect(() => {
@@ -33,9 +41,13 @@ export default function CustomerServices() {
       return;
     }
     Promise.all([getServices(), fetchServiceCategories(supabase)])
-      .then(([data, categories]) => {
-        setServices(data || []);
+      .then(async ([data, categories]) => {
+        const list = data || [];
+        setServices(list);
         setDbCategories(categories);
+        const serviceIds = list.filter((s) => isServiceMenuVisible(s) && !s.is_coming_soon).map((s) => s.id);
+        const { summaries, available } = await fetchServiceReviewSummaries(serviceIds);
+        if (available) setReviewSummaries(summaries);
       })
       .catch((err) => {
         if (process.env.NODE_ENV === 'development') console.error(err);
@@ -46,7 +58,7 @@ export default function CustomerServices() {
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   const filteredServices = services.filter((service) => {
-    if (service.is_addon) return false;
+    if (!isServiceMenuVisible(service)) return false;
     if (!normalizedSearch) return true;
     return (
       service.name.toLowerCase().includes(normalizedSearch) ||
@@ -72,6 +84,22 @@ export default function CustomerServices() {
 
   const handleCategorySelect = (cat) => {
     changeCategory(cat, activeCategory, setContentVisible);
+  };
+
+  const toggleServiceReviews = async (serviceId) => {
+    if (expandedServiceReviews === serviceId) {
+      setExpandedServiceReviews(null);
+      return;
+    }
+    setExpandedServiceReviews(serviceId);
+    if (serviceReviewsCache[serviceId]) return;
+
+    setLoadingServiceReviews(serviceId);
+    const { reviews, available } = await fetchServiceReviews(serviceId, { limit: 5 });
+    if (available) {
+      setServiceReviewsCache((prev) => ({ ...prev, [serviceId]: reviews || [] }));
+    }
+    setLoadingServiceReviews(null);
   };
 
   useEffect(() => {
@@ -158,7 +186,15 @@ export default function CustomerServices() {
                       {groupedServices[category].map((service) => (
                         <div
                           key={service.id}
-                          className={theme === 'dark' ? 'bg-[#0B0B0C]/60 border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all' : 'bg-white border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all'}
+                          className={
+                            service.is_coming_soon
+                              ? theme === 'dark'
+                                ? 'bg-[#0B0B0C]/40 border border-gold/25 border-dashed rounded-xl p-5 opacity-80'
+                                : 'bg-white/60 border border-gold/25 border-dashed rounded-xl p-5 opacity-80'
+                              : theme === 'dark'
+                                ? 'bg-[#0B0B0C]/60 border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all'
+                                : 'bg-white border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all'
+                          }
                         >
                           <div className="flex justify-between items-start gap-3 mb-2">
                             <h3 className={theme === 'dark' ? 'font-heading text-lg text-offwhite' : 'font-heading text-lg text-charcoal'}>{service.name}</h3>
@@ -169,19 +205,55 @@ export default function CustomerServices() {
                           {service.description && (
                             <p className={theme === 'dark' ? 'text-offwhite/50 text-sm mb-4' : 'text-charcoal/50 text-sm mb-4'}>{service.description}</p>
                           )}
-                          <div className="flex items-center justify-between gap-3">
+                          {!service.is_coming_soon && reviewSummaries[service.id]?.reviewCount > 0 && (
+                            <div className="mb-3">
+                              <ReviewSummaryBadge
+                                avgRating={reviewSummaries[service.id].avgRating}
+                                reviewCount={reviewSummaries[service.id].reviewCount}
+                              />
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between gap-3 flex-wrap">
                             <span className={theme === 'dark' ? 'text-offwhite/40 text-sm' : 'text-charcoal/40 text-sm'}>
                               ~{service.duration_minutes || 0} min
                             </span>
-                            {CUSTOMER_ONLINE_BOOKING && (
-                              <Link
-                                to="/customer/book"
-                                className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-xs rounded-lg transition-colors"
-                              >
-                                Book Now
-                              </Link>
-                            )}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {!service.is_coming_soon && reviewSummaries[service.id]?.reviewCount > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleServiceReviews(service.id)}
+                                  className="px-3 py-2 border border-gold/30 text-gold font-heading text-xs rounded-lg hover:bg-gold/10 transition-colors"
+                                >
+                                  {expandedServiceReviews === service.id ? 'Hide Reviews' : 'See Reviews'}
+                                </button>
+                              )}
+                              {service.is_coming_soon ? (
+                                <span className="px-4 py-2 border border-gold/40 text-gold/80 font-heading text-xs rounded-lg">
+                                  Coming Soon
+                                </span>
+                              ) : CUSTOMER_ONLINE_BOOKING ? (
+                                <Link
+                                  to="/customer/book"
+                                  className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-xs rounded-lg transition-colors"
+                                >
+                                  Book Now
+                                </Link>
+                              ) : null}
+                            </div>
                           </div>
+                          {expandedServiceReviews === service.id && (
+                            <div className="mt-4 pt-4 border-t border-gold/10">
+                              {loadingServiceReviews === service.id ? (
+                                <p className={theme === 'dark' ? 'text-offwhite/40 text-sm' : 'text-charcoal/40 text-sm'}>Loading reviews…</p>
+                              ) : (
+                                <ReviewsList
+                                  reviews={serviceReviewsCache[service.id] || []}
+                                  showTechnician
+                                  emptyMessage="No reviews for this service yet."
+                                />
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -192,7 +264,7 @@ export default function CustomerServices() {
           </div>
         )}
 
-        {CUSTOMER_ONLINE_BOOKING && !loading && services.filter((s) => !s.is_addon).length > 0 && (
+        {CUSTOMER_ONLINE_BOOKING && !loading && services.filter((s) => isServiceBookable(s)).length > 0 && (
           <div className="mt-10 text-center">
             <div className="bg-gold/10 border border-gold/30 rounded-2xl p-8">
               <h3 className="font-heading text-2xl text-gold mb-2">Ready to Book?</h3>

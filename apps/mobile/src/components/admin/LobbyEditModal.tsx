@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { AppModal, ModalButton } from '../AppModal';
 import { useThemeStyles } from '../../theme/useThemeStyles';
+import { isServiceBookable, isAddOnBookable } from '@nail-couture/shared/utils/serviceVisibility.js';
 
 type ServiceItem = {
   id: number;
@@ -24,8 +25,8 @@ type LobbyEditModalProps = {
 
 export function LobbyEditModal({ appointment, services, onSave, onClose }: LobbyEditModalProps) {
   const styles = useThemeStyles();
-  const mainServices = services.filter((s) => !s.is_addon);
-  const addOnServices = services.filter((s) => s.is_addon);
+  const mainServices = services.filter((s) => isServiceBookable(s));
+  const addOnServices = services.filter((s) => isAddOnBookable(s));
 
   const [selectedServices, setSelectedServices] = useState<ServiceItem[]>([]);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);

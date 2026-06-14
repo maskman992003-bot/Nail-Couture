@@ -1,17 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { getFitnessAssessmentPath, getNailAssessmentPath } from '@nail-couture/shared/utils/routes';
 import { supabase } from '../lib/supabase';
-import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '../utils/serviceCategories';
+import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '@nail-couture/shared/utils/serviceCategories';
+import { isServiceMenuVisible } from '@nail-couture/shared/utils/serviceVisibility';
+import { fetchServiceReviewSummaries } from '@nail-couture/shared/utils/customerReviewService';
 import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
+import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
 
 export default function ServicesPublic() {
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const fitnessHref = user?.role ? getFitnessAssessmentPath(user.role) : '/fitness-assessment';
+  const nailHref = user?.role ? getNailAssessmentPath(user.role) : '/nail-assessment';
   const [services, setServices] = useState([]);
   const [dbCategories, setDbCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [contentVisible, setContentVisible] = useState(true);
+  const [reviewSummaries, setReviewSummaries] = useState({});
   const isFirstCategoryRender = useRef(true);
 
   useEffect(() => {
@@ -51,8 +61,13 @@ export default function ServicesPublic() {
       .select('*')
       .order('category', { ascending: true })
       .order('price', { ascending: true });
-    setServices(data || []);
+    const list = data || [];
+    setServices(list);
     setLoading(false);
+
+    const serviceIds = list.filter((s) => isServiceMenuVisible(s) && !s.is_coming_soon).map((s) => s.id);
+    const { summaries, available } = await fetchServiceReviewSummaries(serviceIds);
+    if (available) setReviewSummaries(summaries);
   };
 
   const fetchCategories = async () => {
@@ -86,7 +101,7 @@ export default function ServicesPublic() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="text-center mb-12">
-          <h1 className="font-heading text-4xl sm:text-5xl text-gold mb-4">Our Services</h1>
+          <h2 className="font-heading text-4xl sm:text-5xl text-gold mb-4">Our Services</h2>
           <p className={`text-lg max-w-2xl mx-auto ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>
             Expert craftsmanship in nail couture. Each service is performed with precision,
             medical-grade sterilization, and premium non-toxic products.
@@ -126,7 +141,15 @@ export default function ServicesPublic() {
                       {groupedServices[category].map((service) => (
                         <div
                           key={service.id}
-                          className={`border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all ${theme === 'dark' ? 'bg-white/3' : 'bg-white/70'}`}
+                          className={`border rounded-xl p-5 transition-all ${
+                            service.is_coming_soon
+                              ? theme === 'dark'
+                                ? 'border-gold/25 border-dashed bg-white/2 opacity-80'
+                                : 'border-gold/30 border-dashed bg-white/50 opacity-80'
+                              : theme === 'dark'
+                                ? 'border-gold/10 bg-white/3 hover:border-gold/30'
+                                : 'border-gold/10 bg-white/70 hover:border-gold/30'
+                          }`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <h3 className={`font-heading text-lg ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{service.name}</h3>
@@ -135,14 +158,28 @@ export default function ServicesPublic() {
                           {service.description && (
                             <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>{service.description}</p>
                           )}
+                          {!service.is_coming_soon && reviewSummaries[service.id]?.reviewCount > 0 && (
+                            <div className="mb-3">
+                              <ReviewSummaryBadge
+                                avgRating={reviewSummaries[service.id].avgRating}
+                                reviewCount={reviewSummaries[service.id].reviewCount}
+                              />
+                            </div>
+                          )}
                           <div className="flex items-center justify-between">
                             <span className={`text-sm ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>~{service.duration_minutes} min</span>
-                            <a
-                              href="/about#contact"
-                              className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-xs rounded-lg transition-colors"
-                            >
-                              Contact Us
-                            </a>
+                            {service.is_coming_soon ? (
+                              <span className="px-4 py-2 border border-gold/40 text-gold/80 font-heading text-xs rounded-lg">
+                                Coming Soon
+                              </span>
+                            ) : (
+                              <a
+                                href="/about#contact"
+                                className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-xs rounded-lg transition-colors"
+                              >
+                                Contact Us
+                              </a>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -153,6 +190,34 @@ export default function ServicesPublic() {
             })}
           </div>
         )}
+
+        <div className="mt-16">
+          <div className={`rounded-2xl border p-8 md:p-10 ${theme === 'dark' ? 'border-gold/20 bg-offwhite/[0.02]' : 'border-gold/30 bg-white'}`}>
+            <div className="text-center mb-8">
+              <p className="text-[10px] uppercase tracking-[0.28em] text-gold mb-3">Wellness Tools</p>
+              <h3 className="font-heading text-2xl md:text-3xl text-gold mb-2">Not sure what your nails or body need?</h3>
+              <p className={`max-w-2xl mx-auto ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>
+                Use our free assessment dashboards for personalized recommendations before your visit.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+              <Link
+                to={nailHref}
+                className={`rounded-xl border px-5 py-4 text-center transition-all hover:border-gold/40 ${theme === 'dark' ? 'border-gold/20 bg-charcoal/40' : 'border-gold/30 bg-cream/50'}`}
+              >
+                <span className="font-heading text-gold block mb-1">Nail Health Assessment</span>
+                <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Chemistry & maintenance</span>
+              </Link>
+              <Link
+                to={fitnessHref}
+                className={`rounded-xl border px-5 py-4 text-center transition-all hover:border-gold/40 ${theme === 'dark' ? 'border-gold/20 bg-charcoal/40' : 'border-gold/30 bg-cream/50'}`}
+              >
+                <span className="font-heading text-gold block mb-1">Fitness Assessment</span>
+                <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>BMI, TDEE & body fat</span>
+              </Link>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-16 text-center">
           <div className="bg-gold/10 border border-gold/30 rounded-xl p-8 max-w-2xl mx-auto">

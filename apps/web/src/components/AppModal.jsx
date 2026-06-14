@@ -51,13 +51,14 @@ export default function AppModal({
         className={clsx(
           'w-full flex flex-col rounded-2xl border border-card bg-card shadow-2xl',
           'max-h-[min(90dvh,calc(100dvh-2rem))]',
+          scrollBody && 'overflow-hidden min-h-0',
           maxWidth,
           panelClassName,
         )}
         onClick={(e) => e.stopPropagation()}
       >
         {(title || onClose || headerExtra) && (
-          <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-light shrink-0">
+          <div className="flex items-start justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4 border-b border-light shrink-0">
             <div className="min-w-0 flex-1">
               {title && (
                 <h2 id="app-modal-title" className="font-heading text-xl text-gold-strong">
@@ -79,9 +80,16 @@ export default function AppModal({
             )}
           </div>
         )}
-        <div className={clsx('px-5 py-4', scrollBody && 'overflow-y-auto min-h-0 flex-1')}>{children}</div>
+        <div
+          className={clsx(
+            'px-4 py-3 sm:px-5 sm:py-4',
+            scrollBody && 'overflow-y-auto overscroll-contain min-h-0 flex-1',
+          )}
+        >
+          {children}
+        </div>
         {footer && (
-          <div className="px-5 py-4 border-t border-light shrink-0 flex flex-col sm:flex-row gap-3">
+          <div className="px-4 py-3 sm:px-5 sm:py-4 border-t border-light shrink-0 flex flex-col sm:flex-row gap-3">
             {footer}
           </div>
         )}

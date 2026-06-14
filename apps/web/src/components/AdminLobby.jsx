@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { getServices } from '@nail-couture/shared/services/services'
+import { isServiceBookable, isAddOnBookable } from '@nail-couture/shared/utils/serviceVisibility'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import Sidebar from './Sidebar'
@@ -375,8 +376,8 @@ const getAppointmentTotalPrice = (appointment, availableServices = []) => {
 }
 
 const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
-  const mainServices = services.filter(s => !s.is_addon)
-  const addOnServices = services.filter(s => s.is_addon)
+  const mainServices = services.filter(isServiceBookable)
+  const addOnServices = services.filter(isAddOnBookable)
   const currentAddOns = appointment.add_ons ? appointment.add_ons.split(',').map(n => n.trim()).filter(Boolean) : []
 
   const initialMainId = appointment.service_id

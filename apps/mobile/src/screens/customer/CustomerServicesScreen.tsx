@@ -7,6 +7,7 @@ import {
   getDisplayCategories,
 } from '@nail-couture/shared/utils/serviceCategories.js';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags.js';
+import { isServiceBookable, isServiceMenuVisible } from '@nail-couture/shared/utils/serviceVisibility.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
 import { ServiceCategoryBar, useCategoryFade } from '../../components/public/ServiceCategoryBar';
@@ -20,6 +21,7 @@ type ServiceRecord = {
   duration_minutes?: number;
   category?: string;
   is_addon?: boolean;
+  is_coming_soon?: boolean;
 };
 
 export function CustomerServicesScreen() {
@@ -45,7 +47,7 @@ export function CustomerServicesScreen() {
   const filteredServices = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return services.filter((service) => {
-      if (service.is_addon) return false;
+      if (!isServiceMenuVisible(service)) return false;
       if (!term) return true;
       return (
         service.name.toLowerCase().includes(term) ||
@@ -139,9 +141,11 @@ export function CustomerServicesScreen() {
                         key={service.id}
                         style={{
                           borderWidth: 1,
-                          borderColor: styles.tokens.borderLight,
+                          borderColor: service.is_coming_soon ? `${styles.tokens.goldStrong}66` : styles.tokens.borderLight,
+                          borderStyle: service.is_coming_soon ? 'dashed' : 'solid',
                           borderRadius: 12,
                           padding: 12,
+                          opacity: service.is_coming_soon ? 0.85 : 1,
                         }}
                       >
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
@@ -153,9 +157,26 @@ export function CustomerServicesScreen() {
                             {service.description}
                           </Text>
                         ) : null}
-                        <Text style={[styles.textSecondary, { fontSize: 12, marginTop: 6 }]}>
-                          ~{service.duration_minutes} min
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                          <Text style={[styles.textSecondary, { fontSize: 12 }]}>
+                            ~{service.duration_minutes} min
+                          </Text>
+                          {service.is_coming_soon ? (
+                            <View
+                              style={{
+                                borderWidth: 1,
+                                borderColor: `${styles.tokens.goldStrong}66`,
+                                borderRadius: 8,
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                              }}
+                            >
+                              <Text style={{ color: styles.tokens.goldStrong, fontSize: 11, fontWeight: '600', opacity: 0.85 }}>
+                                Coming Soon
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
                       </View>
                     ))}
                   </View>
@@ -166,7 +187,7 @@ export function CustomerServicesScreen() {
         </Animated.View>
       )}
 
-      {CUSTOMER_ONLINE_BOOKING ? (
+      {CUSTOMER_ONLINE_BOOKING && services.some((s) => isServiceBookable(s)) ? (
         <Text style={[styles.textSecondary, { textAlign: 'center', marginTop: 20 }]}>
           Ready to book? Open the Book tab to schedule your visit.
         </Text>

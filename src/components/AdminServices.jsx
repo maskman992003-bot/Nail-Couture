@@ -12,7 +12,7 @@ import AppModal, {
   modalBtnPrimary,
   modalBtnDanger,
 } from './AppModal';
-import { linesToChecklist, checklistToLines } from '../utils/serviceChecklist';
+import { linesToChecklist, checklistToLines } from '@nail-couture/shared/utils/serviceChecklist';
 
 export default function AdminServices() {
   const { user } = useAuth();
@@ -23,7 +23,7 @@ export default function AdminServices() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', checklistLines: '' });
+  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', description: '', checklistLines: '', is_coming_soon: false });
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,6 +36,7 @@ export default function AdminServices() {
   const [deleting, setDeleting] = useState(false);
   const [catDeleteTarget, setCatDeleteTarget] = useState(null);
   const [catDeleting, setCatDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
 
   useEffect(() => { fetchServices(); fetchCategories(); }, []);
 
@@ -69,7 +70,7 @@ export default function AdminServices() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '', checklistLines: '' });
+    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '', description: '', checklistLines: '', is_coming_soon: false });
     setShowForm(true);
   };
 
@@ -80,7 +81,9 @@ export default function AdminServices() {
       price: String(svc.price || ''),
       duration_minutes: String(svc.duration_minutes || ''),
       category: svc.category || categories[0]?.name || '',
+      description: svc.description || '',
       checklistLines: checklistToLines(svc.metadata?.checklist),
+      is_coming_soon: Boolean(svc.is_coming_soon),
     });
     setShowForm(true);
   };
@@ -95,6 +98,8 @@ export default function AdminServices() {
       price: parseFloat(form.price),
       duration_minutes: parseInt(form.duration_minutes) || 0,
       category: form.category,
+      description: form.description,
+      is_coming_soon: form.is_coming_soon,
       metadata: { checklist: linesToChecklist(form.checklistLines) },
     };
     let result;
@@ -116,6 +121,21 @@ export default function AdminServices() {
     setSaving(false);
     if (result.error) { setApiError(result.error.message); return; }
     setShowForm(false);
+    fetchServices();
+  };
+
+  const toggleComingSoon = async (svc) => {
+    setTogglingId(svc.id);
+    setApiError('');
+    const currentUser = user || {};
+    const { error } = await supabase.rpc('manage_service', {
+      admin_phone: currentUser.phone,
+      action: 'update',
+      service_data: { is_coming_soon: !svc.is_coming_soon },
+      service_id: svc.id,
+    });
+    setTogglingId(null);
+    if (error) { setApiError(error.message); return; }
     fetchServices();
   };
 
@@ -249,6 +269,7 @@ export default function AdminServices() {
                 title={editing ? 'Edit Service' : 'Add Service'}
                 maxWidth="max-w-md"
                 zIndex="z-[100]"
+                scrollBody
                 footer={
                   <>
                     <button
@@ -284,25 +305,36 @@ export default function AdminServices() {
                       placeholder="Service name"
                     />
                   </div>
-                  <div>
-                    <label className={modalLabelClass}>Price</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={form.price}
-                      onChange={(e) => setForm({ ...form, price: e.target.value })}
-                      className={modalInputClass}
-                      placeholder="0.00"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={modalLabelClass}>Price</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={form.price}
+                        onChange={(e) => setForm({ ...form, price: e.target.value })}
+                        className={modalInputClass}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label className={modalLabelClass}>Duration (min)</label>
+                      <input
+                        type="number"
+                        value={form.duration_minutes}
+                        onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
+                        className={modalInputClass}
+                        placeholder="60"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className={modalLabelClass}>Duration (min)</label>
-                    <input
-                      type="number"
-                      value={form.duration_minutes}
-                      onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
-                      className={modalInputClass}
-                      placeholder="60"
+                    <label className={modalLabelClass}>Description</label>
+                    <textarea
+                      value={form.description}
+                      onChange={(e) => setForm({ ...form, description: e.target.value })}
+                      className={`${modalInputClass} min-h-[80px] resize-y`}
+                      placeholder="Short description shown on public and customer menus"
                     />
                   </div>
                   <div>
@@ -339,6 +371,15 @@ export default function AdminServices() {
                     />
                     <p className="text-muted text-xs mt-1">Shown to technicians during in-chair service.</p>
                   </div>
+                  <label className="flex items-start sm:items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.is_coming_soon}
+                      onChange={(e) => setForm({ ...form, is_coming_soon: e.target.checked })}
+                      className="w-4 h-4 mt-0.5 sm:mt-0 shrink-0 rounded border-gold/40 text-gold focus:ring-gold"
+                    />
+                    <span className="text-sm text-primary min-w-0">Coming Soon (visible in menus, not bookable)</span>
+                  </label>
                 </div>
               </AppModal>
 
@@ -355,6 +396,7 @@ export default function AdminServices() {
                         <th className="text-left py-3 px-4">Category</th>
                         <th className="text-left py-3 px-4">Price</th>
                         <th className="text-left py-3 px-4">Duration</th>
+                        <th className="text-left py-3 px-4">Status</th>
                         <th className="text-left py-3 px-4">Actions</th>
                       </tr>
                     </thead>
@@ -366,6 +408,21 @@ export default function AdminServices() {
                           <td className="py-3 px-4 text-gold">${parseFloat(svc.price).toFixed(2)}</td>
                           <td className="py-3 px-4 text-secondary">{svc.duration_minutes || 0} min</td>
                           <td className="py-3 px-4">
+                            <button
+                              type="button"
+                              onClick={() => toggleComingSoon(svc)}
+                              disabled={togglingId === svc.id}
+                              className={clsx(
+                                'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                                svc.is_coming_soon
+                                  ? 'bg-gold/20 text-gold border border-gold/40'
+                                  : 'bg-green-500/10 text-green-400 border border-green-500/30'
+                              )}
+                            >
+                              {togglingId === svc.id ? '…' : svc.is_coming_soon ? 'Coming Soon' : 'Active'}
+                            </button>
+                          </td>
+                          <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
                               <button onClick={() => openEdit(svc)} className="text-gold hover:underline text-sm">Edit</button>
                               <button onClick={() => setDeleteTarget(svc)} className="text-red-400 hover:underline text-sm">Delete</button>
@@ -373,7 +430,7 @@ export default function AdminServices() {
                           </td>
                         </tr>
                       ))}
-                      {filteredServices.length === 0 && <tr><td colSpan="5" className="py-8 text-center text-muted">No services found</td></tr>}
+                      {filteredServices.length === 0 && <tr><td colSpan="6" className="py-8 text-center text-muted">No services found</td></tr>}
                     </tbody>
                   </table>
                 </div>

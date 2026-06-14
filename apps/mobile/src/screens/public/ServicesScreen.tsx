@@ -21,6 +21,7 @@ type ServiceRecord = {
   duration_minutes?: number;
   category?: string;
   is_addon?: boolean;
+  is_coming_soon?: boolean;
 };
 
 type ServicesScreenProps = {
@@ -144,10 +145,12 @@ export function ServicesScreen({ navigation }: ServicesScreenProps) {
                           key={service.id}
                           style={{
                             borderWidth: 1,
-                            borderColor: styles.tokens.borderLight,
+                            borderColor: service.is_coming_soon ? `${styles.tokens.goldStrong}66` : styles.tokens.borderLight,
+                            borderStyle: service.is_coming_soon ? 'dashed' : 'solid',
                             borderRadius: 12,
                             padding: 14,
                             backgroundColor: `${styles.tokens.textPrimary}05`,
+                            opacity: service.is_coming_soon ? 0.85 : 1,
                           }}
                         >
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
@@ -172,19 +175,35 @@ export function ServicesScreen({ navigation }: ServicesScreenProps) {
                             }}
                           >
                             <Text style={styles.textSecondary}>~{service.duration_minutes} min</Text>
-                            <Pressable
-                              onPress={() => navigation.navigate('About')}
-                              style={{
-                                backgroundColor: styles.tokens.goldStrong,
-                                borderRadius: 8,
-                                paddingHorizontal: 12,
-                                paddingVertical: 8,
-                              }}
-                            >
-                              <Text style={{ color: '#121212', fontSize: 12, fontWeight: '600' }}>
-                                Contact Us
-                              </Text>
-                            </Pressable>
+                            {service.is_coming_soon ? (
+                              <View
+                                style={{
+                                  borderWidth: 1,
+                                  borderColor: `${styles.tokens.goldStrong}66`,
+                                  borderRadius: 8,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 8,
+                                }}
+                              >
+                                <Text style={{ color: styles.tokens.goldStrong, fontSize: 12, fontWeight: '600', opacity: 0.85 }}>
+                                  Coming Soon
+                                </Text>
+                              </View>
+                            ) : (
+                              <Pressable
+                                onPress={() => navigation.navigate('About')}
+                                style={{
+                                  backgroundColor: styles.tokens.goldStrong,
+                                  borderRadius: 8,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 8,
+                                }}
+                              >
+                                <Text style={{ color: '#121212', fontSize: 12, fontWeight: '600' }}>
+                                  Contact Us
+                                </Text>
+                              </Pressable>
+                            )}
                           </View>
                         </View>
                       ))}

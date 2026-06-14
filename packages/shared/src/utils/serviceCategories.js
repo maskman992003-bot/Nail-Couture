@@ -2,9 +2,12 @@
  * Shared service category grouping and tab building for kiosk, portal, and public menus.
  */
 
-export function groupServicesByCategory(services, { excludeAddons = true } = {}) {
+import { isServiceBookable, isServiceMenuVisible } from './serviceVisibility.js';
+
+export function groupServicesByCategory(services, { excludeAddons = true, bookableOnly = false } = {}) {
   return (services || []).reduce((acc, service) => {
-    if (excludeAddons && service.is_addon) return acc;
+    if (bookableOnly && !isServiceBookable(service)) return acc;
+    if (excludeAddons && !isServiceMenuVisible(service)) return acc;
     const category = service.category || 'Other';
     if (!acc[category]) acc[category] = [];
     acc[category].push(service);
@@ -24,8 +27,8 @@ export function sortCategoryNames(categoryNames, dbCategories = []) {
   });
 }
 
-export function buildCategoryTabs(services, dbCategories = [], { excludeAddons = true } = {}) {
-  const grouped = groupServicesByCategory(services, { excludeAddons });
+export function buildCategoryTabs(services, dbCategories = [], { excludeAddons = true, bookableOnly = false } = {}) {
+  const grouped = groupServicesByCategory(services, { excludeAddons, bookableOnly });
   const sortedCategories = sortCategoryNames(Object.keys(grouped), dbCategories);
   return {
     grouped,

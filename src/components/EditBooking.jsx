@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getHomePath } from '../utils/routes';
+import { getHomePath } from '@nail-couture/shared/utils/routes';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
-import { CATEGORIES, CATEGORY_ORDER } from '../data/servicesData';
+import { CATEGORIES, CATEGORY_ORDER } from '@nail-couture/shared/constants/servicesData';
+import { isServiceBookable, isAddOnBookable } from '@nail-couture/shared/utils/serviceVisibility';
 
 export default function EditBooking() {
   const { bookingId } = useParams();
@@ -113,6 +114,7 @@ export default function EditBooking() {
   };
 
   const groupedServices = services.reduce((acc, service) => {
+    if (!isServiceBookable(service)) return acc;
     const cat = service.category || 'Other';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(service);
@@ -129,7 +131,7 @@ export default function EditBooking() {
     ? sortedCategories
     : sortedCategories.filter((c) => c === activeCategory);
 
-  const addOns = services.filter((s) => s.is_addon);
+  const addOns = services.filter((s) => isAddOnBookable(s));
   const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id));
 
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0);

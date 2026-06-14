@@ -7,6 +7,7 @@ import {
   fetchServiceCategories,
   getDisplayCategories,
 } from '@nail-couture/shared/utils/serviceCategories.js';
+import { isServiceBookable, isAddOnBookable } from '@nail-couture/shared/utils/serviceVisibility.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { ServiceCategoryBar } from '../public/ServiceCategoryBar';
 import { RefreshmentSelect } from '../forms/RefreshmentSelect';
@@ -79,7 +80,7 @@ export function KioskServiceSelection({
   }, []);
 
   const { grouped, sortedCategories, categoryTabs } = useMemo(
-    () => buildCategoryTabs(services, dbCategories),
+    () => buildCategoryTabs(services, dbCategories, { bookableOnly: true }),
     [services, dbCategories],
   );
 
@@ -92,7 +93,7 @@ export function KioskServiceSelection({
   }, [services, dbCategories, activeCategory, sortedCategories]);
 
   const displayCategories = getDisplayCategories(activeCategory, sortedCategories);
-  const addOns = services.filter((service) => service.is_addon);
+  const addOns = services.filter((service) => isAddOnBookable(service));
   const selectedAddOnDetails = addOns.filter((addOn) => selectedAddOns.includes(addOn.id));
   const totalPrice =
     selectedServices.reduce((sum, service) => sum + (service.price || 0), 0) +

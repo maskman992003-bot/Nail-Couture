@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
-import { processCheckIn } from '../services/kioskService'
-import { getServices } from '../services/services'
+import { processCheckIn } from '@nail-couture/shared/services/kioskService'
+import { getServices } from '@nail-couture/shared/services/services'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
-import { getAvailableRefreshments, isRefreshmentAvailable } from '../services/inventoryService'
-import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '../utils/serviceCategories'
-import { buildAppointmentServicePayload } from '../utils/appointmentServices'
-import { LOYALTY_REWARDS, reserveLoyaltyRewardForVisit } from '../utils/loyaltyTransactions'
+import { getAvailableRefreshments, isRefreshmentAvailable } from '@nail-couture/shared/services/inventoryService'
+import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '@nail-couture/shared/utils/serviceCategories'
+import { isServiceBookable, isAddOnBookable } from '@nail-couture/shared/utils/serviceVisibility'
+import { buildAppointmentServicePayload } from '@nail-couture/shared/utils/appointmentServices'
+import { LOYALTY_REWARDS, reserveLoyaltyRewardForVisit } from '@nail-couture/shared/utils/loyaltyTransactions'
 import RefreshmentSelect from './RefreshmentSelect'
 import WaiverModal from './WaiverModal'
 import ScrollSelect from './ScrollSelect'
@@ -98,11 +99,11 @@ const ServiceSelection = ({ onSelect, onBack, initialServices, initialAddOns }) 
     )
   }
 
-  const addOns = services.filter((s) => s.is_addon)
+  const addOns = services.filter((s) => isAddOnBookable(s))
   const selectedAddOnDetails = addOns.filter((a) => selectedAddOns.includes(a.id))
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
 
-  const { grouped: groupedServices, sortedCategories, categoryTabs } = buildCategoryTabs(services, dbCategories)
+  const { grouped: groupedServices, sortedCategories, categoryTabs } = buildCategoryTabs(services, dbCategories, { bookableOnly: true })
   const displayCategories = getDisplayCategories(activeCategory, sortedCategories)
 
   const toggleService = (service) => {
@@ -940,7 +941,7 @@ export default function CheckIn({ onNavigate }) {
   }
 
   if (result && !result.isNew && result.appointment) {
-    const addOns = services.filter((s) => s.is_addon)
+    const addOns = services.filter((s) => isAddOnBookable(s))
     const selectedAddOnDetails = selectedAddOns
     const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
 

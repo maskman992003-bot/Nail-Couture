@@ -15,6 +15,7 @@ import {
   reserveLoyaltyRewardForVisit,
 } from '@nail-couture/shared/utils/loyaltyTransactions.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
+import { isAddOnBookable } from '@nail-couture/shared/utils/serviceVisibility.js';
 import { KioskRegistrationForm } from '../components/kiosk/KioskRegistrationForm';
 import {
   KioskServiceSelection,
@@ -365,7 +366,7 @@ export function CheckInScreen() {
   }
 
   if (result && !result.isNew && result.appointment) {
-    const addOnCatalog = services.filter((service) => service.is_addon);
+    const addOnCatalog = services.filter((service) => isAddOnBookable(service));
     const totalPrice =
       selectedServices.reduce((sum, service) => sum + (service.price || 0), 0) +
       selectedAddOns.reduce((sum, addOn) => sum + (addOn.price || 0), 0);

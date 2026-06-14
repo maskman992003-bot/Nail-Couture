@@ -31,6 +31,7 @@ export default function TechnicianRebookModal({ open, onClose, customerId, custo
       .from('services')
       .select('id, name, price')
       .eq('is_addon', false)
+      .eq('is_coming_soon', false)
       .order('name')
       .then(({ data }) => setServices(data || []));
   }, [open, serviceId]);

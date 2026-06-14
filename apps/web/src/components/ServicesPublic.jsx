@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getFitnessAssessmentPath, getNailAssessmentPath } from '@nail-couture/shared/utils/routes';
 import { supabase } from '../lib/supabase';
 import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '@nail-couture/shared/utils/serviceCategories';
+import { isServiceMenuVisible } from '@nail-couture/shared/utils/serviceVisibility';
 import { fetchServiceReviewSummaries } from '@nail-couture/shared/utils/customerReviewService';
 import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
 import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
@@ -64,7 +65,7 @@ export default function ServicesPublic() {
     setServices(list);
     setLoading(false);
 
-    const serviceIds = list.filter((s) => !s.is_addon).map((s) => s.id);
+    const serviceIds = list.filter((s) => isServiceMenuVisible(s) && !s.is_coming_soon).map((s) => s.id);
     const { summaries, available } = await fetchServiceReviewSummaries(serviceIds);
     if (available) setReviewSummaries(summaries);
   };
@@ -140,7 +141,15 @@ export default function ServicesPublic() {
                       {groupedServices[category].map((service) => (
                         <div
                           key={service.id}
-                          className={`border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all ${theme === 'dark' ? 'bg-white/3' : 'bg-white/70'}`}
+                          className={`border rounded-xl p-5 transition-all ${
+                            service.is_coming_soon
+                              ? theme === 'dark'
+                                ? 'border-gold/25 border-dashed bg-white/2 opacity-80'
+                                : 'border-gold/30 border-dashed bg-white/50 opacity-80'
+                              : theme === 'dark'
+                                ? 'border-gold/10 bg-white/3 hover:border-gold/30'
+                                : 'border-gold/10 bg-white/70 hover:border-gold/30'
+                          }`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <h3 className={`font-heading text-lg ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{service.name}</h3>
@@ -149,7 +158,7 @@ export default function ServicesPublic() {
                           {service.description && (
                             <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>{service.description}</p>
                           )}
-                          {reviewSummaries[service.id]?.reviewCount > 0 && (
+                          {!service.is_coming_soon && reviewSummaries[service.id]?.reviewCount > 0 && (
                             <div className="mb-3">
                               <ReviewSummaryBadge
                                 avgRating={reviewSummaries[service.id].avgRating}
@@ -159,12 +168,18 @@ export default function ServicesPublic() {
                           )}
                           <div className="flex items-center justify-between">
                             <span className={`text-sm ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>~{service.duration_minutes} min</span>
-                            <a
-                              href="/about#contact"
-                              className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-xs rounded-lg transition-colors"
-                            >
-                              Contact Us
-                            </a>
+                            {service.is_coming_soon ? (
+                              <span className="px-4 py-2 border border-gold/40 text-gold/80 font-heading text-xs rounded-lg">
+                                Coming Soon
+                              </span>
+                            ) : (
+                              <a
+                                href="/about#contact"
+                                className="px-4 py-2 bg-gold text-charcoal hover:bg-gold/90 font-heading text-xs rounded-lg transition-colors"
+                              >
+                                Contact Us
+                              </a>
+                            )}
                           </div>
                         </div>
                       ))}

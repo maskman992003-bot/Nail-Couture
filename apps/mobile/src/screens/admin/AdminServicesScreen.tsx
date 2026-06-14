@@ -20,6 +20,8 @@ type ServiceRecord = {
   price: number;
   duration_minutes?: number;
   category?: string;
+  description?: string;
+  is_coming_soon?: boolean;
   metadata?: { checklist?: string[] };
 };
 
@@ -39,11 +41,12 @@ export function AdminServicesScreen() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', checklistLines: '' });
+  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', description: '', checklistLines: '', is_coming_soon: false });
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<ServiceRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const [showCatForm, setShowCatForm] = useState(false);
   const [catEditing, setCatEditing] = useState<number | null>(null);
@@ -79,7 +82,7 @@ export function AdminServicesScreen() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '', checklistLines: '' });
+    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '', description: '', checklistLines: '', is_coming_soon: false });
     setApiError('');
     setShowForm(true);
   };
@@ -91,7 +94,9 @@ export function AdminServicesScreen() {
       price: String(svc.price || ''),
       duration_minutes: String(svc.duration_minutes || ''),
       category: svc.category || categories[0]?.name || '',
+      description: svc.description || '',
       checklistLines: checklistToLines(svc.metadata?.checklist),
+      is_coming_soon: Boolean(svc.is_coming_soon),
     });
     setApiError('');
     setShowForm(true);
@@ -106,6 +111,8 @@ export function AdminServicesScreen() {
       price: parseFloat(form.price),
       duration_minutes: parseInt(form.duration_minutes) || 0,
       category: form.category,
+      description: form.description,
+      is_coming_soon: form.is_coming_soon,
       metadata: { checklist: linesToChecklist(form.checklistLines) },
     };
     const result = editing
@@ -115,6 +122,18 @@ export function AdminServicesScreen() {
     if (result.error) { setApiError(result.error.message); return; }
     setShowForm(false);
     fetchServices();
+  };
+
+  const toggleComingSoon = async (svc: ServiceRecord) => {
+    setTogglingId(svc.id);
+    const { error } = await getSupabase().rpc('manage_service', {
+      admin_phone: user?.phone,
+      action: 'update',
+      service_data: { is_coming_soon: !svc.is_coming_soon },
+      service_id: svc.id,
+    });
+    setTogglingId(null);
+    if (!error) fetchServices();
   };
 
   const handleDelete = async () => {
@@ -248,6 +267,24 @@ export function AdminServicesScreen() {
                   <Text style={styles.textSecondary}>
                     {svc.category} · {svc.duration_minutes || 0} min
                   </Text>
+                  <Pressable
+                    onPress={() => toggleComingSoon(svc)}
+                    disabled={togglingId === svc.id}
+                    style={{
+                      alignSelf: 'flex-start',
+                      marginTop: 6,
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 999,
+                      borderWidth: 1,
+                      borderColor: svc.is_coming_soon ? styles.tokens.goldStrong : '#4ade80',
+                      backgroundColor: svc.is_coming_soon ? 'rgba(197,160,89,0.15)' : 'rgba(74,222,128,0.1)',
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, color: svc.is_coming_soon ? styles.tokens.goldStrong : '#4ade80', fontWeight: '600' }}>
+                      {togglingId === svc.id ? '…' : svc.is_coming_soon ? 'Coming Soon' : 'Active'}
+                    </Text>
+                  </Pressable>
                 </View>
                 <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600' }]}>${svc.price}</Text>
               </View>
@@ -299,6 +336,8 @@ export function AdminServicesScreen() {
         <TextInput value={form.price} onChangeText={(v) => setForm({ ...form, price: v })} keyboardType="decimal-pad" style={inputStyle} placeholderTextColor={styles.tokens.textMuted} />
         <Text style={styles.textSecondary}>Duration (minutes)</Text>
         <TextInput value={form.duration_minutes} onChangeText={(v) => setForm({ ...form, duration_minutes: v })} keyboardType="number-pad" style={inputStyle} placeholderTextColor={styles.tokens.textMuted} />
+        <Text style={styles.textSecondary}>Description</Text>
+        <TextInput value={form.description} onChangeText={(v) => setForm({ ...form, description: v })} multiline style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]} placeholder="Shown on public and customer menus" placeholderTextColor={styles.tokens.textMuted} />
         {categoryOptions.length > 0 && (
           <>
             <Text style={styles.textSecondary}>Category</Text>
@@ -307,6 +346,24 @@ export function AdminServicesScreen() {
         )}
         <Text style={[styles.textSecondary, { marginTop: 8 }]}>Checklist (one item per line)</Text>
         <TextInput value={form.checklistLines} onChangeText={(v) => setForm({ ...form, checklistLines: v })} multiline style={[inputStyle, { minHeight: 80, textAlignVertical: 'top' }]} placeholderTextColor={styles.tokens.textMuted} />
+        <Pressable
+          onPress={() => setForm({ ...form, is_coming_soon: !form.is_coming_soon })}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}
+        >
+          <View style={{
+            width: 22,
+            height: 22,
+            borderRadius: 4,
+            borderWidth: 1,
+            borderColor: styles.tokens.goldStrong,
+            backgroundColor: form.is_coming_soon ? styles.tokens.goldStrong : 'transparent',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            {form.is_coming_soon ? <Text style={{ color: '#121212', fontSize: 14, fontWeight: '700' }}>✓</Text> : null}
+          </View>
+          <Text style={styles.textSecondary}>Coming Soon (visible in menus, not bookable)</Text>
+        </Pressable>
         {apiError ? <Text style={{ color: '#f87171' }}>{apiError}</Text> : null}
       </AppModal>
 
