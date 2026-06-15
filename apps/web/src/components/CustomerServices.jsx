@@ -7,7 +7,7 @@ import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureF
 import { getServices } from '@nail-couture/shared/services/services';
 import { supabase } from '../lib/supabase';
 import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '@nail-couture/shared/utils/serviceCategories';
-import { isServiceBookable, isServiceMenuVisible } from '@nail-couture/shared/utils/serviceVisibility';
+import { isServiceBookable, isServiceMenuVisible, shouldShowServicePrice } from '@nail-couture/shared/utils/serviceVisibility';
 import { fetchServiceReviewSummaries, fetchServiceReviews } from '@nail-couture/shared/utils/customerReviewService';
 import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
 import Sidebar from './Sidebar';
@@ -198,9 +198,11 @@ export default function CustomerServices() {
                         >
                           <div className="flex justify-between items-start gap-3 mb-2">
                             <h3 className={theme === 'dark' ? 'font-heading text-lg text-offwhite' : 'font-heading text-lg text-charcoal'}>{service.name}</h3>
-                            <span className="text-gold font-heading text-xl shrink-0">
-                              ${Number(service.price || 0).toFixed(0)}
-                            </span>
+                            {shouldShowServicePrice(service, user?.role) && (
+                              <span className="text-gold font-heading text-xl shrink-0">
+                                ${Number(service.price || 0).toFixed(0)}
+                              </span>
+                            )}
                           </div>
                           {service.description && (
                             <p className={theme === 'dark' ? 'text-offwhite/50 text-sm mb-4' : 'text-charcoal/50 text-sm mb-4'}>{service.description}</p>

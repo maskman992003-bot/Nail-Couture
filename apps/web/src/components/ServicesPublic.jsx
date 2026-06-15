@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getFitnessAssessmentPath, getNailAssessmentPath } from '@nail-couture/shared/utils/routes';
 import { supabase } from '../lib/supabase';
 import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '@nail-couture/shared/utils/serviceCategories';
-import { isServiceMenuVisible } from '@nail-couture/shared/utils/serviceVisibility';
+import { isServiceMenuVisible, shouldShowServicePrice } from '@nail-couture/shared/utils/serviceVisibility';
 import { fetchServiceReviewSummaries } from '@nail-couture/shared/utils/customerReviewService';
 import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
 import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
@@ -153,7 +153,9 @@ export default function ServicesPublic() {
                         >
                           <div className="flex justify-between items-start mb-2">
                             <h3 className={`font-heading text-lg ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{service.name}</h3>
-                            <span className="text-gold font-heading text-xl">${service.price?.toFixed(0)}</span>
+                            {shouldShowServicePrice(service, user?.role) && (
+                              <span className="text-gold font-heading text-xl">${service.price?.toFixed(0)}</span>
+                            )}
                           </div>
                           {service.description && (
                             <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>{service.description}</p>

@@ -13,3 +13,9 @@ export function isServiceBookable(service) {
 export function isAddOnBookable(service) {
   return Boolean(service?.is_addon) && !service?.is_coming_soon;
 }
+
+/** Coming soon prices are visible to owners only on browse/menu views. */
+export function shouldShowServicePrice(service, role) {
+  if (!service?.is_coming_soon) return true;
+  return role === 'owner';
+}

@@ -7,11 +7,12 @@ import {
   getDisplayCategories,
 } from '@nail-couture/shared/utils/serviceCategories.js';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags.js';
-import { isServiceBookable, isServiceMenuVisible } from '@nail-couture/shared/utils/serviceVisibility.js';
+import { isServiceBookable, isServiceMenuVisible, shouldShowServicePrice } from '@nail-couture/shared/utils/serviceVisibility.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
 import { ServiceCategoryBar, useCategoryFade } from '../../components/public/ServiceCategoryBar';
 import { useThemeStyles } from '../../theme/useThemeStyles';
+import { useAuth } from '../../contexts/AuthContext';
 
 type ServiceRecord = {
   id: string;
@@ -26,6 +27,7 @@ type ServiceRecord = {
 
 export function CustomerServicesScreen() {
   const styles = useThemeStyles();
+  const { user } = useAuth();
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [dbCategories, setDbCategories] = useState<Array<{ name?: string } | string>>([]);
   const [loading, setLoading] = useState(true);
@@ -150,7 +152,9 @@ export function CustomerServicesScreen() {
                       >
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                           <Text style={[styles.textPrimary, { flex: 1, fontWeight: '600' }]}>{service.name}</Text>
-                          <Text style={[styles.textGold, { fontWeight: '600' }]}>${service.price?.toFixed(0)}</Text>
+                          {shouldShowServicePrice(service, user?.role) ? (
+                            <Text style={[styles.textGold, { fontWeight: '600' }]}>${service.price?.toFixed(0)}</Text>
+                          ) : null}
                         </View>
                         {service.description ? (
                           <Text style={[styles.textSecondary, { fontSize: 13, marginTop: 4 }]}>

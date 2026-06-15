@@ -7,10 +7,12 @@ import {
   getDisplayCategories,
 } from '@nail-couture/shared/utils/serviceCategories.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
+import { shouldShowServicePrice } from '@nail-couture/shared/utils/serviceVisibility.js';
 import { PublicScreenLayout } from '../../components/public/PublicScreenLayout';
 import { ServiceCategoryBar } from '../../components/public/ServiceCategoryBar';
 import { Icon } from '../../components/icons/Icon';
 import { useThemeStyles } from '../../theme/useThemeStyles';
+import { useAuth } from '../../contexts/AuthContext';
 import type { PublicTabParamList } from '../../navigation/publicTypes';
 
 type ServiceRecord = {
@@ -30,6 +32,7 @@ type ServicesScreenProps = {
 
 export function ServicesScreen({ navigation }: ServicesScreenProps) {
   const styles = useThemeStyles();
+  const { user } = useAuth();
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [dbCategories, setDbCategories] = useState<Array<{ name?: string } | string>>([]);
   const [loading, setLoading] = useState(true);
@@ -157,9 +160,11 @@ export function ServicesScreen({ navigation }: ServicesScreenProps) {
                             <Text style={[styles.textPrimary, { fontSize: 16, fontWeight: '600', flex: 1 }]}>
                               {service.name}
                             </Text>
-                            <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600' }]}>
-                              ${service.price?.toFixed(0)}
-                            </Text>
+                            {shouldShowServicePrice(service, user?.role) ? (
+                              <Text style={[styles.textGold, { fontSize: 18, fontWeight: '600' }]}>
+                                ${service.price?.toFixed(0)}
+                              </Text>
+                            ) : null}
                           </View>
                           {service.description ? (
                             <Text style={[styles.textSecondary, { marginTop: 6, fontSize: 13 }]}>
