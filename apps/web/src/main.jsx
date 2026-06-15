@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import './index.css'
 import './lib/supabase.js'
@@ -46,19 +46,24 @@ import NailAssessmentPortalPage from './components/nails/NailAssessmentPortalPag
 import AdminInventory from './components/AdminInventory.jsx'
 import AdminServices from './components/AdminServices.jsx'
 import AdminBookings from './components/AdminBookings.jsx'
-import { AuthProvider } from './contexts/AuthContext.jsx'
+import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 import RouteDocumentTitle from './components/RouteDocumentTitle.jsx'
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <HelmetProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <RouteDocumentTitle />
-            <Routes>
+function AppRoutes() {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-charcoal flex items-center justify-center">
+        <div className="text-gold animate-pulse">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
             <Route path="/" element={<App />} />
             <Route path="/lookbook" element={<App />} />
             <Route path="/services" element={<Services />} />
@@ -632,7 +637,19 @@ createRoot(document.getElementById('root')).render(
                 <NailAssessmentPortalPage />
               </ProtectedRoute>
             } />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+  );
+}
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <HelmetProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <RouteDocumentTitle />
+            <AppRoutes />
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

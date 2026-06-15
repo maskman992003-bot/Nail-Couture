@@ -10,7 +10,7 @@ import {
 } from './sitemap.routes.js';
 
 export default defineConfig({
-  base: './',
+  base: '/',
   envDir: path.resolve(__dirname, '../..'),
   plugins: [
     react(),

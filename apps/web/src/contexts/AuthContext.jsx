@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { AUTH_STORAGE_KEY, normalizeUser } from '@nail-couture/shared/auth/user.js';
 
 const AuthContext = createContext(null);
@@ -12,21 +12,17 @@ function getStoredUser() {
     }
   } catch (err) {
     console.error('Error parsing stored user:', err);
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch (clearErr) {
+      console.error('Error clearing stored user:', clearErr);
+    }
   }
   return null;
 }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getStoredUser());
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const stored = getStoredUser();
-    if (stored) {
-      setUser(stored);
-    }
-    setLoading(false);
-  }, []);
 
   const login = (profile) => {
     const userData = normalizeUser(profile);
@@ -37,11 +33,10 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     setUser(null);
-    setLoading(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading: false }}>
       {children}
     </AuthContext.Provider>
   );

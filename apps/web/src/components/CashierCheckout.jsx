@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -654,7 +654,9 @@ export default function CashierCheckout() {
     setCheckingOut(null);
   };
 
-  if (!CASHIER_CHECKOUT) return null;
+  if (!CASHIER_CHECKOUT) {
+    return <Navigate to={user ? getHomePath(user.role) : '/login'} replace />;
+  }
 
   if (loading) {
     return (

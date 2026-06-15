@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
 import clsx from 'clsx';
-import { getCustomersPath } from '@nail-couture/shared/utils/routes';
+import { getCustomersPath, getHomePath } from '@nail-couture/shared/utils/routes';
 import {
   fetchCustomerStats,
   fetchCustomerReceipts,
@@ -528,7 +528,24 @@ export default function StaffCustomerDetail() {
     );
   }
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
+        <Sidebar />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <p className="text-primary/60 mb-4">Customer not found</p>
+            <Link
+              to={user?.role ? getCustomersPath(user.role) : getHomePath(user?.role)}
+              className="px-4 py-2 bg-gold text-charcoal rounded-lg"
+            >
+              Back to customers
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const tier = getTierInfo(profile.loyalty_points);
   const prefs = parseProfilePreferences(profile.preferences);

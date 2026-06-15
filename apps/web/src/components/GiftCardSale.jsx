@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -93,10 +93,11 @@ export default function GiftCardSale() {
     setCodeRevealed(false);
   }, [result?.gift_card?.code]);
 
-  if (!user || !STAFF_GIFT_CARDS) return null;
+  if (!user || !STAFF_GIFT_CARDS) {
+    return <Navigate to={user ? getHomePath(user.role) : '/login'} replace />;
+  }
   if (!canAccessGiftCardSales(user.role)) {
-    navigate(getHomePath(user.role));
-    return null;
+    return <Navigate to={getHomePath(user.role)} replace />;
   }
 
   const bgClass = clsx(

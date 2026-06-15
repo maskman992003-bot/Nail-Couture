@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { CUSTOMER_GIFT_CARDS } from '@nail-couture/shared/constants/featureFlags';
@@ -15,6 +15,7 @@ import {
   GIFT_CARD_STATUS_LABELS,
   transferGiftCard,
 } from '@nail-couture/shared/utils/giftCards';
+import { getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from './Sidebar';
 import { GiftCardVisual } from './GiftCardVisual';
 import clsx from 'clsx';
@@ -144,7 +145,9 @@ export default function CustomerGiftCards() {
     await executeTransfer();
   };
 
-  if (!CUSTOMER_GIFT_CARDS) return null;
+  if (!CUSTOMER_GIFT_CARDS) {
+    return <Navigate to={user ? getHomePath(user.role) : '/portal'} replace />;
+  }
 
   const bgClass = clsx(
     'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64',
