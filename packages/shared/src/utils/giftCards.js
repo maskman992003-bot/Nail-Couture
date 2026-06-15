@@ -92,7 +92,7 @@ export function getGiftCardGiftedFromLabel(card) {
 
 export function getGiftCardRecipientLabel(card) {
   if (!card?.owner_name) return null;
-  return `For ${card.owner_name}`;
+  return card.owner_name;
 }
 
 export function canTransferGiftCard(card) {

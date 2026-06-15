@@ -57,7 +57,7 @@ export function GiftCardVisual({
             <div className={clsx('font-heading text-2xl leading-none', faint)}>$—</div>
           )}
           {ownerName && (
-            <div className={clsx('text-xs mt-1.5 truncate', muted)}>For {ownerName}</div>
+            <div className={clsx('text-xs mt-1.5 truncate', muted)}>{ownerName}</div>
           )}
           {statusText && (
             <div className={clsx('text-xs mt-1', muted)}>{statusText}</div>
