@@ -49,6 +49,7 @@ import AdminBookings from './components/AdminBookings.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
+import RouteDocumentTitle from './components/RouteDocumentTitle.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -56,6 +57,7 @@ createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <AuthProvider>
           <BrowserRouter>
+            <RouteDocumentTitle />
             <Routes>
             <Route path="/" element={<App />} />
             <Route path="/lookbook" element={<App />} />
