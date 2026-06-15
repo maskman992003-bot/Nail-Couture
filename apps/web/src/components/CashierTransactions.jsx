@@ -8,6 +8,7 @@ import {
   buildCashierReceiptContent,
   fetchCashierTransactions,
   getTransactionServiceLabel,
+  isGiftCardSaleTransaction,
   sumTransactionTotals,
 } from '@nail-couture/shared/utils/cashierTransactions';
 import { getCallerPhone } from '@nail-couture/shared/utils/technicianQueue';
@@ -57,7 +58,8 @@ export default function CashierTransactions() {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {
-      const data = await fetchCashierTransactions(user.id, period);
+      const callerPhone = getCallerPhone(user?.phone);
+      const data = await fetchCashierTransactions(user.id, period, callerPhone);
       setTransactions(data);
       setSelectedId((prev) => (prev && data.some((tx) => tx.id === prev) ? prev : null));
     } catch (err) {
@@ -108,7 +110,7 @@ export default function CashierTransactions() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="font-heading text-3xl text-gold">My Transactions</h1>
-            <p className={clsx('text-sm mt-1', mutedClass)}>Checkouts you processed — review and download receipts</p>
+            <p className={clsx('text-sm mt-1', mutedClass)}>Checkouts and gift card sales you processed — review and download receipts</p>
           </div>
           <button
             type="button"
@@ -158,13 +160,14 @@ export default function CashierTransactions() {
             <div className="text-5xl mb-4">🧾</div>
             <h2 className="font-heading text-xl mb-2">No transactions yet</h2>
             <p className={clsx('text-sm', mutedClass)}>
-              Completed checkouts will appear here for review and receipt download.
+              Completed checkouts and gift card sales will appear here for review and receipt download.
             </p>
           </div>
         ) : (
           <ul className="space-y-3">
             {transactions.map((tx) => {
               const isSelected = selectedId === tx.id;
+              const isGiftCardSale = isGiftCardSaleTransaction(tx);
               const tip = Number(tx.extras_amount || 0);
               const discount = Number(tx.discount_amount || 0);
               return (
@@ -197,28 +200,51 @@ export default function CashierTransactions() {
 
                   {isSelected && (
                     <div className={clsx('border-t px-4 py-4 space-y-3', isDark ? 'border-offwhite/10 bg-offwhite/5' : 'border-charcoal/10 bg-charcoal/5')}>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className={mutedClass}>Subtotal</p>
-                          <p className="font-medium">{formatMoney(tx.amount)}</p>
-                        </div>
-                        {tip > 0 && (
+                      {isGiftCardSale ? (
+                        <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
-                            <p className={mutedClass}>Tip</p>
-                            <p className="font-medium">{formatMoney(tip)}</p>
+                            <p className={mutedClass}>Type</p>
+                            <p className="font-medium">Gift card sale</p>
                           </div>
-                        )}
-                        {discount > 0 && (
+                          {tx.gift_card_owner_name && (
+                            <div>
+                              <p className={mutedClass}>Recipient</p>
+                              <p className="font-medium">{tx.gift_card_owner_name}</p>
+                            </div>
+                          )}
                           <div>
-                            <p className={mutedClass}>Discount</p>
-                            <p className="font-medium text-green-500">-{formatMoney(discount)}</p>
+                            <p className={mutedClass}>Amount</p>
+                            <p className="font-medium text-gold">{formatMoney(tx.final_amount || tx.amount)}</p>
                           </div>
-                        )}
-                        <div>
-                          <p className={mutedClass}>Total paid</p>
-                          <p className="font-medium text-gold">{formatMoney(tx.final_amount || tx.amount)}</p>
+                          <div>
+                            <p className={mutedClass}>Payment</p>
+                            <p className="font-medium capitalize">{tx.payment_method || 'paid'}</p>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className={mutedClass}>Subtotal</p>
+                            <p className="font-medium">{formatMoney(tx.amount)}</p>
+                          </div>
+                          {tip > 0 && (
+                            <div>
+                              <p className={mutedClass}>Tip</p>
+                              <p className="font-medium">{formatMoney(tip)}</p>
+                            </div>
+                          )}
+                          {discount > 0 && (
+                            <div>
+                              <p className={mutedClass}>Discount</p>
+                              <p className="font-medium text-green-500">-{formatMoney(discount)}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className={mutedClass}>Total paid</p>
+                            <p className="font-medium text-gold">{formatMoney(tx.final_amount || tx.amount)}</p>
+                          </div>
+                        </div>
+                      )}
                       {tx.notes && (
                         <p className={clsx('text-sm', mutedClass)}>
                           Note: {tx.notes}

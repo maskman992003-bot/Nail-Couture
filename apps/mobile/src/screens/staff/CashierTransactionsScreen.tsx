@@ -4,6 +4,7 @@ import {
   buildCashierReceiptContent,
   fetchCashierTransactions,
   getTransactionServiceLabel,
+  isGiftCardSaleTransaction,
   sumTransactionTotals,
 } from '@nail-couture/shared/utils/cashierTransactions.js';
 import { useAuth } from '../../contexts/AuthContext';
@@ -42,7 +43,7 @@ export function CashierTransactionsScreen() {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {
-      const data = await fetchCashierTransactions(user.id, period);
+      const data = await fetchCashierTransactions(user.id, period, user.phone);
       setTransactions(data);
       setSelectedId((prev) => (prev && data.some((tx) => tx.id === prev) ? prev : null));
     } catch {
@@ -75,7 +76,7 @@ export function CashierTransactionsScreen() {
   return (
     <StaffScreenLayout
       title="My Transactions"
-      subtitle="Checkouts you processed — review and share receipts"
+      subtitle="Checkouts and gift card sales you processed — review and share receipts"
       headerRight={
         <Pressable onPress={() => loadTransactions(true)} disabled={refreshing}>
           <Text style={styles.textGold}>{refreshing ? '…' : 'Refresh'}</Text>
@@ -131,12 +132,13 @@ export function CashierTransactionsScreen() {
             No transactions yet
           </Text>
           <Text style={[styles.textSecondary, { textAlign: 'center' }]}>
-            Completed checkouts will appear here for review and receipt sharing.
+            Completed checkouts and gift card sales will appear here for review and receipt sharing.
           </Text>
         </View>
       ) : (
         transactions.map((tx) => {
           const isSelected = selectedId === tx.id;
+          const isGiftCardSale = isGiftCardSaleTransaction(tx);
           const tip = Number(tx.extras_amount || 0);
           const discount = Number(tx.discount_amount || 0);
           return (
@@ -175,28 +177,53 @@ export function CashierTransactionsScreen() {
                     gap: 12,
                   }}
                 >
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
-                    <View>
-                      <Text style={styles.textSecondary}>Subtotal</Text>
-                      <Text style={styles.textPrimary}>{formatMoney(tx.amount)}</Text>
-                    </View>
-                    {tip > 0 && (
+                  {isGiftCardSale ? (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
                       <View>
-                        <Text style={styles.textSecondary}>Tip</Text>
-                        <Text style={styles.textPrimary}>{formatMoney(tip)}</Text>
+                        <Text style={styles.textSecondary}>Type</Text>
+                        <Text style={styles.textPrimary}>Gift card sale</Text>
                       </View>
-                    )}
-                    {discount > 0 && (
+                      {tx.gift_card_owner_name ? (
+                        <View>
+                          <Text style={styles.textSecondary}>Recipient</Text>
+                          <Text style={styles.textPrimary}>{tx.gift_card_owner_name}</Text>
+                        </View>
+                      ) : null}
                       <View>
-                        <Text style={styles.textSecondary}>Discount</Text>
-                        <Text style={{ color: '#22c55e' }}>-{formatMoney(discount)}</Text>
+                        <Text style={styles.textSecondary}>Amount</Text>
+                        <Text style={styles.textGold}>{formatMoney(tx.final_amount || tx.amount)}</Text>
                       </View>
-                    )}
-                    <View>
-                      <Text style={styles.textSecondary}>Total paid</Text>
-                      <Text style={styles.textGold}>{formatMoney(tx.final_amount || tx.amount)}</Text>
+                      <View>
+                        <Text style={styles.textSecondary}>Payment</Text>
+                        <Text style={[styles.textPrimary, { textTransform: 'capitalize' }]}>
+                          {tx.payment_method || 'paid'}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
+                  ) : (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
+                      <View>
+                        <Text style={styles.textSecondary}>Subtotal</Text>
+                        <Text style={styles.textPrimary}>{formatMoney(tx.amount)}</Text>
+                      </View>
+                      {tip > 0 && (
+                        <View>
+                          <Text style={styles.textSecondary}>Tip</Text>
+                          <Text style={styles.textPrimary}>{formatMoney(tip)}</Text>
+                        </View>
+                      )}
+                      {discount > 0 && (
+                        <View>
+                          <Text style={styles.textSecondary}>Discount</Text>
+                          <Text style={{ color: '#22c55e' }}>-{formatMoney(discount)}</Text>
+                        </View>
+                      )}
+                      <View>
+                        <Text style={styles.textSecondary}>Total paid</Text>
+                        <Text style={styles.textGold}>{formatMoney(tx.final_amount || tx.amount)}</Text>
+                      </View>
+                    </View>
+                  )}
                   {tx.notes ? (
                     <Text style={styles.textSecondary}>Note: {tx.notes}</Text>
                   ) : null}

@@ -5,7 +5,14 @@ import {
   formatReceiptContent,
   receiptFilename,
 } from './customerStats';
+import {
+  buildGiftCardPurchaseReceipt,
+  fetchGiftCardPurchases,
+} from './giftCards';
 import { getTipPeriodRange } from './technicianQueue';
+
+export const CASHIER_TX_CHECKOUT = 'checkout';
+export const CASHIER_TX_GIFT_CARD_SALE = 'gift_card_sale';
 
 const PAYMENT_SELECT = `
   id,
@@ -31,25 +38,63 @@ const PAYMENT_SELECT = `
   customer:profiles!payment_transactions_customer_id_fkey ( full_name )
 `;
 
-export async function fetchCashierTransactions(cashierId, period = 'today') {
+function unwrapRelation(value) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function mapGiftCardPurchaseToTransaction(purchase) {
+  const card = unwrapRelation(purchase?.gift_card);
+  const buyer = unwrapRelation(card?.buyer);
+  const owner = unwrapRelation(card?.owner);
+  const ownerName = card?.recipient_name || owner?.full_name || null;
+
+  return {
+    id: purchase.id,
+    type: CASHIER_TX_GIFT_CARD_SALE,
+    created_at: purchase.created_at,
+    amount: Number(purchase.amount || 0),
+    final_amount: Number(purchase.amount || 0),
+    payment_method: purchase.payment_method,
+    notes: purchase.notes,
+    customer: buyer?.full_name ? { full_name: buyer.full_name } : null,
+    gift_card: card,
+    gift_card_owner_name: ownerName,
+  };
+}
+
+export function isGiftCardSaleTransaction(tx) {
+  return tx?.type === CASHIER_TX_GIFT_CARD_SALE;
+}
+
+export async function fetchCashierTransactions(cashierId, period = 'today', callerPhone = null) {
   if (!cashierId) return [];
 
   const periodStart = getTipPeriodRange(period).start.toISOString();
 
-  const { data, error } = await supabase
-    .from('payment_transactions')
-    .select(PAYMENT_SELECT)
-    .eq('cashier_id', cashierId)
-    .eq('status', 'completed')
-    .gte('created_at', periodStart)
-    .order('created_at', { ascending: false });
+  const [paymentsResult, giftCardPurchases] = await Promise.all([
+    supabase
+      .from('payment_transactions')
+      .select(PAYMENT_SELECT)
+      .eq('cashier_id', cashierId)
+      .eq('status', 'completed')
+      .gte('created_at', periodStart)
+      .order('created_at', { ascending: false }),
+    fetchGiftCardPurchases({ cashierId, callerPhone, periodStart }),
+  ]);
 
-  if (error) {
-    console.warn('Cashier transactions fetch failed:', error);
-    return [];
+  if (paymentsResult.error) {
+    console.warn('Cashier transactions fetch failed:', paymentsResult.error);
   }
 
-  return data || [];
+  const payments = (paymentsResult.data || []).map((tx) => ({
+    ...tx,
+    type: CASHIER_TX_CHECKOUT,
+  }));
+  const giftCardSales = (giftCardPurchases || []).map(mapGiftCardPurchaseToTransaction);
+
+  return [...payments, ...giftCardSales].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
 }
 
 export function sumTransactionTotals(transactions) {
@@ -60,6 +105,11 @@ export function sumTransactionTotals(transactions) {
 }
 
 export function getTransactionServiceLabel(tx) {
+  if (isGiftCardSaleTransaction(tx)) {
+    const recipient = tx.gift_card_owner_name;
+    return recipient ? `Gift card for ${recipient}` : 'Gift card sale';
+  }
+
   const appt = Array.isArray(tx?.appointments) ? tx.appointments[0] : tx?.appointments;
   const names = appt?.selected_service_names;
   if (names) {
@@ -90,6 +140,24 @@ export function mapPaymentToReceiptRow(tx) {
 }
 
 export async function buildCashierReceiptContent(tx, callerPhone) {
+  if (isGiftCardSaleTransaction(tx)) {
+    const card = unwrapRelation(tx.gift_card);
+    const buyer = unwrapRelation(card?.buyer);
+    const owner = unwrapRelation(card?.owner);
+    const content = buildGiftCardPurchaseReceipt({
+      giftCard: card,
+      buyerName: buyer?.full_name || tx.customer?.full_name,
+      ownerName: tx.gift_card_owner_name || owner?.full_name,
+      paymentMethod: tx.payment_method,
+      amount: tx.amount,
+    });
+
+    return {
+      content,
+      filename: receiptFilename(tx.created_at, tx.id),
+    };
+  }
+
   const receiptRow = mapPaymentToReceiptRow(tx);
   let content = formatPaymentReceiptRow(receiptRow);
 

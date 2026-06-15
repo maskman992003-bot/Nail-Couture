@@ -9,6 +9,7 @@ import {
   GIFT_CARD_PRESET_AMOUNTS,
   GIFT_CARD_MIN_AMOUNT,
   GIFT_CARD_MAX_AMOUNT,
+  GIFT_CARD_EXPIRY_PERIOD_LABEL,
   purchaseGiftCard,
   requestGiftCardSale,
   fetchGiftCardSaleRequests,
@@ -23,6 +24,7 @@ import {
 } from '@nail-couture/shared/utils/giftCards';
 import { copyTextToClipboard, downloadTextFile } from '@nail-couture/shared/utils/customerStats';
 import Sidebar from './Sidebar';
+import { GiftCardVisual } from './GiftCardVisual';
 import AppModal, { modalBtnPrimary, modalBtnSecondary } from './AppModal';
 import clsx from 'clsx';
 
@@ -695,7 +697,16 @@ function FormFields({
             </button>
           ))}
         </div>
-        <div className="relative">
+        <GiftCardPreview
+          amount={amount}
+          buyerName={buyerName}
+          giftToOther={giftToOther}
+          recipientName={recipientName}
+          recipientPhone={recipientPhone}
+          giftMessage={giftMessage}
+          isDark={isDark}
+        />
+        <div className="relative mt-3">
           <span className={clsx('absolute left-4 top-1/2 -translate-y-1/2', isDark ? 'text-offwhite/50' : 'text-charcoal/50')}>$</span>
           <input
             type="number"
@@ -749,5 +760,33 @@ function FormFields({
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className={clsx(inputClass, 'resize-none')} rows={2} />
       </div>
     </>
+  );
+}
+
+function GiftCardPreview({
+  amount,
+  buyerName,
+  giftToOther,
+  recipientName,
+  recipientPhone,
+  giftMessage,
+  isDark,
+}) {
+  const value = parseFloat(amount);
+  const hasAmount = Number.isFinite(value) && value >= GIFT_CARD_MIN_AMOUNT;
+
+  const ownerName = giftToOther
+    ? (recipientName || null)
+    : (buyerName || null);
+
+  return (
+    <GiftCardVisual
+      isDark={isDark}
+      balance={hasAmount ? value : null}
+      initialAmount={hasAmount ? value : null}
+      ownerName={ownerName}
+      expiryText={`Valid for ${GIFT_CARD_EXPIRY_PERIOD_LABEL}`}
+      giftMessage={giftToOther && giftMessage.trim() ? giftMessage.trim() : null}
+    />
   );
 }

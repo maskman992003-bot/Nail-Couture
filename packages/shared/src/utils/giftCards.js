@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase';
 export const GIFT_CARD_PRESET_AMOUNTS = [25, 50, 75, 100];
 export const GIFT_CARD_MIN_AMOUNT = 10;
 export const GIFT_CARD_MAX_AMOUNT = 500;
-export const GIFT_CARD_EXPIRY_MONTHS = 6;
+export const GIFT_CARD_EXPIRY_MONTHS = 12;
+export const GIFT_CARD_EXPIRY_PERIOD_LABEL = '1 year';
 
 export const GIFT_CARD_STATUS_LABELS = {
   active: 'Active',
@@ -317,13 +318,30 @@ export async function voidGiftCard({ callerPhone, giftCardId, reason = null }) {
   return data || { success: false, error: 'Unexpected response' };
 }
 
-export async function fetchGiftCardPurchases(cashierId, periodStart) {
+export async function fetchGiftCardPurchases({ cashierId, callerPhone, periodStart } = {}) {
+  if (callerPhone) {
+    const { data, error } = await supabase.rpc('get_cashier_gift_card_purchases', {
+      caller_phone: normalizePhoneDigits(callerPhone),
+      p_since: periodStart || null,
+    });
+
+    if (error) {
+      if (rpcUnavailable(error, 'get_cashier_gift_card_purchases')) {
+        return [];
+      }
+      console.warn('Gift card purchases RPC failed:', error);
+      return [];
+    }
+
+    return data?.purchases || [];
+  }
+
   let query = supabase
     .from('gift_card_purchases')
     .select(`
       id, amount, payment_method, created_at, notes,
       gift_card:gift_cards (
-        id, code, balance, status, recipient_name,
+        id, code, balance, status, recipient_name, expires_at,
         owner:profiles!gift_cards_owner_id_fkey ( full_name, phone ),
         buyer:profiles!gift_cards_purchased_by_id_fkey ( full_name, phone )
       )
@@ -378,7 +396,7 @@ export function buildGiftCardPurchaseReceipt({ giftCard, buyerName, ownerName, p
     `Purchased by: ${buyerName || 'Customer'}`,
     `Recipient: ${ownerName || buyerName || 'Customer'}`,
     `Gift card code: ${maskedCode}`,
-    `Valid until: ${formatGiftCardExpiryDate(giftCard?.expires_at) || `${GIFT_CARD_EXPIRY_MONTHS} months from purchase`}`,
+    `Valid until: ${formatGiftCardExpiryDate(giftCard?.expires_at) || `${GIFT_CARD_EXPIRY_PERIOD_LABEL} from purchase`}`,
     '',
     'Full code is available in the customer app. Present this receipt at checkout if needed.',
   ].join('\n');

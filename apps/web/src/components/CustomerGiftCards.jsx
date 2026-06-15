@@ -9,7 +9,6 @@ import {
   getGiftCardDisplayStatus,
   getGiftCardExpiryLabel,
   getGiftCardGiftedFromLabel,
-  getGiftCardRecipientLabel,
   getMyGiftCards,
   isGiftCardExpired,
   maskGiftCardCode,
@@ -17,60 +16,38 @@ import {
   transferGiftCard,
 } from '@nail-couture/shared/utils/giftCards';
 import Sidebar from './Sidebar';
+import { GiftCardVisual } from './GiftCardVisual';
 import clsx from 'clsx';
 
-function GiftCardRow({ card, theme, onTransfer, showTransfer, hideFullCode, showRecipient }) {
+function GiftCardRow({ card, theme, onTransfer, showTransfer, hideFullCode }) {
   const isDark = theme === 'dark';
   const [revealed, setRevealed] = useState(false);
-  const muted = isDark ? 'text-offwhite/60' : 'text-charcoal/60';
   const maskedCode = maskGiftCardCode(card.code);
+  const codeDisplay = revealed ? formatGiftCardCode(card.code) : maskedCode;
   const giftedFromLabel = getGiftCardGiftedFromLabel(card);
-  const recipientLabel = showRecipient ? getGiftCardRecipientLabel(card) : null;
 
   return (
-    <div className={clsx('border rounded-xl p-5', isDark ? 'border-gold/20 bg-offwhite/5' : 'border-gold/30 bg-white')}>
-      <div className="flex justify-between items-start gap-4 mb-3">
-        <div>
-          <div className="font-heading text-2xl text-gold">${Number(card.balance || 0).toFixed(2)}</div>
-          <div className={clsx('text-sm', muted)}>
-            {GIFT_CARD_STATUS_LABELS[getGiftCardDisplayStatus(card)] || card.status}
-          </div>
-          {getGiftCardExpiryLabel(card) && (
-            <div className={clsx('text-xs mt-0.5', isGiftCardExpired(card) ? 'text-red-400/80' : muted)}>
-              {getGiftCardExpiryLabel(card)}
-            </div>
-          )}
-          {giftedFromLabel && (
-            <div className={clsx('text-xs mt-1', muted)}>{giftedFromLabel}</div>
-          )}
-        </div>
-        <div className="text-right">
-          <div className="font-heading text-5xl text-gold">${Number(card.initial_amount || 0).toFixed(2)}</div>
-          {recipientLabel && <div className={clsx('text-sm mt-1', muted)}>{recipientLabel}</div>}
-        </div>
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        {hideFullCode ? (
-          <span className="font-mono text-sm text-gold">{maskedCode}</span>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setRevealed((v) => !v)}
-            className="font-mono text-sm text-gold hover:underline"
-          >
-            {revealed ? formatGiftCardCode(card.code) : maskedCode}
-          </button>
-        )}
-        {showTransfer && canTransferGiftCard(card) && (
+    <GiftCardVisual
+      isDark={isDark}
+      balance={card.balance}
+      initialAmount={card.initial_amount}
+      ownerName={card.owner_name}
+      statusText={GIFT_CARD_STATUS_LABELS[getGiftCardDisplayStatus(card)] || card.status}
+      expiryText={getGiftCardExpiryLabel(card)}
+      expiryExpired={isGiftCardExpired(card)}
+      giftedFromText={giftedFromLabel}
+      giftMessage={card.gift_message}
+      codeDisplay={codeDisplay}
+      codeInteractive={!hideFullCode}
+      onCodeClick={() => setRevealed((v) => !v)}
+      footer={
+        showTransfer && canTransferGiftCard(card) ? (
           <button type="button" onClick={() => onTransfer(card)} className="text-sm text-gold hover:underline">
             Gift to a friend
           </button>
-        )}
-      </div>
-      {card.gift_message && (
-        <p className={clsx('text-sm mt-3 italic', muted)}>&ldquo;{card.gift_message}&rdquo;</p>
-      )}
-    </div>
+        ) : null
+      }
+    />
   );
 }
 
@@ -223,7 +200,7 @@ export default function CustomerGiftCards() {
             <h2 className="font-heading text-xl mb-4">Purchased for Others</h2>
             <div className="space-y-4">
               {purchasedForOthers.map((card) => (
-                <GiftCardRow key={card.id} card={card} theme={theme} hideFullCode showRecipient />
+                <GiftCardRow key={card.id} card={card} theme={theme} hideFullCode />
               ))}
             </div>
           </section>
