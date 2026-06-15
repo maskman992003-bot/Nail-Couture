@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import Sidebar from './Sidebar'
 import clsx from 'clsx'
+import { fetchGiftCardSummary } from '@nail-couture/shared/utils/giftCards'
 
 const getDateRange = (period) => {
   const now = new Date()
@@ -419,17 +420,20 @@ export default function AdminReports() {
   const [customFromDate, setCustomFromDate] = useState('')
   const [customToDate, setCustomToDate] = useState('')
   const [exporting, setExporting] = useState(false)
+  const [giftCardSummary, setGiftCardSummary] = useState(null)
 
   const fetchInsights = useCallback(async () => {
     const opts = { preferPayments }
-    const [lastWeek, thisWeek, lastMonth, thisMonth] = await Promise.all([
+    const [lastWeek, thisWeek, lastMonth, thisMonth, giftSummary] = await Promise.all([
       analyzePeriod('lastWeek', opts),
       analyzePeriod('thisWeek', opts),
       analyzePeriod('lastMonth', opts),
-      analyzePeriod('thisMonth', opts)
+      analyzePeriod('thisMonth', opts),
+      fetchGiftCardSummary().catch(() => null),
     ])
     
     setPeriodData({ lastWeek, thisWeek, lastMonth, thisMonth })
+    setGiftCardSummary(giftSummary)
     setLoading(false)
   }, [preferPayments])
 
@@ -667,6 +671,27 @@ export default function AdminReports() {
         </div>
 
         <div className="bg-secondary border border-card rounded-2xl p-6 sm:p-8">
+          {giftCardSummary && (
+            <div className="mb-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-secondary/50 border border-card rounded-xl p-4 text-center">
+                <div className="text-xs uppercase tracking-wider text-secondary mb-1">Gift Card Sales</div>
+                <div className="font-heading text-2xl text-gold">${giftCardSummary.totalSales.toLocaleString()}</div>
+              </div>
+              <div className="bg-secondary/50 border border-card rounded-xl p-4 text-center">
+                <div className="text-xs uppercase tracking-wider text-secondary mb-1">Outstanding Liability</div>
+                <div className="font-heading text-2xl text-gold">${giftCardSummary.outstandingLiability.toLocaleString()}</div>
+              </div>
+              <div className="bg-secondary/50 border border-card rounded-xl p-4 text-center">
+                <div className="text-xs uppercase tracking-wider text-secondary mb-1">Total Redeemed</div>
+                <div className="font-heading text-2xl text-gold">${giftCardSummary.totalRedeemed.toLocaleString()}</div>
+              </div>
+              <div className="bg-secondary/50 border border-card rounded-xl p-4 text-center">
+                <div className="text-xs uppercase tracking-wider text-secondary mb-1">Active Cards</div>
+                <div className="font-heading text-2xl text-gold">{giftCardSummary.activeCardCount}</div>
+              </div>
+            </div>
+          )}
+
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
               <span className="text-sm font-heading text-secondary uppercase tracking-wider">View Period:</span>

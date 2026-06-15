@@ -33,6 +33,7 @@ import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCusto
 import { getWorkstationStatus, WORKSTATION_ON_BREAK } from '@nail-couture/shared/utils/technicianWorkstation'
 import usePullToRefresh from '../hooks/usePullToRefresh'
 import PullToRefreshIndicator from './PullToRefreshIndicator'
+import VisitTechnicianManager, { MultiTechBadge } from './VisitTechnicianManager'
 
 const LOBBY_DROP_ID = 'lobby'
 

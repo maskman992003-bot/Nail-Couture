@@ -81,6 +81,17 @@ export function getSalonUpdatesPath(role) {
   }
 }
 
+export function getGiftCardsPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/gift-cards';
+    case 'owner': return '/owner/gift-cards';
+    case 'partner': return '/partner/gift-cards';
+    case 'cashier': return '/cashier/gift-cards';
+    case 'customer': return '/customer/gift-cards';
+    default: return getHomePath(role);
+  }
+}
+
 export function getFitnessAssessmentPath(role) {
   switch (role) {
     case 'super_admin': return '/superadmin/fitness-assessment';

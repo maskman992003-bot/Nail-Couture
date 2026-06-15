@@ -1,7 +1,7 @@
 /**
  * Maps notification types to navigation targets (web paths and mobile screens).
  */
-import { getHomePath, getSalonUpdatesPath } from '../utils/routes.js';
+import { getHomePath, getSalonUpdatesPath, getGiftCardsPath } from '../utils/routes.js';
 
 const CHECKOUT_TYPES = new Set(['checkout_ready', 'checkout_price_change', 'loyalty_at_checkout']);
 const LOBBY_TYPES = new Set([
@@ -131,6 +131,16 @@ export function getNotificationWebPath(type, role) {
     return '/portal';
   }
 
+  if (type === 'gift_card_sale_pending' && (role === 'cashier' || role === 'super_admin')) {
+    return getGiftCardsPath(role);
+  }
+  if (type === 'gift_card_sale_completed' && ['owner', 'partner', 'admin'].includes(role)) {
+    return getGiftCardsPath(role);
+  }
+  if (type === 'gift_card_purchased' || type === 'gift_card_received') {
+    return role === 'customer' ? '/customer/gift-cards' : getHomePath(role);
+  }
+
   return getHomePath(role);
 }
 
@@ -158,6 +168,16 @@ export function getNotificationMobileScreen(type, role) {
     if (type === 'payment_receipt' || type === 'visit_completed') return 'History';
     if (type.startsWith('loyalty') || type === 'referral_bonus') return 'Loyalty';
     return 'Home';
+  }
+
+  if (type === 'gift_card_sale_pending' && (role === 'cashier' || role === 'super_admin')) {
+    return 'GiftCards';
+  }
+  if (type === 'gift_card_sale_completed' && ['owner', 'partner', 'admin'].includes(role)) {
+    return 'GiftCards';
+  }
+  if ((type === 'gift_card_purchased' || type === 'gift_card_received') && role === 'customer') {
+    return 'GiftCards';
   }
 
   return 'Home';

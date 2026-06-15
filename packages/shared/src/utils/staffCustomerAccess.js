@@ -36,3 +36,11 @@ export function canDeleteVisitPhotos(role) {
 export function canViewGlobalVisitHistory(role) {
   return CRM_MANAGEMENT_ROLES.includes(role);
 }
+
+export function canViewCustomerGiftCards(role) {
+  return CRM_MANAGEMENT_ROLES.includes(role);
+}
+
+export function canVoidCustomerGiftCards(role) {
+  return CRM_MANAGEMENT_ROLES.includes(role);
+}

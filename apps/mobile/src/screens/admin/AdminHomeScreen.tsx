@@ -10,6 +10,7 @@ import {
   getAppointmentFinalPrice,
   getAppointmentServices,
 } from '@nail-couture/shared/utils/appointmentHelpers.js';
+import { STAFF_GIFT_CARDS } from '@nail-couture/shared/constants/featureFlags.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal } from '../../components/AppModal';
@@ -149,6 +150,9 @@ export function AdminHomeScreen() {
       ? [
           { screen: 'Services' as AppScreenName, icon: '💅', title: 'Services', desc: 'Manage pricing and categories' },
           { screen: 'Reports' as AppScreenName, icon: '📊', title: 'View Reports', desc: 'Analytics and insights' },
+          ...(STAFF_GIFT_CARDS
+            ? [{ screen: 'GiftCards' as AppScreenName, icon: '🎁', title: 'Gift Cards', desc: 'Send gift card sales to cashier' }]
+            : []),
         ]
       : []),
     { screen: 'Bookings' as AppScreenName, icon: '📅', title: 'Bookings', desc: 'Manage appointments' },

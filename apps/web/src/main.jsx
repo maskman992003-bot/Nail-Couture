@@ -11,6 +11,7 @@ import ClientPortal from './components/ClientPortal.jsx'
 import CustomerBooking from './components/CustomerBooking.jsx'
 import CustomerHistory from './components/CustomerHistory.jsx'
 import CustomerLoyalty from './components/CustomerLoyalty.jsx'
+import CustomerGiftCards from './components/CustomerGiftCards.jsx'
 import CustomerProfile from './components/CustomerProfile.jsx'
 import CustomerSettings from './components/CustomerSettings.jsx'
 import CustomerServices from './components/CustomerServices.jsx'
@@ -31,6 +32,7 @@ import AdminLobby from './components/AdminLobby.jsx'
 import AdminReports from './components/AdminReports.jsx'
 import CashierCheckout from './components/CashierCheckout.jsx'
 import CashierTransactions from './components/CashierTransactions.jsx'
+import GiftCardSale from './components/GiftCardSale.jsx'
 import StaffManagement from './components/StaffManagement.jsx'
 import StaffProfile from './components/StaffProfile.jsx'
 import StaffSchedule from './components/StaffSchedule.jsx'
@@ -79,6 +81,11 @@ createRoot(document.getElementById('root')).render(
              <Route path="/superadmin/reports" element={
                <ProtectedRoute allowedRoles={['super_admin']}>
                  <AdminReports />
+               </ProtectedRoute>
+             } />
+             <Route path="/superadmin/gift-cards" element={
+               <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
+                 <GiftCardSale />
                </ProtectedRoute>
              } />
              <Route path="/superadmin/services" element={
@@ -213,6 +220,11 @@ createRoot(document.getElementById('root')).render(
                  <AdminReports />
                </ProtectedRoute>
              } />
+             <Route path="/owner/gift-cards" element={
+               <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
+                 <GiftCardSale />
+               </ProtectedRoute>
+             } />
              <Route path="/owner/services" element={
                <ProtectedRoute allowedRoles={['owner']}>
                  <AdminServices />
@@ -304,6 +316,11 @@ createRoot(document.getElementById('root')).render(
              <Route path="/partner/reports" element={
                <ProtectedRoute allowedRoles={['partner']}>
                  <AdminReports />
+               </ProtectedRoute>
+             } />
+             <Route path="/partner/gift-cards" element={
+               <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
+                 <GiftCardSale />
                </ProtectedRoute>
              } />
               <Route path="/partner/services" element={
@@ -461,6 +478,11 @@ createRoot(document.getElementById('root')).render(
                 <CashierTransactions />
               </ProtectedRoute>
             } />
+            <Route path="/cashier/gift-cards" element={
+              <ProtectedRoute allowedRoles={['cashier', 'super_admin', 'owner', 'partner']}>
+                <GiftCardSale />
+              </ProtectedRoute>
+            } />
             <Route path="/cashier/reports" element={
               <ProtectedRoute allowedRoles={['cashier', 'super_admin', 'owner', 'partner']}>
                 <AdminReports />
@@ -576,6 +598,11 @@ createRoot(document.getElementById('root')).render(
             <Route path="/customer/loyalty" element={
               <ProtectedRoute allowedRoles={['customer']}>
                 <CustomerLoyalty />
+              </ProtectedRoute>
+            } />
+            <Route path="/customer/gift-cards" element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <CustomerGiftCards />
               </ProtectedRoute>
             } />
             <Route path="/customer/profile" element={

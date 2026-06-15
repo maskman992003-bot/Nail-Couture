@@ -3,7 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { getHomePath } from '@nail-couture/shared/utils/routes';
+import { STAFF_GIFT_CARDS } from '@nail-couture/shared/constants/featureFlags';
+import { getGiftCardsPath, getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from './Sidebar';
 import AppModal from './AppModal';
 import AppointmentServicesPanel from './AppointmentServicesPanel';
@@ -355,6 +356,12 @@ export default function SuperAdmin() {
                        <div className={`font-heading ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>View Reports</div>
                        <div className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Analytics and insights</div>
                      </Link>
+                     {STAFF_GIFT_CARDS && user?.role && (
+                       <Link to={getGiftCardsPath(user.role)} className={`block p-4 rounded-lg transition-colors ${theme === 'dark' ? 'bg-offwhite/5 border border-offwhite/20 hover:bg-offwhite/10' : 'bg-charcoal/5 border border-charcoal/20 hover:bg-charcoal/10'}`}>
+                         <div className={`font-heading ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Gift Cards</div>
+                         <div className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Complete sales or send requests to cashier</div>
+                       </Link>
+                     )}
                    </div>
                 </div>
               </div>

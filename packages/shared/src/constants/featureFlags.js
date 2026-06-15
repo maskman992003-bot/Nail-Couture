@@ -18,6 +18,7 @@ export const featureFlags = {
     onlineBooking: false,           // Main online booking toggle
     appointmentReminders: false,    // SMS/email reminders (Phase 3 — infra ready, off until enabled)
     prepayOptions: false,           // Pay online in advance (Phase 3)
+    giftCards: true,                // View and transfer gift cards
   },
   
   // Admin/Staff Features  
@@ -40,6 +41,7 @@ export const featureFlags = {
     employeeManagement: false,      // Add/remove staff, roles (Phase 3)
     announcements: true,           // Management salon announcements tab
     promotions: true,                // Management home-screen promotions tab
+    giftCards: true,                 // Sell gift cards at front desk
   },
   
   // Inventory & Operations
@@ -93,3 +95,5 @@ export const EXTERNAL_MESSAGING = featureFlags.global.externalMessaging;
 export const NOTIFICATION_PREFERENCES = featureFlags.global.notificationPreferences;
 export const APPOINTMENT_REMINDERS = featureFlags.customer.appointmentReminders;
 export const STAFF_ANNOUNCEMENTS = featureFlags.staff.announcements;
+export const STAFF_GIFT_CARDS = featureFlags.staff.giftCards;
+export const CUSTOMER_GIFT_CARDS = featureFlags.customer.giftCards;

@@ -25,6 +25,15 @@ import {
   VISIT_TIME_OPTIONS,
 } from '@nail-couture/shared/utils/profilePreferences';
 import { fetchLoyaltyHistory, formatTransactionType } from '@nail-couture/shared/utils/loyaltyTransactions';
+import {
+  formatGiftCardCode,
+  getCustomerGiftCards,
+  getGiftCardDisplayStatus,
+  getGiftCardExpiryLabel,
+  GIFT_CARD_STATUS_LABELS,
+  isGiftCardExpired,
+  voidGiftCard,
+} from '@nail-couture/shared/utils/giftCards';
 import { fetchStaffNotes, addStaffNote } from '@nail-couture/shared/utils/staffCustomerNotes';
 import {
   fetchCustomerTimeline,
@@ -32,6 +41,7 @@ import {
   uploadVisitPhoto,
   deleteVisitPhoto,
 } from '@nail-couture/shared/utils/staffCustomerTimeline';
+import { STAFF_GIFT_CARDS } from '@nail-couture/shared/constants/featureFlags';
 import {
   canAccessStaffCrm,
   canEditCustomerProfile,
@@ -39,6 +49,8 @@ import {
   canAddStaffNotes,
   canUploadVisitPhotos,
   canDeleteVisitPhotos,
+  canViewCustomerGiftCards,
+  canVoidCustomerGiftCards,
 } from '@nail-couture/shared/utils/staffCustomerAccess';
 import { formatTimelineDate } from './TimelineEventRow';
 import VirtualizedTimelineList from './VirtualizedTimelineList';
@@ -55,6 +67,7 @@ const TABS = [
   { id: 'timeline', label: 'Timeline' },
   { id: 'notes', label: 'Notes' },
   { id: 'loyalty', label: 'Loyalty' },
+  { id: 'gift-cards', label: 'Gift Cards' },
   { id: 'photos', label: 'Photos' },
 ];
 
@@ -138,10 +151,20 @@ export default function StaffCustomerDetail() {
   const [timelineEventFilter, setTimelineEventFilter] = useState('visit');
   const [visitsLoaded, setVisitsLoaded] = useState(false);
   const [visitsLoading, setVisitsLoading] = useState(false);
+  const [customerGiftCards, setCustomerGiftCards] = useState([]);
+  const [giftCardsLoaded, setGiftCardsLoaded] = useState(false);
+  const [giftCardsLoading, setGiftCardsLoading] = useState(false);
+  const [voidingGiftCardId, setVoidingGiftCardId] = useState(null);
 
   const canEdit = canEditCustomerProfile(user?.role);
   const canAdjust = canAdjustLoyalty(user?.role);
+  const canVoidGiftCards = canVoidCustomerGiftCards(user?.role);
   const canDeletePhotos = canDeleteVisitPhotos(user?.role);
+  const showGiftCardsTab = STAFF_GIFT_CARDS && canViewCustomerGiftCards(user?.role);
+  const visibleTabs = useMemo(
+    () => TABS.filter((tab) => tab.id !== 'gift-cards' || showGiftCardsTab),
+    [showGiftCardsTab],
+  );
 
   const filteredVisits = useMemo(() => {
     const sorted = [...visits].sort((a, b) => new Date(b.visitAt) - new Date(a.visitAt));
@@ -269,12 +292,45 @@ export default function StaffCustomerDetail() {
     }
   }, [customerId]);
 
+  const loadGiftCardsData = useCallback(async () => {
+    if (!user?.phone || !customerId) return;
+    setGiftCardsLoading(true);
+    try {
+      const data = await getCustomerGiftCards(user.phone, customerId);
+      setCustomerGiftCards(data.gift_cards || []);
+      setGiftCardsLoaded(true);
+    } catch (err) {
+      console.error('Failed to load gift cards:', err);
+    } finally {
+      setGiftCardsLoading(false);
+    }
+  }, [customerId, user?.phone]);
+
+  const handleVoidGiftCard = async (giftCardId) => {
+    if (!canVoidGiftCards || !user?.phone) return;
+    const reason = window.prompt('Reason for voiding this gift card?');
+    if (reason == null) return;
+    setVoidingGiftCardId(giftCardId);
+    try {
+      const result = await voidGiftCard({ callerPhone: user.phone, giftCardId, reason });
+      if (!result.success) {
+        window.alert(result.error || 'Void failed');
+        return;
+      }
+      await loadGiftCardsData();
+    } finally {
+      setVoidingGiftCardId(null);
+    }
+  };
+
   const loadData = useCallback(async () => {
     setTimelineLoaded(false);
     setVisitsLoaded(false);
     setTimeline([]);
     setVisits([]);
     setPhotos([]);
+    setGiftCardsLoaded(false);
+    setCustomerGiftCards([]);
     return loadCoreData();
   }, [loadCoreData]);
 
@@ -299,6 +355,9 @@ export default function StaffCustomerDetail() {
     if (activeTab === 'history' && !visitsLoaded && !visitsLoading) {
       loadVisitHistoryData(profile);
     }
+    if (activeTab === 'gift-cards' && !giftCardsLoaded && !giftCardsLoading) {
+      loadGiftCardsData();
+    }
   }, [
     activeTab,
     profile,
@@ -307,8 +366,11 @@ export default function StaffCustomerDetail() {
     timelineLoading,
     visitsLoaded,
     visitsLoading,
+    giftCardsLoaded,
+    giftCardsLoading,
     loadTimelineData,
     loadVisitHistoryData,
+    loadGiftCardsData,
   ]);
 
   const handleStartEditProfile = () => {
@@ -538,7 +600,7 @@ export default function StaffCustomerDetail() {
         </div>
 
         <div className="flex gap-1 overflow-x-auto border-b border-light pb-px">
-          {TABS.map((tab) => (
+          {visibleTabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -939,6 +1001,46 @@ export default function StaffCustomerDetail() {
               )}
             </Section>
           </div>
+        )}
+
+        {activeTab === 'gift-cards' && (
+          <Section title="Gift cards">
+            {giftCardsLoading ? (
+              <p className="text-secondary text-center py-6">Loading gift cards…</p>
+            ) : customerGiftCards.length === 0 ? (
+              <p className="text-secondary text-center py-6">No gift cards for this customer</p>
+            ) : (
+              <div className="space-y-3">
+                {customerGiftCards.map((card) => (
+                  <div key={card.id} className="flex flex-wrap items-center justify-between gap-3 py-3 border-b border-light last:border-0">
+                    <div>
+                      <div className="font-mono text-gold">{formatGiftCardCode(card.code)}</div>
+                      <div className="text-secondary text-sm">
+                        {GIFT_CARD_STATUS_LABELS[getGiftCardDisplayStatus(card)] || card.status}
+                        {' · '}
+                        {card.relation === 'purchased' ? 'Purchased for another' : 'Owned'}
+                        {getGiftCardExpiryLabel(card) ? ` · ${getGiftCardExpiryLabel(card)}` : ''}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-primary font-heading">${Number(card.balance || 0).toFixed(2)}</div>
+                      <div className="text-secondary text-xs">of ${Number(card.initial_amount || 0).toFixed(2)}</div>
+                    </div>
+                    {canVoidGiftCards && card.status === 'active' && !card.first_used_at && !isGiftCardExpired(card) && (
+                      <button
+                        type="button"
+                        onClick={() => handleVoidGiftCard(card.id)}
+                        disabled={voidingGiftCardId === card.id}
+                        className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50"
+                      >
+                        {voidingGiftCardId === card.id ? 'Voiding…' : 'Void'}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
         )}
 
         {activeTab === 'photos' && (

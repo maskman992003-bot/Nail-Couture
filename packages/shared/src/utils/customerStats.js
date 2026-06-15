@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { formatGiftCardPaymentMethod, formatGiftCardReceiptLines } from './giftCards.js';
 import { enrichAppointmentsWithServices, getAppointmentTechnicianNames } from './appointmentServices';
 
 function visitDate(appointment) {
@@ -317,16 +318,23 @@ export function resolveReceiptTotals(payment, appointment = null) {
     discount,
     total: computedTotal,
     paymentMethod: payment.payment_method || payment.paymentMethod || 'N/A',
+    giftCardAmount: roundMoney(payment.gift_card_amount ?? payment.giftCardAmount ?? 0),
+    cashAmount: roundMoney(payment.final_amount ?? payment.finalAmount ?? computedTotal),
   };
 }
 
-function formatReceiptTotalsBlock({ serviceSubtotal, tip, discount, total, paymentMethod, discountType }) {
+function formatReceiptTotalsBlock({ serviceSubtotal, tip, discount, total, paymentMethod, discountType, giftCardAmount = 0, cashAmount = null }) {
   const discountLabel = discountType ? ` (${discountType}, services only)` : ' (services only)';
+  const visitTotal = Math.max(0, serviceSubtotal - discount) + tip;
+  const cashDue = cashAmount != null ? cashAmount : total;
+  const paymentLines = giftCardAmount > 0
+    ? formatGiftCardReceiptLines({ giftCardAmount, cashAmount: cashDue, paymentMethod }).join('\n')
+    : `Payment: ${formatGiftCardPaymentMethod(paymentMethod)}`;
   return `
 Subtotal: $${serviceSubtotal.toFixed(2)}
-${tip > 0 ? `Tip: $${tip.toFixed(2)}\n` : ''}${discount > 0 ? `Discount${discountLabel}: -$${discount.toFixed(2)}\n` : ''}Total Paid: $${total.toFixed(2)}
-=======================
-Payment: ${paymentMethod}`.trim();
+${tip > 0 ? `Tip: $${tip.toFixed(2)}\n` : ''}${discount > 0 ? `Discount${discountLabel}: -$${discount.toFixed(2)}\n` : ''}Visit Total: $${visitTotal.toFixed(2)}
+${giftCardAmount > 0 ? `Gift Card Applied: -$${Number(giftCardAmount).toFixed(2)}\nAmount Due: $${Number(cashDue).toFixed(2)}\n` : `Total Paid: $${total.toFixed(2)}\n`}=======================
+${paymentLines}`.trim();
 }
 
 export function receiptFilename(bookingOrDate, appointmentId) {
@@ -380,6 +388,7 @@ export function formatPaymentReceiptRow(row) {
     discount_type: row.discountType,
     final_amount: row.finalAmount,
     payment_method: row.paymentMethod,
+    gift_card_amount: row.giftCardAmount,
   });
 
   return `

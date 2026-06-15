@@ -19,6 +19,7 @@ export type AppScreenName =
   | 'Profile'
   | 'Book'
   | 'Loyalty'
+  | 'GiftCards'
   | 'History'
   | 'Reviews'
   | 'Settings'
@@ -47,6 +48,7 @@ export const ALL_SCREEN_NAMES: AppScreenName[] = [
   'Profile',
   'Book',
   'Loyalty',
+  'GiftCards',
   'History',
   'Reviews',
   'Settings',

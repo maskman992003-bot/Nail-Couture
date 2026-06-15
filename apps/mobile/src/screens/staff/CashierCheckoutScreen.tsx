@@ -16,6 +16,11 @@ import {
 } from '@nail-couture/shared/utils/appointmentServices.js';
 import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCustomerAccess.js';
 import { fetchVisitTechnicianData } from '@nail-couture/shared/utils/visitTechnicians.js';
+import {
+  computeGiftCardCheckoutSplit,
+  isGiftCardExpired,
+  lookupGiftCardByCode,
+} from '@nail-couture/shared/utils/giftCards.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
@@ -27,6 +32,7 @@ import { useThemeStyles } from '../../theme/useThemeStyles';
 type AppointmentRecord = {
   id: string;
   status: string;
+  customer_id?: string;
   final_price?: number;
   add_ons?: string;
   selected_service_names?: string;
@@ -91,18 +97,32 @@ function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, use
   } | null>(null);
   const [tipAllocations, setTipAllocations] = useState<Array<{ technician_id: string; amount: number }>>([]);
   const [showTechManager, setShowTechManager] = useState(false);
+  const [giftCardCode, setGiftCardCode] = useState('');
+  const [appliedGiftCard, setAppliedGiftCard] = useState<Record<string, unknown> | null>(null);
+  const [giftCardLookupError, setGiftCardLookupError] = useState('');
+  const [lookingUpGiftCard, setLookingUpGiftCard] = useState(false);
 
   const hasReservedReward = Boolean(
     appointment?.loyalty_reward_id && appointment?.loyalty_points_cost,
   );
   const basePrice = appointment?.final_price || appointment?.services?.price || 0;
   const extras = parseFloat(extrasAmount) || 0;
-  const { serviceSubtotal, tip, discount, finalTotal } = computeTotals(
+  const { serviceSubtotal, tip, discount } = computeTotals(
     basePrice,
     extras,
     discountAmount,
     discountType,
   );
+  const serviceDue = Math.max(0, serviceSubtotal - discount);
+  const giftSplit = appliedGiftCard
+    ? computeGiftCardCheckoutSplit({
+      serviceDue,
+      tip,
+      balance: Number(appliedGiftCard.balance || 0),
+    })
+    : { totalDue: serviceDue + tip, giftCardAmount: 0, cashDue: serviceDue + tip };
+  const finalTotal = giftSplit.cashDue;
+  const visitTotal = giftSplit.totalDue;
   const customerPoints = appointment?.customer?.loyalty_points || 0;
   const selectedReward = LOYALTY_REWARDS.find((r) => r.id === loyaltyRewardId);
 
@@ -154,7 +174,45 @@ function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, use
     setNotes('');
     setPaymentMethod('Card');
     setLoyaltyRewardId('');
+    setGiftCardCode('');
+    setAppliedGiftCard(null);
+    setGiftCardLookupError('');
   }, [appointment?.id, hasReservedReward, appointment?.loyalty_discount_amount]);
+
+  const handleLookupGiftCard = async () => {
+    if (!giftCardCode.trim() || !callerPhone) return;
+    setLookingUpGiftCard(true);
+    setGiftCardLookupError('');
+    try {
+      const result = await lookupGiftCardByCode(callerPhone, giftCardCode.trim());
+      if (!result.success) {
+        setAppliedGiftCard(null);
+        setGiftCardLookupError(result.error || 'Gift card not found');
+        return;
+      }
+      const card = result.gift_card as Record<string, unknown>;
+      if (card.owner_id && appointment.customer_id && card.owner_id !== appointment.customer_id) {
+        setAppliedGiftCard(null);
+        setGiftCardLookupError(`This card belongs to ${String(card.owner_name || 'another customer')}.`);
+        return;
+      }
+      if (isGiftCardExpired(card)) {
+        setAppliedGiftCard(null);
+        setGiftCardLookupError('This gift card has expired.');
+        return;
+      }
+      if (card.status !== 'active' || Number(card.balance) <= 0) {
+        setAppliedGiftCard(null);
+        setGiftCardLookupError('Gift card has no remaining balance.');
+        return;
+      }
+      setAppliedGiftCard(card);
+    } catch (err) {
+      setGiftCardLookupError(err instanceof Error ? err.message : 'Lookup failed');
+    } finally {
+      setLookingUpGiftCard(false);
+    }
+  };
 
   const handleConfirm = async () => {
     if (!appointment) return;
@@ -181,6 +239,8 @@ function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, use
         loyalty_points_redeem: hasReservedReward ? 0 : selectedReward?.points || 0,
         loyalty_reward_name: hasReservedReward ? null : selectedReward?.name || null,
         tip_allocations: showTipSplit && tip > 0 ? tipAllocations : null,
+        gift_card_id: appliedGiftCard?.id || null,
+        gift_card_amount: appliedGiftCard ? giftSplit.giftCardAmount : null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Checkout failed');
@@ -333,6 +393,35 @@ function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, use
       )}
 
       <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 4, marginTop: 12 }]}>
+        Apply Gift Card
+      </Text>
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+        <TextInput
+          value={giftCardCode}
+          onChangeText={(val) => setGiftCardCode(val.toUpperCase())}
+          placeholder="GC-XXXX-XXXX"
+          placeholderTextColor={styles.tokens.textMuted}
+          autoCapitalize="characters"
+          style={[styles.input, { flex: 1, marginBottom: 0 }]}
+        />
+        <Pressable
+          onPress={handleLookupGiftCard}
+          disabled={lookingUpGiftCard}
+          style={[styles.card, { paddingHorizontal: 14, justifyContent: 'center', marginBottom: 0 }]}
+        >
+          <Text style={styles.textGold}>{lookingUpGiftCard ? '…' : 'Apply'}</Text>
+        </Pressable>
+      </View>
+      {appliedGiftCard && (
+        <Text style={[styles.textGold, { fontSize: 12, marginBottom: 8 }]}>
+          {String(appliedGiftCard.code)} — ${Number(appliedGiftCard.balance || 0).toFixed(2)} available
+        </Text>
+      )}
+      {giftCardLookupError ? (
+        <Text style={{ color: '#f87171', fontSize: 12, marginBottom: 8 }}>{giftCardLookupError}</Text>
+      ) : null}
+
+      <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 4, marginTop: 12 }]}>
         Notes
       </Text>
       <TextInput
@@ -365,6 +454,9 @@ function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, use
         <CheckoutRow label="Services" value={`$${serviceSubtotal.toFixed(2)}`} />
         {tip > 0 && <CheckoutRow label="Tip" value={`$${tip.toFixed(2)}`} />}
         {discount > 0 && <CheckoutRow label="Discount" value={`-$${discount.toFixed(2)}`} green />}
+        {appliedGiftCard && giftSplit.giftCardAmount > 0 && (
+          <CheckoutRow label="Gift card" value={`-$${giftSplit.giftCardAmount.toFixed(2)}`} gold />
+        )}
         <View
           style={{
             flexDirection: 'row',
@@ -375,11 +467,16 @@ function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, use
             borderTopColor: styles.tokens.borderLight,
           }}
         >
-          <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Final Total</Text>
+          <Text style={[styles.textPrimary, { fontWeight: '600' }]}>
+            {appliedGiftCard ? 'Due Now' : 'Final Total'}
+          </Text>
           <Text style={[styles.textGold, { fontSize: 22, fontWeight: '600' }]}>
             ${finalTotal.toFixed(2)}
           </Text>
         </View>
+        {appliedGiftCard ? (
+          <CheckoutRow label="Visit total" value={`$${visitTotal.toFixed(2)}`} />
+        ) : null}
       </View>
 
       {error ? <Text style={{ color: '#f87171', marginTop: 12 }}>{error}</Text> : null}
@@ -561,6 +658,8 @@ export function CashierCheckoutScreen() {
       p_loyalty_reward_name: checkoutData.loyalty_reward_name || null,
       p_extras_amount: checkoutData.extras_amount || 0,
       p_tip_allocations: checkoutData.tip_allocations || null,
+      p_gift_card_id: checkoutData.gift_card_id || null,
+      p_gift_card_amount: checkoutData.gift_card_amount || null,
     });
 
     if (error) {

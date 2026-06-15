@@ -4,6 +4,7 @@ import { CustomerProfileScreen } from '../screens/customer/CustomerProfileScreen
 import { CustomerServicesScreen } from '../screens/customer/CustomerServicesScreen';
 import { CustomerBookingScreen } from '../screens/customer/CustomerBookingScreen';
 import { CustomerLoyaltyScreen } from '../screens/customer/CustomerLoyaltyScreen';
+import { CustomerGiftCardsScreen } from '../screens/customer/CustomerGiftCardsScreen';
 import { CustomerHistoryScreen } from '../screens/customer/CustomerHistoryScreen';
 import { CustomerFitnessAssessmentScreen } from '../screens/customer/CustomerFitnessAssessmentScreen';
 import { CustomerSettingsScreen } from '../screens/customer/CustomerSettingsScreen';
@@ -12,6 +13,7 @@ import { TechnicianTipsScreen } from '../screens/staff/TechnicianTipsScreen';
 import { CashierHomeScreen } from '../screens/staff/CashierHomeScreen';
 import { CashierCheckoutScreen } from '../screens/staff/CashierCheckoutScreen';
 import { CashierTransactionsScreen } from '../screens/staff/CashierTransactionsScreen';
+import { GiftCardSaleScreen } from '../screens/staff/GiftCardSaleScreen';
 import { EmployeeScheduleView as ScheduleScreen } from '../screens/staff/EmployeeScheduleScreen';
 import { StaffSettingsScreen } from '../screens/staff/StaffSettingsScreen';
 import { AdminHomeScreen } from '../screens/admin/AdminHomeScreen';
@@ -37,6 +39,7 @@ export const CUSTOMER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenCom
   Services: CustomerServicesScreen,
   Book: CustomerBookingScreen,
   Loyalty: CustomerLoyaltyScreen,
+  GiftCards: CustomerGiftCardsScreen,
   History: CustomerHistoryScreen,
   FitnessAssessment: CustomerFitnessAssessmentScreen,
   SalonUpdates: SalonUpdatesScreen,
@@ -59,6 +62,7 @@ const CASHIER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>>
   Schedule: ScheduleScreen,
   Lobby: AdminLobbyScreen,
   Checkout: CashierCheckoutScreen,
+  GiftCards: GiftCardSaleScreen,
   Transactions: CashierTransactionsScreen,
   Customers: CustomersStackNavigator,
   Reviews: StaffReviewsScreen,
@@ -76,6 +80,7 @@ const ADMIN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> =
   Services: AdminServicesScreen,
   Inventory: AdminInventoryScreen,
   Reports: AdminReportsScreen,
+  GiftCards: GiftCardSaleScreen,
   Customers: CustomersStackNavigator,
   Staff: StaffStackNavigator,
   Reviews: StaffReviewsScreen,

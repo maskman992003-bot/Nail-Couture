@@ -130,7 +130,7 @@ export default function Cashier() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Link to="/cashier/checkout" className="block p-6 sm:p-8 bg-gold/10 border-2 border-gold rounded-xl hover:bg-gold/20 transition-colors text-center relative">
               {queueCount > 0 && (
                 <span className="absolute top-3 right-3 min-w-[1.5rem] h-6 px-1.5 flex items-center justify-center rounded-full bg-amber-500 text-charcoal text-xs font-bold">
@@ -145,6 +145,11 @@ export default function Cashier() {
               <div className="text-4xl mb-3">👥</div>
               <h3 className={clsx('font-heading text-2xl mb-2', theme === 'dark' ? 'text-offwhite' : 'text-charcoal')}>Lobby</h3>
               <p className={welcomeSubclass}>Monitor floor and assist check-ins</p>
+            </Link>
+            <Link to="/cashier/gift-cards" className={linkCard}>
+              <div className="text-4xl mb-3">🎁</div>
+              <h3 className={clsx('font-heading text-2xl mb-2', theme === 'dark' ? 'text-offwhite' : 'text-charcoal')}>Gift Cards</h3>
+              <p className={welcomeSubclass}>Complete gift card sales or send requests to cashier</p>
             </Link>
             <Link to="/cashier/reports" className={linkCard}>
               <div className="text-4xl mb-3">📊</div>

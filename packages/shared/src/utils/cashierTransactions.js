@@ -20,6 +20,8 @@ const PAYMENT_SELECT = `
   created_at,
   status,
   notes,
+  gift_card_id,
+  gift_card_amount,
   appointments (
     id,
     add_ons,
@@ -83,6 +85,7 @@ export function mapPaymentToReceiptRow(tx) {
     discountType: tx.discount_type,
     finalAmount: Number(tx.final_amount || 0),
     paymentMethod: tx.payment_method || 'other',
+    giftCardAmount: Number(tx.gift_card_amount || 0),
   };
 }
 

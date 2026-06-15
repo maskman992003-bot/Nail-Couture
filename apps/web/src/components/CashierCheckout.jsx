@@ -5,6 +5,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { CASHIER_CHECKOUT, MULTI_TECH_VISITS } from '@nail-couture/shared/constants/featureFlags';
 import { LOYALTY_REWARDS } from '@nail-couture/shared/utils/loyaltyTransactions';
+import {
+  computeGiftCardCheckoutSplit,
+  isGiftCardExpired,
+  lookupGiftCardByCode,
+} from '@nail-couture/shared/utils/giftCards';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import {
   getParticipatingTechnicians,
@@ -61,11 +66,25 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
   const [visitTechData, setVisitTechData] = useState(null);
   const [tipAllocations, setTipAllocations] = useState([]);
   const [showTechManager, setShowTechManager] = useState(false);
+  const [giftCardCode, setGiftCardCode] = useState('');
+  const [appliedGiftCard, setAppliedGiftCard] = useState(null);
+  const [giftCardLookupError, setGiftCardLookupError] = useState('');
+  const [lookingUpGiftCard, setLookingUpGiftCard] = useState(false);
 
   const hasReservedReward = Boolean(appointment?.loyalty_reward_id && appointment?.loyalty_points_cost > 0);
   const basePrice = appointment?.final_price || appointment?.services?.price || 0;
   const extras = parseFloat(extrasAmount) || 0;
-  const { serviceSubtotal, tip, discount, finalTotal } = computeTotals(basePrice, extras, discountAmount, discountType);
+  const { serviceSubtotal, tip, discount } = computeTotals(basePrice, extras, discountAmount, discountType);
+  const serviceDue = Math.max(0, serviceSubtotal - discount);
+  const giftSplit = appliedGiftCard
+    ? computeGiftCardCheckoutSplit({
+      serviceDue,
+      tip,
+      balance: appliedGiftCard.balance,
+    })
+    : { totalDue: serviceDue + tip, giftCardAmount: 0, cashDue: serviceDue + tip };
+  const finalTotal = giftSplit.cashDue;
+  const visitTotal = giftSplit.totalDue;
 
   const customerPoints = appointment?.customer?.loyalty_points || 0;
   const selectedReward = LOYALTY_REWARDS.find((r) => r.id === loyaltyRewardId);
@@ -102,6 +121,12 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
   }, [appointment?.id, callerPhone]);
 
   useEffect(() => {
+    setGiftCardCode('');
+    setAppliedGiftCard(null);
+    setGiftCardLookupError('');
+  }, [appointment?.id]);
+
+  useEffect(() => {
     if (hasReservedReward) {
       const reservedDiscount = Number(appointment.loyalty_discount_amount || 0);
       if (reservedDiscount > 0) {
@@ -126,6 +151,41 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
 
   if (!appointment) return null;
 
+  const handleLookupGiftCard = async () => {
+    if (!giftCardCode.trim()) return;
+    setLookingUpGiftCard(true);
+    setGiftCardLookupError('');
+    try {
+      const result = await lookupGiftCardByCode(callerPhone, giftCardCode.trim());
+      if (!result.success) {
+        setAppliedGiftCard(null);
+        setGiftCardLookupError(result.error || 'Gift card not found');
+        return;
+      }
+      const card = result.gift_card;
+      if (card.owner_id && appointment.customer_id && card.owner_id !== appointment.customer_id) {
+        setAppliedGiftCard(null);
+        setGiftCardLookupError(`This card belongs to ${card.owner_name || 'another customer'}.`);
+        return;
+      }
+      if (isGiftCardExpired(card)) {
+        setAppliedGiftCard(null);
+        setGiftCardLookupError('This gift card has expired.');
+        return;
+      }
+      if (card.status !== 'active' || Number(card.balance) <= 0) {
+        setAppliedGiftCard(null);
+        setGiftCardLookupError('Gift card has no remaining balance.');
+        return;
+      }
+      setAppliedGiftCard(card);
+    } catch (err) {
+      setGiftCardLookupError(err.message || 'Lookup failed');
+    } finally {
+      setLookingUpGiftCard(false);
+    }
+  };
+
   const handleConfirm = async () => {
     if (showTipSplit && tip > 0 && !validateTipAllocations(tip, tipAllocations)) {
       setError('Tip splits must sum to the total tip amount.');
@@ -145,6 +205,8 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
         loyalty_points_redeem: hasReservedReward ? 0 : (selectedReward?.points || 0),
         loyalty_reward_name: hasReservedReward ? null : (selectedReward?.name || null),
         tip_allocations: showTipSplit && tip > 0 ? tipAllocations : null,
+        gift_card_id: appliedGiftCard?.id || null,
+        gift_card_amount: appliedGiftCard ? giftSplit.giftCardAmount : null,
       });
     } catch (err) {
       setError(err.message || 'Checkout failed');
@@ -302,6 +364,34 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
               </div>
             )}
 
+            <div className={clsx('rounded-lg p-3 border', isDark ? 'border-gold/20 bg-offwhite/5' : 'border-gold/30 bg-charcoal/5')}>
+              <label className={labelClass}>Apply Gift Card</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={giftCardCode}
+                  onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
+                  className={inputClass}
+                  placeholder="GC-XXXX-XXXX"
+                />
+                <button
+                  type="button"
+                  onClick={handleLookupGiftCard}
+                  disabled={lookingUpGiftCard}
+                  className="px-4 py-2 bg-gold/20 text-gold border border-gold/30 rounded-lg whitespace-nowrap"
+                >
+                  {lookingUpGiftCard ? '...' : 'Apply'}
+                </button>
+              </div>
+              {appliedGiftCard && (
+                <div className="mt-2 text-sm text-gold">
+                  {appliedGiftCard.code} — ${Number(appliedGiftCard.balance).toFixed(2)} available
+                  <button type="button" onClick={() => { setAppliedGiftCard(null); setGiftCardCode(''); }} className="ml-3 text-xs underline">Remove</button>
+                </div>
+              )}
+              {giftCardLookupError && <p className="text-red-400 text-xs mt-2">{giftCardLookupError}</p>}
+            </div>
+
             <div>
               <label className={labelClass}>Notes</label>
               <textarea
@@ -350,10 +440,22 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
                 <span>{selectedReward.points} pts — {selectedReward.name}</span>
               </div>
             )}
+            {appliedGiftCard && giftSplit.giftCardAmount > 0 && (
+              <div className="flex justify-between items-center mb-2 text-gold text-sm">
+                <span>Gift card</span>
+                <span>-${giftSplit.giftCardAmount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center pt-2 border-t border-gold/20">
-              <span className={clsx('font-medium', textClass)}>Final Total</span>
+              <span className={clsx('font-medium', textClass)}>{appliedGiftCard ? 'Due Now' : 'Final Total'}</span>
               <span className="font-heading text-2xl text-gold">${finalTotal.toFixed(2)}</span>
             </div>
+            {appliedGiftCard && (
+              <div className={clsx('flex justify-between items-center mt-2 text-sm', mutedClass)}>
+                <span>Visit total</span>
+                <span>${visitTotal.toFixed(2)}</span>
+              </div>
+            )}
           </div>
 
           {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
@@ -528,6 +630,8 @@ export default function CashierCheckout() {
       p_loyalty_reward_name: checkoutData.loyalty_reward_name || null,
       p_extras_amount: checkoutData.extras_amount || 0,
       p_tip_allocations: checkoutData.tip_allocations || null,
+      p_gift_card_id: checkoutData.gift_card_id || null,
+      p_gift_card_amount: checkoutData.gift_card_amount || null,
     });
 
     if (error) {
