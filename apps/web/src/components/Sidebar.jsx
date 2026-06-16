@@ -20,9 +20,9 @@ const ACTIVE_NAV_GRADIENT = {
   light: 'linear-gradient(135deg, rgba(197, 160, 89, 0.22), rgba(240, 215, 140, 0.14))',
 };
 
-function renderIcon(iconPath) {
+function renderIcon(iconPath, compact = false) {
   return (
-    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} flex-shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={iconPath} />
     </svg>
   );
@@ -43,7 +43,7 @@ function getNavLinkClasses(isActive, theme) {
 
 function getMobileNavLinkClasses(isActive, theme) {
   const base =
-    'flex min-h-[52px] min-w-[56px] shrink-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-full px-3.5 py-2 transition-colors duration-200 touch-manipulation';
+    'flex min-h-[34px] min-w-[42px] shrink-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-full px-2 py-1 transition-colors duration-200 touch-manipulation';
   if (isActive) {
     return `${base} text-gold font-medium`;
   }
@@ -56,8 +56,8 @@ function getMobileNavLinkClasses(isActive, theme) {
 
 function NavIcon({ iconPath, showBadge, badgeCount, compact = false }) {
   return (
-    <span className="relative flex size-8 shrink-0 items-center justify-center">
-      {renderIcon(iconPath)}
+    <span className={`relative flex shrink-0 items-center justify-center ${compact ? 'size-5' : 'size-8'}`}>
+      {renderIcon(iconPath, compact)}
       {showBadge ? (
         <span
           className={`pointer-events-none absolute top-0 right-0 flex items-center justify-center rounded-full font-bold text-charcoal ${
@@ -498,15 +498,15 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Navigation */}
       <div
-        className="md:hidden fixed bottom-3 left-3 right-3 z-50 rounded-3xl"
+        className="md:hidden fixed bottom-2 left-2 right-2 z-50 rounded-2xl"
         style={{
           backgroundColor: sidebarBg,
           border: `1px solid ${borderColor}`,
           boxShadow: sidebarShadow,
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingBottom: 'max(0px, env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <nav className="flex items-center gap-1.5 px-2 py-2 w-full">
+        <nav className="flex w-full items-center gap-1 px-1.5 py-1">
           <div
             ref={(el) => {
               if (el) {
@@ -520,9 +520,9 @@ export default function Sidebar() {
               }
             }}
             onScroll={handleBottomNavScroll}
-            className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto overscroll-x-contain px-1 scrollbar-none"
+            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain px-0.5 scrollbar-none"
           >
-            <ul className="m-0 flex list-none gap-2 p-0">
+            <ul className="m-0 flex list-none gap-1 p-0">
               {navItems.map((item) => {
                 const showAssignmentBadge = isTechnician && item.id === 'home' && pendingAssignments > 0;
                 const showCheckoutBadge = isCashier && item.id === 'checkout' && checkoutQueueCount > 0;
@@ -538,7 +538,7 @@ export default function Sidebar() {
                       onClick={closeUserMenu}
                     >
                       <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} compact />
-                      <span className="max-w-[64px] truncate text-center text-[9px] font-medium leading-tight tracking-wide">
+                      <span className="max-w-[52px] truncate text-center text-[7px] font-medium leading-none tracking-wide">
                         {item.label}
                       </span>
                     </NavLink>
@@ -550,7 +550,7 @@ export default function Sidebar() {
             <div className="w-2 shrink-0" aria-hidden="true" />
           </div>
 
-          <div className="relative flex flex-col items-center flex-shrink-0 mobile-user-menu pr-1">
+          <div className="relative flex shrink-0 flex-col items-center mobile-user-menu">
             <button
               type="button"
               ref={mobileUserMenuRef}
@@ -558,7 +558,7 @@ export default function Sidebar() {
                 e.stopPropagation();
                 toggleUserMenu('mobile');
               }}
-              className={`user-menu-trigger flex flex-col items-center gap-1 rounded-full px-2.5 py-2 transition-colors duration-200 ${
+              className={`user-menu-trigger flex flex-col items-center gap-0.5 rounded-full px-1.5 py-1 transition-colors duration-200 ${
                 showUserMenu && userMenuSource === 'mobile'
                   ? 'text-gold font-medium'
                   : theme === 'dark'
@@ -572,25 +572,25 @@ export default function Sidebar() {
               }
             >
               <div
-                className="relative w-8 h-8 rounded-full flex items-center justify-center"
+                className="relative flex h-6 w-6 items-center justify-center rounded-full"
                 style={{
                   background: 'rgba(197, 160, 89, 0.15)',
                   boxShadow: 'inset 0 0 0 1px rgba(197, 160, 89, 0.25)',
                 }}
               >
-                <span className="text-[10px] text-gold font-heading">{initials || '?'}</span>
+                <span className="text-[8px] text-gold font-heading">{initials || '?'}</span>
                 <NotificationBell
                   unreadCount={unreadCount}
                   ring={bellRing}
                   theme={theme}
                   size="sm"
                   overlay
-                  className="absolute -top-1 -right-1.5 z-10"
+                  className="absolute -top-1 -right-1 z-10"
                   onClick={openNotifPanel}
                 />
               </div>
               <span
-                className={`text-[9px] font-medium truncate max-w-[52px] leading-tight ${
+                className={`max-w-[44px] truncate text-[7px] font-medium leading-none ${
                   showUserMenu && userMenuSource === 'mobile'
                     ? 'text-gold'
                     : theme === 'dark'
