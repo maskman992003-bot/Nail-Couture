@@ -26,7 +26,7 @@ export default function NailAssessmentPublicPage() {
           </header>
           <NailAssessmentDashboard />
         </main>
-        <Footer onNavigate={() => {}} />
+        <Footer />
       </div>
     </>
   );

@@ -25,7 +25,7 @@ export default function FitnessAssessmentPublicPage() {
           </header>
           <FitnessAssessmentDashboard />
         </main>
-        <Footer onNavigate={() => {}} />
+        <Footer />
       </div>
     </>
   );

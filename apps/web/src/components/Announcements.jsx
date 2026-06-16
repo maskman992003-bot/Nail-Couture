@@ -311,7 +311,7 @@ export default function Announcements() {
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
         <div className={clsx('mx-auto', activeTab === 'home-offers' ? 'max-w-6xl' : 'max-w-3xl')}>
           <header className="mb-8">
-            <h1 className="font-heading text-2xl text-gold mb-2">Announcements</h1>
+            <h1 className="font-heading text-3xl text-gold mb-2">Announcements</h1>
             <p className="text-secondary text-sm mb-5">
               {activeTab === 'home-offers'
                 ? 'Manage home-screen offers and promo codes without redeploying the app.'

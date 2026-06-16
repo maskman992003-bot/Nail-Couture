@@ -39,7 +39,7 @@ export default function Services({ embedded = false }) {
         <main className="flex-1">
           <ServicesPublic />
         </main>
-        <Footer onNavigate={() => {}} />
+        <Footer />
       </div>
     </>
   );

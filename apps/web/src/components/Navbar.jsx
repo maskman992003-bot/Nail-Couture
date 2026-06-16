@@ -78,7 +78,12 @@ export default function Navbar({ currentPage, onNavigate }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="cursor-pointer flex-shrink-0" onClick={handleLogoClick}>
-              <img src="/NC.jpg" alt="Nail Couture" className="h-16 sm:h-20 md:h-24 w-auto" />
+              <div
+                className="flex items-center justify-center rounded-full p-1"
+                style={{ boxShadow: '0 0 0 1px rgba(197, 160, 89, 0.2)' }}
+              >
+                <img src="/NC.jpg" alt="Nail Couture" className="h-8 w-8 sm:h-10 sm:w-10 rounded-full" />
+              </div>
             </div>
           </div>
 

@@ -135,8 +135,13 @@ export default function ClientLogin() {
       <div className="w-full max-w-md">
         <div className={cardClass}>
           <div className="text-center mb-8">
-            <Link to="/" className="block">
-              <img src="/NC.jpg" alt="Nail Couture" className="h-28 w-auto mx-auto" />
+            <Link to="/" className="inline-flex justify-center">
+              <div
+                className="flex items-center justify-center rounded-full p-1"
+                style={{ boxShadow: '0 0 0 1px rgba(197, 160, 89, 0.2)' }}
+              >
+                <img src="/NC.jpg" alt="Nail Couture" className="h-8 w-8 sm:h-10 sm:w-10 rounded-full" />
+              </div>
             </Link>
             <p className={subtitleClass}>Client Portal Login</p>
           </div>

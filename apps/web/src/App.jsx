@@ -171,7 +171,7 @@ function App() {
         {currentPage === 'check-in' && <CheckIn onNavigate={setCurrentPage} />}
       </main>
       
-      {currentPage !== 'check-in' && <Footer onNavigate={setCurrentPage} />}
+      {currentPage !== 'check-in' && <Footer />}
 
       {promosEnabled && currentSlideInPromo && !detailPromo ? (
         <PromoSlideIn

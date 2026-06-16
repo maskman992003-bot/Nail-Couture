@@ -1,14 +1,9 @@
-import { Link } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { getHomePath } from '@nail-couture/shared/utils/routes.js';
 import Sidebar from '../Sidebar';
 import NailAssessmentDashboard from './NailAssessmentDashboard';
 
 export default function NailAssessmentPortalPage() {
   const { theme } = useTheme();
-  const { user } = useAuth();
-  const homePath = getHomePath(user?.role);
 
   return (
     <div
@@ -19,20 +14,6 @@ export default function NailAssessmentPortalPage() {
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-8">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Link
-              to={homePath}
-              className={
-                theme === 'dark'
-                  ? 'text-offwhite/40 hover:text-gold text-sm'
-                  : 'text-charcoal/40 hover:text-gold text-sm'
-              }
-            >
-              Home
-            </Link>
-            <span className={theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}>/</span>
-            <span className="text-gold font-heading text-sm">Nail Health Assessment</span>
-          </div>
           <h1 className="font-heading text-4xl text-gold">Nail Health Assessment</h1>
           <p
             className={

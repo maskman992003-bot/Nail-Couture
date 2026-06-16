@@ -399,11 +399,6 @@ export default function CustomerHistory() {
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-8">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Link to="/portal" className={theme === 'dark' ? 'text-offwhite/40 hover:text-gold text-sm' : 'text-charcoal/40 hover:text-gold text-sm'}>Home</Link>
-            <span className={theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}>/</span>
-            <span className="text-gold font-heading text-sm">{CUSTOMER_ONLINE_BOOKING ? 'My Bookings' : 'Visit History'}</span>
-          </div>
           <h1 className="font-heading text-4xl text-gold">{CUSTOMER_ONLINE_BOOKING ? 'My Bookings' : 'Visit History'}</h1>
           <p className={theme === 'dark' ? 'text-offwhite/50 text-sm mt-1' : 'text-charcoal/50 text-sm mt-1'}>
             {CUSTOMER_ONLINE_BOOKING ? 'Completed and cancelled appointments' : 'Your completed and cancelled salon visits'}

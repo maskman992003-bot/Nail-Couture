@@ -50,7 +50,7 @@ export default function SalonUpdates() {
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
         <div className="max-w-3xl mx-auto">
           <header className="mb-8">
-            <h1 className="font-heading text-2xl text-gold mb-2">Salon Updates</h1>
+            <h1 className="font-heading text-3xl text-gold mb-2">Salon Updates</h1>
             <p className="text-secondary text-sm">
               Announcements from the salon. Save important ones or archive what you have read.
             </p>

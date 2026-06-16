@@ -1,14 +1,19 @@
 import { Link } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
 
-export default function Footer({ onNavigate }) {
+export default function Footer() {
   const { theme } = useTheme()
   const linkClass = `block hover:text-gold transition-colors text-sm ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`
   return (
     <footer className={`border-t border-gold/30 mt-auto ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
         <div>
-          <img src="/NC.jpg" alt="Nail Couture" className="h-20 w-auto mb-4" />
+          <div
+            className="mb-4 flex w-fit items-center justify-center rounded-full p-1"
+            style={{ boxShadow: '0 0 0 1px rgba(197, 160, 89, 0.2)' }}
+          >
+            <img src="/NC.jpg" alt="Nail Couture" className="h-8 w-8 sm:h-10 sm:w-10 rounded-full" />
+          </div>
           <p className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>
             5300 Tchoupitoulas St #32-34<br />
             New Orleans, LA 70115<br />
@@ -75,12 +80,9 @@ export default function Footer({ onNavigate }) {
             <Link to="/nail-assessment" className={linkClass}>
               Nail Health Assessment
             </Link>
-            <button 
-              onClick={() => onNavigate('about')}
-              className={linkClass}
-            >
+            <Link to="/about" className={linkClass}>
               About & Contact
-            </button>
+            </Link>
           </div>
         </div>
       </div>
