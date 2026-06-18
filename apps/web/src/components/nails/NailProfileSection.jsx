@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
+import { NAIL_HEALTH_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import {
   fetchNailAssessmentHistory,
   formatAssessmentDate,
@@ -54,6 +55,8 @@ export default function NailProfileSection({ profileId, callerPhone, theme, pane
       mounted = false;
     };
   }, [profileId, callerPhone]);
+
+  if (!NAIL_HEALTH_ASSESSMENT) return null;
 
   if (loading) {
     return <p className="text-gold animate-pulse text-sm py-4">Loading nail health data…</p>;

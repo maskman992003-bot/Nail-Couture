@@ -1,3 +1,8 @@
+import {
+  FITNESS_ASSESSMENT,
+  NAIL_HEALTH_ASSESSMENT,
+} from '../../packages/shared/src/constants/featureFlags.js';
+
 /** Public marketing routes included in sitemap.xml */
 /** Homepage (/) is auto-included from dist/index.html by vite-plugin-sitemap */
 
@@ -11,22 +16,22 @@ const corePublicRoutes = [
 
 /** Wellness tools — public fitness and nail health assessments */
 export const wellnessSitemapRoutes = [
-  '/fitness-assessment',
-  '/nail-assessment',
-];
+  FITNESS_ASSESSMENT && '/fitness-assessment',
+  NAIL_HEALTH_ASSESSMENT && '/nail-assessment',
+].filter(Boolean);
 
 export const publicSitemapRoutes = [...corePublicRoutes, ...wellnessSitemapRoutes];
 
 /** Per-route sitemap metadata (vite-plugin-sitemap RoutesOptionMap) */
 export const sitemapPriority = {
   '/': 1.0,
-  '/fitness-assessment': 0.85,
-  '/nail-assessment': 0.85,
+  ...(FITNESS_ASSESSMENT ? { '/fitness-assessment': 0.85 } : {}),
+  ...(NAIL_HEALTH_ASSESSMENT ? { '/nail-assessment': 0.85 } : {}),
   '*': 0.8,
 };
 
 export const sitemapChangefreq = {
-  '/fitness-assessment': 'monthly',
-  '/nail-assessment': 'monthly',
+  ...(FITNESS_ASSESSMENT ? { '/fitness-assessment': 'monthly' } : {}),
+  ...(NAIL_HEALTH_ASSESSMENT ? { '/nail-assessment': 'monthly' } : {}),
   '*': 'weekly',
 };

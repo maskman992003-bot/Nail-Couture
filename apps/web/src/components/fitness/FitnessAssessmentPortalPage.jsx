@@ -1,9 +1,18 @@
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
+import { getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from '../Sidebar';
 import FitnessAssessmentDashboard from './FitnessAssessmentDashboard';
 
 export default function FitnessAssessmentPortalPage() {
+  const { user } = useAuth();
   const { theme } = useTheme();
+
+  if (!FITNESS_ASSESSMENT) {
+    return <Navigate to={user ? getHomePath(user.role) : '/'} replace />;
+  }
 
   return (
     <div

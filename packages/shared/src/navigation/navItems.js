@@ -164,10 +164,18 @@ export const navItemScreenMap = {
   'nail-assessment': 'NailAssessment',
 };
 
+function isWellnessNavItemEnabled(itemId) {
+  if (itemId === 'fitness-assessment') return featureFlags.customer.fitnessAssessment === true;
+  if (itemId === 'nail-assessment') return featureFlags.customer.nailHealthAssessment === true;
+  return true;
+}
+
 export function getNavItemsForRole(role) {
   if (!role) return [];
   const actualUserRole = role || 'customer';
   let items = navItemsByRole[actualUserRole] || navItemsByRole.customer;
+
+  items = items.filter((item) => isWellnessNavItemEnabled(item.id));
 
   if (actualUserRole !== 'super_admin') {
     items = items.filter((item) => {

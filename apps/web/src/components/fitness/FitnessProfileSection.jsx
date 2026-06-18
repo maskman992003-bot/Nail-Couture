@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
+import { FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import {
   fetchFitnessAssessmentHistory,
   formatAssessmentDate,
@@ -54,6 +55,8 @@ export default function FitnessProfileSection({ profileId, callerPhone, theme, p
       mounted = false;
     };
   }, [profileId, callerPhone]);
+
+  if (!FITNESS_ASSESSMENT) return null;
 
   if (loading) {
     return <p className="text-gold animate-pulse text-sm py-4">Loading fitness data…</p>;

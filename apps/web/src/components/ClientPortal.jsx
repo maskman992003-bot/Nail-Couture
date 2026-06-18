@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags';
+import { CUSTOMER_ONLINE_BOOKING, FITNESS_ASSESSMENT, NAIL_HEALTH_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import { getTierInfo, tierDetails, generateReferralCode } from '@nail-couture/shared/utils/loyaltyTier';
 import { getProfileInitials } from '@nail-couture/shared/utils/avatarUpload';
@@ -232,16 +232,20 @@ export default function ClientPortal() {
               <div className="text-gold font-heading text-lg">Redeem Points →</div>
               <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-2' : 'text-charcoal/40 text-xs mt-2'}>Browse and redeem loyalty rewards</p>
             </Link>
+            {NAIL_HEALTH_ASSESSMENT ? (
             <Link to="/customer/nail-assessment" className="rounded-2xl p-6 border hover:border-gold/40 transition-colors" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#ffffff' }}>
               <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-2' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-2'}>Wellness</div>
               <div className="text-gold font-heading text-lg">Nail Health Assessment →</div>
               <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-2' : 'text-charcoal/40 text-xs mt-2'}>Chemistry, prep, and maintenance plan</p>
             </Link>
+            ) : null}
+            {FITNESS_ASSESSMENT ? (
             <Link to="/customer/fitness-assessment" className="rounded-2xl p-6 border hover:border-gold/40 transition-colors" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#ffffff' }}>
               <div className={theme === 'dark' ? 'text-offwhite/40 text-xs uppercase tracking-widest mb-2' : 'text-charcoal/40 text-xs uppercase tracking-widest mb-2'}>Wellness</div>
               <div className="text-gold font-heading text-lg">Fitness Assessment →</div>
               <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-2' : 'text-charcoal/40 text-xs mt-2'}>BMI, TDEE, and calorie targets</p>
             </Link>
+            ) : null}
           </div>
 
           <AppModal

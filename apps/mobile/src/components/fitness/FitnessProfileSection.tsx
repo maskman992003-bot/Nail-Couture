@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import {
   fetchFitnessAssessmentHistory,
   formatAssessmentDate,
@@ -47,6 +48,8 @@ export function FitnessProfileSection({ profileId, callerPhone, onOpenAssessment
       mounted = false;
     };
   }, [profileId, callerPhone]);
+
+  if (!FITNESS_ASSESSMENT) return null;
 
   if (loading) {
     return <Text style={[styles.textGold, { paddingVertical: 12 }]}>Loading fitness data…</Text>;

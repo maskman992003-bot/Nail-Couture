@@ -1,10 +1,14 @@
+import { Navigate } from 'react-router-dom';
 import Navbar from '../Navbar';
 import Footer from '../Footer';
 import PageHelmet from '../PageHelmet';
 import { APP_PAGE_SEO } from '../../constants/pageSeo';
+import { NAIL_HEALTH_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import NailAssessmentDashboard from './NailAssessmentDashboard';
 
 export default function NailAssessmentPublicPage() {
+  if (!NAIL_HEALTH_ASSESSMENT) return <Navigate to="/" replace />;
+
   return (
     <>
       <PageHelmet

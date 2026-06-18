@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getFitnessAssessmentPath, getNailAssessmentPath } from '@nail-couture/shared/utils/routes';
+import { FITNESS_ASSESSMENT, NAIL_HEALTH_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import { supabase } from '../lib/supabase';
 import { buildCategoryTabs, fetchServiceCategories, getDisplayCategories } from '@nail-couture/shared/utils/serviceCategories';
 import { isServiceMenuVisible, shouldShowServicePrice } from '@nail-couture/shared/utils/serviceVisibility';
@@ -15,6 +16,7 @@ export default function ServicesPublic() {
   const { user } = useAuth();
   const fitnessHref = user?.role ? getFitnessAssessmentPath(user.role) : '/fitness-assessment';
   const nailHref = user?.role ? getNailAssessmentPath(user.role) : '/nail-assessment';
+  const showWellnessTools = FITNESS_ASSESSMENT || NAIL_HEALTH_ASSESSMENT;
   const [services, setServices] = useState([]);
   const [dbCategories, setDbCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -193,6 +195,7 @@ export default function ServicesPublic() {
           </div>
         )}
 
+        {showWellnessTools ? (
         <div className="mt-16">
           <div className={`rounded-2xl border p-8 md:p-10 ${theme === 'dark' ? 'border-gold/20 bg-offwhite/[0.02]' : 'border-gold/30 bg-white'}`}>
             <div className="text-center mb-8">
@@ -203,6 +206,7 @@ export default function ServicesPublic() {
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+              {NAIL_HEALTH_ASSESSMENT ? (
               <Link
                 to={nailHref}
                 className={`rounded-xl border px-5 py-4 text-center transition-all hover:border-gold/40 ${theme === 'dark' ? 'border-gold/20 bg-charcoal/40' : 'border-gold/30 bg-cream/50'}`}
@@ -210,6 +214,8 @@ export default function ServicesPublic() {
                 <span className="font-heading text-gold block mb-1">Nail Health Assessment</span>
                 <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Chemistry & maintenance</span>
               </Link>
+              ) : null}
+              {FITNESS_ASSESSMENT ? (
               <Link
                 to={fitnessHref}
                 className={`rounded-xl border px-5 py-4 text-center transition-all hover:border-gold/40 ${theme === 'dark' ? 'border-gold/20 bg-charcoal/40' : 'border-gold/30 bg-cream/50'}`}
@@ -217,9 +223,11 @@ export default function ServicesPublic() {
                 <span className="font-heading text-gold block mb-1">Fitness Assessment</span>
                 <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>BMI, TDEE & body fat</span>
               </Link>
+              ) : null}
             </div>
           </div>
         </div>
+        ) : null}
 
         <div className="mt-16 text-center">
           <div className="bg-gold/10 border border-gold/30 rounded-xl p-8 max-w-2xl mx-auto">

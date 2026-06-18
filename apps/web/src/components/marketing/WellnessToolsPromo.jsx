@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { Activity, Beaker } from 'lucide-react';
+import { FITNESS_ASSESSMENT, NAIL_HEALTH_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import { useAppTheme } from '../../hooks/useAppTheme.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { getFitnessAssessmentPath, getNailAssessmentPath } from '@nail-couture/shared/utils/routes';
@@ -14,6 +15,7 @@ const TOOLS = [
     hrefKey: 'nail',
     icon: Beaker,
     cta: 'Start nail diagnostic',
+    enabled: NAIL_HEALTH_ASSESSMENT,
   },
   {
     id: 'fitness',
@@ -23,12 +25,16 @@ const TOOLS = [
     hrefKey: 'fitness',
     icon: Activity,
     cta: 'Open fitness dashboard',
+    enabled: FITNESS_ASSESSMENT,
   },
 ];
 
 export default function WellnessToolsPromo({ className, id = 'wellness-tools', compact = false }) {
   const { themeConfig } = useAppTheme();
   const { user } = useAuth();
+
+  const visibleTools = TOOLS.filter((tool) => tool.enabled);
+  if (visibleTools.length === 0) return null;
 
   const hrefs = {
     fitness: user?.role ? getFitnessAssessmentPath(user.role) : '/fitness-assessment',
@@ -60,7 +66,7 @@ export default function WellnessToolsPromo({ className, id = 'wellness-tools', c
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {TOOLS.map((tool) => {
+          {visibleTools.map((tool) => {
             const Icon = tool.icon;
             const href = hrefs[tool.hrefKey];
 

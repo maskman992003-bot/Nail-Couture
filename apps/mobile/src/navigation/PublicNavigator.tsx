@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
+import { FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import { HomeScreen } from '../screens/public/HomeScreen';
 import { LookbookScreen } from '../screens/public/LookbookScreen';
 import { ServicesScreen } from '../screens/public/ServicesScreen';
@@ -60,11 +61,13 @@ export function PublicNavigator() {
       <PublicTabs.Screen name="Lookbook" component={LookbookScreen} options={{ title: 'Lookbook' }} />
       <PublicTabs.Screen name="Services" component={ServicesScreen} options={{ title: 'Services' }} />
       <PublicTabs.Screen name="About" component={AboutScreen} options={{ title: 'About' }} />
+      {FITNESS_ASSESSMENT ? (
       <PublicTabs.Screen
         name="FitnessAssessment"
         component={FitnessAssessmentScreen}
         options={{ title: 'Fitness' }}
       />
+      ) : null}
     </PublicTabs.Navigator>
   );
 }

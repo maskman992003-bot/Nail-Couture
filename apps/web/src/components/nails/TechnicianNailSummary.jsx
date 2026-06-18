@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { Beaker, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { NAIL_HEALTH_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import {
   fetchLatestNailAssessment,
   formatAssessmentDate,
@@ -30,7 +31,7 @@ export default function TechnicianNailSummary({ profileId }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!profileId || !user?.phone) {
+    if (!NAIL_HEALTH_ASSESSMENT || !profileId || !user?.phone) {
       setLoading(false);
       return;
     }
@@ -49,6 +50,8 @@ export default function TechnicianNailSummary({ profileId }) {
       mounted = false;
     };
   }, [profileId, user?.phone]);
+
+  if (!NAIL_HEALTH_ASSESSMENT) return null;
 
   if (loading) {
     return (

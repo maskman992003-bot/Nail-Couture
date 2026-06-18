@@ -9,6 +9,7 @@ import { fetchCustomerStats } from '@nail-couture/shared/utils/customerStats.js'
 import { generateReferralCode, getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
 import { getProfileInitials } from '@nail-couture/shared/utils/avatarUpload.js';
 import { useAuth } from '../../contexts/AuthContext';
+import { FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import { DAYS, MONTHS, NAIL_GOALS } from '../../constants/birthdayOptions';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
 import { MembershipCard } from '../../components/customer/MembershipCard';
@@ -39,7 +40,7 @@ type ProfileRecord = Record<string, unknown> & {
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'preferences', label: 'Preferences' },
-  { id: 'fitness', label: 'Fitness' },
+  ...(FITNESS_ASSESSMENT ? [{ id: 'fitness' as const, label: 'Fitness' }] : []),
   { id: 'reviews', label: 'Reviews' },
   { id: 'security', label: 'Security' },
 ] as const;
@@ -315,7 +316,7 @@ export function CustomerProfileScreen() {
         </View>
       ) : null}
 
-      {activeTab === 'fitness' ? (
+      {activeTab === 'fitness' && FITNESS_ASSESSMENT ? (
         <FitnessProfileSection
           profileId={profile.id}
           callerPhone={profile.phone}

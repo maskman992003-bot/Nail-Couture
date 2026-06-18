@@ -1,9 +1,18 @@
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { NAIL_HEALTH_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
+import { getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from '../Sidebar';
 import NailAssessmentDashboard from './NailAssessmentDashboard';
 
 export default function NailAssessmentPortalPage() {
+  const { user } = useAuth();
   const { theme } = useTheme();
+
+  if (!NAIL_HEALTH_ASSESSMENT) {
+    return <Navigate to={user ? getHomePath(user.role) : '/'} replace />;
+  }
 
   return (
     <div

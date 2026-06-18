@@ -1,10 +1,14 @@
+import { Navigate } from 'react-router-dom';
 import Navbar from '../Navbar';
 import Footer from '../Footer';
 import PageHelmet from '../PageHelmet';
 import { APP_PAGE_SEO } from '../../constants/pageSeo';
+import { FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import FitnessAssessmentDashboard from './FitnessAssessmentDashboard';
 
 export default function FitnessAssessmentPublicPage() {
+  if (!FITNESS_ASSESSMENT) return <Navigate to="/" replace />;
+
   return (
     <>
       <PageHelmet

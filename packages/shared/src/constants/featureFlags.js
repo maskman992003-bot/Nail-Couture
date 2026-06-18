@@ -19,6 +19,8 @@ export const featureFlags = {
     appointmentReminders: false,    // SMS/email reminders (Phase 3 — infra ready, off until enabled)
     prepayOptions: false,           // Pay online in advance (Phase 3)
     giftCards: true,                // View and transfer gift cards
+    fitnessAssessment: false,       // Fitness assessment wellness tool
+    nailHealthAssessment: false,    // Nail health assessment wellness tool
   },
   
   // Admin/Staff Features  
@@ -97,3 +99,5 @@ export const APPOINTMENT_REMINDERS = featureFlags.customer.appointmentReminders;
 export const STAFF_ANNOUNCEMENTS = featureFlags.staff.announcements;
 export const STAFF_GIFT_CARDS = featureFlags.staff.giftCards;
 export const CUSTOMER_GIFT_CARDS = featureFlags.customer.giftCards;
+export const FITNESS_ASSESSMENT = featureFlags.customer.fitnessAssessment;
+export const NAIL_HEALTH_ASSESSMENT = featureFlags.customer.nailHealthAssessment;

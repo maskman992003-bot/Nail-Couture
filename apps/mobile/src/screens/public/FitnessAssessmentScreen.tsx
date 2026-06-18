@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import { FitnessAssessmentContent } from '../../components/fitness/FitnessAssessmentContent';
 import { PublicScreenLayout } from '../../components/public/PublicScreenLayout';
 import { useThemeStyles } from '../../theme/useThemeStyles';
@@ -15,6 +17,14 @@ type FitnessAssessmentScreenProps = {
 export function FitnessAssessmentScreen({ navigation }: FitnessAssessmentScreenProps) {
   const styles = useThemeStyles();
   const rootNav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  useEffect(() => {
+    if (!FITNESS_ASSESSMENT) {
+      navigation.navigate('Home');
+    }
+  }, [navigation]);
+
+  if (!FITNESS_ASSESSMENT) return null;
 
   return (
     <PublicScreenLayout onNavigateTab={(tab) => navigation.navigate(tab)}>

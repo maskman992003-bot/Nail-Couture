@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags.js';
+import { CUSTOMER_ONLINE_BOOKING, FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import type { RootStackParamList } from '../../navigation/publicTypes';
@@ -29,6 +29,7 @@ export function PublicNavbar({ onNavigateTab }: PublicNavbarProps) {
   };
 
   const ctaLabel = CUSTOMER_ONLINE_BOOKING ? 'BOOK' : 'CONTACT';
+  const menuTabs = ['Services', 'Lookbook', ...(FITNESS_ASSESSMENT ? ['Fitness'] : []), 'About'] as const;
 
   const handleCta = () => {
     setMenuOpen(false);
@@ -118,7 +119,7 @@ export function PublicNavbar({ onNavigateTab }: PublicNavbarProps) {
             gap: 4,
           }}
         >
-          {(['Services', 'Lookbook', 'Fitness', 'About'] as const).map((tab) => (
+          {menuTabs.map((tab) => (
             <Pressable
               key={tab}
               onPress={() =>

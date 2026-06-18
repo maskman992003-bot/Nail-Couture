@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
+import { FITNESS_ASSESSMENT, NAIL_HEALTH_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import {
   fetchCustomerStats,
   fetchReferralInfo,
@@ -441,14 +442,18 @@ export default function CustomerProfile() {
                 <span className="text-gold font-heading text-sm">Rewards & Redemption →</span>
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>Redeem points for perks</p>
               </Link>
+              {FITNESS_ASSESSMENT ? (
               <Link to="/customer/fitness-assessment" className={`${panelClass} hover:border-gold/30 transition-colors`}>
                 <span className="text-gold font-heading text-sm">Fitness Assessment →</span>
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>View saved measurements and metrics</p>
               </Link>
+              ) : null}
+              {NAIL_HEALTH_ASSESSMENT ? (
               <Link to="/customer/nail-assessment" className={`${panelClass} hover:border-gold/30 transition-colors`}>
                 <span className="text-gold font-heading text-sm">Nail Health Assessment →</span>
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>View chemistry and maintenance recommendations</p>
               </Link>
+              ) : null}
               <Link to="/customer/settings" className={`${panelClass} hover:border-gold/30 transition-colors sm:col-span-2`}>
                 <span className="text-gold font-heading text-sm">Account Settings →</span>
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>
