@@ -66,7 +66,7 @@ export function SiteFooter() {
           <p className="flex items-start gap-2">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <span>
-              5500 Tchoupitoulas St #32-24
+              5300 Tchoupitoulas St #32-24
               <br />
               New Orleans, LA 70115
             </span>

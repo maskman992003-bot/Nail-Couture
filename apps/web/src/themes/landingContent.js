@@ -76,14 +76,14 @@ export const LANDING_STORY = {
 };
 
 export const LANDING_CONTACT = {
-  address: ['5500 Tchoupitoulas St #32-24', 'New Orleans, LA 70115'],
+  address: ['5300 Tchoupitoulas St #32-24', 'New Orleans, LA 70115'],
   phone: '(504) 481-7879',
   phoneTel: '+15044817879',
   openingLabel: 'Opening Fall 2026',
   mapsEmbedUrl:
-    'https://www.google.com/maps?q=5500+Tchoupitoulas+St+%2332-24+New+Orleans+LA+70115&output=embed',
+    'https://www.google.com/maps?q=5300+Tchoupitoulas+St+%2332-24+New+Orleans+LA+70115&output=embed',
   mapsUrl:
-    'https://www.google.com/maps/search/?api=1&query=5500+Tchoupitoulas+St+%2332-24+New+Orleans+LA+70115',
+    'https://www.google.com/maps/search/?api=1&query=5300+Tchoupitoulas+St+%2332-24+New+Orleans+LA+70115',
 };
 
 export const LANDING_SOCIAL_LINKS = [
