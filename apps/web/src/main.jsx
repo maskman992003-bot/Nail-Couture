@@ -50,6 +50,7 @@ import CheckIn from './components/CheckIn.jsx'
 import PageHelmet from './components/PageHelmet.jsx'
 import { APP_PAGE_SEO } from './constants/pageSeo.js'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
+import { IdleSessionProvider } from './contexts/IdleSessionContext.jsx'
 import { ThemeEngineProvider } from './context/ThemeEngineContext.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 import RouteDocumentTitle from './components/RouteDocumentTitle.jsx'
@@ -681,8 +682,10 @@ createRoot(document.getElementById('root')).render(
       <ThemeEngineProvider>
           <AuthProvider>
             <BrowserRouter>
-              <RouteDocumentTitle />
-              <AppRoutes />
+              <IdleSessionProvider>
+                <RouteDocumentTitle />
+                <AppRoutes />
+              </IdleSessionProvider>
             </BrowserRouter>
           </AuthProvider>
       </ThemeEngineProvider>

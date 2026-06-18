@@ -25,6 +25,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-helmet-async": "^3.0.0",
+    "react-idle-timer": "^5.7.3",
     "react-router-dom": "^7.15.0",
     "react-signature-canvas": "^1.1.0-alpha.2",
     "recharts": "^3.8.1",

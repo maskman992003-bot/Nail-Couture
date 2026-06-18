@@ -7,6 +7,7 @@ import { getThemeOptions } from '../themes/index.js';
 import { mergeSkinWithPalette } from '../themes/resolveThemePalette.js';
 import Sidebar from './Sidebar';
 import NotificationPreferencesPanel from '@nail-couture/shared/components/NotificationPreferencesPanel.jsx';
+import SessionTimeoutSettingsPanel from './SessionTimeoutSettingsPanel.jsx';
 import clsx from 'clsx';
 
 const roleLabels = {
@@ -659,6 +660,10 @@ export default function Settings() {
               })}
             </div>
           </div>
+        )}
+
+        {isSuperAdmin && (
+          <SessionTimeoutSettingsPanel callerPhone={user?.phone} />
         )}
 
         <NotificationPreferencesPanel
