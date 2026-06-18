@@ -73,7 +73,7 @@ export default function AboutContact() {
                 <div>
                   <div className="text-sm text-muted tracking-wider uppercase mb-2">WhatsApp</div>
                   <a
-                    href="https://wa.me/15044887879"
+                    href={`https://wa.me/${LANDING_CONTACT.phoneTel.replace('+', '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-gold-strong hover:opacity-80 transition-colors"

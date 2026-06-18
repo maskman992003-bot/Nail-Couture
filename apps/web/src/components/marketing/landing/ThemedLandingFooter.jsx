@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Camera, Mail, MapPin, MessageCircle, Phone, Sparkles } from 'lucide-react';
+import { Mail, MapPin, Phone, Sparkles } from 'lucide-react';
 import { joinVipFoundingList } from '@nail-couture/shared/utils/vipFoundingListService.js';
 import { getSupabaseErrorMessage } from '@nail-couture/shared/utils/supabaseErrors.js';
 import { useAppTheme } from '../../../hooks/useAppTheme.js';
-import { LANDING_CONTACT } from '../../../themes/landingContent.js';
+import { LANDING_CONTACT, LANDING_SOCIAL_LINKS } from '../../../themes/landingContent.js';
+import { SocialIcon } from '../../SocialIcons.jsx';
 import LocationMapModal from '../../LocationMapModal.jsx';
 import ThemedLogo from './ThemedLogo.jsx';
 
@@ -141,21 +142,23 @@ export default function ThemedLandingFooter() {
         </div>
 
         <div className="flex flex-col justify-start">
-          <span className="landing-heading text-sm uppercase tracking-[0.16em]">{contact.openingLabel}</span>
+          <span className="landing-heading text-sm font-extrabold uppercase tracking-[0.16em] text-center align-middle">{contact.openingLabel}</span>
         </div>
 
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em]">Follow Us</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-left">Follow Us</p>
           <div className="mt-3 flex gap-3">
-            {[Camera, MessageCircle, Phone].map((Icon, i) => (
+            {LANDING_SOCIAL_LINKS.map((link) => (
               <a
-                key={i}
-                href="#contact"
-                aria-label="Social media link"
+                key={link.label}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={link.label}
                 className="flex h-9 w-9 items-center justify-center rounded-full transition-opacity hover:opacity-85"
                 style={{ backgroundColor: themeConfig.accentColor, color: '#fff' }}
               >
-                <Icon className="h-4 w-4" />
+                <SocialIcon label={link.label} />
               </a>
             ))}
           </div>

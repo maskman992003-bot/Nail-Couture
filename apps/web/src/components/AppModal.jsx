@@ -31,6 +31,7 @@ export default function AppModal({
   scrollBody = false,
   panelClassName = '',
   headerExtra,
+  centered = false,
 }) {
   const panelRef = useFocusTrap(open, onClose);
 
@@ -39,7 +40,10 @@ export default function AppModal({
   return createPortal(
     <div
       className={clsx(
-        'fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm',
+        'fixed inset-0 flex justify-center bg-black/70 backdrop-blur-sm',
+        centered
+          ? 'items-center p-4 sm:p-6'
+          : 'items-end sm:items-center p-0 sm:p-4',
         zIndex,
       )}
       onClick={onClose}
@@ -52,8 +56,8 @@ export default function AppModal({
         aria-labelledby={title ? 'app-modal-title' : undefined}
         className={clsx(
           'w-full flex flex-col border border-card bg-card shadow-2xl',
-          'max-h-[min(92dvh,calc(100dvh-1rem))] sm:max-h-[min(90dvh,calc(100dvh-2rem))]',
-          'rounded-t-2xl sm:rounded-2xl',
+          'max-h-[min(92dvh,calc(100dvh-2rem))] sm:max-h-[min(90dvh,calc(100dvh-3rem))]',
+          centered ? 'rounded-2xl' : 'rounded-t-2xl sm:rounded-2xl',
           scrollBody && 'overflow-hidden min-h-0',
           maxWidth,
           panelClassName,

@@ -73,7 +73,7 @@ export function SiteFooter() {
           </p>
           <p className="flex items-center gap-2">
             <Phone className="h-4 w-4 shrink-0 text-primary" />
-            (504) 488-7879
+            (504) 481-7879
           </p>
         </div>
 

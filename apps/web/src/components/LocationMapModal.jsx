@@ -12,6 +12,8 @@ export default function LocationMapModal({ open, onClose }) {
       title="Visit Our Salon"
       subtitle={addressLine}
       maxWidth="max-w-2xl"
+      centered
+      panelClassName="mx-auto"
       footer={
         <a
           href={LANDING_CONTACT.mapsUrl}
@@ -23,7 +25,7 @@ export default function LocationMapModal({ open, onClose }) {
         </a>
       }
     >
-      <div className="h-[min(50vh,320px)] sm:h-[360px] overflow-hidden rounded-xl border border-light">
+      <div className="h-[min(42dvh,240px)] min-h-[180px] sm:h-[min(48dvh,320px)] md:h-[min(52dvh,380px)] overflow-hidden rounded-xl border border-light">
         <LocationMapEmbed className="h-full w-full" />
       </div>
     </AppModal>
