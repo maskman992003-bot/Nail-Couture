@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import BrandLogo from './BrandLogo.jsx';
 import ScrollSelect from './ScrollSelect';
 
 const MONTHS = [
@@ -218,7 +219,7 @@ export default function ClientRegister() {
         <div className={cardClass}>
           <div className="text-center mb-8">
             <Link to="/" className="block">
-              <img src="/NC.jpg" alt="Nail Couture" className="h-28 w-auto mx-auto" />
+              <BrandLogo className="h-28 w-auto mx-auto" rounded={false} />
             </Link>
             <p className={subtitleClass}>Create Your Account</p>
             {formData.referral_code && (

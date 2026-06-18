@@ -385,7 +385,7 @@ export default function CustomerHistory() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
+      <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
         <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
@@ -395,7 +395,7 @@ export default function CustomerHistory() {
   }
 
   return (
-    <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
+    <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-8">
         <div>
@@ -530,9 +530,9 @@ export default function CustomerHistory() {
                   Book Now
                 </Link>
               ) : (
-                <Link to="/check-in" className="inline-block px-8 py-4 bg-gold text-charcoal font-heading tracking-wider text-sm rounded-xl hover:bg-gold/90 transition-colors shadow-lg shadow-gold/20">
-                  Check In at Salon
-                </Link>
+                <p className={theme === 'dark' ? 'text-sm text-offwhite/50' : 'text-sm text-charcoal/50'}>
+                  Check in at the salon kiosk when you arrive.
+                </p>
               )
             )}
           </div>

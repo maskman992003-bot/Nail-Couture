@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from './Sidebar';
+import VipFoundingListCard from './VipFoundingListCard.jsx';
 import clsx from 'clsx';
 
 export default function Admin() {
@@ -48,7 +49,7 @@ export default function Admin() {
 
   const bgClass = clsx(
     'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64',
-    theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'
+    theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'
   );
 
   const headerBorderClass = clsx('px-8 py-6 border-b', theme === 'dark' ? 'border-gold/10' : 'border-gold/30');
@@ -84,7 +85,7 @@ export default function Admin() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             <div className={statCardClass}>
               <div className={subtextClass}>Active Technicians</div>
               <div className={textColor}>{stats.activeTechnicians}</div>
@@ -97,6 +98,12 @@ export default function Admin() {
               <div className={subtextClass}>Completed</div>
               <div className="text-3xl font-heading text-green-400">{stats.completedToday}</div>
             </div>
+            <VipFoundingListCard
+              phone={user?.phone}
+              role={user?.role}
+              theme={theme}
+              className={statCardClass}
+            />
           </div>
 
            <div className="grid md:grid-cols-2 gap-6">

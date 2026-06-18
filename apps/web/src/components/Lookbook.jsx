@@ -80,11 +80,11 @@ export default function Lookbook() {
     : galleryData.filter((item) => item.category === activeCategory)
 
   return (
-    <section id="gallery" className="py-24 px-6 bg-offwhite">
+    <section id="gallery" className="py-24 lg:py-32 px-4 sm:px-6 bg-[#FBF9F6]">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="font-heading text-charcoal text-4xl md:text-5xl mb-4">Couture Lookbook</h2>
-          <p className="text-charcoal/60">Inspiration for your next appointment</p>
+          <h2 className="font-heading text-4xl md:text-5xl mb-4 tracking-wide text-[#2A241F]">Couture Lookbook</h2>
+          <p className="text-[#6E6259]">Inspiration for your next appointment</p>
         </div>
 
         <div className="flex justify-center gap-4 mb-12 flex-wrap">
@@ -92,10 +92,10 @@ export default function Lookbook() {
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
-              className={`px-6 py-2 rounded-full text-sm tracking-wider transition-all duration-200 ease-out ${
+              className={`px-6 py-2 rounded-sm text-sm tracking-wider transition-all duration-200 ease-out ${
                 activeCategory === category
-                  ? 'bg-charcoal text-offwhite shadow-[0_0_20px_rgba(0,0,0,0.08)]'
-                  : 'border border-charcoal/20 text-charcoal/60 hover:border-gold hover:text-gold hover:-translate-y-0.5 hover:scale-[1.02]'
+                  ? 'bg-[#B88E4C] text-white shadow-sm'
+                  : 'border border-[#B88E4C]/25 text-[#6E6259] hover:border-[#B88E4C]/50 hover:text-[#2A241F]'
               }`}
             >
               {category}

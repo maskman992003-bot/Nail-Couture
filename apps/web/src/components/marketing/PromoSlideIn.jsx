@@ -42,7 +42,7 @@ export default function PromoSlideIn({
         onClick={() => onOpenDetail?.(promo)}
         aria-label={`View offer: ${promo.title}`}
         className={clsx(
-          'w-full rounded-2xl border p-3 shadow-lg text-left cursor-pointer',
+          'w-full rounded-2xl border p-3 shadow-lg text-center cursor-pointer',
           'transition hover:border-gold/50 motion-reduce:transition-none',
           theme === 'dark'
             ? 'border-gold/25 bg-charcoal/95 text-offwhite backdrop-blur-sm'

@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { useAppTheme } from '../hooks/useAppTheme.js';
 
 export function GiftCardVisual({
   isDark,
@@ -15,6 +16,7 @@ export function GiftCardVisual({
   onCodeClick,
   footer,
 }) {
+  const { logoUrl } = useAppTheme();
   const hasBalance = balance != null && Number.isFinite(Number(balance));
   const hasInitial = initialAmount != null && Number.isFinite(Number(initialAmount));
   const muted = isDark ? 'text-offwhite/50' : 'text-charcoal/50';
@@ -31,7 +33,7 @@ export function GiftCardVisual({
     >
       <div className={clsx('px-4 py-2.5 flex items-center justify-between border-b', isDark ? 'border-gold/15' : 'border-gold/20')}>
         <div className="flex items-center gap-2 min-w-0">
-          <img src="/NC.jpg" alt="" className="h-7 w-auto shrink-0 opacity-90" />
+          <img src={logoUrl} alt="" className="h-7 w-auto shrink-0 opacity-90" />
           <span className="font-heading text-gold text-sm truncate">Nail Couture</span>
         </div>
         {codeInteractive ? (

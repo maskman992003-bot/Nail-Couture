@@ -6,6 +6,7 @@ export async function getServices() {
     .select('*')
     .order('category', { ascending: true })
     .order('price', { ascending: true })
+  if (error) throw error
   return data || []
 }
 

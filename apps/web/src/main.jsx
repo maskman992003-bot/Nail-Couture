@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import './index.css'
 import './lib/supabase.js'
@@ -46,10 +46,37 @@ import NailAssessmentPortalPage from './components/nails/NailAssessmentPortalPag
 import AdminInventory from './components/AdminInventory.jsx'
 import AdminServices from './components/AdminServices.jsx'
 import AdminBookings from './components/AdminBookings.jsx'
+import CheckIn from './components/CheckIn.jsx'
+import PageHelmet from './components/PageHelmet.jsx'
+import { APP_PAGE_SEO } from './constants/pageSeo.js'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
-import { ThemeProvider } from './contexts/ThemeContext.jsx'
+import { ThemeEngineProvider } from './context/ThemeEngineContext.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 import RouteDocumentTitle from './components/RouteDocumentTitle.jsx'
+import { CHECK_IN_ROLE } from '@nail-couture/shared/utils/routes'
+
+const KIOSK_ALLOWED_PATHS = ['/check-in', '/login'];
+
+function KioskSessionGuard({ children }) {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  if (user?.role === CHECK_IN_ROLE && !KIOSK_ALLOWED_PATHS.includes(location.pathname)) {
+    return <Navigate to="/check-in" replace />;
+  }
+
+  return children;
+}
+
+function CheckInPage() {
+  const seo = APP_PAGE_SEO['/check-in'];
+  return (
+    <>
+      <PageHelmet title={seo.title} description={seo.description} path={seo.path} />
+      <CheckIn />
+    </>
+  );
+}
 
 function AppRoutes() {
   const { loading } = useAuth();
@@ -63,6 +90,7 @@ function AppRoutes() {
   }
 
   return (
+    <KioskSessionGuard>
     <Routes>
             <Route path="/" element={<App />} />
             <Route path="/lookbook" element={<App />} />
@@ -71,7 +99,11 @@ function AppRoutes() {
             <Route path="/nail-assessment" element={<NailAssessmentPublicPage />} />
             <Route path="/booking" element={<App />} />
             <Route path="/about" element={<App />} />
-            <Route path="/check-in" element={<App />} />
+            <Route path="/check-in" element={
+              <ProtectedRoute allowedRoles={[CHECK_IN_ROLE]}>
+                <CheckInPage />
+              </ProtectedRoute>
+            } />
             <Route path="/login" element={<ClientLogin />} />
             <Route path="/register" element={<ClientRegister />} />
 
@@ -639,20 +671,21 @@ function AppRoutes() {
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+    </KioskSessionGuard>
   );
 }
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <HelmetProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <RouteDocumentTitle />
-            <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+      <ThemeEngineProvider>
+          <AuthProvider>
+            <BrowserRouter>
+              <RouteDocumentTitle />
+              <AppRoutes />
+            </BrowserRouter>
+          </AuthProvider>
+      </ThemeEngineProvider>
     </HelmetProvider>
   </StrictMode>,
 )

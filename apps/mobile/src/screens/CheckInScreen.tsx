@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { processCheckIn } from '@nail-couture/shared/services/kioskService.js';
+import { processCheckIn, completeCheckIn } from '@nail-couture/shared/services/kioskService.js';
 import { getServices } from '@nail-couture/shared/services/services.js';
 import {
   getAvailableRefreshments,
@@ -175,12 +175,16 @@ export function CheckInScreen() {
     full_name: string;
     phone: string;
     refreshmentPref?: string | null;
+    appointmentId?: string;
   }) => {
     setResult((prev) => ({
       ...prev,
       isNew: true,
       profile: profileData,
       name: profileData.full_name,
+      appointment: profileData.appointmentId
+        ? { id: profileData.appointmentId, customer_id: profileData.id }
+        : prev?.appointment,
     }));
     setWaiverCustomerName(profileData.full_name);
     setWaiverCustomerPhone(profileData.phone);
@@ -246,6 +250,11 @@ export function CheckInScreen() {
       ]);
 
       if (insertError) throw insertError;
+
+      const appointmentId = result?.appointment?.id;
+      if (appointmentId && result?.isNew) {
+        await completeCheckIn(profilePhone || phone, appointmentId);
+      }
 
       if (result?.isNew) {
         setNewUserSuccess(true);
@@ -500,14 +509,26 @@ export function CheckInScreen() {
                 <Text style={styles.textSecondary}>Cancel</Text>
               </Pressable>
               <Pressable
-                onPress={() => {
-                  setNewUserDetails({
-                    fullName: result?.name || 'Guest',
-                    refreshmentPref: (result?.appointment?.refreshment_pref as string) || '',
-                  });
-                  setNewUserSuccess(true);
+                onPress={async () => {
+                  if (!result?.appointment?.id) return;
+                  setLoading(true);
+                  setError(null);
+                  try {
+                    await completeCheckIn(phone, result.appointment.id);
+                    setNewUserDetails({
+                      fullName: result?.name || 'Guest',
+                      refreshmentPref: (result?.appointment?.refreshment_pref as string) || '',
+                    });
+                    setNewUserSuccess(true);
+                  } catch (err) {
+                    const message = err instanceof Error ? err.message : 'Failed to complete check-in';
+                    setError(message);
+                  } finally {
+                    setLoading(false);
+                  }
                 }}
-                style={[styles.buttonPrimary, { flex: 1 }]}
+                disabled={loading}
+                style={[styles.buttonPrimary, { flex: 1, opacity: loading ? 0.5 : 1 }]}
               >
                 <Text style={styles.buttonPrimaryText}>Confirm</Text>
               </Pressable>

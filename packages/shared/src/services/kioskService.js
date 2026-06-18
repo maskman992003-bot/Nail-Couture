@@ -32,6 +32,24 @@ export async function processCheckIn(phoneNumber, checkedInBy = null) {
   }
 }
 
+export async function completeCheckIn(phoneNumber, appointmentId) {
+  const cleanPhone = phoneNumber.replace(/\D/g, '')
+
+  const { data, error } = await supabase.rpc('complete_kiosk_check_in', {
+    caller_phone: cleanPhone,
+    appointment_id: appointmentId,
+  })
+
+  if (error) {
+    if (error.message?.includes('complete_kiosk_check_in') || error.code === '42883') {
+      throw new Error('Check-in completion unavailable. Run sql/096_kiosk_checking_in_status.sql in Supabase.')
+    }
+    throw error
+  }
+
+  return data
+}
+
 export async function logInventoryUsageByRefreshmentName(refreshmentName, quantityChanged, appointmentId, customerId, reason, callerPhone) {
   if (!refreshmentName) return;
 

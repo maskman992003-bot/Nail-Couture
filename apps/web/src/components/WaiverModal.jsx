@@ -169,11 +169,11 @@ export default function WaiverModal({ customerName, customerPhone, onConfirm, on
         </div>
 
         <div className="p-4 sm:p-6 border-t border-card flex-shrink-0">
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-stretch gap-2 sm:gap-3">
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-5 py-3 rounded-full border border-light text-secondary text-sm font-heading uppercase tracking-[0.24em] hover:border-theme hover:text-gold-strong transition-all"
+              className="flex-1 min-w-0 px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 min-h-[44px] rounded-full border border-light text-secondary text-[11px] min-[380px]:text-xs sm:text-sm font-heading uppercase tracking-[0.06em] min-[380px]:tracking-[0.12em] sm:tracking-[0.18em] md:tracking-[0.24em] text-center leading-snug whitespace-normal text-balance hover:border-theme hover:text-gold-strong transition-all"
             >
               Cancel
             </button>
@@ -181,7 +181,7 @@ export default function WaiverModal({ customerName, customerPhone, onConfirm, on
               type="button"
               onClick={handleConfirm}
               disabled={!canConfirm}
-              className="flex-1 px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 min-w-0 px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 min-h-[44px] rounded-full bg-gold text-charcoal text-[11px] min-[380px]:text-xs sm:text-sm font-heading uppercase tracking-[0.06em] min-[380px]:tracking-[0.12em] sm:tracking-[0.18em] md:tracking-[0.24em] text-center leading-snug whitespace-normal text-balance hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Confirm Check-In
             </button>

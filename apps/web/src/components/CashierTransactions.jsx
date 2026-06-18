@@ -45,7 +45,7 @@ export default function CashierTransactions() {
   const isDark = theme === 'dark';
   const bgClass = clsx(
     'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64',
-    isDark ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal',
+    isDark ? 'bg-primary text-primary' : 'bg-white text-charcoal',
   );
   const cardClass = isDark ? 'bg-[#1a1a1a] border-gold/20' : 'bg-white border-gold/30';
   const mutedClass = isDark ? 'text-offwhite/60' : 'text-charcoal/60';

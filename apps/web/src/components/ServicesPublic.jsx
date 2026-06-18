@@ -83,8 +83,8 @@ export default function ServicesPublic() {
     : 'border border-gold/30 text-charcoal/60 hover:border-gold hover:text-gold';
 
   return (
-    <div className={`min-h-screen w-full overflow-x-hidden ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
-      <div className={`sticky top-0 z-50 ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
+    <div className="min-h-screen w-full overflow-x-hidden bg-primary text-primary">
+      <div className="sticky top-0 z-50 bg-primary/95 backdrop-blur-sm border-b border-theme">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="text-gold font-heading text-xl">Services & Pricing</div>
         </div>

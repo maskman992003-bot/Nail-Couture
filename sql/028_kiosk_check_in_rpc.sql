@@ -40,16 +40,30 @@ BEGIN
   INTO v_appointment
   FROM appointments
   WHERE customer_id = v_profile.id
-    AND status IN ('confirmed', 'waiting', 'serving')
+    AND status IN ('confirmed', 'checking_in', 'waiting', 'serving')
   ORDER BY created_at DESC
   LIMIT 1;
 
   IF v_appointment.id IS NOT NULL THEN
-    UPDATE appointments SET
-      status = 'waiting',
-      checked_in_at = NOW(),
-      checked_in_by = COALESCE(p_checked_in_by, checked_in_by)
-    WHERE id = v_appointment.id;
+    IF v_appointment.status = 'checking_in' THEN
+      SELECT row_to_json(a.*)::jsonb INTO result
+      FROM appointments a WHERE a.id = v_appointment.id;
+
+      RETURN jsonb_build_object(
+        'is_new', false,
+        'name', v_profile.full_name,
+        'profile', row_to_json(v_profile)::jsonb,
+        'appointment', result
+      );
+    END IF;
+
+    IF v_appointment.status = 'confirmed' THEN
+      UPDATE appointments SET
+        status = 'checking_in',
+        checked_in_at = NULL,
+        checked_in_by = COALESCE(p_checked_in_by, checked_in_by)
+      WHERE id = v_appointment.id;
+    END IF;
 
     SELECT row_to_json(a.*)::jsonb INTO result
     FROM appointments a WHERE a.id = v_appointment.id;
@@ -65,13 +79,11 @@ BEGIN
   INSERT INTO appointments (
     customer_id,
     status,
-    checked_in_at,
     checked_in_by,
     booking_type
   ) VALUES (
     v_profile.id,
-    'waiting',
-    NOW(),
+    'checking_in',
     p_checked_in_by,
     'walk_in'
   )

@@ -151,7 +151,7 @@ export default function CustomerGiftCards() {
 
   const bgClass = clsx(
     'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64',
-    isDark ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal',
+    isDark ? 'bg-primary text-primary' : 'bg-white text-charcoal',
   );
   const inputClass = isDark
     ? 'w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg'

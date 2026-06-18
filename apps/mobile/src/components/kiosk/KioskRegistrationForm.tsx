@@ -32,6 +32,7 @@ type KioskRegistrationFormProps = {
     full_name: string;
     phone: string;
     refreshmentPref?: string | null;
+    appointmentId?: string;
   }) => void;
 };
 
@@ -122,17 +123,16 @@ export function KioskRegistrationForm({
         buildAppointmentServicePayload(selectedServices, []);
       const totalPrice = selectedServices.reduce((sum, service) => sum + (service.price || 0), 0);
 
-      const { error: appointmentError } = await getSupabase().from('appointments').insert({
+      const { data: appointment, error: appointmentError } = await getSupabase().from('appointments').insert({
         customer_id: profileId,
         service_id: selectedServices[0]?.id || null,
         add_ons: addOnsValue,
         selected_service_names: selectedServiceNames,
         final_price: totalPrice,
-        status: 'waiting',
-        checked_in_at: new Date().toISOString(),
+        status: 'checking_in',
         refreshment_pref: safeRefreshmentPref,
         booking_type: 'walk_in',
-      });
+      }).select().single();
 
       if (appointmentError) throw appointmentError;
 
@@ -141,6 +141,7 @@ export function KioskRegistrationForm({
         full_name: finalProfile.full_name,
         phone: finalProfile.phone,
         refreshmentPref: safeRefreshmentPref,
+        appointmentId: appointment.id,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong';

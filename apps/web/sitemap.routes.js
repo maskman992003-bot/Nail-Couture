@@ -7,7 +7,6 @@ const corePublicRoutes = [
   '/services',
   '/booking',
   '/about',
-  '/check-in',
 ];
 
 /** Wellness tools — public fitness and nail health assessments */

@@ -1,6 +1,8 @@
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ShimmerSurface } from './ShimmerSurface';
 import { useThemeStyles } from '../../theme/useThemeStyles';
+
+const logoImage = require('../../assets/NC.jpg');
 
 type PromoRecord = {
   id: string;
@@ -69,6 +71,48 @@ export function PromoOfferCard({ promo, onCopy, preview = false }: PromoOfferCar
   );
 }
 
+function PromoDetailHeader() {
+  const styles = useThemeStyles();
+
+  return (
+    <View style={headerStyles.wrap}>
+      <View style={headerStyles.logoWrap}>
+        <Image source={logoImage} style={headerStyles.logo} accessibilityLabel="Nail Couture" />
+      </View>
+      <View style={headerStyles.titleWrap} pointerEvents="none">
+        <Text style={[styles.textGold, headerStyles.title]}>Salon Offer</Text>
+      </View>
+    </View>
+  );
+}
+
+const headerStyles = StyleSheet.create({
+  wrap: {
+    position: 'relative',
+    minHeight: 44,
+    marginBottom: 20,
+    justifyContent: 'center',
+  },
+  logoWrap: {
+    alignSelf: 'flex-start',
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  titleWrap: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 10,
+    letterSpacing: 2.8,
+    textTransform: 'uppercase',
+  },
+});
+
 type PromoDetailModalProps = {
   promo: PromoRecord | null;
   visible: boolean;
@@ -92,14 +136,14 @@ export function PromoDetailModal({ promo, visible, onClose, onCopy, preview = fa
         <ShimmerSurface
           active={Boolean(promo.show_shimmer_cta)}
           borderRadius={16}
-          style={[styles.card, { padding: 20, maxWidth: 480, alignSelf: 'center', width: '100%' }]}
+          style={[styles.card, { position: 'relative', padding: 20, maxWidth: 480, alignSelf: 'center', width: '100%' }]}
         >
           {!preview ? (
-            <Pressable onPress={onClose} style={{ alignSelf: 'flex-end', marginBottom: 8 }}>
+            <Pressable onPress={onClose} style={{ position: 'absolute', top: 16, right: 16, zIndex: 1 }}>
               <Text style={[styles.textSecondary, { fontSize: 22, lineHeight: 22 }]}>×</Text>
             </Pressable>
           ) : null}
-          <Text style={[styles.textGold, { fontSize: 10, letterSpacing: 2.5, marginBottom: 12 }]}>SALON OFFER</Text>
+          <PromoDetailHeader />
           <PromoOfferCard promo={promo} onCopy={onCopy} preview={preview} />
         </ShimmerSurface>
         </Pressable>

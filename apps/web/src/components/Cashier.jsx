@@ -83,7 +83,7 @@ export default function Cashier() {
 
   const bgClass = clsx(
     'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64',
-    theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'
+    theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'
   );
   const headerBorderClass = clsx('px-6 sm:px-8 py-4 border-b', theme === 'dark' ? 'border-gold/10' : 'border-gold/30');
   const textColor = clsx('font-medium', theme === 'dark' ? 'text-offwhite' : 'text-charcoal');

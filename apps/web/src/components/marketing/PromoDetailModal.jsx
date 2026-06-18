@@ -1,5 +1,6 @@
 import clsx from 'clsx';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useAppTheme } from '../../hooks/useAppTheme.js';
+import PromoDetailHeader from './PromoDetailHeader.jsx';
 import PromoOfferCard from './PromoOfferCard';
 
 export default function PromoDetailModal({
@@ -8,7 +9,7 @@ export default function PromoDetailModal({
   onCopy,
   preview = false,
 }) {
-  const { theme } = useTheme();
+  const { themeConfig } = useAppTheme();
 
   if (!promo) return null;
 
@@ -24,11 +25,13 @@ export default function PromoDetailModal({
         aria-labelledby="promo-detail-title"
         className={clsx(
           'relative w-full max-w-lg rounded-2xl border p-6 shadow-xl motion-reduce:transition-none animate-nc-slide-in-up',
-          theme === 'dark'
-            ? 'border-gold/25 bg-charcoal text-offwhite'
-            : 'border-gold/35 bg-white text-charcoal',
           promo.show_shimmer_cta && 'nc-shimmer-surface',
         )}
+        style={{
+          borderColor: themeConfig.borderColor,
+          backgroundColor: themeConfig.cardStyle.background,
+          color: themeConfig.textPrimary,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {onClose ? (
@@ -42,7 +45,7 @@ export default function PromoDetailModal({
           </button>
         ) : null}
 
-        <p className="text-[10px] uppercase tracking-[0.28em] text-gold mb-4">Salon Offer</p>
+        <PromoDetailHeader themeConfig={themeConfig} />
         <PromoOfferCard
           promo={promo}
           onCopy={onCopy}

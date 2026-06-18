@@ -553,7 +553,7 @@ export default function CashierCheckout() {
   const isDark = theme === 'dark';
   const bgClass = clsx(
     'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64',
-    isDark ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'
+    isDark ? 'bg-primary text-primary' : 'bg-white text-charcoal'
   );
   const mutedClass = isDark ? 'text-offwhite/60' : 'text-charcoal/60';
   const emptyCardClass = isDark ? 'bg-[#1a1a1a]' : 'bg-charcoal/5 border border-gold/20';

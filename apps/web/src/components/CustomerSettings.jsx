@@ -52,7 +52,7 @@ const formatPhone = (phone) => {
 export default function CustomerSettings() {
   const navigate = useNavigate();
   const { user, login, loading: authLoading } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const { refreshments, loading: refreshmentsLoading } = useAvailableRefreshments();
 
   const [loading, setLoading] = useState(true);
@@ -66,7 +66,7 @@ export default function CustomerSettings() {
   const [commPrefsAvailable, setCommPrefsAvailable] = useState(true);
   const [commPrefsSaving, setCommPrefsSaving] = useState(false);
 
-  const shellClass = theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal';
+  const shellClass = theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal';
   const cardClass =
     theme === 'dark'
       ? 'rounded-2xl border border-white/10 bg-white/[0.03] p-6'
@@ -403,21 +403,6 @@ export default function CustomerSettings() {
               Run sql/024_phase3_loyalty_engagement.sql in Supabase to enable communication preferences.
             </p>
           )}
-        </div>
-
-        <div className={`${cardClass} mb-6 flex items-center justify-between gap-4`}>
-          <div>
-            <p className={theme === 'dark' ? 'text-offwhite font-medium' : 'text-charcoal font-medium'}>Dark Mode</p>
-            <p className={theme === 'dark' ? 'text-offwhite/50 text-xs mt-1' : 'text-charcoal/50 text-xs mt-1'}>
-              Toggle app theme
-            </p>
-          </div>
-          <ToggleSwitch
-            checked={theme === 'dark'}
-            theme={theme}
-            ariaLabel={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            onChange={() => toggleTheme()}
-          />
         </div>
 
         <NotificationPreferencesPanel userPhone={user?.phone || profile?.phone} role="customer" theme={theme} />

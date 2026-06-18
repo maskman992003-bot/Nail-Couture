@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import BrandLogo from './BrandLogo.jsx';
 
 const statusOptions = ['pending', 'confirmed', 'completed', 'noshow'];
 
@@ -57,7 +58,7 @@ export default function AdminDashboard() {
       <nav className="bg-charcoal border-b border-gold/30 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link to="/"><img src="/NC.jpg" alt="Nail Couture" className="h-16 w-auto" /></Link>
+            <Link to="/"><BrandLogo className="h-16 w-auto" rounded={false} alt="Nail Couture" /></Link>
             <span className="text-gold/60 text-sm">Admin Dashboard</span>
           </div>
           <div className="flex items-center gap-4">

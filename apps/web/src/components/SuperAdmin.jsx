@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useAppTheme } from '../hooks/useAppTheme.js';
 import { STAFF_GIFT_CARDS } from '@nail-couture/shared/constants/featureFlags';
 import { getGiftCardsPath, getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from './Sidebar';
@@ -15,6 +15,7 @@ import {
 } from '@nail-couture/shared/utils/appointmentHelpers';
 import { loadVisitServiceSummary } from '@nail-couture/shared/utils/appointmentServiceHistory';
 import { fetchAppointmentVisitNotes } from '@nail-couture/shared/utils/appointmentVisitNotes';
+import VipFoundingListCard from './VipFoundingListCard.jsx';
 
 function prefetchAppointmentDetails(appointment) {
   if (!appointment?.id) return;
@@ -42,7 +43,7 @@ export default function SuperAdmin() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { theme } = useTheme();
+  const { theme, themeConfig } = useAppTheme();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ todayRevenue: 0, activeTechnicians: 0, waitingCustomers: 0, completedToday: 0 });
   const [recentAppointments, setRecentAppointments] = useState([]);
@@ -172,6 +173,12 @@ export default function SuperAdmin() {
     }
   }, [location.pathname]);
 
+  const panelCardStyle = {
+    backgroundColor: themeConfig.backgroundSecondary,
+    border: `1px solid ${themeConfig.borderColor}`,
+    borderRadius: themeConfig.cardStyle.borderRadius,
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
@@ -187,26 +194,26 @@ export default function SuperAdmin() {
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
-         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: theme === 'dark' ? 'rgba(197, 160, 89, 0.1)' : 'rgba(197, 160, 89, 0.2)' }}>
+         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-theme">
         <div className="flex items-center justify-between">
               <div>
-                <h1 className="font-heading text-3xl text-gold">
+                <h1 className="font-heading text-3xl text-gold-strong" style={{ fontFamily: themeConfig.fonts.heading }}>
                   {user?.role === 'owner' ? 'Owner Dashboard' : user?.role === 'partner' ? 'Partner Dashboard' : 'Super Admin'}
                 </h1>
-                <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Welcome back, {user?.full_name}</p>
+                <p className="text-sm mt-1 text-secondary">Welcome back, {user?.full_name}</p>
               </div>
-             <div className={`text-sm ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>
+             <div className="text-sm text-muted">
                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
              </div>
            </div>
          </div>
 
          {user?.role !== 'owner' && (
-           <div className="px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row gap-2 border-b" style={{ borderColor: theme === 'dark' ? 'rgba(197, 160, 89, 0.1)' : 'rgba(197, 160, 89, 0.2)' }}>
-             <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-gold text-charcoal' : theme === 'dark' ? 'bg-offwhite/10 text-offwhite/60 hover:bg-offwhite/20' : 'bg-charcoal/10 text-charcoal/60 hover:bg-charcoal/20'}`}>
+           <div className="px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row gap-2 border-b border-theme">
+             <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-gold-strong text-primary' : 'bg-secondary text-secondary hover:text-primary border border-theme'}`}>
                Dashboard
              </button>
-             <button onClick={() => setActiveTab('staff')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'staff' ? 'bg-gold text-charcoal' : theme === 'dark' ? 'bg-offwhite/10 text-offwhite/60 hover:bg-offwhite/20' : 'bg-charcoal/10 text-charcoal/60 hover:bg-charcoal/20'}`}>
+             <button onClick={() => setActiveTab('staff')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'staff' ? 'bg-gold-strong text-primary' : 'bg-secondary text-secondary hover:text-primary border border-theme'}`}>
                Staff
              </button>
            </div>
@@ -215,30 +222,36 @@ export default function SuperAdmin() {
         <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
           {activeTab === 'dashboard' && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div className={`border p-6 rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
-                  <div className={`text-sm mb-1 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Today's Revenue</div>
-                  <div className="text-3xl font-heading text-gold">${stats.todayRevenue.toFixed(0)}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                <div className="border p-6" style={panelCardStyle}>
+                  <div className="text-sm mb-1 text-secondary">Today's Revenue</div>
+                  <div className="text-3xl font-heading text-gold-strong">${stats.todayRevenue.toFixed(0)}</div>
                 </div>
-                <div className={`border p-6 rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
-                  <div className={`text-sm mb-1 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Active Technicians</div>
-                  <div className={`text-3xl font-heading ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{stats.activeTechnicians}</div>
+                <div className="border p-6" style={panelCardStyle}>
+                  <div className="text-sm mb-1 text-secondary">Active Technicians</div>
+                  <div className="text-3xl font-heading text-primary">{stats.activeTechnicians}</div>
                 </div>
-                <div className={`border p-6 rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
-                  <div className={`text-sm mb-1 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Waiting</div>
-                  <div className="text-3xl font-heading text-yellow-400">{stats.waitingCustomers}</div>
+                <div className="border p-6" style={panelCardStyle}>
+                  <div className="text-sm mb-1 text-secondary">Waiting</div>
+                  <div className="text-3xl font-heading text-gold-strong">{stats.waitingCustomers}</div>
                 </div>
-                <div className={`border p-6 rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
-                  <div className={`text-sm mb-1 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>Completed</div>
-                  <div className="text-3xl font-heading text-green-400">{stats.completedToday}</div>
+                <div className="border p-6" style={panelCardStyle}>
+                  <div className="text-sm mb-1 text-secondary">Completed</div>
+                  <div className="text-3xl font-heading text-primary">{stats.completedToday}</div>
                 </div>
+                <VipFoundingListCard
+                  phone={user?.phone}
+                  role={user?.role}
+                  theme={theme}
+                  panelStyle={panelCardStyle}
+                />
               </div>
 
               <div className="grid lg:grid-cols-3 gap-6">
-                <div className={`lg:col-span-2 border rounded-xl p-6 ${theme === 'dark' ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30'}`}>
+                <div className="lg:col-span-2 border p-6" style={panelCardStyle}>
 <div className="flex items-center justify-between mb-4">
-  <h2 className={`font-heading text-xl ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Today's Activity</h2>
-  <Link to={user?.role === 'owner' ? '/owner/lobby' : user?.role === 'partner' ? '/partner/lobby' : '/superadmin/lobby'} className="text-gold text-sm hover:underline">View Lobby</Link>
+  <h2 className="font-heading text-xl text-primary" style={{ fontFamily: themeConfig.fonts.heading }}>Today's Activity</h2>
+  <Link to={user?.role === 'owner' ? '/owner/lobby' : user?.role === 'partner' ? '/partner/lobby' : '/superadmin/lobby'} className="text-gold-strong text-sm hover:underline">View Lobby</Link>
 </div>
                <div className="space-y-3">
                      {recentAppointments.length > 0 ? recentAppointments.map((appt) => {
@@ -254,16 +267,16 @@ export default function SuperAdmin() {
                           setSelectedAppointment(appt);
                           setIsDetailsModalOpen(true);
                         }}
-                        className={`grid grid-cols-1 gap-3 md:grid-cols-[1.5fr_2fr_1fr] items-center p-3 rounded-lg w-full text-left ${theme === 'dark' ? 'bg-offwhite/5' : 'bg-charcoal/5'}`}
+                        className="grid grid-cols-1 gap-3 md:grid-cols-[1.5fr_2fr_1fr] items-center p-3 rounded-lg w-full text-left bg-primary/40 border border-theme"
                       >
                         <div className="min-w-0">
-                          <div className={`font-medium truncate ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{appt.customer?.full_name || appt.customer?.phone || 'Guest'}</div>
-                          <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>{getAppointmentCheckInLabel(appt)}</div>
+                          <div className="font-medium truncate text-primary">{appt.customer?.full_name || appt.customer?.phone || 'Guest'}</div>
+                          <div className="text-xs mt-1 text-muted">{getAppointmentCheckInLabel(appt)}</div>
                         </div>
 
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 overflow-hidden">
-                            <div className={`truncate text-sm ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>{primaryService}</div>
+                            <div className="truncate text-sm text-secondary">{primaryService}</div>
                                 {extraServiceCount > 0 && (
                                   <span className="flex-shrink-0 rounded-full border border-gold/30 bg-gold/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">
                                     +{extraServiceCount} more
@@ -276,12 +289,12 @@ export default function SuperAdmin() {
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${statusColors[appt.status]}`}>
                                 {statusLabels[appt.status]}
                               </span>
-                              <div className="text-gold text-sm font-heading mt-2">${getAppointmentFinalPrice(appt)}</div>
+                              <div className="text-gold-strong text-sm font-heading mt-2">${getAppointmentFinalPrice(appt)}</div>
                             </div>
                           </button>
                         );
                      }) : (
-                       <p className={`text-center py-8 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No appointments today</p>
+                       <p className="text-center py-8 text-muted">No appointments today</p>
                      )}
                    </div>
                 </div>

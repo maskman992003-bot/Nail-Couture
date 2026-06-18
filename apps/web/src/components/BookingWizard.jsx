@@ -398,7 +398,7 @@ function BookingWizard() {
   };
 
   return (
-    <section id="book" className={`py-12 sm:py-16 md:py-24 px-4 sm:px-6 ${theme === 'dark' ? 'bg-charcoal' : 'bg-offwhite'}`}>
+    <section id="book" className="py-24 lg:py-32 px-4 sm:px-6 bg-[#FBF9F6]">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className={`font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-2 sm:mb-4 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>Book Your Appointment</h2>

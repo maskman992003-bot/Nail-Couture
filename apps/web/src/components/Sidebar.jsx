@@ -1,6 +1,7 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useAppTheme } from '../hooks/useAppTheme.js';
+import BrandLogo from './BrandLogo.jsx';
 import { supabase } from '../lib/supabase';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -14,11 +15,43 @@ import { getSettingsPath } from '@nail-couture/shared/utils/routes';
 import { fetchPendingAssignmentCount } from '@nail-couture/shared/utils/technicianQueue';
 import { modalBtnPrimary, modalBtnSecondary } from './AppModal';
 
-const GOLD_GRADIENT = 'linear-gradient(135deg, #c5a059, #f0d78c)';
-const ACTIVE_NAV_GRADIENT = {
-  dark: 'linear-gradient(135deg, rgba(197, 160, 89, 0.28), rgba(240, 215, 140, 0.12))',
-  light: 'linear-gradient(135deg, rgba(197, 160, 89, 0.22), rgba(240, 215, 140, 0.14))',
-};
+const ACTIVE_NAV_GRADIENT_FALLBACK = 'linear-gradient(135deg, rgba(197, 160, 89, 0.22), rgba(240, 215, 140, 0.12))';
+
+function getNavLinkClasses(isActive) {
+  const base =
+    'flex w-full min-h-[44px] shrink-0 items-center gap-3 overflow-hidden rounded-full px-3 py-2 transition-colors duration-200 touch-manipulation md:justify-center lg:justify-start lg:gap-3 lg:px-4 lg:py-2.5';
+  if (isActive) {
+    return `${base} text-gold-strong font-medium`;
+  }
+  return `${base} text-secondary hover:text-primary hover:bg-primary/5`;
+}
+
+function getMobileNavLinkClasses(isActive) {
+  const base =
+    'flex min-h-[34px] min-w-[42px] shrink-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-full px-2 py-1 transition-colors duration-200 touch-manipulation';
+  if (isActive) {
+    return `${base} text-gold-strong font-medium`;
+  }
+  return `${base} text-secondary hover:text-primary hover:bg-primary/5`;
+}
+
+function NavIcon({ iconPath, showBadge, badgeCount, compact = false, accentGradient }) {
+  return (
+    <span className={`relative flex shrink-0 items-center justify-center ${compact ? 'size-5' : 'size-8'}`}>
+      {renderIcon(iconPath, compact)}
+      {showBadge ? (
+        <span
+          className={`pointer-events-none absolute top-0 right-0 flex items-center justify-center rounded-full font-bold text-charcoal ${
+            compact ? 'min-w-[12px] h-3 text-[6px] px-0.5' : 'min-w-[16px] h-4 text-[8px] px-1'
+          }`}
+          style={{ background: accentGradient }}
+        >
+          {badgeCount > 9 ? '9+' : badgeCount}
+        </span>
+      ) : null}
+    </span>
+  );
+}
 
 function renderIcon(iconPath, compact = false) {
   return (
@@ -28,59 +61,16 @@ function renderIcon(iconPath, compact = false) {
   );
 }
 
-function getNavLinkClasses(isActive, theme) {
-  const base =
-    'flex w-full min-h-[44px] shrink-0 items-center gap-3 overflow-hidden rounded-full px-3 py-2 transition-colors duration-200 touch-manipulation md:justify-center lg:justify-start lg:gap-3 lg:px-4 lg:py-2.5';
-  if (isActive) {
-    return `${base} text-gold font-medium`;
-  }
-  return `${base} ${
-    theme === 'dark'
-      ? 'text-offwhite/50 hover:text-offwhite/90 hover:bg-offwhite/[0.06]'
-      : 'text-charcoal/65 hover:text-charcoal hover:bg-charcoal/[0.05]'
-  }`;
-}
-
-function getMobileNavLinkClasses(isActive, theme) {
-  const base =
-    'flex min-h-[34px] min-w-[42px] shrink-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-full px-2 py-1 transition-colors duration-200 touch-manipulation';
-  if (isActive) {
-    return `${base} text-gold font-medium`;
-  }
-  return `${base} ${
-    theme === 'dark'
-      ? 'text-offwhite/50 hover:text-offwhite/90 hover:bg-offwhite/[0.06]'
-      : 'text-charcoal/65 hover:text-charcoal hover:bg-charcoal/[0.05]'
-  }`;
-}
-
-function NavIcon({ iconPath, showBadge, badgeCount, compact = false }) {
-  return (
-    <span className={`relative flex shrink-0 items-center justify-center ${compact ? 'size-5' : 'size-8'}`}>
-      {renderIcon(iconPath, compact)}
-      {showBadge ? (
-        <span
-          className={`pointer-events-none absolute top-0 right-0 flex items-center justify-center rounded-full font-bold text-charcoal ${
-            compact ? 'min-w-[12px] h-3 text-[6px] px-0.5' : 'min-w-[16px] h-4 text-[8px] px-1'
-          }`}
-          style={{ background: GOLD_GRADIENT }}
-        >
-          {badgeCount > 9 ? '9+' : badgeCount}
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
-function getNavLinkStyle(isActive, theme) {
+function getNavLinkStyle(isActive, accentGradient) {
   if (!isActive) return undefined;
   return {
-    background: ACTIVE_NAV_GRADIENT[theme === 'dark' ? 'dark' : 'light'],
+    background: accentGradient || ACTIVE_NAV_GRADIENT_FALLBACK,
   };
 }
 
 function UserMenuDropdown({
   theme,
+  accentGradient,
   unreadCount,
   onNavigateSettings,
   onToggleTheme,
@@ -117,7 +107,7 @@ function UserMenuDropdown({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
           </svg>
         )}
-        {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+        {theme === 'dark' ? 'Light mode' : 'Dark mode'}
       </button>
       <button
         type="button"
@@ -130,7 +120,7 @@ function UserMenuDropdown({
         </svg>
         Notifications
         {unreadCount > 0 && (
-          <span className="ml-auto min-w-[16px] h-4 flex items-center justify-center rounded-full text-[8px] font-bold text-charcoal" style={{ background: GOLD_GRADIENT }}>
+          <span className="ml-auto min-w-[16px] h-4 flex items-center justify-center rounded-full text-[8px] font-bold text-charcoal" style={{ background: accentGradient }}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -188,7 +178,7 @@ function computeUserMenuPosition(anchorEl) {
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, themeConfig, toggleTheme } = useAppTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
@@ -403,12 +393,10 @@ export default function Sidebar() {
     navigate('/login');
   };
 
-  const sidebarBg = theme === 'dark' ? '#0a0a0a' : '#fdf8f0';
-  const borderColor = theme === 'dark' ? 'rgba(197, 160, 89, 0.14)' : 'rgba(197, 160, 89, 0.22)';
-  const sidebarShadow =
-    theme === 'dark'
-      ? '0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(240, 215, 140, 0.06)'
-      : '0 12px 40px rgba(197, 160, 89, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.85)';
+  const sidebarBg = themeConfig.backgroundSecondary;
+  const borderColor = themeConfig.borderColor;
+  const accentGradient = themeConfig.accentGradient;
+  const sidebarShadow = themeConfig.layout.sidebarShadow;
 
   return (
     <>
@@ -428,9 +416,9 @@ export default function Sidebar() {
         >
           <div
             className="flex items-center justify-center rounded-full p-1"
-            style={{ boxShadow: '0 0 0 1px rgba(197, 160, 89, 0.2)' }}
+            style={{ boxShadow: `0 0 0 1px ${borderColor}` }}
           >
-            <img src="/NC.jpg" alt="Nail Couture" className="h-8 w-8 lg:h-10 lg:w-10 rounded-full" />
+            <BrandLogo className="h-8 w-8 lg:h-10 lg:w-10" />
           </div>
         </div>
 
@@ -452,11 +440,11 @@ export default function Sidebar() {
                     <NavLink
                       to={item.href}
                       end={item.id === 'home'}
-                      className={({ isActive }) => getNavLinkClasses(isActive, theme)}
-                      style={({ isActive }) => getNavLinkStyle(isActive, theme)}
+                      className={({ isActive }) => getNavLinkClasses(isActive)}
+                      style={({ isActive }) => getNavLinkStyle(isActive, accentGradient)}
                       onClick={closeUserMenu}
                     >
-                      <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} />
+                      <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} accentGradient={accentGradient} />
                       <span className="hidden text-sm font-medium tracking-wide whitespace-nowrap lg:inline">
                         {item.label}
                       </span>
@@ -479,8 +467,8 @@ export default function Sidebar() {
                 showUserMenu && userMenuSource === 'desktop' ? 'bg-offwhite/[0.04]' : ''
               }`}
             >
-              <div className="relative w-9 h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(197, 160, 89, 0.15)', boxShadow: 'inset 0 0 0 1px rgba(197, 160, 89, 0.25)' }}>
-                <span className="text-gold text-xs lg:text-sm font-heading">{initials || '?'}</span>
+              <div className="relative w-9 h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: `${themeConfig.accentColor}26`, boxShadow: `inset 0 0 0 1px ${themeConfig.borderColor}` }}>
+                <span className="text-gold-strong text-xs lg:text-sm font-heading">{initials || '?'}</span>
                 <NotificationBell
                   unreadCount={unreadCount}
                   ring={bellRing}
@@ -533,11 +521,11 @@ export default function Sidebar() {
                     <NavLink
                       to={item.href}
                       end={item.id === 'home'}
-                      className={({ isActive }) => getMobileNavLinkClasses(isActive, theme)}
-                      style={({ isActive }) => getNavLinkStyle(isActive, theme)}
+                      className={({ isActive }) => getMobileNavLinkClasses(isActive)}
+                      style={({ isActive }) => getNavLinkStyle(isActive, accentGradient)}
                       onClick={closeUserMenu}
                     >
-                      <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} compact />
+                      <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} compact accentGradient={accentGradient} />
                       <span className="max-w-[52px] truncate text-center text-[7px] font-medium leading-none tracking-wide">
                         {item.label}
                       </span>
@@ -567,7 +555,7 @@ export default function Sidebar() {
               }`}
               style={
                 showUserMenu && userMenuSource === 'mobile'
-                  ? { background: ACTIVE_NAV_GRADIENT[theme === 'dark' ? 'dark' : 'light'] }
+                  ? { background: accentGradient || ACTIVE_NAV_GRADIENT_FALLBACK }
                   : undefined
               }
             >
@@ -614,6 +602,7 @@ export default function Sidebar() {
           >
             <UserMenuDropdown
               theme={theme}
+              accentGradient={accentGradient}
               unreadCount={unreadCount}
               textSize={userMenuSource === 'mobile' ? 'text-xs' : 'text-sm'}
               onNavigateSettings={() => {

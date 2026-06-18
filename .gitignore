@@ -24,5 +24,8 @@ dist-ssr
 *.sw?
 .env
 
+# Local-only docs (not for version control)
+docs/FULL_TESTING_PLAN.md
+
 # Local Playwright promo chip verification output
 scripts/.promo-verify/

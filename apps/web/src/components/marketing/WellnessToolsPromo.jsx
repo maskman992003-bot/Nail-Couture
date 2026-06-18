@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { Activity, Beaker } from 'lucide-react';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useAppTheme } from '../../hooks/useAppTheme.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { getFitnessAssessmentPath, getNailAssessmentPath } from '@nail-couture/shared/utils/routes';
 
@@ -27,7 +27,7 @@ const TOOLS = [
 ];
 
 export default function WellnessToolsPromo({ className, id = 'wellness-tools', compact = false }) {
-  const { theme } = useTheme();
+  const { themeConfig } = useAppTheme();
   const { user } = useAuth();
 
   const hrefs = {
@@ -36,18 +36,14 @@ export default function WellnessToolsPromo({ className, id = 'wellness-tools', c
   };
 
   const cardClass = clsx(
-    'group rounded-2xl border p-6 transition-all duration-300 hover:border-gold/40 hover:-translate-y-0.5',
-    theme === 'dark'
-      ? 'border-gold/20 bg-offwhite/[0.02] hover:bg-offwhite/[0.04]'
-      : 'border-gold/30 bg-white hover:bg-gold/[0.03]',
+    'group rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-0.5 bg-card border-card hover:border-gold-strong/40',
   );
 
   return (
     <section
       id={id}
       className={clsx(
-        'py-20 px-4 sm:px-6',
-        theme === 'dark' ? 'bg-charcoal' : 'bg-cream',
+        'py-20 px-4 sm:px-6 bg-primary',
         className,
       )}
     >
@@ -55,8 +51,8 @@ export default function WellnessToolsPromo({ className, id = 'wellness-tools', c
         {!compact && (
           <div className="text-center mb-12">
             <p className="text-[10px] uppercase tracking-[0.28em] text-gold mb-3">Wellness Tools</p>
-            <h2 className="font-heading text-3xl md:text-4xl text-gold mb-3">Plan Your Care in Real Time</h2>
-            <p className={`text-sm max-w-2xl mx-auto ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>
+            <h2 className="font-heading text-3xl md:text-4xl text-primary mb-3" style={{ fontFamily: themeConfig.fonts.heading }}>Plan Your Care in Real Time</h2>
+            <p className="text-sm max-w-2xl mx-auto text-secondary">
               Free interactive dashboards for nail diagnostics and fitness metrics. Results update instantly as you
               adjust your inputs — save to your profile when you are logged in.
             </p>
@@ -79,7 +75,7 @@ export default function WellnessToolsPromo({ className, id = 'wellness-tools', c
                     <Icon className="h-5 w-5" aria-hidden />
                   </div>
                 </div>
-                <p className={`text-sm mb-5 leading-relaxed ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>
+                <p className="text-sm mb-5 leading-relaxed text-secondary">
                   {tool.description}
                 </p>
                 <span className="inline-flex items-center text-sm font-medium text-gold group-hover:underline">

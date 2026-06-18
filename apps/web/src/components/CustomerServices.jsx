@@ -116,7 +116,7 @@ export default function CustomerServices() {
     : 'border border-gold/30 text-charcoal/60 hover:border-gold hover:text-gold';
 
   return (
-    <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-[#0B0B0C] text-white' : 'bg-white text-charcoal'}`}>
+    <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-5xl mx-auto">
         <div className="border-b border-gold/10 pb-6 mb-6">
@@ -189,10 +189,10 @@ export default function CustomerServices() {
                           className={
                             service.is_coming_soon
                               ? theme === 'dark'
-                                ? 'bg-[#0B0B0C]/40 border border-gold/25 border-dashed rounded-xl p-5 opacity-80'
+                                ? 'bg-primary/40 border border-gold/25 border-dashed rounded-xl p-5 opacity-80'
                                 : 'bg-white/60 border border-gold/25 border-dashed rounded-xl p-5 opacity-80'
                               : theme === 'dark'
-                                ? 'bg-[#0B0B0C]/60 border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all'
+                                ? 'bg-primary/60 border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all'
                                 : 'bg-white border border-gold/10 rounded-xl p-5 hover:border-gold/30 transition-all'
                           }
                         >

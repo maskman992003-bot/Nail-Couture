@@ -1,7 +1,12 @@
 export const STAFF_ROLES = ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'];
+export const CHECK_IN_ROLE = 'check_in';
 
 export function isStaffRole(role) {
   return STAFF_ROLES.includes(role);
+}
+
+export function isCheckInRole(role) {
+  return role === CHECK_IN_ROLE;
 }
 
 export function getHomePath(role) {
@@ -12,6 +17,7 @@ export function getHomePath(role) {
     case 'admin': return '/admin';
     case 'cashier': return '/cashier';
     case 'technician': return '/technician';
+    case 'check_in': return '/check-in';
     case 'customer': return '/portal';
     default: return '/login';
   }
