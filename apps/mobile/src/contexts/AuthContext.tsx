@@ -9,6 +9,9 @@ import {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AUTH_STORAGE_KEY, normalizeUser } from '@nail-couture/shared/auth/user.js';
+import { enrichWalletSnapshot, fetchWalletSnapshot } from '@nail-couture/shared/utils/loyaltyWallet.js';
+import { setCachedWalletSnapshot } from '../features/wallet/hooks/useWalletCache';
+import type { WalletSnapshot } from '../features/wallet/types';
 
 type User = ReturnType<typeof normalizeUser>;
 
@@ -53,6 +56,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userData = normalizeUser(profile);
     AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
     setUser(userData);
+    if (userData.id) {
+      fetchWalletSnapshot(userData.id)
+        .then((snap) => {
+          if (snap?.success) {
+            return setCachedWalletSnapshot(userData.id, enrichWalletSnapshot(snap) as WalletSnapshot);
+          }
+          return undefined;
+        })
+        .catch(() => undefined);
+    }
   }, []);
 
   const logout = useCallback(() => {

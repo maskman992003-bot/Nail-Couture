@@ -8,6 +8,7 @@ import { useNotifications, type AppNotification } from '../hooks/useNotification
 import { useThemeStyles } from '../theme/useThemeStyles';
 import { NotificationPanel } from './NotificationPanel';
 import { BELL_PATH, HeaderIcon, LOGOUT_PATH, LogoutConfirmModal } from './LogoutConfirmModal';
+import { WaxSealBadge } from '../features/wallet/components/WaxSealBadge';
 import { Icon } from './icons/Icon';
 
 export function UserHeaderActions() {
@@ -120,6 +121,14 @@ export function UserHeaderActions() {
           }}
         >
           <Text style={[styles.textGold, { fontSize: 12, fontWeight: '600' }]}>{initials}</Text>
+          <View style={{ position: 'absolute', bottom: -2, right: -4 }}>
+            <WaxSealBadge
+              foundingType={user.founding_type}
+              foundingSpot={user.founding_spot}
+              pending={!user.founding_spot}
+              size={16}
+            />
+          </View>
         </Pressable>
       </View>
 

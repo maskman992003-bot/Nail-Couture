@@ -22,6 +22,11 @@ import { fetchVisitTechnicianData } from '@nail-couture/shared/utils/visitTechni
 import Sidebar from './Sidebar';
 import CheckoutServiceSummary from './CheckoutServiceSummary';
 import VisitTechnicianManager from './VisitTechnicianManager';
+import {
+  modalBtnPrimary,
+  modalBtnSecondary,
+  modalInputClass,
+} from './AppModal';
 import clsx from 'clsx';
 
 const statusColors = {
@@ -140,14 +145,10 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
     setDiscountType('percent');
   }, [appointment?.id, hasReservedReward, appointment?.loyalty_discount_amount]);
 
-  const isDark = theme === 'dark';
-  const modalBg = isDark ? 'bg-[#1a1a1a] border-gold/10' : 'bg-white border-gold/30';
-  const inputClass = isDark
-    ? 'w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg'
-    : 'w-full px-4 py-3 bg-charcoal/5 border border-charcoal/20 text-charcoal rounded-lg';
-  const labelClass = isDark ? 'block text-offwhite/80 text-sm mb-2' : 'block text-charcoal/80 text-sm mb-2';
-  const mutedClass = isDark ? 'text-offwhite/60' : 'text-charcoal/60';
-  const textClass = isDark ? 'text-offwhite' : 'text-charcoal';
+  const labelClass = 'block text-secondary text-sm mb-2';
+  const mutedClass = 'text-secondary';
+  const textClass = 'text-primary';
+  const inputClass = clsx(modalInputClass, 'px-4 py-3');
 
   if (!appointment) return null;
 
@@ -223,13 +224,13 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className={clsx('w-full max-w-lg flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border shadow-2xl', modalBg)}>
-        <div className={clsx('flex items-center justify-between gap-4 p-4 sm:p-6 border-b', isDark ? 'border-gold/10' : 'border-gold/20')}>
-          <h3 className="font-heading text-2xl text-gold">Settle Payment</h3>
-          <button type="button" onClick={onClose} className={clsx(isDark ? 'text-offwhite/50 hover:text-offwhite' : 'text-charcoal/50 hover:text-charcoal', 'text-2xl')}>&times;</button>
+      <div className="w-full max-w-lg flex flex-col max-h-[min(90dvh,calc(100dvh-2rem))] rounded-t-2xl sm:rounded-xl overflow-hidden mx-0 sm:mx-4 border border-card bg-card shadow-2xl">
+        <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-light">
+          <h3 className="font-heading text-2xl text-gold-strong">Settle Payment</h3>
+          <button type="button" onClick={onClose} className="text-secondary hover:text-primary text-2xl">&times;</button>
         </div>
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div className={clsx('rounded-lg p-4 mb-6', isDark ? 'bg-offwhite/5' : 'bg-charcoal/5')}>
+          <div className="rounded-lg p-4 mb-6 bg-secondary border border-light">
             <div className="flex justify-between items-center mb-2">
               <span className={mutedClass}>Customer</span>
               <span className={clsx('font-heading', textClass)}>{appointment.customer?.full_name || 'Guest'}</span>
@@ -241,7 +242,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
                 <span className="text-gold text-sm">{appointment.loyalty_reward_name}</span>
               </div>
             )}
-            <div className={clsx('flex justify-between items-center mt-2 pt-2 border-t', isDark ? 'border-offwhite/10' : 'border-charcoal/10')}>
+            <div className="flex justify-between items-center mt-2 pt-2 border-t border-light">
               <span className={mutedClass}>Estimated Price</span>
               <span className={clsx('font-heading text-gold', textClass)}>${basePrice.toFixed(2)}</span>
             </div>
@@ -271,7 +272,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
             </div>
 
             {showTipSplit && tip > 0 && (
-              <div className={clsx('rounded-lg p-3 border', isDark ? 'border-gold/20 bg-offwhite/5' : 'border-gold/30 bg-charcoal/5')}>
+              <div className="rounded-lg p-3 border border-card bg-secondary">
                 <p className={clsx('text-sm mb-3', mutedClass)}>Split tip between technicians</p>
                 <div className="space-y-2">
                   {techLabels.map((tech) => {
@@ -364,7 +365,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
               </div>
             )}
 
-            <div className={clsx('rounded-lg p-3 border', isDark ? 'border-gold/20 bg-offwhite/5' : 'border-gold/30 bg-charcoal/5')}>
+            <div className="rounded-lg p-3 border border-card bg-secondary">
               <label className={labelClass}>Apply Gift Card</label>
               <div className="flex gap-2">
                 <input
@@ -378,7 +379,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
                   type="button"
                   onClick={handleLookupGiftCard}
                   disabled={lookingUpGiftCard}
-                  className="px-4 py-2 bg-gold/20 text-gold border border-gold/30 rounded-lg whitespace-nowrap"
+                  className="px-4 py-2 bg-gold/20 text-gold border border-card rounded-lg whitespace-nowrap"
                 >
                   {lookingUpGiftCard ? '...' : 'Apply'}
                 </button>
@@ -417,7 +418,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
             </div>
           </div>
 
-          <div className="bg-gold/10 border border-gold/30 rounded-lg p-4 mt-6">
+          <div className="bg-gold/10 border border-card rounded-lg p-4 mt-6">
             <div className="flex justify-between items-center mb-2">
               <span className={mutedClass}>Services</span>
               <span className={textClass}>${serviceSubtotal.toFixed(2)}</span>
@@ -464,7 +465,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
             <button
               type="button"
               onClick={onClose}
-              className={clsx('flex-1 py-3 border rounded-lg transition-colors', isDark ? 'border-offwhite/30 text-offwhite/60 hover:text-offwhite' : 'border-charcoal/30 text-charcoal/60 hover:text-charcoal')}
+              className={clsx(modalBtnSecondary, 'flex-1 min-h-0 rounded-lg')}
             >
               Cancel
             </button>
@@ -472,7 +473,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
               type="button"
               onClick={handleConfirm}
               disabled={saving}
-              className="flex-1 py-3 bg-gold text-charcoal font-heading hover:bg-gold/90 rounded-lg disabled:opacity-50 transition-colors"
+              className={clsx(modalBtnPrimary, 'flex-1 min-h-0 rounded-lg font-heading')}
             >
               {saving ? 'Processing...' : 'Confirm Payment'}
             </button>
@@ -642,12 +643,24 @@ export default function CashierCheckout() {
     }
 
     const amount = data?.final_amount ?? checkoutData.final_amount;
+    const foundingResult = data?.founding_result;
+
+    let foundingDetail;
+    let variant = 'success';
+    if (foundingResult?.success && !foundingResult.already_member && foundingResult.badge_label) {
+      foundingDetail = `Founding Member ${foundingResult.badge_label} claimed!`;
+    } else if (foundingResult?.success === false && foundingResult.reason === 'cap_reached') {
+      foundingDetail = 'Founding Member spots are full — checkout completed successfully.';
+      variant = 'info';
+    }
 
     setNotification({
       message: 'Payment Complete!',
       name: appt?.customer?.full_name,
       amount,
       points: data?.points_earned,
+      detail: foundingDetail,
+      variant,
     });
     setTimeout(() => setNotification(null), 3000);
     await fetchQueues();
@@ -679,12 +692,15 @@ export default function CashierCheckout() {
         </div>
 
         {notification && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-500 text-white px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw] text-center">
+          <div className={`fixed top-6 left-1/2 -translate-x-1/2 ${notification.variant === 'info' ? 'bg-amber-600' : 'bg-green-500'} text-white px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw] text-center`}>
             <p className="font-heading text-lg">{notification.message}</p>
             <p className="text-sm opacity-90">
               {notification.name} — ${notification.amount?.toFixed(2)}
               {notification.points > 0 && ` · +${notification.points} loyalty pts`}
             </p>
+            {notification.detail ? (
+              <p className="text-sm mt-2 font-medium">{notification.detail}</p>
+            ) : null}
           </div>
         )}
 

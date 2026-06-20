@@ -1,18 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import * as Clipboard from 'expo-clipboard';
-import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags.js';
 import { getTierInfo, generateReferralCode, tierDetails } from '@nail-couture/shared/utils/loyaltyTier.js';
+import { computeVaultRewardsAvailable } from '@nail-couture/shared/utils/vaultRewards.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
-import { MembershipCard } from '../../components/customer/MembershipCard';
 import { AppointmentStatusBadge } from '../../components/customer/AppointmentStatusBadge';
+import { MembershipHeroCard } from '../../components/customer/home/MembershipHeroCard';
+import { WalletStatsRow } from '../../components/customer/home/WalletStatsRow';
+import { BookAppointmentCTA } from '../../components/customer/home/BookAppointmentCTA';
+import { QuickActionGrid } from '../../components/customer/home/QuickActionGrid';
+import { ReferFriendModal } from '../../components/customer/home/ReferFriendModal';
 import { PromoSlideIn } from '../../components/marketing/PromoSlideIn';
 import { PromoDetailModal } from '../../components/marketing/PromoDetailModal';
 import { useCustomerHomePromotions } from '../../hooks/useCustomerHomePromotions';
+import { useWalletState } from '../../features/wallet/hooks/useWalletState';
+import { AppModal, ModalButton } from '../../components/AppModal';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import type { AppScreenName } from '../../navigation/screenRegistry';
 
@@ -32,16 +38,22 @@ type ProfileRecord = {
   full_name?: string;
   loyalty_points?: number;
   referral_code?: string;
+  loyalty_tier?: string;
+  calendar_spend_ytd?: number;
+  founding_spot?: number | null;
+  founding_type?: string | null;
 };
 
 export function CustomerHomeScreen() {
   const { user } = useAuth();
   const styles = useThemeStyles();
   const navigation = useNavigation<BottomTabNavigationProp<Record<AppScreenName, undefined>>>();
+  const { snapshot } = useWalletState(user?.id);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileRecord | null>(null);
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [showEarningModal, setShowEarningModal] = useState(false);
+  const [showReferModal, setShowReferModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<AppointmentRecord | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -108,7 +120,7 @@ export function CustomerHomeScreen() {
 
   if (loading) {
     return (
-      <CustomerScreenLayout>
+      <CustomerScreenLayout showUserActions={false}>
         <View style={{ alignItems: 'center', paddingVertical: 48 }}>
           <ActivityIndicator color={styles.tokens.goldStrong} />
         </View>
@@ -124,223 +136,203 @@ export function CustomerHomeScreen() {
     );
   }
 
-  const tier = getTierInfo(profile.loyalty_points || 0);
+  const tier = getTierInfo(profile);
   const firstName = profile.full_name?.split(' ')[0] || 'back';
+  const points = snapshot?.points ?? profile.loyalty_points ?? 0;
+  const rewardsAvailable = computeVaultRewardsAvailable(points, snapshot?.milestones);
 
   return (
     <View style={{ flex: 1 }}>
-    <CustomerScreenLayout
-      title={`Welcome, ${firstName}`}
-      subtitle="We're glad to have you here"
-    >
-      <MembershipCard
-        profile={profile}
-        onPress={() => setShowEarningModal(true)}
-        onCopyReferral={handleCopyReferral}
-        copiedCode={copiedCode}
-      />
-
-      {appointments.length > 0 ? (
-        <View style={[styles.card, { padding: 16, marginTop: 16, gap: 12 }]}>
-          <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2 }]}>
-            YOUR ACTIVE APPOINTMENT{appointments.length > 1 ? 'S' : ''}
-          </Text>
-          {appointments.map((booking) => (
-            <Pressable
-              key={booking.id}
-              onPress={() => {
-                setSelectedBooking(booking);
-                setShowDetailModal(true);
-              }}
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                gap: 12,
-                paddingVertical: 8,
-                borderBottomWidth: 1,
-                borderBottomColor: styles.tokens.borderLight,
-              }}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>
-                  {booking.add_ons || booking.services?.name || 'Service'}
-                </Text>
-                {booking.checked_in_at ? (
-                  <Text style={[styles.textSecondary, { fontSize: 12, marginTop: 4 }]}>
-                    {new Date(booking.checked_in_at).toLocaleString()}
-                  </Text>
-                ) : null}
-              </View>
-              <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                <AppointmentStatusBadge status={booking.status} />
-                {booking.final_price || booking.services?.price ? (
-                  <Text style={styles.textGold}>
-                    ${(booking.final_price || booking.services?.price || 0).toFixed(2)}
-                  </Text>
-                ) : null}
-              </View>
-            </Pressable>
-          ))}
-        </View>
-      ) : (
-        <View style={[styles.card, { padding: 24, marginTop: 16, alignItems: 'center' }]}>
-          <Text style={{ fontSize: 40, marginBottom: 8 }}>💅</Text>
-          <Text style={[styles.textPrimary, { fontSize: 22, fontWeight: '600', textAlign: 'center' }]}>
-            Book Your Experience
-          </Text>
-          <Text style={[styles.textSecondary, { textAlign: 'center', marginTop: 8, marginBottom: 16 }]}>
-            Treat yourself to our premium nail services. We can't wait to see you.
-          </Text>
-          {CUSTOMER_ONLINE_BOOKING ? (
-            <Pressable onPress={() => navigation.navigate('Book')} style={styles.buttonPrimary}>
-              <Text style={styles.buttonPrimaryText}>Book Now</Text>
-            </Pressable>
-          ) : (
-            <Pressable
-              onPress={() => Linking.openURL('https://wa.me/15044817879')}
-              style={styles.buttonPrimary}
-            >
-              <Text style={styles.buttonPrimaryText}>Contact Support</Text>
-            </Pressable>
-          )}
-        </View>
-      )}
-
-      <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
-        <Pressable
-          onPress={() => navigation.navigate('Profile')}
-          style={[styles.card, { flex: 1, padding: 16 }]}
-        >
-          <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 1 }]}>ACCOUNT</Text>
-          <Text style={[styles.textGold, { fontSize: 16, fontWeight: '600', marginTop: 6 }]}>
-            My Profile →
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => navigation.navigate('Loyalty')}
-          style={[styles.card, { flex: 1, padding: 16 }]}
-        >
-          <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 1 }]}>REWARDS</Text>
-          <Text style={[styles.textGold, { fontSize: 16, fontWeight: '600', marginTop: 6 }]}>
-            Redeem Points →
-          </Text>
-        </Pressable>
-      </View>
-
-      <AppModal
-        open={showEarningModal}
-        onClose={() => setShowEarningModal(false)}
-        title="Earn More Points"
-        scrollBody
-        footer={<ModalButton label="Got It" variant="primary" onPress={() => setShowEarningModal(false)} />}
+      <CustomerScreenLayout
+        title={`Welcome back, ${firstName}`}
+        subtitle=""
       >
         <View style={{ gap: 16 }}>
-          <View style={[styles.card, { padding: 14, backgroundColor: `${styles.tokens.goldStrong}14` }]}>
-            <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Spend & Earn</Text>
-            <Text style={[styles.textSecondary, { marginTop: 6 }]}>
-              Earn 1 point for every $1 spent on any service.
-            </Text>
-          </View>
-          <View style={[styles.card, { padding: 14, backgroundColor: `${styles.tokens.goldStrong}14` }]}>
-            <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Refer a Friend</Text>
-            <Text style={[styles.textSecondary, { marginTop: 6 }]}>
-              Share your referral code — you both earn bonus points when they sign up.
-            </Text>
-          </View>
-          {tier.nextTier ? (
-            <View style={[styles.card, { padding: 14 }]}>
-              <Text style={[styles.textSecondary, { fontSize: 11, letterSpacing: 1 }]}>
-                YOUR PATH TO {tier.nextTier.toUpperCase()}
+          <MembershipHeroCard profile={profile} onPress={() => setShowEarningModal(true)} />
+
+          <WalletStatsRow
+            points={points}
+            rewardsAvailable={rewardsAvailable}
+            onViewRewards={() => navigation.navigate('Loyalty')}
+          />
+
+          <BookAppointmentCTA onPress={() => navigation.navigate('Book')} />
+
+          <QuickActionGrid
+            onAppointmentsPress={() => navigation.navigate('History' as AppScreenName)}
+            onRewardsPress={() => navigation.navigate('Loyalty')}
+            onReferPress={() => setShowReferModal(true)}
+            onMembershipPress={() => navigation.navigate('Loyalty')}
+          />
+
+          {appointments.length > 0 ? (
+            <View style={[styles.card, { padding: 16, gap: 12 }]}>
+              <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2 }]}>
+                YOUR ACTIVE APPOINTMENT{appointments.length > 1 ? 'S' : ''}
               </Text>
-              <Text style={[styles.textPrimary, { marginTop: 6 }]}>
-                {tierDetails[tier.name as keyof typeof tierDetails]?.reward}
-              </Text>
+              {appointments.map((booking) => (
+                <Pressable
+                  key={booking.id}
+                  onPress={() => {
+                    setSelectedBooking(booking);
+                    setShowDetailModal(true);
+                  }}
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    paddingVertical: 8,
+                    borderBottomWidth: 1,
+                    borderBottomColor: styles.tokens.borderLight,
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600' }]}>
+                      {booking.add_ons || booking.services?.name || 'Service'}
+                    </Text>
+                    {booking.checked_in_at ? (
+                      <Text style={[styles.textSecondary, { fontSize: 12, marginTop: 4 }]}>
+                        {new Date(booking.checked_in_at).toLocaleString()}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                    <AppointmentStatusBadge status={booking.status} />
+                    {booking.final_price || booking.services?.price ? (
+                      <Text style={styles.textGold}>
+                        ${(booking.final_price || booking.services?.price || 0).toFixed(2)}
+                      </Text>
+                    ) : null}
+                  </View>
+                </Pressable>
+              ))}
             </View>
           ) : null}
         </View>
-      </AppModal>
 
-      <AppModal
-        open={showDetailModal && Boolean(selectedBooking)}
-        onClose={() => setShowDetailModal(false)}
-        title="Appointment Details"
-        scrollBody
-        footer={<ModalButton label="Close" variant="primary" onPress={() => setShowDetailModal(false)} />}
-      >
-        {selectedBooking ? (
-          <View style={{ gap: 14 }}>
-            <View>
-              <Text style={styles.textSecondary}>Services</Text>
-              <Text style={styles.textPrimary}>
-                {selectedBooking.add_ons || selectedBooking.services?.name || 'N/A'}
+        <ReferFriendModal
+          open={showReferModal}
+          onClose={() => setShowReferModal(false)}
+          referralCode={profile.referral_code}
+          copiedCode={copiedCode}
+          onCopy={handleCopyReferral}
+        />
+
+        <AppModal
+          open={showEarningModal}
+          onClose={() => setShowEarningModal(false)}
+          title="Earn More Points"
+          scrollBody
+          footer={<ModalButton label="Got It" variant="primary" onPress={() => setShowEarningModal(false)} />}
+        >
+          <View style={{ gap: 16 }}>
+            <View style={[styles.card, { padding: 14, backgroundColor: `${styles.tokens.goldStrong}14` }]}>
+              <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Spend & Earn</Text>
+              <Text style={[styles.textSecondary, { marginTop: 6 }]}>
+                Earn 1 point for every $1 spent on any service.
               </Text>
             </View>
-            {(selectedBooking.final_price || selectedBooking.services?.price) ? (
-              <View>
-                <Text style={styles.textSecondary}>Total Price</Text>
-                <Text style={[styles.textGold, { fontSize: 20, fontWeight: '600' }]}>
-                  ${(selectedBooking.final_price || selectedBooking.services?.price || 0).toFixed(2)}
-                </Text>
-              </View>
-            ) : null}
-            {selectedBooking.checked_in_at ? (
-              <View>
-                <Text style={styles.textSecondary}>Date & Time</Text>
-                <Text style={styles.textPrimary}>
-                  {new Date(selectedBooking.checked_in_at).toLocaleString()}
-                </Text>
-              </View>
-            ) : null}
-            <View>
-              <Text style={styles.textSecondary}>Status</Text>
-              <View style={{ alignSelf: 'flex-start', marginTop: 4 }}>
-                <AppointmentStatusBadge status={selectedBooking.status} />
-              </View>
+            <View style={[styles.card, { padding: 14, backgroundColor: `${styles.tokens.goldStrong}14` }]}>
+              <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Refer a Friend</Text>
+              <Text style={[styles.textSecondary, { marginTop: 6 }]}>
+                Share your referral code — you both earn bonus points when they sign up.
+              </Text>
             </View>
-            {selectedBooking.technician?.name ? (
-              <View>
-                <Text style={styles.textSecondary}>Technician</Text>
-                <Text style={styles.textPrimary}>{selectedBooking.technician.name}</Text>
+            {tier.nextTier ? (
+              <View style={[styles.card, { padding: 14 }]}>
+                <Text style={[styles.textSecondary, { fontSize: 11, letterSpacing: 1 }]}>
+                  YOUR PATH TO {tier.nextTier.toUpperCase()}
+                </Text>
+                <Text style={[styles.textPrimary, { marginTop: 6 }]}>
+                  {tierDetails[tier.name as keyof typeof tierDetails]?.reward}
+                </Text>
               </View>
             ) : null}
           </View>
-        ) : null}
-      </AppModal>
-    </CustomerScreenLayout>
-    {promosEnabled ? (
-      <>
-        <PromoSlideIn
-          promo={currentSlideInPromo}
-          visible={chipReady}
-          detailOpen={Boolean(detailPromo)}
-          onOpenDetail={openSlideInDetail}
-          onAutoHide={advanceSlideInQueue}
-        />
-        <PromoDetailModal
-          promo={detailPromo}
-          visible={Boolean(detailPromo)}
-          onClose={closeSlideInDetail}
-          onCopy={copyCode}
-        />
-      </>
-    ) : null}
-    {promoToast ? (
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 120,
-          alignSelf: 'center',
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: `${styles.tokens.goldStrong}40`,
-          backgroundColor: styles.tokens.cardBg,
-          paddingHorizontal: 16,
-          paddingVertical: 10,
-        }}
-      >
-        <Text style={styles.textGold}>{promoToast}</Text>
-      </View>
-    ) : null}
+        </AppModal>
+
+        <AppModal
+          open={showDetailModal && Boolean(selectedBooking)}
+          onClose={() => setShowDetailModal(false)}
+          title="Appointment Details"
+          scrollBody
+          footer={<ModalButton label="Close" variant="primary" onPress={() => setShowDetailModal(false)} />}
+        >
+          {selectedBooking ? (
+            <View style={{ gap: 14 }}>
+              <View>
+                <Text style={styles.textSecondary}>Services</Text>
+                <Text style={styles.textPrimary}>
+                  {selectedBooking.add_ons || selectedBooking.services?.name || 'N/A'}
+                </Text>
+              </View>
+              {(selectedBooking.final_price || selectedBooking.services?.price) ? (
+                <View>
+                  <Text style={styles.textSecondary}>Total Price</Text>
+                  <Text style={[styles.textGold, { fontSize: 20, fontWeight: '600' }]}>
+                    ${(selectedBooking.final_price || selectedBooking.services?.price || 0).toFixed(2)}
+                  </Text>
+                </View>
+              ) : null}
+              {selectedBooking.checked_in_at ? (
+                <View>
+                  <Text style={styles.textSecondary}>Date & Time</Text>
+                  <Text style={styles.textPrimary}>
+                    {new Date(selectedBooking.checked_in_at).toLocaleString()}
+                  </Text>
+                </View>
+              ) : null}
+              <View>
+                <Text style={styles.textSecondary}>Status</Text>
+                <View style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+                  <AppointmentStatusBadge status={selectedBooking.status} />
+                </View>
+              </View>
+              {selectedBooking.technician?.name ? (
+                <View>
+                  <Text style={styles.textSecondary}>Technician</Text>
+                  <Text style={styles.textPrimary}>{selectedBooking.technician.name}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+        </AppModal>
+      </CustomerScreenLayout>
+
+      {promosEnabled ? (
+        <>
+          <PromoSlideIn
+            promo={currentSlideInPromo}
+            visible={chipReady}
+            detailOpen={Boolean(detailPromo)}
+            onOpenDetail={openSlideInDetail}
+            onAutoHide={advanceSlideInQueue}
+          />
+          <PromoDetailModal
+            promo={detailPromo}
+            visible={Boolean(detailPromo)}
+            onClose={closeSlideInDetail}
+            onCopy={copyCode}
+          />
+        </>
+      ) : null}
+      {promoToast ? (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 120,
+            alignSelf: 'center',
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: `${styles.tokens.goldStrong}40`,
+            backgroundColor: styles.tokens.cardBg,
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+          }}
+        >
+          <Text style={styles.textGold}>{promoToast}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }

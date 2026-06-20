@@ -16,6 +16,7 @@ import {
   parseVisitFinalServices,
 } from '@nail-couture/shared/utils/appointmentServiceHistory';
 import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier';
+import { formatFoundingBadge } from '@nail-couture/shared/constants/loyaltyProgram.js';
 import {
   parseProfilePreferences,
   labelForOption,
@@ -547,7 +548,8 @@ export default function StaffCustomerDetail() {
     );
   }
 
-  const tier = getTierInfo(profile.loyalty_points);
+  const tier = getTierInfo(profile);
+  const foundingBadge = formatFoundingBadge(profile.founding_type, profile.founding_spot);
   const prefs = parseProfilePreferences(profile.preferences);
   const initials = profile.full_name?.charAt(0)?.toUpperCase() || '?';
   const readOnlyBadge = !canEdit;
@@ -597,6 +599,11 @@ export default function StaffCustomerDetail() {
                   <span className={clsx('px-2 py-0.5 text-xs rounded-full border max-w-full truncate', tier.color, 'border-current')}>
                     {tier.name} · {profile.loyalty_points || 0} pts
                   </span>
+                  {foundingBadge && (
+                    <span className="px-2 py-0.5 text-xs rounded-full border border-gold/40 text-gold bg-gold/10">
+                      Founding {foundingBadge}
+                    </span>
+                  )}
                   {profile.birthday && (
                     <span className="px-2 py-0.5 text-xs rounded-full border border-light text-secondary">
                       Birthday {profile.birthday}

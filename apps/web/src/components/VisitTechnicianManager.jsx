@@ -25,12 +25,10 @@ export default function VisitTechnicianManager({
   const [addTechId, setAddTechId] = useState('');
   const [handoffTechId, setHandoffTechId] = useState('');
 
-  const isDark = theme === 'dark';
-  const mutedClass = isDark ? 'text-offwhite/60' : 'text-charcoal/60';
-  const textClass = isDark ? 'text-offwhite' : 'text-charcoal';
-  const inputClass = isDark
-    ? 'w-full px-3 py-2 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg text-sm'
-    : 'w-full px-3 py-2 bg-charcoal/5 border border-charcoal/20 text-charcoal rounded-lg text-sm';
+  const mutedClass = 'text-secondary';
+  const textClass = 'text-primary';
+  const inputClass =
+    'w-full px-3 py-2 bg-input border border-input text-primary rounded-lg text-sm placeholder-text-muted focus:border-gold focus:outline-none';
 
   const onUpdatedRef = useRef(onUpdated);
   onUpdatedRef.current = onUpdated;
@@ -96,7 +94,7 @@ export default function VisitTechnicianManager({
   if (!appointment?.id) return null;
 
   return (
-    <div className={clsx(compact ? 'space-y-3' : 'space-y-4 rounded-lg border p-4', isDark ? 'border-gold/20' : 'border-gold/30')}>
+    <div className={clsx(compact ? 'space-y-3' : 'space-y-4 rounded-lg border border-card p-4')}>
       {!compact && (
         <h4 className={clsx('font-heading text-gold text-sm', textClass)}>Manage Technicians</h4>
       )}

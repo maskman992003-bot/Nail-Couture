@@ -4,14 +4,14 @@ export function getVisitPanelStyles(tone = 'admin', theme = 'dark') {
 
   if (isCheckout) {
     return {
-      mutedClass: 'text-offwhite/60',
-      textClass: 'text-offwhite',
-      accentClass: 'text-gold',
-      cardClass: 'bg-offwhite/5 border-offwhite/10',
-      badgeClass: 'bg-offwhite/10 border-offwhite/20 text-offwhite/70',
-      lineClass: 'bg-offwhite/15',
-      labelClass: 'text-offwhite/50',
-      sectionBorder: 'border-offwhite/10',
+      mutedClass: 'text-secondary',
+      textClass: 'text-primary',
+      accentClass: 'text-gold-strong',
+      cardClass: 'bg-secondary border-light',
+      badgeClass: 'bg-input border-input text-secondary',
+      lineClass: 'bg-gold/20',
+      labelClass: 'text-secondary',
+      sectionBorder: 'border-light',
     };
   }
 

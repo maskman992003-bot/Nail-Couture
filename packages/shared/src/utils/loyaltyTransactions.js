@@ -1,9 +1,10 @@
 import { supabase } from '../lib/supabase';
 
 export const LOYALTY_REWARDS = [
-  { id: 'nail-art', name: 'Free Basic Nail Art', points: 100, discountAmount: 15, description: '$15 service credit applied at checkout' },
-  { id: 'refreshment', name: 'Free Refreshment', points: 200, discountAmount: 0, description: 'Complimentary refreshment with your visit' },
-  { id: 'voucher', name: '$25 Voucher', points: 500, discountAmount: 25, description: '$25 off your visit total at checkout' },
+  { id: 'vault-100', name: 'Vault $5 Reward', points: 100, discountAmount: 5, description: '$5 reward — redeem via The Vault' },
+  { id: 'vault-250', name: 'Vault $15 Reward', points: 250, discountAmount: 15, description: '$15 reward — redeem via The Vault' },
+  { id: 'vault-500', name: 'Vault $35 Reward', points: 500, discountAmount: 35, description: '$35 reward — redeem via The Vault' },
+  { id: 'vault-1000', name: 'Vault $75 Reward', points: 1000, discountAmount: 75, description: '$75 reward — redeem via The Vault' },
 ];
 
 const TYPE_LABELS = {

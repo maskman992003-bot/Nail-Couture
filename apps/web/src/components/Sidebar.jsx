@@ -2,6 +2,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppTheme } from '../hooks/useAppTheme.js';
 import BrandLogo from './BrandLogo.jsx';
+import WaxSealBadge from '../features/wallet/components/WaxSealBadge';
 import { supabase } from '../lib/supabase';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -469,6 +470,14 @@ export default function Sidebar() {
             >
               <div className="relative w-9 h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: `${themeConfig.accentColor}26`, boxShadow: `inset 0 0 0 1px ${themeConfig.borderColor}` }}>
                 <span className="text-gold-strong text-xs lg:text-sm font-heading">{initials || '?'}</span>
+                <div className="absolute -bottom-0.5 -left-0.5 z-20">
+                  <WaxSealBadge
+                    foundingType={user?.founding_type}
+                    foundingSpot={user?.founding_spot}
+                    pending={!user?.founding_spot}
+                    size={14}
+                  />
+                </div>
                 <NotificationBell
                   unreadCount={unreadCount}
                   ring={bellRing}

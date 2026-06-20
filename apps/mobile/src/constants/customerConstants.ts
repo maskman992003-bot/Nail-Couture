@@ -21,6 +21,12 @@ export const APPOINTMENT_STATUS_COLORS: Record<string, { bg: string; text: strin
 };
 
 export const TIER_COLORS: Record<string, string> = {
+  Pearl: '#E8E4DF',
+  Atelier: '#C17B6E',
+  'Diamond Couture': '#9CA3AF',
+  pearl: '#E8E4DF',
+  atelier: '#C17B6E',
+  diamond_couture: '#9CA3AF',
   Silver: '#9ca3af',
   Gold: '#C5A059',
   Platinum: '#d1d5db',

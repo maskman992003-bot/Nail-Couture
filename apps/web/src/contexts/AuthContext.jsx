@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import { AUTH_STORAGE_KEY, normalizeUser } from '@nail-couture/shared/auth/user.js';
+import { enrichWalletSnapshot, fetchWalletSnapshot, writeWalletCache } from '@nail-couture/shared/utils/loyaltyWallet.js';
 
 const AuthContext = createContext(null);
 
@@ -28,6 +29,13 @@ export function AuthProvider({ children }) {
     const userData = normalizeUser(profile);
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
     setUser(userData);
+    if (userData.id) {
+      fetchWalletSnapshot(userData.id)
+        .then((snap) => {
+          if (snap?.success) writeWalletCache(userData.id, enrichWalletSnapshot(snap));
+        })
+        .catch(() => undefined);
+    }
   };
 
   const logout = () => {

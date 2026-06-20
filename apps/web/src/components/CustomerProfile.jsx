@@ -282,7 +282,7 @@ export default function CustomerProfile() {
     );
   }
 
-  const tier = getTierInfo(profile.loyalty_points || 0);
+  const tier = getTierInfo(profile);
   const achievements = computeAchievements({ stats, profile, referralInfo, tier });
   const panelClass = theme === 'dark' ? 'bg-offwhite/5 border border-white/5 rounded-2xl p-6' : 'bg-charcoal/5 border border-charcoal/5 rounded-2xl p-6';
   const initials = getProfileInitials(profile.full_name);

@@ -15,7 +15,7 @@ const montserrat = Montserrat({
 })
 
 export const metadata: Metadata = {
-  title: 'Nail Couture | Luxury Nail & Beauty Lounge',
+  title: 'Nail Couture | Beauty · Care · Affection',
   description:
     'Luxury Nail & Beauty Lounge opening soon in Uptown New Orleans. Beauty, Care, Affection. Join our VIP Founding List.',
   generator: 'v0.app',

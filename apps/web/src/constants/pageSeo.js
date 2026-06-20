@@ -11,7 +11,7 @@ export function formatPageTitle(pageTitle) {
 }
 
 export const DEFAULT_PAGE_SEO = {
-  title: 'Luxury Press-On Nails & Custom Nail Art',
+  title: 'Beauty · Care · Affection',
   description:
     'Discover luxury press-on nails and custom nail art at Nail Couture. Russian manicure precision, medical-grade sterilization, and premium non-toxic products.',
   path: '/',
@@ -92,7 +92,7 @@ export const APP_PAGE_SEO = {
     path: '/customer/history',
   },
   '/customer/loyalty': {
-    title: 'Loyalty Rewards',
+    title: 'Digital Wallet',
     description: 'Track your Nail Couture loyalty points and rewards.',
     path: '/customer/loyalty',
   },

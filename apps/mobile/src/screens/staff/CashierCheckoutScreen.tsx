@@ -588,6 +588,8 @@ export function CashierCheckoutScreen() {
     name?: string;
     amount?: number;
     points?: number;
+    variant?: 'success' | 'info';
+    detail?: string;
   } | null>(null);
 
   const allAppointments = useMemo(
@@ -670,12 +672,26 @@ export function CashierCheckoutScreen() {
     }
 
     const amount = (data as { final_amount?: number })?.final_amount ?? checkoutData.final_amount;
+    const foundingResult = (data as { founding_result?: { success?: boolean; reason?: string; badge_label?: string; already_member?: boolean } })
+      ?.founding_result;
+
+    let foundingDetail: string | undefined;
+    let variant: 'success' | 'info' = 'success';
+
+    if (foundingResult?.success && !foundingResult.already_member && foundingResult.badge_label) {
+      foundingDetail = `Founding Member ${foundingResult.badge_label} claimed!`;
+    } else if (foundingResult?.success === false && foundingResult.reason === 'cap_reached') {
+      foundingDetail = 'Founding Member spots are full — checkout completed successfully.';
+      variant = 'info';
+    }
 
     setNotification({
       message: 'Payment Complete!',
       name: appt?.customer?.full_name,
       amount: Number(amount),
       points: (data as { points_earned?: number })?.points_earned,
+      variant,
+      detail: foundingDetail,
     });
     setTimeout(() => setNotification(null), 3000);
     await fetchQueues();
@@ -708,7 +724,7 @@ export function CashierCheckoutScreen() {
       {notification && (
         <View
           style={{
-            backgroundColor: '#22c55e',
+            backgroundColor: notification.variant === 'info' ? '#d97706' : '#22c55e',
             borderRadius: 12,
             padding: 16,
             marginBottom: 16,
@@ -720,6 +736,11 @@ export function CashierCheckoutScreen() {
             {notification.name} — ${notification.amount?.toFixed(2)}
             {notification.points ? ` · +${notification.points} loyalty pts` : ''}
           </Text>
+          {notification.detail ? (
+            <Text style={{ color: '#fff', marginTop: 8, textAlign: 'center', fontSize: 13 }}>
+              {notification.detail}
+            </Text>
+          ) : null}
         </View>
       )}
 
