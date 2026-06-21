@@ -56,6 +56,7 @@ import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 import RouteDocumentTitle from './components/RouteDocumentTitle.jsx'
 import { CHECK_IN_ROLE } from '@nail-couture/shared/utils/routes'
 import MembershipCardPreviewPage from './pages/dev/MembershipCardPreviewPage.jsx'
+import GiftCardPreviewPage from './pages/dev/GiftCardPreviewPage.jsx'
 
 const KIOSK_ALLOWED_PATHS = ['/check-in', '/login'];
 
@@ -672,7 +673,10 @@ function AppRoutes() {
               </ProtectedRoute>
             } />
             {import.meta.env.DEV ? (
-              <Route path="/dev/membership-card" element={<MembershipCardPreviewPage />} />
+              <>
+                <Route path="/dev/membership-card" element={<MembershipCardPreviewPage />} />
+                <Route path="/dev/gift-card" element={<GiftCardPreviewPage />} />
+              </>
             ) : null}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
