@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWalletState } from './hooks/useWalletState';
 import { useFoundingMemberRealtime } from './hooks/useFoundingMemberRealtime';
-import WalletCardDeck from './components/cards/WalletCardDeck';
+import { MembershipCardSection } from '../../components/customer/home/MembershipHeroCard';
 import TheVault from './components/vault/TheVault';
 import VaultActiveCodes from './components/vault/VaultActiveCodes';
 import VaultUnboxingModal from './components/vault/VaultUnboxingModal';
@@ -79,8 +79,15 @@ export default function DigitalWallet() {
     return <div className="text-gold animate-pulse py-12 text-center">Loading wallet…</div>;
   }
 
-  const activeTier = snapshot?.tier || user?.loyalty_tier || 'pearl';
   const isFounding = Boolean(snapshot?.founding?.spot || user?.founding_spot);
+  const cardProfile = {
+    full_name: user?.full_name,
+    founding_spot: snapshot?.founding?.spot ?? user?.founding_spot,
+    founding_type: snapshot?.founding?.type || user?.founding_type,
+    loyalty_tier: snapshot?.tier || user?.loyalty_tier || 'pearl',
+    calendar_spend_ytd: snapshot?.calendar_spend_ytd ?? user?.calendar_spend_ytd,
+    loyalty_points: snapshot?.points ?? user?.loyalty_points,
+  };
 
   return (
     <>
@@ -94,7 +101,7 @@ export default function DigitalWallet() {
                 Showing cached wallet · syncing…
               </>
             ) : (
-              'Your tier cards & The Vault'
+              'Your membership card & The Vault'
             )}
           </p>
         </div>
@@ -111,11 +118,13 @@ export default function DigitalWallet() {
           <p className={`text-[10px] uppercase tracking-widest mb-3 ${muted}`}>
             {tierInfo.name.toUpperCase()} · {snapshot?.earn_rate ?? 1}× earn
           </p>
-          <WalletCardDeck activeTier={activeTier} isFounding={isFounding} />
+          <div className="w-3/4 mx-auto">
+            <MembershipCardSection profile={cardProfile} asStatic />
+          </div>
         </div>
 
-        <div className="md:grid md:grid-cols-2 md:gap-8 space-y-8 md:space-y-0">
-          <div className="space-y-8">
+        <div className="lg:grid lg:grid-cols-2 lg:gap-8 space-y-8 lg:space-y-0">
+          <div className="space-y-8 min-w-0">
             <TheVault
               points={walletPoints}
               milestones={snapshot?.milestones}
@@ -127,7 +136,7 @@ export default function DigitalWallet() {
             />
           </div>
           <div
-            className="hidden md:block rounded-2xl p-6 border mt-0"
+            className="hidden lg:block rounded-2xl p-6 border mt-0 min-w-0"
             style={{ borderColor: 'rgba(197,160,89,0.25)', backgroundColor: theme === 'dark' ? '#111' : '#fff' }}
           >
             <p className={`text-[10px] uppercase tracking-widest mb-4 ${muted}`}>Tier Benefits</p>

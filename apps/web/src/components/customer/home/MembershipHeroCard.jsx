@@ -44,7 +44,7 @@ function ProfileAvatar({ profile }) {
   );
 }
 
-export function ProfileMembershipCard({ profile, onPress, fillSlot = false }) {
+export function ProfileMembershipCard({ profile, onPress, fillSlot = false, asStatic = false }) {
   const tier = getTierInfo(profile);
   const isFounding = Boolean(profile?.founding_spot);
   const foundingYear = new Date().getFullYear();
@@ -84,6 +84,14 @@ export function ProfileMembershipCard({ profile, onPress, fillSlot = false }) {
     );
   }
 
+  if (asStatic) {
+    return (
+      <div className={fillSlot ? wrapperClass : 'block'} style={wrapperStyle}>
+        {card}
+      </div>
+    );
+  }
+
   return (
     <Link to="/customer/loyalty" className={fillSlot ? wrapperClass : 'block'} style={wrapperStyle}>
       {card}
@@ -91,14 +99,14 @@ export function ProfileMembershipCard({ profile, onPress, fillSlot = false }) {
   );
 }
 
-export function MembershipCardSection({ profile, onCardPress }) {
+export function MembershipCardSection({ profile, onCardPress, asStatic = false }) {
   return (
     <div className="w-full rounded-2xl border border-card bg-card p-3">
       <div
         className="relative w-full aspect-[758/478] overflow-hidden"
         style={{ borderRadius: MEMBERSHIP_CARD_HERO.borderRadiusPx }}
       >
-        <ProfileMembershipCard profile={profile} onPress={onCardPress} fillSlot />
+        <ProfileMembershipCard profile={profile} onPress={onCardPress} fillSlot asStatic={asStatic} />
       </div>
     </div>
   );
