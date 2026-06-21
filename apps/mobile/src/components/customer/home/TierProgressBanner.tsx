@@ -6,7 +6,7 @@ import type { ProfileLike } from './MembershipHeroCard';
 
 type TierProgressBannerProps = {
   profile: ProfileLike;
-  snapshot?: { calendar_spend_ytd?: number } | null;
+  snapshot?: { rolling_spend_12m?: number; calendar_spend_ytd?: number } | null;
 };
 
 export function TierProgressBanner({ profile, snapshot }: TierProgressBannerProps) {

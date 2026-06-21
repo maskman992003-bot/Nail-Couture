@@ -24,9 +24,13 @@ export type WalletSnapshot = {
   tierColor?: string;
   tierTagline?: string;
   tierBenefits?: string[];
+  rolling_spend_12m?: number;
+  /** @deprecated Use rolling_spend_12m */
   calendar_spend_ytd?: number;
-  tier_grace_until?: string | null;
-  tier_locked_until?: string | null;
+  fm_floor_active?: boolean;
+  fm_floor_until?: string | null;
+  points_expiring_soon?: number;
+  next_points_expiry?: string | null;
   next_tier?: string | null;
   nextTierName?: string | null;
   spend_to_next_tier?: number;

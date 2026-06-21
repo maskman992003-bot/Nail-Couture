@@ -68,6 +68,7 @@ export function enrichWalletSnapshot(snapshot) {
     tierTagline: tier.tagline,
     tierBenefits: tier.benefits,
     nextTierName: nextTier?.name || null,
+    rolling_spend_12m: snapshot.rolling_spend_12m ?? snapshot.calendar_spend_ytd ?? 0,
     cached_at: new Date().toISOString(),
   };
 }

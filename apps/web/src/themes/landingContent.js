@@ -66,13 +66,13 @@ export const LANDING_WHY_CHOOSE = [
 ];
 
 export const LANDING_STORY = {
-  headline: 'Our Story',
-  tagline: 'To bring elevated beauty, meticulous care, and genuine hospitality to Uptown New Orleans.',
+  headline: 'The Story of Nail Couture',
   paragraphs: [
-    'Nail Couture was founded on the principle that every client deserves an exceptional experience. Our artisans undergo rigorous training in the Russian manicure technique, mastering cuticle work and nail shaping refined over decades in Eastern Europe.',
-    'We believe in more than beautiful nails. We believe in an elevated standard of hygiene — medical-grade sterilization equipment and exclusively non-toxic, vegan products in every service.',
+    'At Nail Couture, beauty is more than a service—it is an art form. Founded with a passion for creativity, precision, and exceptional client care, Nail Couture was created to redefine the modern nail salon experience.',
+    'Our team specializes in luxury acrylic enhancements, custom nail artistry, Gel-X extensions, builder gel overlays, and meticulously crafted manicures and pedicures. Every service is performed with attention to detail, blending advanced techniques with personalized artistry to create nails that are as unique as each client.',
+    'Beyond beautiful results, we are committed to the highest standards of cleanliness, safety, and professionalism. We utilize hospital-grade sterilization practices and carefully selected premium products to ensure every visit is both safe and indulgent.',
+    'From timeless elegance to bold, trend-setting designs, Nail Couture is a destination where artistry meets self-care. Every appointment is an opportunity to relax, recharge, and leave feeling confident, polished, and beautifully cared for.',
   ],
-  boutiqueExtra: 'Every detail—from our premium materials and medical-grade sterilization standards to our carefully selected furnishings—has been chosen to create an experience that feels luxurious, welcoming, and uniquely personal.',
 };
 
 export const LANDING_CONTACT = {

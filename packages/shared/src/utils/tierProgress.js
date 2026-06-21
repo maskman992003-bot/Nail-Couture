@@ -1,18 +1,21 @@
 /**
  * Spend-based tier progress copy for Digital Wallet UI.
- * Tiers are driven by calendar-year spend — not loyalty_points.
+ * Tiers are driven by rolling 12-month spend — not loyalty_points.
  */
 
 import { getTierConfig } from '../constants/loyaltyProgram.js';
+import { resolveRollingSpend } from './loyaltyTier.js';
 
 export function formatTierSpend(amount) {
   return `$${Number(amount || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
 export function resolveCalendarSpend(profile, snapshot) {
-  return Number(
-    snapshot?.calendar_spend_ytd ?? profile?.calendar_spend_ytd ?? 0,
-  ) || 0;
+  return resolveRollingSpend({
+    rolling_spend_12m: snapshot?.rolling_spend_12m ?? snapshot?.calendar_spend_ytd,
+    calendar_spend_ytd: snapshot?.calendar_spend_ytd,
+    ...profile,
+  });
 }
 
 /**
@@ -27,7 +30,7 @@ export function getTierProgressSummary(tierInfo, profile, snapshot) {
       nextTier: null,
       nextThreshold: null,
       spendRemaining: 0,
-      progressLabel: `${formatTierSpend(spend)} spent this year`,
+      progressLabel: `${formatTierSpend(spend)} spent in the last 12 months`,
       progressDetail: `You're at ${tierInfo.name} — enjoy your tier benefits.`,
       headline: `Top tier: ${tierInfo.name}`,
     };
@@ -40,9 +43,11 @@ export function getTierProgressSummary(tierInfo, profile, snapshot) {
     nextTier: tierInfo.nextTier,
     nextThreshold: tierInfo.nextThreshold,
     spendRemaining,
-    progressLabel: `${formatTierSpend(spend)} / ${formatTierSpend(tierInfo.nextThreshold)} YTD spend`,
+    progressLabel: `${formatTierSpend(spend)} / ${formatTierSpend(tierInfo.nextThreshold)} rolling spend`,
     progressDetail: `${formatTierSpend(spendRemaining)} more to reach ${tierInfo.nextTier}`,
-    headline: `Your path to ${tierInfo.nextTier}`,
+    headline: tierInfo.id === 'regular_customer'
+      ? 'Unlock your Pearl membership card'
+      : `Your path to ${tierInfo.nextTier}`,
   };
 }
 
@@ -53,4 +58,21 @@ export function getNextTierUpsellBenefit(tierInfo) {
   }
   const next = getTierConfig(tierInfo.nextTierId);
   return next.benefits?.[0] || next.tagline || '';
+}
+
+export function formatPointsExpiryDate(isoDate) {
+  if (!isoDate) return null;
+  try {
+    return new Date(isoDate).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return null;
+  }
+}
+
+export function formatFmFloorUntil(isoDate) {
+  return formatPointsExpiryDate(isoDate);
 }

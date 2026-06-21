@@ -20,7 +20,7 @@ export function WalletCardDeck({ activeTier, isFounding }: WalletCardDeckProps) 
 
   const cards = useMemo(
     () =>
-      TIER_ORDER.map((tierId) => {
+      TIER_ORDER.filter((tierId) => tierId !== 'regular_customer').map((tierId) => {
         const active = tierId === activeTier;
         const props = { width: cardWidth, height: CARD_HEIGHT, active, isFounding };
         if (tierId === 'pearl') return { key: tierId, node: <PearlCard {...props} /> };

@@ -100,6 +100,11 @@ export function ProfileMembershipCard({ profile, onPress, fillSlot = false, asSt
 }
 
 export function MembershipCardSection({ profile, onCardPress, asStatic = false }) {
+  const tier = getTierInfo(profile);
+  if (tier.id === 'regular_customer') {
+    return null;
+  }
+
   return (
     <div className="w-full rounded-2xl border border-card bg-card p-3">
       <div

@@ -1,15 +1,30 @@
 export const LOYALTY_TIER_IDS = {
+  REGULAR: 'regular_customer',
   PEARL: 'pearl',
   ATELIER: 'atelier',
   DIAMOND: 'diamond_couture',
 };
 
 export const TIER_CONFIG = {
+  regular_customer: {
+    id: 'regular_customer',
+    name: 'Regular Customer',
+    spendThreshold: 0,
+    earnMultiplier: 1.0,
+    bookingWindowDays: 0,
+    color: '#9CA3AF',
+    tagline: 'Welcome to Nail Couture.',
+    benefits: [
+      'Standard earn rate on visits',
+      'Access to The Vault rewards',
+      'Birthday promotions when eligible',
+    ],
+  },
   pearl: {
     id: 'pearl',
     name: 'Pearl',
     spendThreshold: 500,
-    earnMultiplier: 1.0,
+    earnMultiplier: 1.1,
     bookingWindowDays: 0,
     color: '#E8E4DF',
     tagline: 'Your introduction to the Nail Couture experience.',
@@ -24,7 +39,7 @@ export const TIER_CONFIG = {
     id: 'atelier',
     name: 'Atelier',
     spendThreshold: 1500,
-    earnMultiplier: 1.25,
+    earnMultiplier: 1.2,
     bookingWindowDays: 14,
     color: '#C17B6E',
     tagline: 'For clients who make self-care part of their lifestyle.',
@@ -40,7 +55,7 @@ export const TIER_CONFIG = {
   },
   diamond_couture: {
     id: 'diamond_couture',
-    name: 'Diamond Couture',
+    name: 'Diamond',
     spendThreshold: 3000,
     earnMultiplier: 1.5,
     bookingWindowDays: 30,
@@ -57,6 +72,14 @@ export const TIER_CONFIG = {
       'Book 30 days before public release',
     ],
   },
+};
+
+/** Vault point expiry by tier at earn time (months) */
+export const POINT_EXPIRY_MONTHS = {
+  regular_customer: 3,
+  pearl: 3,
+  atelier: 6,
+  diamond_couture: 12,
 };
 
 export const VAULT_MILESTONES = [
@@ -76,7 +99,7 @@ export function getVaultMaxPoints(milestones = VAULT_MILESTONES) {
   return source.reduce((max, milestone) => Math.max(max, milestone.points ?? 0), 0) || VAULT_MAX_POINTS;
 }
 
-export const TIER_ORDER = ['pearl', 'atelier', 'diamond_couture'];
+export const TIER_ORDER = ['regular_customer', 'pearl', 'atelier', 'diamond_couture'];
 
 /** First 25 checkout founding spots — Vanguard tier */
 export const FOUNDING_VANGUARD_CAP = 25;
@@ -100,11 +123,17 @@ export function formatFoundingBadge(type, spot) {
 }
 
 export function getTierConfig(tierId) {
-  return TIER_CONFIG[tierId] || TIER_CONFIG.pearl;
+  return TIER_CONFIG[tierId] || TIER_CONFIG.regular_customer;
 }
 
 export function getNextTier(tierId) {
   const idx = TIER_ORDER.indexOf(tierId);
   if (idx < 0 || idx >= TIER_ORDER.length - 1) return null;
   return TIER_ORDER[idx + 1];
+}
+
+export function getFoundingFloorTier(foundingType) {
+  if (foundingType === 'vanguard') return LOYALTY_TIER_IDS.DIAMOND;
+  if (foundingType === 'legacy') return LOYALTY_TIER_IDS.ATELIER;
+  return null;
 }

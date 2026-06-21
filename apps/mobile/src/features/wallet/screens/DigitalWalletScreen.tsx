@@ -3,8 +3,15 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { redeemVaultMilestone } from '@nail-couture/shared/utils/loyaltyWallet.js';
 import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
 import { getActiveVaultCodes, resolveMilestonePress } from '@nail-couture/shared/utils/vaultMilestones.js';
+import {
+  formatFmFloorUntil,
+  formatPointsExpiryDate,
+  getTierProgressSummary,
+} from '@nail-couture/shared/utils/tierProgress.js';
+import { getTierConfig } from '@nail-couture/shared/constants/loyaltyProgram.js';
 import { useAuth } from '../../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../../components/customer/CustomerScreenLayout';
+import { TierProgressBanner } from '../../../components/customer/home/TierProgressBanner';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
 import { useLayout } from '../../../theme/useLayout';
 import { useWalletState } from '../hooks/useWalletState';
@@ -41,13 +48,25 @@ export function DigitalWalletScreen() {
     setUnboxingReview(false);
   };
 
-  const tierInfo = getTierInfo({
+  const walletProfile = {
     loyalty_tier: snapshot?.tier || user?.loyalty_tier,
-    calendar_spend_ytd: snapshot?.calendar_spend_ytd ?? user?.calendar_spend_ytd,
+    loyalty_tier_earned: snapshot?.tier_earned,
+    rolling_spend_12m:
+      snapshot?.rolling_spend_12m
+      ?? snapshot?.calendar_spend_ytd
+      ?? user?.rolling_spend_12m
+      ?? user?.calendar_spend_ytd,
+    calendar_spend_ytd: snapshot?.rolling_spend_12m ?? snapshot?.calendar_spend_ytd ?? user?.calendar_spend_ytd,
     founding_type: snapshot?.founding?.type || user?.founding_type,
     founding_spot: snapshot?.founding?.spot ?? user?.founding_spot,
+    founding_awarded_at: user?.founding_awarded_at,
+    fm_floor_active: snapshot?.fm_floor_active,
+    fm_floor_until: snapshot?.fm_floor_until,
     loyalty_points: snapshot?.points ?? user?.loyalty_points,
-  });
+  };
+
+  const tierInfo = getTierInfo(walletProfile);
+  const progress = getTierProgressSummary(tierInfo, walletProfile, snapshot);
 
   const tierBenefits =
     'benefits' in tierInfo && Array.isArray(tierInfo.benefits)
@@ -86,11 +105,23 @@ export function DigitalWalletScreen() {
   }
 
   const showLoader = loading && !snapshot;
+  const showMembershipCard = tierInfo.id !== 'regular_customer';
+  const fmFloorTierName = tierInfo.fmFloorTier
+    ? getTierConfig(tierInfo.fmFloorTier).name
+    : null;
+  const pointsExpiringSoon = snapshot?.points_expiring_soon ?? 0;
+  const nextPointsExpiry = formatPointsExpiryDate(snapshot?.next_points_expiry ?? undefined);
 
   return (
     <CustomerScreenLayout
       title="Digital Wallet"
-      subtitle={isStale ? 'Showing cached wallet · syncing…' : 'Your tier cards & The Vault'}
+      subtitle={
+        isStale
+          ? 'Showing cached wallet · syncing…'
+          : showMembershipCard
+            ? 'Your tier cards & The Vault'
+            : 'Your tier progress & The Vault'
+      }
       headerRight={
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {isStale ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#f59e0b' }} /> : null}
@@ -110,12 +141,41 @@ export function DigitalWalletScreen() {
         <View style={{ gap: 20 }}>
           <View>
             <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2, marginBottom: 8 }]}>
-              {tierInfo.name.toUpperCase()} · {snapshot?.earn_rate ?? 1}× earn
+              {tierInfo.name.toUpperCase()} · {snapshot?.earn_rate ?? tierInfo.earnMultiplier ?? 1}× earn
             </Text>
-            <WalletCardDeck
-              activeTier={snapshot?.tier || user.loyalty_tier || 'pearl'}
-              isFounding={Boolean(snapshot?.founding || user.founding_spot)}
-            />
+
+            {tierInfo.fmFloorActive && fmFloorTierName ? (
+              <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 8 }]}>
+                Founding floor: {fmFloorTierName} until {formatFmFloorUntil(tierInfo.fmFloorUntil ?? undefined)}
+              </Text>
+            ) : null}
+
+            {tierInfo.earnedTierId && tierInfo.earnedTierId !== tierInfo.id ? (
+              <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 8 }]}>
+                Earned tier: {tierInfo.earnedTierName} · Effective: {tierInfo.name}
+              </Text>
+            ) : null}
+
+            {pointsExpiringSoon > 0 && nextPointsExpiry ? (
+              <Text style={{ fontSize: 12, marginBottom: 8, color: '#d97706' }}>
+                {pointsExpiringSoon} vault points expiring by {nextPointsExpiry}
+              </Text>
+            ) : null}
+
+            {showMembershipCard ? (
+              <WalletCardDeck
+                activeTier={snapshot?.tier || user.loyalty_tier || 'regular_customer'}
+                isFounding={Boolean(snapshot?.founding || user.founding_spot)}
+              />
+            ) : (
+              <View style={{ gap: 10 }}>
+                <TierProgressBanner profile={walletProfile} snapshot={snapshot} />
+                <Text style={[styles.textSecondary, { fontSize: 12, textAlign: 'center' }]}>
+                  {progress.progressDetail} — unlock your Pearl membership card at $
+                  {progress.nextThreshold ?? 500} rolling spend.
+                </Text>
+              </View>
+            )}
           </View>
 
           <TheVault

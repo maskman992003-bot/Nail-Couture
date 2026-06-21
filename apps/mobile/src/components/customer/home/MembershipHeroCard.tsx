@@ -14,6 +14,7 @@ export type ProfileLike = {
   full_name?: string;
   avatar_url?: string;
   loyalty_tier?: string;
+  rolling_spend_12m?: number;
   calendar_spend_ytd?: number;
   founding_spot?: number | null;
   founding_type?: string | null;
@@ -80,6 +81,10 @@ function ProfileAvatar({ profile }: { profile: ProfileLike }) {
 
 export function ProfileMembershipCard({ profile, onPress, fillSlot = false }: ProfileMembershipCardProps) {
   const tier = getTierInfo(profile);
+  if (tier.id === 'regular_customer') {
+    return null;
+  }
+
   const isFounding = Boolean(profile?.founding_spot);
   const foundingYear = new Date().getFullYear();
   const cardImage = getMembershipCardImage(tier.id);

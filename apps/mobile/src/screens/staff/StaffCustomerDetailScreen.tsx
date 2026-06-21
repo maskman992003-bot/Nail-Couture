@@ -22,7 +22,7 @@ import {
 import { parseVisitFinalServices } from '@nail-couture/shared/utils/appointmentServiceHistory.js';
 import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
 import { formatTierSpend } from '@nail-couture/shared/utils/tierProgress.js';
-import { formatFoundingBadge } from '@nail-couture/shared/constants/loyaltyProgram.js';
+import { formatFoundingBadge, getTierConfig } from '@nail-couture/shared/constants/loyaltyProgram.js';
 import {
   parseProfilePreferences,
   labelForOption,
@@ -83,6 +83,7 @@ type ProfileRecord = Record<string, unknown> & {
   refreshment_pref?: string;
   loyalty_points?: number;
   loyalty_tier?: string;
+  rolling_spend_12m?: number;
   calendar_spend_ytd?: number;
   founding_type?: string | null;
   founding_spot?: number | null;
@@ -675,9 +676,40 @@ export function StaffCustomerDetailScreen() {
                 }}
               >
                 <Text style={{ color: tierColor, fontSize: 12 }}>
-                  {tier.name} · {profile.loyalty_points || 0} pts · {formatTierSpend(profile.calendar_spend_ytd)} YTD
+                  {tier.name} · {profile.loyalty_points || 0} pts · {formatTierSpend(profile.rolling_spend_12m ?? profile.calendar_spend_ytd)} rolling
                 </Text>
               </View>
+              {tier.earnedTierName && tier.earnedTierName !== tier.name ? (
+                <View
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: styles.tokens.border,
+                  }}
+                >
+                  <Text style={[styles.textSecondary, { fontSize: 12 }]}>
+                    Earned: {tier.earnedTierName}
+                  </Text>
+                </View>
+              ) : null}
+              {tier.fmFloorActive && tier.fmFloorTier ? (
+                <View
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: styles.tokens.goldStrong,
+                    backgroundColor: `${styles.tokens.goldStrong}12`,
+                  }}
+                >
+                  <Text style={[styles.textGold, { fontSize: 12 }]}>
+                    FM floor: {getTierConfig(tier.fmFloorTier).name}
+                  </Text>
+                </View>
+              ) : null}
               {foundingBadge ? (
                 <View
                   style={{

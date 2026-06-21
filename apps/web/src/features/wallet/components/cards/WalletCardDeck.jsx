@@ -12,7 +12,7 @@ const CARD_COMPONENTS = {
 };
 
 export default function WalletCardDeck({ activeTier, isFounding }) {
-  const cards = TIER_ORDER.map((tierId) => {
+  const cards = TIER_ORDER.filter((tierId) => tierId !== 'regular_customer').map((tierId) => {
     const Card = CARD_COMPONENTS[tierId];
     const active = tierId === activeTier;
     return { tierId, active, Card };

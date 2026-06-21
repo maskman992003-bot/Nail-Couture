@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Armchair,
@@ -48,6 +48,38 @@ const ICONS = {
 
 const HERO_TAGS = ['Acrylics', 'Gel X', 'Builder Gel', 'Luxury Pedicures', 'Waxing Refinements'];
 const HERO_TAGS_2 = ['Medical-Grade Sterilization', 'Non-Toxic Premium Products'];
+
+function BoutiqueStoryBlock({ themeConfig }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasMore = LANDING_STORY.paragraphs.length > 1;
+
+  return (
+    <div className="mt-12 lg:mt-14 border-t pt-8 lg:pt-10" style={{ borderColor: themeConfig.borderColor }}>
+      <h3 className="landing-heading text-xl sm:text-2xl uppercase tracking-[0.08em]">{LANDING_STORY.headline}</h3>
+      <div
+        className={`mt-4 max-w-2xl space-y-4 text-sm leading-relaxed ${expanded ? '' : 'overflow-hidden'}`}
+        style={{
+          color: themeConfig.textSecondary,
+          maxHeight: expanded ? undefined : '9.75rem',
+        }}
+      >
+        {LANDING_STORY.paragraphs.map((paragraph) => (
+          <p key={paragraph.slice(0, 32)}>{paragraph}</p>
+        ))}
+      </div>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-4 text-[10px] font-semibold uppercase tracking-[0.18em] transition-opacity hover:opacity-80"
+          style={{ color: themeConfig.accentColor }}
+        >
+          {expanded ? 'Read Less' : 'Read More'}
+        </button>
+      )}
+    </div>
+  );
+}
 
 function PremiumHero({ themeConfig, assets, onVip, onServices }) {
   return (
@@ -323,12 +355,7 @@ export default function ThemedHomeLanding() {
                 );
               })}
             </div>
-            <div className="mt-12 lg:mt-14 border-t pt-8 lg:pt-10" style={{ borderColor: themeConfig.borderColor }}>
-              <h3 className="landing-heading text-xl sm:text-2xl uppercase tracking-[0.08em]">{LANDING_STORY.headline}</h3>
-              <p className="mt-4 text-sm leading-relaxed" style={{ color: themeConfig.textSecondary }}>Nail Couture was created with a simple vision:</p>
-              <p className="landing-heading mt-2 text-base sm:text-lg italic leading-relaxed" style={{ color: themeConfig.accentColor }}>{LANDING_STORY.tagline}</p>
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed" style={{ color: themeConfig.textSecondary }}>{LANDING_STORY.boutiqueExtra}</p>
-            </div>
+            <BoutiqueStoryBlock themeConfig={themeConfig} />
           </div>
         </section>
       ) : (
@@ -365,9 +392,6 @@ export default function ThemedHomeLanding() {
                 </div>
                 <div>
                   <h2 className="landing-heading text-2xl sm:text-3xl lg:text-4xl tracking-[0.08em] uppercase mb-6">{LANDING_STORY.headline}</h2>
-                  <p className="landing-heading text-base sm:text-lg italic mb-6 leading-relaxed" style={{ color: themeConfig.accentColor }}>
-                    {LANDING_STORY.tagline}
-                  </p>
                   <div className="space-y-4 text-sm leading-relaxed" style={{ color: themeConfig.textSecondary }}>
                     {LANDING_STORY.paragraphs.map((paragraph) => (
                       <p key={paragraph.slice(0, 24)}>{paragraph}</p>
