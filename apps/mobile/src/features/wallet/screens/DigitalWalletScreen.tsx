@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { redeemVaultMilestone } from '@nail-couture/shared/utils/loyaltyWallet.js';
 import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
+import { getActiveVaultCodes, resolveMilestonePress } from '@nail-couture/shared/utils/vaultMilestones.js';
 import { useAuth } from '../../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../../components/customer/CustomerScreenLayout';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
@@ -10,6 +11,7 @@ import { useWalletState } from '../hooks/useWalletState';
 import { useFoundingMemberRealtime } from '../hooks/useFoundingMemberRealtime';
 import { WalletCardDeck } from '../components/cards/WalletCardDeck';
 import { TheVault } from '../components/vault/TheVault';
+import { VaultActiveCodes } from '../components/vault/VaultActiveCodes';
 import { VaultUnboxingModal } from '../components/vault/VaultUnboxingModal';
 import { FoundingRevealOverlay } from '../components/animations/FoundingRevealOverlay';
 import { WaxSealBadge } from '../components/WaxSealBadge';
@@ -22,7 +24,22 @@ export function DigitalWalletScreen() {
   const { revealPayload, dismissReveal } = useFoundingMemberRealtime(user?.id);
   const [unboxingCode, setUnboxingCode] = useState<string | null>(null);
   const [unboxingLabel, setUnboxingLabel] = useState<string | undefined>();
+  const [unboxingReview, setUnboxingReview] = useState(false);
   const [redeeming, setRedeeming] = useState(false);
+
+  const walletPoints = snapshot?.points ?? user?.loyalty_points ?? 0;
+  const activeCodes = getActiveVaultCodes(snapshot?.milestones, walletPoints);
+
+  const openUnboxing = (code: string, label?: string, reviewMode = false) => {
+    setUnboxingCode(code);
+    setUnboxingLabel(label);
+    setUnboxingReview(reviewMode);
+  };
+
+  const closeUnboxing = () => {
+    setUnboxingCode(null);
+    setUnboxingReview(false);
+  };
 
   const tierInfo = getTierInfo({
     loyalty_tier: snapshot?.tier || user?.loyalty_tier,
@@ -40,20 +57,19 @@ export function DigitalWalletScreen() {
   const handleMilestonePress = async (milestonePoints: number) => {
     if (!user?.id || redeeming) return;
     const ms = snapshot?.milestones?.find((m) => m.points === milestonePoints);
-    if (!ms?.unlocked) return;
+    const decision = resolveMilestonePress(milestonePoints, walletPoints, ms);
 
-    if (ms.redemption_code) {
-      setUnboxingCode(ms.redemption_code);
-      setUnboxingLabel(ms.reward_label);
+    if (decision.action === 'show') {
+      openUnboxing(decision.code!, decision.label, true);
       return;
     }
+    if (decision.action !== 'claim') return;
 
     setRedeeming(true);
     try {
       const result = await redeemVaultMilestone(user.id, milestonePoints);
       if (result.success && result.redemption_code) {
-        setUnboxingCode(result.redemption_code);
-        setUnboxingLabel(result.reward_label);
+        openUnboxing(result.redemption_code, result.reward_label, false);
         await refresh();
       }
     } finally {
@@ -103,9 +119,14 @@ export function DigitalWalletScreen() {
           </View>
 
           <TheVault
-            points={snapshot?.points ?? user.loyalty_points ?? 0}
+            points={walletPoints}
             milestones={snapshot?.milestones}
             onMilestonePress={handleMilestonePress}
+          />
+
+          <VaultActiveCodes
+            codes={activeCodes}
+            onCodePress={(code, label) => openUnboxing(code, label, true)}
           />
 
           {layout.isMdUp ? (
@@ -121,9 +142,10 @@ export function DigitalWalletScreen() {
 
       <VaultUnboxingModal
         open={Boolean(unboxingCode)}
-        onClose={() => setUnboxingCode(null)}
+        onClose={closeUnboxing}
         redemptionCode={unboxingCode || ''}
         rewardLabel={unboxingLabel}
+        reviewMode={unboxingReview}
       />
 
       {revealPayload ? (

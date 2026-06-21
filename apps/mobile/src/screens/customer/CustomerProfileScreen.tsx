@@ -7,6 +7,7 @@ import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { isRefreshmentAvailable } from '@nail-couture/shared/services/inventoryService.js';
 import { fetchCustomerStats } from '@nail-couture/shared/utils/customerStats.js';
 import { generateReferralCode, getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
+import { formatTierSpend } from '@nail-couture/shared/utils/tierProgress.js';
 import { getProfileInitials } from '@nail-couture/shared/utils/avatarUpload.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
@@ -31,6 +32,10 @@ type ProfileRecord = Record<string, unknown> & {
   email?: string;
   birthday?: string;
   loyalty_points?: number;
+  loyalty_tier?: string;
+  calendar_spend_ytd?: number;
+  founding_spot?: number | null;
+  founding_type?: string | null;
   referral_code?: string;
   refreshment_pref?: string;
   nail_goal?: string;
@@ -224,7 +229,8 @@ export function CustomerProfileScreen() {
     return <CustomerScreenLayout title="My Account" subtitle="Unable to load profile" />;
   }
 
-  const tier = getTierInfo(profile.loyalty_points || 0);
+  const tier = getTierInfo(profile);
+  const ytdSpend = formatTierSpend(profile.calendar_spend_ytd);
 
   return (
     <CustomerScreenLayout title="My Account" subtitle="Profile, preferences, and security">
@@ -248,7 +254,7 @@ export function CustomerProfileScreen() {
             <Text style={[styles.textPrimary, { fontSize: 20, fontWeight: '600' }]}>{profile.full_name}</Text>
             <Text style={styles.textSecondary}>{profile.phone}</Text>
             <Text style={[styles.textGold, { fontSize: 12, marginTop: 4 }]}>
-              {tier.name} · {profile.loyalty_points ?? 0} pts
+              {tier.name} · {profile.loyalty_points ?? 0} pts · {ytdSpend} YTD
             </Text>
           </View>
         </View>

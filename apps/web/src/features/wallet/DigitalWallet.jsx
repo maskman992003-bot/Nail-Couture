@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { redeemVaultMilestone } from '@nail-couture/shared/utils/loyaltyWallet.js';
 import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier';
+import { getActiveVaultCodes, resolveMilestonePress } from '@nail-couture/shared/utils/vaultMilestones.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWalletState } from './hooks/useWalletState';
 import { useFoundingMemberRealtime } from './hooks/useFoundingMemberRealtime';
 import WalletCardDeck from './components/cards/WalletCardDeck';
 import TheVault from './components/vault/TheVault';
+import VaultActiveCodes from './components/vault/VaultActiveCodes';
 import VaultUnboxingModal from './components/vault/VaultUnboxingModal';
 import FoundingRevealOverlay from './components/animations/FoundingRevealOverlay';
 import WaxSealBadge from './components/WaxSealBadge';
@@ -18,7 +20,22 @@ export default function DigitalWallet() {
   const { revealPayload, dismissReveal } = useFoundingMemberRealtime(user?.id);
   const [unboxingCode, setUnboxingCode] = useState(null);
   const [unboxingLabel, setUnboxingLabel] = useState(undefined);
+  const [unboxingReview, setUnboxingReview] = useState(false);
   const [redeeming, setRedeeming] = useState(false);
+
+  const walletPoints = snapshot?.points ?? user?.loyalty_points ?? 0;
+  const activeCodes = getActiveVaultCodes(snapshot?.milestones, walletPoints);
+
+  const openUnboxing = (code, label, reviewMode = false) => {
+    setUnboxingCode(code);
+    setUnboxingLabel(label);
+    setUnboxingReview(reviewMode);
+  };
+
+  const closeUnboxing = () => {
+    setUnboxingCode(null);
+    setUnboxingReview(false);
+  };
 
   const muted = theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50';
 
@@ -38,20 +55,19 @@ export default function DigitalWallet() {
   const handleMilestonePress = async (milestonePoints) => {
     if (!user?.id || redeeming) return;
     const ms = snapshot?.milestones?.find((m) => m.points === milestonePoints);
-    if (!ms?.unlocked) return;
+    const decision = resolveMilestonePress(milestonePoints, walletPoints, ms);
 
-    if (ms.redemption_code) {
-      setUnboxingCode(ms.redemption_code);
-      setUnboxingLabel(ms.reward_label);
+    if (decision.action === 'show') {
+      openUnboxing(decision.code, decision.label, true);
       return;
     }
+    if (decision.action !== 'claim') return;
 
     setRedeeming(true);
     try {
       const result = await redeemVaultMilestone(user.id, milestonePoints);
       if (result.success && result.redemption_code) {
-        setUnboxingCode(result.redemption_code);
-        setUnboxingLabel(result.reward_label);
+        openUnboxing(result.redemption_code, result.reward_label, false);
         await refresh();
       }
     } finally {
@@ -98,12 +114,18 @@ export default function DigitalWallet() {
           <WalletCardDeck activeTier={activeTier} isFounding={isFounding} />
         </div>
 
-        <div className="md:grid md:grid-cols-2 md:gap-8">
-          <TheVault
-            points={snapshot?.points ?? user?.loyalty_points ?? 0}
-            milestones={snapshot?.milestones}
-            onMilestonePress={handleMilestonePress}
-          />
+        <div className="md:grid md:grid-cols-2 md:gap-8 space-y-8 md:space-y-0">
+          <div className="space-y-8">
+            <TheVault
+              points={walletPoints}
+              milestones={snapshot?.milestones}
+              onMilestonePress={handleMilestonePress}
+            />
+            <VaultActiveCodes
+              codes={activeCodes}
+              onCodePress={(code, label) => openUnboxing(code, label, true)}
+            />
+          </div>
           <div
             className="hidden md:block rounded-2xl p-6 border mt-0"
             style={{ borderColor: 'rgba(197,160,89,0.25)', backgroundColor: theme === 'dark' ? '#111' : '#fff' }}
@@ -120,9 +142,10 @@ export default function DigitalWallet() {
 
       <VaultUnboxingModal
         open={Boolean(unboxingCode)}
-        onClose={() => setUnboxingCode(null)}
+        onClose={closeUnboxing}
         redemptionCode={unboxingCode || ''}
         rewardLabel={unboxingLabel}
+        reviewMode={unboxingReview}
       />
 
       {revealPayload ? (

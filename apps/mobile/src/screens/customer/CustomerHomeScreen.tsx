@@ -3,15 +3,16 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import * as Clipboard from 'expo-clipboard';
-import { getTierInfo, generateReferralCode, tierDetails } from '@nail-couture/shared/utils/loyaltyTier.js';
+import { getTierInfo, generateReferralCode } from '@nail-couture/shared/utils/loyaltyTier.js';
 import { computeVaultRewardsAvailable } from '@nail-couture/shared/utils/vaultRewards.js';
+import { getNextTierUpsellBenefit, getTierProgressSummary } from '@nail-couture/shared/utils/tierProgress.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
 import { AppointmentStatusBadge } from '../../components/customer/AppointmentStatusBadge';
 import { MembershipHeroCard } from '../../components/customer/home/MembershipHeroCard';
-import { WalletStatsRow } from '../../components/customer/home/WalletStatsRow';
-import { BookAppointmentCTA } from '../../components/customer/home/BookAppointmentCTA';
+import { WalletStatsRow, PointsBalanceBar } from '../../components/customer/home/WalletStatsRow';
+import { TierProgressBanner } from '../../components/customer/home/TierProgressBanner';
 import { QuickActionGrid } from '../../components/customer/home/QuickActionGrid';
 import { ReferFriendModal } from '../../components/customer/home/ReferFriendModal';
 import { PromoSlideIn } from '../../components/marketing/PromoSlideIn';
@@ -137,6 +138,7 @@ export function CustomerHomeScreen() {
   }
 
   const tier = getTierInfo(profile);
+  const tierProgress = getTierProgressSummary(tier, profile, snapshot);
   const firstName = profile.full_name?.split(' ')[0] || 'back';
   const points = snapshot?.points ?? profile.loyalty_points ?? 0;
   const rewardsAvailable = computeVaultRewardsAvailable(points, snapshot?.milestones);
@@ -148,15 +150,18 @@ export function CustomerHomeScreen() {
         subtitle=""
       >
         <View style={{ gap: 16 }}>
-          <MembershipHeroCard profile={profile} onPress={() => setShowEarningModal(true)} />
+          <MembershipHeroCard profile={profile} />
 
           <WalletStatsRow
-            points={points}
+            profile={profile}
+            onCardPress={() => setShowEarningModal(true)}
             rewardsAvailable={rewardsAvailable}
             onViewRewards={() => navigation.navigate('Loyalty')}
           />
 
-          <BookAppointmentCTA onPress={() => navigation.navigate('Book')} />
+          <PointsBalanceBar points={points} />
+
+          <TierProgressBanner profile={profile} snapshot={snapshot} />
 
           <QuickActionGrid
             onAppointmentsPress={() => navigation.navigate('History' as AppScreenName)}
@@ -241,13 +246,20 @@ export function CustomerHomeScreen() {
             {tier.nextTier ? (
               <View style={[styles.card, { padding: 14 }]}>
                 <Text style={[styles.textSecondary, { fontSize: 11, letterSpacing: 1 }]}>
-                  YOUR PATH TO {tier.nextTier.toUpperCase()}
+                  {tierProgress.headline.toUpperCase()}
                 </Text>
                 <Text style={[styles.textPrimary, { marginTop: 6 }]}>
-                  {tierDetails[tier.name as keyof typeof tierDetails]?.reward}
+                  {getNextTierUpsellBenefit(tier)}
+                </Text>
+                <Text style={[styles.textSecondary, { marginTop: 8, fontSize: 12 }]}>
+                  {tierProgress.progressDetail}. Redeeming points does not change your tier.
                 </Text>
               </View>
-            ) : null}
+            ) : (
+              <View style={[styles.card, { padding: 14 }]}>
+                <Text style={[styles.textSecondary, { fontSize: 12 }]}>{tierProgress.progressDetail}</Text>
+              </View>
+            )}
           </View>
         </AppModal>
 

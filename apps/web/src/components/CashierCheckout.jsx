@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { CASHIER_CHECKOUT, MULTI_TECH_VISITS } from '@nail-couture/shared/constants/featureFlags';
-import { LOYALTY_REWARDS } from '@nail-couture/shared/utils/loyaltyTransactions';
+import { LOYALTY_REWARDS, validateVaultRedemptionCode } from '@nail-couture/shared/utils/loyaltyTransactions';
 import {
   computeGiftCardCheckoutSplit,
   isGiftCardExpired,
@@ -75,6 +75,10 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
   const [appliedGiftCard, setAppliedGiftCard] = useState(null);
   const [giftCardLookupError, setGiftCardLookupError] = useState('');
   const [lookingUpGiftCard, setLookingUpGiftCard] = useState(false);
+  const [vaultCode, setVaultCode] = useState('');
+  const [appliedVault, setAppliedVault] = useState(null);
+  const [vaultLookupError, setVaultLookupError] = useState('');
+  const [lookingUpVault, setLookingUpVault] = useState(false);
 
   const hasReservedReward = Boolean(appointment?.loyalty_reward_id && appointment?.loyalty_points_cost > 0);
   const basePrice = appointment?.final_price || appointment?.services?.price || 0;
@@ -129,9 +133,18 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
     setGiftCardCode('');
     setAppliedGiftCard(null);
     setGiftCardLookupError('');
+    setVaultCode('');
+    setAppliedVault(null);
+    setVaultLookupError('');
   }, [appointment?.id]);
 
   useEffect(() => {
+    if (appliedVault) {
+      setDiscountAmount(String(appliedVault.reward_value || 0));
+      setDiscountType('amount');
+      setLoyaltyRewardId('');
+      return;
+    }
     if (hasReservedReward) {
       const reservedDiscount = Number(appointment.loyalty_discount_amount || 0);
       if (reservedDiscount > 0) {
@@ -141,9 +154,21 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
       setLoyaltyRewardId('');
       return;
     }
+    if (selectedReward) {
+      setDiscountAmount(String(selectedReward.discountAmount || 0));
+      setDiscountType('amount');
+      return;
+    }
     setDiscountAmount('');
     setDiscountType('percent');
-  }, [appointment?.id, hasReservedReward, appointment?.loyalty_discount_amount]);
+  }, [
+    appointment?.id,
+    hasReservedReward,
+    appointment?.loyalty_discount_amount,
+    loyaltyRewardId,
+    appliedVault?.redemption_code,
+    selectedReward?.id,
+  ]);
 
   const labelClass = 'block text-secondary text-sm mb-2';
   const mutedClass = 'text-secondary';
@@ -187,6 +212,26 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
     }
   };
 
+  const handleLookupVaultCode = async () => {
+    if (!vaultCode.trim() || !appointment.customer_id) return;
+    setLookingUpVault(true);
+    setVaultLookupError('');
+    try {
+      const result = await validateVaultRedemptionCode(appointment.customer_id, vaultCode.trim());
+      if (!result.success) {
+        setAppliedVault(null);
+        setVaultLookupError(result.error || 'Vault code not found');
+        return;
+      }
+      setAppliedVault(result);
+      setLoyaltyRewardId('');
+    } catch (err) {
+      setVaultLookupError(err.message || 'Lookup failed');
+    } finally {
+      setLookingUpVault(false);
+    }
+  };
+
   const handleConfirm = async () => {
     if (showTipSplit && tip > 0 && !validateTipAllocations(tip, tipAllocations)) {
       setError('Tip splits must sum to the total tip amount.');
@@ -198,13 +243,18 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
       await onConfirm(appointment.id, {
         amount: basePrice,
         discount_amount: discount,
-        discount_type: discountType === 'percent' ? 'percentage' : discount > 0 && selectedReward ? 'loyalty' : 'fixed',
+        discount_type: discountType === 'percent' ? 'percentage' : discount > 0 && (selectedReward || appliedVault) ? 'loyalty' : 'fixed',
         final_amount: finalTotal,
         extras_amount: extras,
         notes,
         payment_method: paymentMethod,
-        loyalty_points_redeem: hasReservedReward ? 0 : (selectedReward?.points || 0),
-        loyalty_reward_name: hasReservedReward ? null : (selectedReward?.name || null),
+        loyalty_points_redeem: appliedVault || hasReservedReward ? 0 : (selectedReward?.points || 0),
+        loyalty_reward_name: appliedVault
+          ? appliedVault.reward_label
+          : hasReservedReward
+            ? null
+            : (selectedReward?.name || null),
+        vault_redemption_code: appliedVault?.redemption_code || null,
         tip_allocations: showTipSplit && tip > 0 ? tipAllocations : null,
         gift_card_id: appliedGiftCard?.id || null,
         gift_card_amount: appliedGiftCard ? giftSplit.giftCardAmount : null,
@@ -350,9 +400,17 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
             {customerPoints > 0 && !hasReservedReward && (
               <div>
                 <label className={labelClass}>Redeem Loyalty Reward</label>
+                <p className="text-xs text-secondary mb-2">
+                  Use a Vault code below if the guest claimed in the app. Otherwise select a reward (deducts points at checkout).
+                </p>
                 <select
                   value={loyaltyRewardId}
-                  onChange={(e) => setLoyaltyRewardId(e.target.value)}
+                  onChange={(e) => {
+                    setLoyaltyRewardId(e.target.value);
+                    setAppliedVault(null);
+                    setVaultCode('');
+                  }}
+                  disabled={Boolean(appliedVault)}
                   className={inputClass}
                 >
                   <option value="">None</option>
@@ -362,6 +420,43 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
                     </option>
                   ))}
                 </select>
+              </div>
+            )}
+
+            {customerPoints > 0 && !hasReservedReward && (
+              <div className="rounded-lg p-3 border border-card bg-secondary">
+                <label className={labelClass}>Vault Redemption Code</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={vaultCode}
+                    onChange={(e) => setVaultCode(e.target.value.toUpperCase())}
+                    className={inputClass}
+                    placeholder="From guest&apos;s Digital Wallet"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleLookupVaultCode}
+                    disabled={lookingUpVault}
+                    className="px-4 py-2 bg-gold/20 text-gold border border-card rounded-lg whitespace-nowrap"
+                  >
+                    {lookingUpVault ? '...' : 'Apply'}
+                  </button>
+                </div>
+                {appliedVault && (
+                  <div className="mt-2 text-sm text-gold">
+                    {appliedVault.reward_label} — ${Number(appliedVault.reward_value || 0).toFixed(2)} off
+                    <span className="text-secondary ml-2">(points already deducted)</span>
+                    <button
+                      type="button"
+                      onClick={() => { setAppliedVault(null); setVaultCode(''); }}
+                      className="ml-3 text-xs underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+                {vaultLookupError && <p className="text-red-400 text-xs mt-2">{vaultLookupError}</p>}
               </div>
             )}
 
@@ -435,10 +530,16 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
                 <span>-${discount.toFixed(2)}</span>
               </div>
             )}
-            {selectedReward && (
+            {selectedReward && !appliedVault && (
               <div className="flex justify-between items-center mb-2 text-amber-500 text-sm">
                 <span>Loyalty redeem</span>
                 <span>{selectedReward.points} pts — {selectedReward.name}</span>
+              </div>
+            )}
+            {appliedVault && (
+              <div className="flex justify-between items-center mb-2 text-amber-500 text-sm">
+                <span>Vault code</span>
+                <span>{appliedVault.reward_label}</span>
               </div>
             )}
             {appliedGiftCard && giftSplit.giftCardAmount > 0 && (
@@ -633,6 +734,7 @@ export default function CashierCheckout() {
       p_tip_allocations: checkoutData.tip_allocations || null,
       p_gift_card_id: checkoutData.gift_card_id || null,
       p_gift_card_amount: checkoutData.gift_card_amount || null,
+      p_vault_redemption_code: checkoutData.vault_redemption_code || null,
     });
 
     if (error) {

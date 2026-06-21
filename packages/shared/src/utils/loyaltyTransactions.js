@@ -1,10 +1,10 @@
 import { supabase } from '../lib/supabase';
 
 export const LOYALTY_REWARDS = [
-  { id: 'vault-100', name: 'Vault $5 Reward', points: 100, discountAmount: 5, description: '$5 reward — redeem via The Vault' },
-  { id: 'vault-250', name: 'Vault $15 Reward', points: 250, discountAmount: 15, description: '$15 reward — redeem via The Vault' },
-  { id: 'vault-500', name: 'Vault $35 Reward', points: 500, discountAmount: 35, description: '$35 reward — redeem via The Vault' },
-  { id: 'vault-1000', name: 'Vault $75 Reward', points: 1000, discountAmount: 75, description: '$75 reward — redeem via The Vault' },
+  { id: 'vault-100', name: 'Vault $5 Reward', points: 100, discountAmount: 5, description: 'Claim in The Vault first, or redeem here (deducts 100 pts)' },
+  { id: 'vault-250', name: 'Vault $15 Reward', points: 250, discountAmount: 15, description: 'Claim in The Vault first, or redeem here (deducts 250 pts)' },
+  { id: 'vault-500', name: 'Vault $35 Reward', points: 500, discountAmount: 35, description: 'Claim in The Vault first, or redeem here (deducts 500 pts)' },
+  { id: 'vault-1000', name: 'Vault $75 Reward', points: 1000, discountAmount: 75, description: 'Claim in The Vault first, or redeem here (deducts 1000 pts)' },
 ];
 
 const TYPE_LABELS = {
@@ -54,6 +54,27 @@ export async function redeemLoyaltyReward(profileId, pointsCost, rewardName) {
       return { success: false, error: 'Redemption service unavailable. Run sql/024_phase3_loyalty_engagement.sql in Supabase.' };
     }
     return { success: false, error: error.message || 'Redemption failed' };
+  }
+
+  return data || { success: false, error: 'Unexpected response' };
+}
+
+/** Validate a Vault redemption code at checkout (points already deducted when claimed in app). */
+export async function validateVaultRedemptionCode(profileId, code) {
+  const { data, error } = await supabase.rpc('validate_vault_redemption_code', {
+    p_profile_id: profileId,
+    p_code: String(code || '').trim().toUpperCase(),
+  });
+
+  if (error) {
+    if (error.message?.includes('validate_vault_redemption_code') || error.code === '42883') {
+      return { success: false, error: 'Vault validation unavailable. Run sql/101_vault_redemption_unify.sql in Supabase.' };
+    }
+    return { success: false, error: error.message || 'Validation failed' };
+  }
+
+  if (data?.error === 'invalid_or_used_code') {
+    return { success: false, error: 'Invalid or already used vault code.' };
   }
 
   return data || { success: false, error: 'Unexpected response' };

@@ -10,7 +10,8 @@ import {
   fetchReferralInfo,
   fetchCustomerVisitPhotos,
 } from '@nail-couture/shared/utils/customerStats';
-import { getTierInfo, generateReferralCode, isBirthdayMonth, tierDetails } from '@nail-couture/shared/utils/loyaltyTier';
+import { getTierInfo, generateReferralCode, isBirthdayMonth } from '@nail-couture/shared/utils/loyaltyTier';
+import { getNextTierUpsellBenefit, getTierProgressSummary } from '@nail-couture/shared/utils/tierProgress.js';
 import {
   parseProfilePreferences,
   buildProfilePreferences,
@@ -283,6 +284,7 @@ export default function CustomerProfile() {
   }
 
   const tier = getTierInfo(profile);
+  const tierProgress = getTierProgressSummary(tier, profile);
   const achievements = computeAchievements({ stats, profile, referralInfo, tier });
   const panelClass = theme === 'dark' ? 'bg-offwhite/5 border border-white/5 rounded-2xl p-6' : 'bg-charcoal/5 border border-charcoal/5 rounded-2xl p-6';
   const initials = getProfileInitials(profile.full_name);
@@ -577,23 +579,26 @@ export default function CustomerProfile() {
               <div className="text-center mb-4">
                 <div className={`font-heading text-2xl mb-1 ${tier.color}`}>{tier.name} Member</div>
                 <div className="text-4xl font-heading text-gold">{profile.loyalty_points ?? 0}</div>
-                <div className={theme === 'dark' ? 'text-offwhite/40 text-xs' : 'text-charcoal/40 text-xs'}>loyalty points</div>
+                <div className={theme === 'dark' ? 'text-offwhite/40 text-xs' : 'text-charcoal/40 text-xs'}>loyalty points · redeem in The Vault or at checkout</div>
               </div>
               {tier.nextTier && (
                 <div className="max-w-sm mx-auto mb-4">
                   <div className="flex justify-between text-xs mb-1" style={{ color: theme === 'dark' ? 'rgba(249,249,249,0.4)' : 'rgba(18,18,18,0.4)' }}>
-                    <span>Next: {tier.nextTier}</span>
-                    <span>{profile.loyalty_points || 0} / {tier.nextThreshold}</span>
+                    <span>Next tier: {tier.nextTier}</span>
+                    <span>{tierProgress.progressLabel}</span>
                   </div>
                   <div className="w-full rounded-full h-1.5" style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(18,18,18,0.1)' }}>
                     <div className="h-1.5 rounded-full bg-gold" style={{ width: `${tier.progress}%` }} />
                   </div>
+                  <p className={`text-center text-xs mt-2 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>
+                    {tierProgress.progressDetail}
+                  </p>
                 </div>
               )}
               <p className={`text-center text-sm ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>{tier.benefit}</p>
               {tier.nextTier && (
                 <p className={`text-center text-xs mt-3 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>
-                  {tierDetails[tier.name]?.reward}
+                  {getNextTierUpsellBenefit(tier)}
                 </p>
               )}
             </div>

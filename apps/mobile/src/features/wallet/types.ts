@@ -5,6 +5,7 @@ export type WalletMilestone = {
   unlocked: boolean;
   redeemed: boolean;
   redemption_code?: string | null;
+  used_at?: string | null;
 };
 
 export type WalletFounding = {

@@ -16,6 +16,7 @@ import {
   parseVisitFinalServices,
 } from '@nail-couture/shared/utils/appointmentServiceHistory';
 import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier';
+import { formatTierSpend } from '@nail-couture/shared/utils/tierProgress.js';
 import { formatFoundingBadge } from '@nail-couture/shared/constants/loyaltyProgram.js';
 import {
   parseProfilePreferences,
@@ -597,7 +598,7 @@ export default function StaffCustomerDetail() {
                 <p className="text-secondary text-sm truncate">{profile.phone}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5 sm:gap-2">
                   <span className={clsx('px-2 py-0.5 text-xs rounded-full border max-w-full truncate', tier.color, 'border-current')}>
-                    {tier.name} · {profile.loyalty_points || 0} pts
+                    {tier.name} · {profile.loyalty_points || 0} pts · {formatTierSpend(profile.calendar_spend_ytd)} YTD
                   </span>
                   {foundingBadge && (
                     <span className="px-2 py-0.5 text-xs rounded-full border border-gold/40 text-gold bg-gold/10">

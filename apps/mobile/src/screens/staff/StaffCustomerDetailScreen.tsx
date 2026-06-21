@@ -21,6 +21,8 @@ import {
 } from '@nail-couture/shared/utils/customerStats.js';
 import { parseVisitFinalServices } from '@nail-couture/shared/utils/appointmentServiceHistory.js';
 import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
+import { formatTierSpend } from '@nail-couture/shared/utils/tierProgress.js';
+import { formatFoundingBadge } from '@nail-couture/shared/constants/loyaltyProgram.js';
 import {
   parseProfilePreferences,
   labelForOption,
@@ -80,6 +82,10 @@ type ProfileRecord = Record<string, unknown> & {
   nail_goal?: string;
   refreshment_pref?: string;
   loyalty_points?: number;
+  loyalty_tier?: string;
+  calendar_spend_ytd?: number;
+  founding_type?: string | null;
+  founding_spot?: number | null;
   referral_code?: string;
   avatar_url?: string;
   role?: string;
@@ -595,7 +601,8 @@ export function StaffCustomerDetailScreen() {
 
   if (!profile) return null;
 
-  const tier = getTierInfo(profile.loyalty_points || 0);
+  const tier = getTierInfo(profile);
+  const foundingBadge = formatFoundingBadge(profile.founding_type, profile.founding_spot);
   const tierColor = TIER_COLORS[tier.name] || styles.tokens.goldStrong;
   const prefs = parseProfilePreferences(profile.preferences);
   const initials = profile.full_name?.charAt(0)?.toUpperCase() || '?';
@@ -668,9 +675,23 @@ export function StaffCustomerDetailScreen() {
                 }}
               >
                 <Text style={{ color: tierColor, fontSize: 12 }}>
-                  {tier.name} · {profile.loyalty_points || 0} pts
+                  {tier.name} · {profile.loyalty_points || 0} pts · {formatTierSpend(profile.calendar_spend_ytd)} YTD
                 </Text>
               </View>
+              {foundingBadge ? (
+                <View
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: styles.tokens.goldStrong,
+                    backgroundColor: `${styles.tokens.goldStrong}18`,
+                  }}
+                >
+                  <Text style={[styles.textGold, { fontSize: 12 }]}>Founding {foundingBadge}</Text>
+                </View>
+              ) : null}
               {profile.birthday ? (
                 <View
                   style={{

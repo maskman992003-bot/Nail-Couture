@@ -399,13 +399,24 @@ BEGIN
       'points', m.points,
       'reward_label', m.reward_label,
       'reward_value', m.reward_value,
-      'unlocked', COALESCE(v_profile.loyalty_points, 0) >= m.points,
+      'unlocked', (
+        COALESCE(v_profile.loyalty_points, 0) >= m.points
+        OR EXISTS (
+          SELECT 1 FROM loyalty_milestone_redemptions r
+          WHERE r.profile_id = p_profile_id AND r.milestone_points = m.points
+        )
+      ),
       'redeemed', EXISTS (
         SELECT 1 FROM loyalty_milestone_redemptions r
         WHERE r.profile_id = p_profile_id AND r.milestone_points = m.points
       ),
       'redemption_code', (
         SELECT r.redemption_code FROM loyalty_milestone_redemptions r
+        WHERE r.profile_id = p_profile_id AND r.milestone_points = m.points
+        LIMIT 1
+      ),
+      'used_at', (
+        SELECT r.used_at FROM loyalty_milestone_redemptions r
         WHERE r.profile_id = p_profile_id AND r.milestone_points = m.points
         LIMIT 1
       )
@@ -458,6 +469,7 @@ SET search_path = public
 AS $$
 DECLARE
   v_balance integer;
+  v_new integer;
   v_milestone RECORD;
   v_existing text;
   v_code text;
@@ -503,6 +515,20 @@ BEGIN
 
   v_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12));
 
+  v_new := v_balance - p_milestone_points;
+  UPDATE profiles SET loyalty_points = v_new WHERE id = p_profile_id;
+
+  INSERT INTO loyalty_transactions (
+    profile_id, transaction_type, points, balance_after, description, redemption_code
+  ) VALUES (
+    p_profile_id,
+    'redeem',
+    -p_milestone_points,
+    v_new,
+    format('Vault %s claimed', v_milestone.reward_label),
+    v_code
+  );
+
   INSERT INTO loyalty_milestone_redemptions (profile_id, milestone_points, redemption_code)
   VALUES (p_profile_id, p_milestone_points, v_code);
 
@@ -510,7 +536,8 @@ BEGIN
     'success', true,
     'redemption_code', v_code,
     'milestone_points', p_milestone_points,
-    'reward_label', v_milestone.reward_label
+    'reward_label', v_milestone.reward_label,
+    'new_balance', v_new
   );
 END;
 $$;

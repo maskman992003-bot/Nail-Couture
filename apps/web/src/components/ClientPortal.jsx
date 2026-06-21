@@ -4,8 +4,9 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
-import { getTierInfo, tierDetails, generateReferralCode } from '@nail-couture/shared/utils/loyaltyTier';
+import { getTierInfo, generateReferralCode } from '@nail-couture/shared/utils/loyaltyTier';
 import { computeVaultRewardsAvailable } from '@nail-couture/shared/utils/vaultRewards.js';
+import { getNextTierUpsellBenefit, getTierProgressSummary } from '@nail-couture/shared/utils/tierProgress.js';
 import Sidebar from './Sidebar';
 import AppModal, { modalBtnPrimary, modalLabelClass } from './AppModal';
 import PromoSlideIn from './marketing/PromoSlideIn';
@@ -13,9 +14,9 @@ import PromoDetailModal from './marketing/PromoDetailModal';
 import { useCustomerHomePromotions } from '../hooks/useCustomerHomePromotions';
 import { useWalletState } from '../features/wallet/hooks/useWalletState';
 import CustomerHomeHeader from './customer/home/CustomerHomeHeader';
-import MembershipHeroCard from './customer/home/MembershipHeroCard';
+import MembershipHeroCard, { MembershipCardSection } from './customer/home/MembershipHeroCard';
 import WalletStatsRow from './customer/home/WalletStatsRow';
-import BookAppointmentCTA from './customer/home/BookAppointmentCTA';
+import TierProgressBanner from './customer/home/TierProgressBanner';
 import QuickActionGrid from './customer/home/QuickActionGrid';
 import ReferFriendModal from './customer/home/ReferFriendModal';
 
@@ -126,6 +127,7 @@ export default function ClientPortal() {
   }
 
   const tier = getTierInfo(profile);
+  const tierProgress = getTierProgressSummary(tier, profile, snapshot);
   const points = snapshot?.points ?? profile.loyalty_points ?? 0;
   const rewardsAvailable = computeVaultRewardsAvailable(points, snapshot?.milestones);
 
@@ -133,13 +135,21 @@ export default function ClientPortal() {
     <div className={shellClass}>
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-2xl mx-auto space-y-5">
-        <CustomerHomeHeader profile={profile} />
+        <CustomerHomeHeader />
 
-        <MembershipHeroCard profile={profile} onPress={() => setShowEarningModal(true)} />
+        <MembershipHeroCard profile={profile} />
 
-        <WalletStatsRow points={points} rewardsAvailable={rewardsAvailable} />
+        <MembershipCardSection
+          profile={profile}
+          onCardPress={() => setShowEarningModal(true)}
+        />
 
-        <BookAppointmentCTA />
+        <WalletStatsRow
+          points={points}
+          rewardsAvailable={rewardsAvailable}
+        />
+
+        <TierProgressBanner profile={profile} snapshot={snapshot} />
 
         <QuickActionGrid onReferPress={() => setShowReferModal(true)} />
 
@@ -226,13 +236,17 @@ export default function ClientPortal() {
               </div>
             </div>
             <div className="rounded-xl border border-card bg-secondary p-5">
-              <div className={`${modalLabelClass} mb-2`}>Your Path to {tier.nextTier || 'Diamond'}</div>
-              <div className="text-primary font-heading text-base">{tierDetails[tier.name]?.reward}</div>
-              {tier.nextTier && tier.nextThreshold != null ? (
-                <div className="mt-3 text-sm text-secondary">
-                  Need <span className="text-gold-strong font-heading">{Math.max(0, tier.nextThreshold - (profile.loyalty_points || 0))}</span> more points to unlock {tier.nextTier}
-                </div>
-              ) : null}
+              <div className={`${modalLabelClass} mb-2`}>{tierProgress.headline}</div>
+              {tier.nextTier ? (
+                <>
+                  <div className="text-primary font-heading text-base">{getNextTierUpsellBenefit(tier)}</div>
+                  <div className="mt-3 text-sm text-secondary">
+                    {tierProgress.progressDetail}. Membership tier is based on calendar-year spend — redeeming points does not change your tier.
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-secondary">{tierProgress.progressDetail}</div>
+              )}
             </div>
           </div>
         </AppModal>

@@ -1,0 +1,199 @@
+import { normalizeMembershipTierId } from './membershipCardImages.js';
+import { formatFoundingBadge } from './loyaltyProgram.js';
+export const MEMBERSHIP_CARD_ASPECT_RATIO = 1.586;
+
+/** Compact hero card dimensions (beside profile avatar) */
+export const MEMBERSHIP_CARD_HERO = {
+  heightPx: 116,
+  borderRadiusPx: 20,
+};
+
+export function getMembershipCardHeroWidth() {
+  return Math.round(MEMBERSHIP_CARD_HERO.heightPx * MEMBERSHIP_CARD_ASPECT_RATIO);
+}
+
+/** Space reserved at card bottom when founding badge is shown (overlay padding) */
+export const MEMBERSHIP_CARD_FOUNDING_RESERVE = '28%';
+
+/** Card-height-relative font sizes for web (container query units) */
+export const MEMBERSHIP_CARD_FONT = {
+  name: 'clamp(17px, 4.2cqh, 11px)',
+  id: 'clamp(10px, 3.2cqh, 8px)',
+  founding: 'clamp(8px, 5.2cqh, 14px)',
+};
+
+/** Compute pixel font sizes from measured card height (mobile) */
+export function getMembershipCardFontSizes(cardHeightPx) {
+  const height = cardHeightPx || MEMBERSHIP_CARD_HERO.heightPx;
+  return {
+    name: Math.min(12, Math.max(6, height * 0.075)),
+    id: Math.min(9, Math.max(5, height * 0.055)),
+    founding: Math.min(14, Math.max(8, height * 0.096)),
+    seal: Math.min(68, Math.max(36, height * 0.4)),
+  };
+}
+
+/**
+ * Per-tier overlay layout for GIMP-exported card assets.
+ * Adjust `positions` top/left percentages to align with clear zones on each PNG.
+ *
+ * Tier names (PEARL, ATELIER, DIAMOND COUTURE) are baked into the artwork —
+ * only member name and ID are rendered dynamically.
+ */
+export const MEMBERSHIP_CARD_TIER_LAYOUT = {
+  pearl: {
+    positions: {
+      name: { top: '72%', left: '8%' },
+      id: { top: '83%', left: '8%' },
+    },
+    name: {
+      color: '#D4AF37',
+      fontFamily: 'heading',
+      fontWeight: 600,
+      letterSpacing: '0.08em',
+      letterSpacingMobile: 0.8,
+      textTransform: 'uppercase',
+      fontSizeWeb: MEMBERSHIP_CARD_FONT.name,
+      fontSizeMobile: 9,
+    },
+    id: {
+      color: '#B8960C',
+      fontFamily: 'body',
+      fontWeight: 500,
+      letterSpacing: '0.16em',
+      letterSpacingMobile: 1,
+      textTransform: 'uppercase',
+      fontSizeWeb: MEMBERSHIP_CARD_FONT.id,
+      fontSizeMobile: 7,
+    },
+    textShadow: '0 1px 2px rgba(0,0,0,0.45), 0 0 5px rgba(255,255,255,0.25)',
+  },
+  atelier: {
+    positions: {
+      name: { top: '56%', left: '10%' },
+      id: { top: '67%', left: '10%' },
+    },
+    name: {
+      color: '#C8895A',
+      fontFamily: 'heading',
+      fontWeight: 600,
+      letterSpacing: '0.1em',
+      letterSpacingMobile: 1,
+      textTransform: 'uppercase',
+      fontSizeWeb: MEMBERSHIP_CARD_FONT.name,
+      fontSizeMobile: 8.5,
+    },
+    id: {
+      color: '#9A6840',
+      fontFamily: 'body',
+      fontWeight: 500,
+      letterSpacing: '0.18em',
+      letterSpacingMobile: 1.2,
+      textTransform: 'uppercase',
+      fontSizeWeb: MEMBERSHIP_CARD_FONT.id,
+      fontSizeMobile: 6.5,
+    },
+    textShadow: '0 1px 3px rgba(0,0,0,0.65), 0 0 6px rgba(0,0,0,0.35)',
+  },
+  diamond_couture: {
+    positions: {
+      name: { top: '74%', left: '8%' },
+      id: { top: '85%', left: '8%' },
+    },
+    name: {
+      color: '#F4F4F6', // Slightly brighter white for better contrast against dark texture
+      fontFamily: "'Playfair Display', serif", // Use a high-contrast elegant Serif (Google Font)
+      fontWeight: 400, // Thinner weight is more couture than bold 600
+      letterSpacing: '.25em', // Wide tracking for that luxury editorial look
+      letterSpacingMobile: 1.5,
+      textTransform: 'uppercase',
+      fontSizeWeb: MEMBERSHIP_CARD_FONT.name,
+      fontSizeMobile: 9,
+      // Add a very subtle, sharp emboss effect
+      textShadow: '1px 1px 0px rgba(0,0,0,0.5), -1px -1px 0px rgba(255,255,255,0.1)',
+    },
+    id: {
+      color: '#BDBDC4',
+      fontFamily: "'Montserrat', sans-serif",
+      fontWeight: 300,
+      letterSpacing: '0.3em',
+      letterSpacingMobile: 2,
+      textTransform: 'uppercase',
+      fontSizeWeb: MEMBERSHIP_CARD_FONT.id,
+      fontSizeMobile: 6,
+    },
+    textShadow: '1px 1px 0px rgba(0,0,0,0.5), -1px -1px 0px rgba(255,255,255,0.1)',
+  },
+};
+
+/** @deprecated Use getMembershipCardLayout(tierId).positions */
+export const MEMBERSHIP_CARD_TEXT_POSITIONS = MEMBERSHIP_CARD_TIER_LAYOUT.pearl.positions;
+
+/** @deprecated Use tier layout name.color */
+export const MEMBERSHIP_CARD_GOLD = '#D4AF37';
+
+/** @deprecated Use tier layout textShadow */
+export const MEMBERSHIP_CARD_TEXT_SHADOW =
+  '0 1px 2px rgba(0,0,0,0.5), 0 0 6px rgba(0,0,0,0.35)';
+
+const WEB_FONT_FAMILIES = {
+  heading: "'Playfair Display', Georgia, serif",
+  body: "'Inter', system-ui, sans-serif",
+};
+
+const MOBILE_FONT_FAMILIES = {
+  heading: 'Playfair Display',
+  body: 'System',
+};
+
+export function getMembershipCardLayout(tierId) {
+  const key = normalizeMembershipTierId(tierId);
+  return MEMBERSHIP_CARD_TIER_LAYOUT[key] || MEMBERSHIP_CARD_TIER_LAYOUT.pearl;
+}
+
+export function getMembershipCardWebTextStyle(fieldStyle) {
+  return {
+    color: fieldStyle.color,
+    fontFamily: WEB_FONT_FAMILIES[fieldStyle.fontFamily] || WEB_FONT_FAMILIES.heading,
+    fontWeight: fieldStyle.fontWeight,
+    letterSpacing: fieldStyle.letterSpacing,
+    textTransform: fieldStyle.textTransform,
+    fontSize: fieldStyle.fontSizeWeb,
+  };
+}
+
+export function getMembershipCardMobileTextStyle(fieldStyle, cardHeightPx) {
+  const scaled = cardHeightPx ? getMembershipCardFontSizes(cardHeightPx) : null;
+  const fontSize = fieldStyle.fontFamily === 'body'
+    ? (scaled?.id ?? fieldStyle.fontSizeMobile)
+    : (scaled?.name ?? fieldStyle.fontSizeMobile);
+
+  return {
+    color: fieldStyle.color,
+    fontFamily: MOBILE_FONT_FAMILIES[fieldStyle.fontFamily] || MOBILE_FONT_FAMILIES.heading,
+    fontWeight: fieldStyle.fontWeight,
+    letterSpacing: fieldStyle.letterSpacingMobile ?? 1,
+    textTransform: fieldStyle.textTransform,
+    fontSize,
+  };
+}
+
+/** Founding member number for card overlay (e.g. FM 01/25 or FM 142/250) */
+export function getMembershipCardMemberId(profile) {
+  const badge = formatFoundingBadge(profile?.founding_type, profile?.founding_spot);
+  if (!badge) return '—';
+  return `FM ${badge}`;
+}
+
+/** Display member ID line on the card */
+export function formatMembershipCardId(id) {
+  const value = String(id || '').trim();
+  if (!value || value === '—') return '—';
+  return value;
+}
+
+export function getMembershipCardAlt({ name, tier }) {
+  const displayName = name?.trim() || 'Member';
+  const tierLabel = tier?.trim() || 'membership';
+  return `${displayName} — Nail Couture ${tierLabel} membership card`;
+}
