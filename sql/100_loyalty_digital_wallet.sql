@@ -61,7 +61,7 @@ CREATE INDEX IF NOT EXISTS idx_loyalty_milestone_redemptions_profile
 
 CREATE TABLE IF NOT EXISTS founding_members (
   profile_id uuid PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
-  spot_number integer NOT NULL UNIQUE CHECK (spot_number BETWEEN 1 AND 250),
+  spot_number integer NOT NULL UNIQUE CHECK (spot_number BETWEEN 1 AND 100),
   founding_type text NOT NULL CHECK (founding_type IN ('vanguard', 'legacy')),
   payment_transaction_id uuid NOT NULL REFERENCES payment_transactions(id),
   appointment_id uuid NOT NULL REFERENCES appointments(id),
@@ -127,7 +127,7 @@ IMMUTABLE
 AS $$
   SELECT CASE p_type
     WHEN 'vanguard' THEN lpad(p_spot::text, 2, '0') || '/25'
-    WHEN 'legacy' THEN p_spot::text || '/250'
+    WHEN 'legacy' THEN (p_spot - 25)::text || '/75'
     ELSE NULL
   END;
 $$;
@@ -307,7 +307,7 @@ BEGIN
 
   SELECT count(*)::int INTO v_count FROM founding_members;
 
-  IF v_count >= 250 THEN
+  IF v_count >= 100 THEN
     RETURN jsonb_build_object('success', false, 'reason', 'cap_reached');
   END IF;
 

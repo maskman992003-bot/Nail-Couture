@@ -1,4 +1,4 @@
-import { getNextTier, getTierConfig, TIER_CONFIG } from '../constants/loyaltyProgram.js';
+import { getNextTier, getTierConfig, TIER_CONFIG, formatFoundingBadge } from '../constants/loyaltyProgram.js';
 
 /** @deprecated Use TIER_CONFIG from loyaltyProgram.js */
 export const tierDetails = {
@@ -44,11 +44,7 @@ function getTierFromProfile(profile) {
     progress,
     calendarSpend: spend,
     isFounding: Boolean(profile.founding_spot),
-    foundingBadge: profile.founding_spot
-      ? profile.founding_type === 'vanguard'
-        ? `${String(profile.founding_spot).padStart(2, '0')}/25`
-        : `${profile.founding_spot}/250`
-      : null,
+    foundingBadge: formatFoundingBadge(profile.founding_type, profile.founding_spot),
   };
 }
 

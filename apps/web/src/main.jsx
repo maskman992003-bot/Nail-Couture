@@ -55,6 +55,7 @@ import { ThemeEngineProvider } from './context/ThemeEngineContext.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 import RouteDocumentTitle from './components/RouteDocumentTitle.jsx'
 import { CHECK_IN_ROLE } from '@nail-couture/shared/utils/routes'
+import MembershipCardPreviewPage from './pages/dev/MembershipCardPreviewPage.jsx'
 
 const KIOSK_ALLOWED_PATHS = ['/check-in', '/login'];
 
@@ -670,6 +671,9 @@ function AppRoutes() {
                 <NailAssessmentPortalPage />
               </ProtectedRoute>
             } />
+            {import.meta.env.DEV ? (
+              <Route path="/dev/membership-card" element={<MembershipCardPreviewPage />} />
+            ) : null}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
     </KioskSessionGuard>

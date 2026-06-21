@@ -78,10 +78,24 @@ export function getVaultMaxPoints(milestones = VAULT_MILESTONES) {
 
 export const TIER_ORDER = ['pearl', 'atelier', 'diamond_couture'];
 
+/** First 25 checkout founding spots — Vanguard tier */
+export const FOUNDING_VANGUARD_CAP = 25;
+/** Legacy founding spots after Vanguard (26th–100th member overall) */
+export const FOUNDING_LEGACY_CAP = 75;
+/** Total founding program capacity */
+export const FOUNDING_TOTAL_CAP = FOUNDING_VANGUARD_CAP + FOUNDING_LEGACY_CAP;
+
 export function formatFoundingBadge(type, spot) {
   if (!type || spot == null) return null;
-  if (type === 'vanguard') return `${String(spot).padStart(2, '0')}/25`;
-  if (type === 'legacy') return `${spot}/250`;
+  const spotNumber = Number(spot);
+  if (type === 'vanguard') {
+    return `${String(spotNumber).padStart(2, '0')}/${FOUNDING_VANGUARD_CAP}`;
+  }
+  if (type === 'legacy') {
+    const legacyIndex = spotNumber - FOUNDING_VANGUARD_CAP;
+    if (legacyIndex < 1 || legacyIndex > FOUNDING_LEGACY_CAP) return null;
+    return `${legacyIndex}/${FOUNDING_LEGACY_CAP}`;
+  }
   return null;
 }
 

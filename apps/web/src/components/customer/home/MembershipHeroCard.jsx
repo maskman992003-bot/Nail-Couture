@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
 import { getProfileInitials } from '@nail-couture/shared/utils/avatarUpload.js';
-import { getMembershipCardWebSrc } from '@nail-couture/shared/constants/membershipCardImages.js';
+import { getMembershipCardWebSrc } from '../../../constants/membershipCardImages.js';
 import { getMembershipCardMemberId, MEMBERSHIP_CARD_HERO } from '@nail-couture/shared/constants/membershipCardLayout.js';
 import { FOUNDING_SEAL_PALETTES } from '@nail-couture/shared/constants/membershipCardThemes.js';
 import MembershipCard from './membership-card/MembershipCard.jsx';

@@ -19,13 +19,15 @@ import {
 import FoundingWaxSeal from './FoundingWaxSeal.jsx';
 
 function OverlayText({ value, position, fieldStyle, textShadow }) {
+  const resolvedShadow = fieldStyle.textShadow ?? textShadow;
+
   return (
     <p
       className="absolute max-w-[90%] leading-none"
       style={{
         top: position.top,
         left: position.left,
-        textShadow,
+        textShadow: resolvedShadow,
         lineHeight: 1.15,
         ...getMembershipCardWebTextStyle(fieldStyle),
       }}

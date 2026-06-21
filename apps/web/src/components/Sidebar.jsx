@@ -15,6 +15,7 @@ import NotificationPanel from '@nail-couture/shared/components/NotificationPanel
 import { getSettingsPath } from '@nail-couture/shared/utils/routes';
 import { fetchPendingAssignmentCount } from '@nail-couture/shared/utils/technicianQueue';
 import { modalBtnPrimary, modalBtnSecondary } from './AppModal';
+import { OPEN_NOTIFICATIONS_EVENT } from '../utils/notificationPanel.js';
 
 const ACTIVE_NAV_GRADIENT_FALLBACK = 'linear-gradient(135deg, rgba(197, 160, 89, 0.22), rgba(240, 215, 140, 0.12))';
 
@@ -184,6 +185,12 @@ export default function Sidebar() {
   const location = useLocation();
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  useEffect(() => {
+    const openFromExternal = () => setNotifPanelOpen(true);
+    window.addEventListener(OPEN_NOTIFICATIONS_EVENT, openFromExternal);
+    return () => window.removeEventListener(OPEN_NOTIFICATIONS_EVENT, openFromExternal);
+  }, []);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [userMenuSource, setUserMenuSource] = useState(null);
   const [userMenuPos, setUserMenuPos] = useState(null);

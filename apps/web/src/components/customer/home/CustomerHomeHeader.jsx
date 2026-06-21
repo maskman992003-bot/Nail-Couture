@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import BrandLogo from '../../BrandLogo.jsx';
+import { openNotificationPanel } from '../../../utils/notificationPanel.js';
 
 export default function CustomerHomeHeader() {
   return (
@@ -7,6 +8,7 @@ export default function CustomerHomeHeader() {
       <div className="flex justify-start">
         <button
           type="button"
+          onClick={openNotificationPanel}
           className="p-2 rounded-full text-secondary hover:text-gold-strong hover:bg-primary/5 transition-colors"
           aria-label="Notifications"
         >

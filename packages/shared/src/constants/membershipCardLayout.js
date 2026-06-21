@@ -43,8 +43,8 @@ export function getMembershipCardFontSizes(cardHeightPx) {
 export const MEMBERSHIP_CARD_TIER_LAYOUT = {
   pearl: {
     positions: {
-      name: { top: '72%', left: '8%' },
-      id: { top: '83%', left: '8%' },
+      name: { top: '57%', left: '18%' },
+      id: { top: '65%', left: '38%' },
     },
     name: {
       color: '#D4AF37',
@@ -70,8 +70,8 @@ export const MEMBERSHIP_CARD_TIER_LAYOUT = {
   },
   atelier: {
     positions: {
-      name: { top: '56%', left: '10%' },
-      id: { top: '67%', left: '10%' },
+      name: { top: '53%', left: '20%' },
+      id: { top: '60%', left: '45%' },
     },
     name: {
       color: '#C8895A',
@@ -97,14 +97,14 @@ export const MEMBERSHIP_CARD_TIER_LAYOUT = {
   },
   diamond_couture: {
     positions: {
-      name: { top: '74%', left: '8%' },
-      id: { top: '85%', left: '8%' },
+      name: { top: '51%', left: '19%' },
+      id: { top: '22%', left: '90%' },
     },
     name: {
       color: '#F4F4F6', // Slightly brighter white for better contrast against dark texture
       fontFamily: "'Playfair Display', serif", // Use a high-contrast elegant Serif (Google Font)
       fontWeight: 400, // Thinner weight is more couture than bold 600
-      letterSpacing: '.25em', // Wide tracking for that luxury editorial look
+      letterSpacing: '.20em', // Wide tracking for that luxury editorial look
       letterSpacingMobile: 1.5,
       textTransform: 'uppercase',
       fontSizeWeb: MEMBERSHIP_CARD_FONT.name,
@@ -113,14 +113,17 @@ export const MEMBERSHIP_CARD_TIER_LAYOUT = {
       textShadow: '1px 1px 0px rgba(0,0,0,0.5), -1px -1px 0px rgba(255,255,255,0.1)',
     },
     id: {
-      color: '#BDBDC4',
+      color: '#FFFFFF',
       fontFamily: "'Montserrat', sans-serif",
-      fontWeight: 300,
-      letterSpacing: '0.3em',
-      letterSpacingMobile: 2,
+      fontWeight: 500,
+      letterSpacing: '0.22em',
+      letterSpacingMobile: 1.5,
       textTransform: 'uppercase',
-      fontSizeWeb: MEMBERSHIP_CARD_FONT.id,
-      fontSizeMobile: 6,
+      fontSizeWeb: 'clamp(11px, 3.8cqh, 14px)',
+      fontSizeMobile: 8,
+      textStroke: '0.6px rgba(0,0,0,0.95)',
+      textShadow:
+        '-1px -1px 0 rgba(0,0,0,0.95), 1px -1px 0 rgba(0,0,0,0.95), -1px 1px 0 rgba(0,0,0,0.95), 1px 1px 0 rgba(0,0,0,0.95), 0 -1px 0 rgba(0,0,0,0.95), 0 1px 0 rgba(0,0,0,0.95), -1px 0 0 rgba(0,0,0,0.95), 1px 0 0 rgba(0,0,0,0.95)',
     },
     textShadow: '1px 1px 0px rgba(0,0,0,0.5), -1px -1px 0px rgba(255,255,255,0.1)',
   },
@@ -152,13 +155,25 @@ export function getMembershipCardLayout(tierId) {
 }
 
 export function getMembershipCardWebTextStyle(fieldStyle) {
+  const fontFamily = WEB_FONT_FAMILIES[fieldStyle.fontFamily]
+    || (fieldStyle.fontFamily?.includes("'") || fieldStyle.fontFamily?.includes(',')
+      ? fieldStyle.fontFamily
+      : WEB_FONT_FAMILIES.heading);
+
   return {
     color: fieldStyle.color,
-    fontFamily: WEB_FONT_FAMILIES[fieldStyle.fontFamily] || WEB_FONT_FAMILIES.heading,
+    fontFamily,
     fontWeight: fieldStyle.fontWeight,
     letterSpacing: fieldStyle.letterSpacing,
     textTransform: fieldStyle.textTransform,
     fontSize: fieldStyle.fontSizeWeb,
+    ...(fieldStyle.border && { border: fieldStyle.border, display: 'inline-block' }),
+    ...(fieldStyle.borderRadius && { borderRadius: fieldStyle.borderRadius }),
+    ...(fieldStyle.padding && { padding: fieldStyle.padding }),
+    ...(fieldStyle.textStroke && {
+      WebkitTextStroke: fieldStyle.textStroke,
+      paintOrder: 'stroke fill',
+    }),
   };
 }
 
@@ -175,14 +190,22 @@ export function getMembershipCardMobileTextStyle(fieldStyle, cardHeightPx) {
     letterSpacing: fieldStyle.letterSpacingMobile ?? 1,
     textTransform: fieldStyle.textTransform,
     fontSize,
+    ...(fieldStyle.border && {
+      borderWidth: 1,
+      borderColor: 'rgba(212, 175, 55, 0.9)',
+      alignSelf: 'flex-start',
+      paddingHorizontal: 5,
+      paddingVertical: 2,
+      borderRadius: 4,
+    }),
   };
 }
 
-/** Founding member number for card overlay (e.g. FM 01/25 or FM 142/250) */
+/** Founding member number for card overlay (e.g. 01/25 or 42/75) */
 export function getMembershipCardMemberId(profile) {
   const badge = formatFoundingBadge(profile?.founding_type, profile?.founding_spot);
   if (!badge) return '—';
-  return `FM ${badge}`;
+  return badge;
 }
 
 /** Display member ID line on the card */

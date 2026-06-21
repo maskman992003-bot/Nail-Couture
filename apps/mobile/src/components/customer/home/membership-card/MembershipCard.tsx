@@ -63,10 +63,13 @@ function OverlayText({
 }: {
   value: string;
   position: { top: string; left: string };
-  fieldStyle: object;
+  fieldStyle: Record<string, unknown>;
   textShadowColor: string;
   cardHeightPx: number;
 }) {
+  const mobileStyle = getMembershipCardMobileTextStyle(fieldStyle, cardHeightPx);
+  const hasTextOutline = Boolean(fieldStyle.textStroke);
+
   return (
     <Text
       adjustsFontSizeToFit
@@ -77,10 +80,10 @@ function OverlayText({
         {
           top: position.top,
           left: position.left,
-          textShadowColor,
-          textShadowOffset: { width: 0, height: 1 },
-          textShadowRadius: 3,
-          ...getMembershipCardMobileTextStyle(fieldStyle, cardHeightPx),
+          textShadowColor: hasTextOutline ? '#000' : textShadowColor,
+          textShadowOffset: hasTextOutline ? { width: 0, height: 0 } : { width: 0, height: 1 },
+          textShadowRadius: hasTextOutline ? 2 : 3,
+          ...mobileStyle,
         },
       ]}
     >
