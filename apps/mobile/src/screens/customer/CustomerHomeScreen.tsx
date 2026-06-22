@@ -15,6 +15,7 @@ import { WalletStatsRow, PointsBalanceBar } from '../../components/customer/home
 import { TierProgressBanner } from '../../components/customer/home/TierProgressBanner';
 import { QuickActionGrid } from '../../components/customer/home/QuickActionGrid';
 import { ReferFriendModal } from '../../components/customer/home/ReferFriendModal';
+import LoyaltyTermsSummary from '../../features/wallet/components/LoyaltyTermsSummary';
 import { PromoSlideIn } from '../../components/marketing/PromoSlideIn';
 import { PromoDetailModal } from '../../components/marketing/PromoDetailModal';
 import { useCustomerHomePromotions } from '../../hooks/useCustomerHomePromotions';
@@ -252,7 +253,7 @@ export function CustomerHomeScreen() {
                   {getNextTierUpsellBenefit(tier)}
                 </Text>
                 <Text style={[styles.textSecondary, { marginTop: 8, fontSize: 12 }]}>
-                  {tierProgress.progressDetail}. Redeeming points does not change your tier.
+                  {tierProgress.progressDetail}. Membership tier is based on rolling 12-month spend — redeeming points does not change your tier.
                 </Text>
               </View>
             ) : (
@@ -260,6 +261,7 @@ export function CustomerHomeScreen() {
                 <Text style={[styles.textSecondary, { fontSize: 12 }]}>{tierProgress.progressDetail}</Text>
               </View>
             )}
+            <LoyaltyTermsSummary variant="compact" />
           </View>
         </AppModal>
 

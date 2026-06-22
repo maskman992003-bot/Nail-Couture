@@ -15,21 +15,50 @@ export function getMembershipCardHeroWidth() {
 /** Space reserved at card bottom when founding badge is shown (overlay padding) */
 export const MEMBERSHIP_CARD_FOUNDING_RESERVE = '28%';
 
-/** Card-height-relative font sizes for web (container query units) */
+/** Card-height-relative font sizes for web (container query units — CSS fallback) */
 export const MEMBERSHIP_CARD_FONT = {
-  name: 'clamp(17px, 4.2cqh, 11px)',
-  id: 'clamp(10px, 3.2cqh, 8px)',
+  name: 'clamp(6px, 4.2cqh, 17px)',
+  id: 'clamp(5px, 3.2cqh, 10px)',
   founding: 'clamp(8px, 5.2cqh, 14px)',
 };
 
-/** Compute pixel font sizes from measured card height (mobile) */
-export function getMembershipCardFontSizes(cardHeightPx) {
+/** Default font scale ratios (% of card height) with px bounds */
+export const MEMBERSHIP_CARD_FIELD_FONT = {
+  name: { ratio: 0.042, min: 6, max: 17 },
+  id: { ratio: 0.032, min: 5, max: 10 },
+  founding: { ratio: 0.052, min: 8, max: 14 },
+};
+
+/** Max width for name overlay as fraction of card width (leaves room for seal) */
+export const MEMBERSHIP_CARD_NAME_MAX_WIDTH = 0.58;
+
+/** Minimum font scale when shrinking long names to fit */
+export const MEMBERSHIP_CARD_NAME_MIN_SCALE = 0.65;
+
+/** Resolve font scale config for a field, with optional per-tier overrides */
+export function getMembershipCardFieldFontScale(tierId, fieldKey) {
+  const layout = getMembershipCardLayout(tierId);
+  const fieldStyle = fieldKey === 'id' ? layout.id : fieldKey === 'founding' ? null : layout.name;
+  const defaults = MEMBERSHIP_CARD_FIELD_FONT[fieldKey] || MEMBERSHIP_CARD_FIELD_FONT.name;
+  return fieldStyle?.fontScale || defaults;
+}
+
+/** Compute pixel font size for one overlay field */
+export function getMembershipCardFieldFontSize(cardHeightPx, fieldKey, tierId) {
   const height = cardHeightPx || MEMBERSHIP_CARD_HERO.heightPx;
+  const { ratio, min, max } = getMembershipCardFieldFontScale(tierId, fieldKey);
+  return Math.min(max, Math.max(min, height * ratio));
+}
+
+/** Compute pixel font sizes from measured card height */
+export function getMembershipCardFontSizes(cardHeightPx, tierId) {
+  const height = cardHeightPx || MEMBERSHIP_CARD_HERO.heightPx;
+  const resolvedTier = tierId || 'pearl';
   return {
-    name: Math.min(12, Math.max(6, height * 0.075)),
-    id: Math.min(9, Math.max(5, height * 0.055)),
-    founding: Math.min(14, Math.max(8, height * 0.096)),
-    seal: Math.min(68, Math.max(36, height * 0.4)),
+    name: getMembershipCardFieldFontSize(height, 'name', resolvedTier),
+    id: getMembershipCardFieldFontSize(height, 'id', resolvedTier),
+    founding: getMembershipCardFieldFontSize(height, 'founding', resolvedTier),
+    seal: Math.min(88, Math.max(56, height * 0.20)),
   };
 }
 
@@ -98,18 +127,17 @@ export const MEMBERSHIP_CARD_TIER_LAYOUT = {
   diamond_couture: {
     positions: {
       name: { top: '51%', left: '19%' },
-      id: { top: '22%', left: '90%' },
+      id: { top: '30%', right: '3%', textAlign: 'right' },
     },
     name: {
-      color: '#F4F4F6', // Slightly brighter white for better contrast against dark texture
-      fontFamily: "'Playfair Display', serif", // Use a high-contrast elegant Serif (Google Font)
-      fontWeight: 400, // Thinner weight is more couture than bold 600
-      letterSpacing: '.20em', // Wide tracking for that luxury editorial look
+      color: '#F4F4F6',
+      fontFamily: "'Playfair Display', serif",
+      fontWeight: 400,
+      letterSpacing: '.20em',
       letterSpacingMobile: 1.5,
       textTransform: 'uppercase',
       fontSizeWeb: MEMBERSHIP_CARD_FONT.name,
       fontSizeMobile: 9,
-      // Add a very subtle, sharp emboss effect
       textShadow: '1px 1px 0px rgba(0,0,0,0.5), -1px -1px 0px rgba(255,255,255,0.1)',
     },
     id: {
@@ -119,8 +147,9 @@ export const MEMBERSHIP_CARD_TIER_LAYOUT = {
       letterSpacing: '0.22em',
       letterSpacingMobile: 1.5,
       textTransform: 'uppercase',
-      fontSizeWeb: 'clamp(11px, 3.8cqh, 14px)',
+      fontSizeWeb: 'clamp(6px, 3.8cqh, 12px)',
       fontSizeMobile: 8,
+      fontScale: { ratio: 0.038, min: 6, max: 12 },
       textStroke: '0.6px rgba(0,0,0,0.95)',
       textShadow:
         '-1px -1px 0 rgba(0,0,0,0.95), 1px -1px 0 rgba(0,0,0,0.95), -1px 1px 0 rgba(0,0,0,0.95), 1px 1px 0 rgba(0,0,0,0.95), 0 -1px 0 rgba(0,0,0,0.95), 0 1px 0 rgba(0,0,0,0.95), -1px 0 0 rgba(0,0,0,0.95), 1px 0 0 rgba(0,0,0,0.95)',
@@ -154,11 +183,15 @@ export function getMembershipCardLayout(tierId) {
   return MEMBERSHIP_CARD_TIER_LAYOUT[key] || MEMBERSHIP_CARD_TIER_LAYOUT.pearl;
 }
 
-export function getMembershipCardWebTextStyle(fieldStyle) {
+export function getMembershipCardWebTextStyle(fieldStyle, cardHeightPx, fieldKey, tierId) {
   const fontFamily = WEB_FONT_FAMILIES[fieldStyle.fontFamily]
     || (fieldStyle.fontFamily?.includes("'") || fieldStyle.fontFamily?.includes(',')
       ? fieldStyle.fontFamily
       : WEB_FONT_FAMILIES.heading);
+
+  const fontSize = cardHeightPx && fieldKey
+    ? getMembershipCardFieldFontSize(cardHeightPx, fieldKey, tierId)
+    : fieldStyle.fontSizeWeb;
 
   return {
     color: fieldStyle.color,
@@ -166,7 +199,7 @@ export function getMembershipCardWebTextStyle(fieldStyle) {
     fontWeight: fieldStyle.fontWeight,
     letterSpacing: fieldStyle.letterSpacing,
     textTransform: fieldStyle.textTransform,
-    fontSize: fieldStyle.fontSizeWeb,
+    fontSize,
     ...(fieldStyle.border && { border: fieldStyle.border, display: 'inline-block' }),
     ...(fieldStyle.borderRadius && { borderRadius: fieldStyle.borderRadius }),
     ...(fieldStyle.padding && { padding: fieldStyle.padding }),
@@ -177,11 +210,10 @@ export function getMembershipCardWebTextStyle(fieldStyle) {
   };
 }
 
-export function getMembershipCardMobileTextStyle(fieldStyle, cardHeightPx) {
-  const scaled = cardHeightPx ? getMembershipCardFontSizes(cardHeightPx) : null;
-  const fontSize = fieldStyle.fontFamily === 'body'
-    ? (scaled?.id ?? fieldStyle.fontSizeMobile)
-    : (scaled?.name ?? fieldStyle.fontSizeMobile);
+export function getMembershipCardMobileTextStyle(fieldStyle, cardHeightPx, fieldKey, tierId) {
+  const fontSize = cardHeightPx && fieldKey
+    ? getMembershipCardFieldFontSize(cardHeightPx, fieldKey, tierId)
+    : fieldStyle.fontSizeMobile;
 
   return {
     color: fieldStyle.color,

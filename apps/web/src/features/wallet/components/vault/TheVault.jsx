@@ -4,11 +4,12 @@ import { getVaultMaxPoints, VAULT_MILESTONES } from '@nail-couture/shared/consta
 import { mergeVaultMilestones } from '@nail-couture/shared/utils/vaultMilestones.js';
 import { useTheme } from '../../../../contexts/ThemeContext';
 
-const VIAL_WIDTH = 72;
 const VIAL_HEIGHT = 220;
+const VIAL_FILL_MAX_PERCENT = ((VIAL_HEIGHT - 16) / VIAL_HEIGHT) * 100;
 
-function milestoneY(points, maxPoints) {
-  return VIAL_HEIGHT - 8 - (points / maxPoints) * (VIAL_HEIGHT - 16);
+function milestoneTopPercent(points, maxPoints) {
+  const y = VIAL_HEIGHT - 8 - (points / maxPoints) * (VIAL_HEIGHT - 16);
+  return (y / VIAL_HEIGHT) * 100;
 }
 
 function dotColor(m, glowing, used) {
@@ -46,9 +47,9 @@ function VaultMilestoneButton({ milestone: m, muted, onMilestonePress, className
   );
 }
 
-function VaultVial({ fillRatio, merged, maxPoints }) {
+function VaultVial({ fillRatio }) {
   return (
-    <div className="relative shrink-0" style={{ width: VIAL_WIDTH, height: VIAL_HEIGHT }}>
+    <div className="relative shrink-0 w-[clamp(3.5rem,18vw,4.5rem)] aspect-[72/220]">
       <div
         className="absolute inset-1 rounded-[20px] border-2"
         style={{
@@ -57,31 +58,15 @@ function VaultVial({ fillRatio, merged, maxPoints }) {
         }}
       />
       <motion.div
-        className="absolute left-[10px] right-[10px] bottom-2 rounded-2xl overflow-hidden"
+        className="absolute left-[14%] right-[14%] bottom-[3.6%] rounded-2xl overflow-hidden"
         initial={false}
-        animate={{ height: (VIAL_HEIGHT - 16) * fillRatio }}
+        animate={{ height: `${fillRatio * VIAL_FILL_MAX_PERCENT}%` }}
         transition={{ type: 'spring', damping: 18, stiffness: 120 }}
         style={{
           background: 'linear-gradient(to top, #8B6914, #C5A059)',
-          maxHeight: VIAL_HEIGHT - 16,
+          maxHeight: 'calc(100% - 7.3%)',
         }}
       />
-      {merged.map((m) => {
-        const y = milestoneY(m.points, maxPoints);
-        const glowing = m.canClaim;
-        const used = Boolean(m.used_at);
-        return (
-          <span
-            key={m.points}
-            className={`absolute right-0 translate-x-1/2 rounded ${glowing ? 'w-3 h-3 shadow-[0_0_8px_#C5A059]' : 'w-2 h-2'}`}
-            style={{
-              top: y - (glowing ? 6 : 4),
-              backgroundColor: dotColor(m, glowing, used),
-            }}
-            aria-hidden="true"
-          />
-        );
-      })}
     </div>
   );
 }
@@ -105,23 +90,27 @@ export default function TheVault({ points, milestones = [], onMilestonePress }) 
     >
       <p className={`text-[10px] uppercase tracking-widest mb-4 ${muted}`}>The Vault</p>
 
-      <div className="flex flex-row items-start gap-4 sm:gap-6 w-full min-w-0">
-        <VaultVial fillRatio={fillRatio} merged={merged} maxPoints={maxPoints} />
-
+      <div className="flex justify-center w-full min-w-0">
         <div
-          className="relative flex-1 min-w-0 self-start"
-          style={{ height: VIAL_HEIGHT }}
+          className="grid gap-3 sm:gap-5 md:gap-6 w-fit max-w-full min-w-0 items-stretch"
+          style={{
+            gridTemplateColumns: 'clamp(3.5rem, 18vw, 4.5rem) clamp(9rem, 42vw, 17.5rem)',
+          }}
         >
-          {merged.map((m) => (
-            <VaultMilestoneButton
-              key={m.points}
-              milestone={m}
-              muted={muted}
-              onMilestonePress={onMilestonePress}
-              className="absolute left-0 right-0 pr-1"
-              style={{ top: milestoneY(m.points, maxPoints) - 10 }}
-            />
-          ))}
+          <VaultVial fillRatio={fillRatio} />
+
+          <div className="relative min-h-0 min-w-0 h-full">
+            {merged.map((m) => (
+              <VaultMilestoneButton
+                key={m.points}
+                milestone={m}
+                muted={muted}
+                onMilestonePress={onMilestonePress}
+                className="absolute left-0 right-0 pr-1"
+                style={{ top: `calc(${milestoneTopPercent(m.points, maxPoints)}% - 0.625rem)` }}
+              />
+            ))}
+          </div>
         </div>
       </div>
 

@@ -75,6 +75,12 @@ export const LANDING_STORY = {
   ],
 };
 
+export const LANDING_LOYALTY = {
+  headline: 'Nail Couture Loyalty Program',
+  teaser:
+    'Earn points on every visit, unlock membership tiers, and redeem rewards through your digital wallet—with transparent rolling status and no annual reset.',
+};
+
 export const LANDING_CONTACT = {
   address: ['5300 Tchoupitoulas St #32-24', 'New Orleans, LA 70115'],
   phone: '(504) 481-7879',
@@ -107,6 +113,7 @@ export const LANDING_SOCIAL_LINKS = [
 export const DEFAULT_NAV_LINKS = [
   { label: 'Home', href: '#home' },
   { label: 'Services', href: '#services' },
+  { label: 'Loyalty', href: '#loyalty' },
   { label: 'About', href: '#about' },
   { label: 'Experience', href: '#experience' },
   { label: 'Gallery', href: '#gallery' },

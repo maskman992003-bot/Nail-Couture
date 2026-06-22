@@ -25,12 +25,17 @@ export function getRewardById(rewardId) {
 }
 
 export async function fetchLoyaltyHistory(profileId, limit = 20) {
-  const { data, error } = await supabase
+  let query = supabase
     .from('loyalty_transactions')
     .select('id, transaction_type, points, balance_after, description, redemption_code, created_at')
     .eq('profile_id', profileId)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+    .order('created_at', { ascending: false });
+
+  if (limit != null) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     if (error.message?.includes('loyalty_transactions') || error.code === '42P01') {

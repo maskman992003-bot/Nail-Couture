@@ -7,7 +7,6 @@ import {
   formatPointsExpiryDate,
   getTierProgressSummary,
 } from '@nail-couture/shared/utils/tierProgress.js';
-import { getTierConfig } from '@nail-couture/shared/constants/loyaltyProgram.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWalletState } from './hooks/useWalletState';
@@ -19,6 +18,7 @@ import VaultActiveCodes from './components/vault/VaultActiveCodes';
 import VaultUnboxingModal from './components/vault/VaultUnboxingModal';
 import FoundingRevealOverlay from './components/animations/FoundingRevealOverlay';
 import WaxSealBadge from './components/WaxSealBadge';
+import LoyaltyTermsSummary from './components/LoyaltyTermsSummary';
 
 export default function DigitalWallet() {
   const { user } = useAuth();
@@ -96,9 +96,6 @@ export default function DigitalWallet() {
 
   const isFounding = Boolean(snapshot?.founding?.spot || user?.founding_spot);
   const showMembershipCard = tierInfo.id !== 'regular_customer';
-  const fmFloorTierName = tierInfo.fmFloorTier
-    ? getTierConfig(tierInfo.fmFloorTier).name
-    : null;
   const pointsExpiringSoon = snapshot?.points_expiring_soon ?? 0;
   const nextPointsExpiry = formatPointsExpiryDate(snapshot?.next_points_expiry);
 
@@ -135,22 +132,6 @@ export default function DigitalWallet() {
 
       <div className="space-y-8 mt-8">
         <div>
-          <p className={`text-[10px] uppercase tracking-widest mb-3 ${muted}`}>
-            {tierInfo.name.toUpperCase()} · {snapshot?.earn_rate ?? tierInfo.earnMultiplier ?? 1}× earn
-          </p>
-
-          {tierInfo.fmFloorActive && fmFloorTierName ? (
-            <p className={`text-xs mb-3 ${muted}`}>
-              Founding floor: {fmFloorTierName} until {formatFmFloorUntil(tierInfo.fmFloorUntil)}
-            </p>
-          ) : null}
-
-          {tierInfo.earnedTierId && tierInfo.earnedTierId !== tierInfo.id ? (
-            <p className={`text-xs mb-3 ${muted}`}>
-              Earned tier: {tierInfo.earnedTierName} · Effective: {tierInfo.name}
-            </p>
-          ) : null}
-
           {pointsExpiringSoon > 0 && nextPointsExpiry ? (
             <p className="text-xs mb-3 text-amber-600/90 dark:text-amber-400/90">
               {pointsExpiringSoon} vault points expiring by {nextPointsExpiry}
@@ -160,6 +141,11 @@ export default function DigitalWallet() {
           {showMembershipCard ? (
             <div className="w-3/4 mx-auto">
               <MembershipCardSection profile={cardProfile} asStatic />
+              {tierInfo.fmFloorActive && tierInfo.fmFloorUntil ? (
+                <p className={`text-xs text-center mt-3 ${muted}`}>
+                  Valid until {formatFmFloorUntil(tierInfo.fmFloorUntil)}
+                </p>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-3">
@@ -182,6 +168,7 @@ export default function DigitalWallet() {
               codes={activeCodes}
               onCodePress={(code, label) => openUnboxing(code, label, true)}
             />
+            <LoyaltyTermsSummary variant="wallet" />
           </div>
           <div
             className="hidden lg:block rounded-2xl p-6 border mt-0 min-w-0"

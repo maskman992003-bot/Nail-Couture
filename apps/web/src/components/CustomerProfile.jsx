@@ -21,10 +21,12 @@ import {
   VISIT_TIME_OPTIONS,
   labelForOption,
 } from '@nail-couture/shared/utils/profilePreferences';
-import { fetchLoyaltyHistory, formatTransactionType } from '@nail-couture/shared/utils/loyaltyTransactions';
+import { fetchLoyaltyHistory } from '@nail-couture/shared/utils/loyaltyTransactions';
 import { computeAchievements } from '@nail-couture/shared/utils/customerAchievements';
 import { uploadProfileAvatar, getProfileInitials } from '@nail-couture/shared/utils/avatarUpload';
 import Sidebar from './Sidebar';
+import LoyaltyTermsSummary from '../features/wallet/components/LoyaltyTermsSummary';
+import LoyaltyPointsHistoryPanel from './customer/LoyaltyPointsHistoryPanel';
 import { modalBtnSecondary } from './AppModal';
 import CustomerReviewsSection from './reviews/CustomerReviewsSection';
 
@@ -118,7 +120,7 @@ export default function CustomerProfile() {
       const [statsData, referralData, loyaltyData, photosData] = await Promise.all([
         fetchCustomerStats(userId, user?.phone),
         fetchReferralInfo(profileData),
-        fetchLoyaltyHistory(userId),
+        fetchLoyaltyHistory(userId, null),
         fetchCustomerVisitPhotos(userId),
       ]);
 
@@ -639,32 +641,16 @@ export default function CustomerProfile() {
 
             {loyaltyHistory.available && loyaltyHistory.rows.length > 0 && (
               <div className={panelClass}>
-                <h3 className={theme === 'dark' ? 'text-offwhite font-medium mb-4' : 'text-charcoal font-medium mb-4'}>Points History</h3>
-                <div className="space-y-3">
-                  {loyaltyHistory.rows.map((tx) => (
-                    <div key={tx.id} className={`flex justify-between items-start py-3 border-b last:border-0 ${theme === 'dark' ? 'border-white/5' : 'border-charcoal/5'}`}>
-                      <div>
-                        <div className={valueClass(theme)}>
-                          {tx.description || formatTransactionType(tx.transaction_type)}
-                        </div>
-                        <div className={theme === 'dark' ? 'text-offwhite/40 text-xs' : 'text-charcoal/40 text-xs'}>
-                          {new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          {tx.redemption_code && ` · Code: ${tx.redemption_code}`}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0 ml-3">
-                        <span className={`font-heading text-sm ${tx.points >= 0 ? 'text-green-500' : 'text-red-400'}`}>
-                          {tx.points >= 0 ? '+' : ''}{tx.points}
-                        </span>
-                        <div className={theme === 'dark' ? 'text-offwhite/30 text-xs' : 'text-charcoal/30 text-xs'}>
-                          bal. {tx.balance_after}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <LoyaltyPointsHistoryPanel
+                  rows={loyaltyHistory.rows}
+                  theme={theme}
+                  showBalance
+                  titleClassName={theme === 'dark' ? 'text-offwhite font-medium mb-4' : 'text-charcoal font-medium mb-4'}
+                />
               </div>
             )}
+
+            <LoyaltyTermsSummary variant="compact" />
 
             <Link to="/customer/loyalty" className={`block ${panelClass} hover:border-gold/30 transition-colors text-center`}>
               <span className="text-gold font-heading">View Rewards Program →</span>

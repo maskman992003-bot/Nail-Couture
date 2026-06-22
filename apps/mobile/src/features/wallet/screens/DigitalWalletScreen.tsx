@@ -8,7 +8,6 @@ import {
   formatPointsExpiryDate,
   getTierProgressSummary,
 } from '@nail-couture/shared/utils/tierProgress.js';
-import { getTierConfig } from '@nail-couture/shared/constants/loyaltyProgram.js';
 import { useAuth } from '../../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../../components/customer/CustomerScreenLayout';
 import { TierProgressBanner } from '../../../components/customer/home/TierProgressBanner';
@@ -22,6 +21,7 @@ import { VaultActiveCodes } from '../components/vault/VaultActiveCodes';
 import { VaultUnboxingModal } from '../components/vault/VaultUnboxingModal';
 import { FoundingRevealOverlay } from '../components/animations/FoundingRevealOverlay';
 import { WaxSealBadge } from '../components/WaxSealBadge';
+import LoyaltyTermsSummary from '../components/LoyaltyTermsSummary';
 
 export function DigitalWalletScreen() {
   const { user } = useAuth();
@@ -106,9 +106,6 @@ export function DigitalWalletScreen() {
 
   const showLoader = loading && !snapshot;
   const showMembershipCard = tierInfo.id !== 'regular_customer';
-  const fmFloorTierName = tierInfo.fmFloorTier
-    ? getTierConfig(tierInfo.fmFloorTier).name
-    : null;
   const pointsExpiringSoon = snapshot?.points_expiring_soon ?? 0;
   const nextPointsExpiry = formatPointsExpiryDate(snapshot?.next_points_expiry ?? undefined);
 
@@ -140,22 +137,6 @@ export function DigitalWalletScreen() {
       ) : (
         <View style={{ gap: 20 }}>
           <View>
-            <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2, marginBottom: 8 }]}>
-              {tierInfo.name.toUpperCase()} · {snapshot?.earn_rate ?? tierInfo.earnMultiplier ?? 1}× earn
-            </Text>
-
-            {tierInfo.fmFloorActive && fmFloorTierName ? (
-              <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 8 }]}>
-                Founding floor: {fmFloorTierName} until {formatFmFloorUntil(tierInfo.fmFloorUntil ?? undefined)}
-              </Text>
-            ) : null}
-
-            {tierInfo.earnedTierId && tierInfo.earnedTierId !== tierInfo.id ? (
-              <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 8 }]}>
-                Earned tier: {tierInfo.earnedTierName} · Effective: {tierInfo.name}
-              </Text>
-            ) : null}
-
             {pointsExpiringSoon > 0 && nextPointsExpiry ? (
               <Text style={{ fontSize: 12, marginBottom: 8, color: '#d97706' }}>
                 {pointsExpiringSoon} vault points expiring by {nextPointsExpiry}
@@ -163,10 +144,17 @@ export function DigitalWalletScreen() {
             ) : null}
 
             {showMembershipCard ? (
-              <WalletCardDeck
-                activeTier={snapshot?.tier || user.loyalty_tier || 'regular_customer'}
-                isFounding={Boolean(snapshot?.founding || user.founding_spot)}
-              />
+              <View>
+                <WalletCardDeck
+                  activeTier={snapshot?.tier || user.loyalty_tier || 'regular_customer'}
+                  isFounding={Boolean(snapshot?.founding || user.founding_spot)}
+                />
+                {tierInfo.fmFloorActive && tierInfo.fmFloorUntil ? (
+                  <Text style={[styles.textSecondary, { fontSize: 12, textAlign: 'center', marginTop: 12 }]}>
+                    Valid until {formatFmFloorUntil(tierInfo.fmFloorUntil ?? undefined)}
+                  </Text>
+                ) : null}
+              </View>
             ) : (
               <View style={{ gap: 10 }}>
                 <TierProgressBanner profile={walletProfile} snapshot={snapshot} />
@@ -188,6 +176,8 @@ export function DigitalWalletScreen() {
             codes={activeCodes}
             onCodePress={(code, label) => openUnboxing(code, label, true)}
           />
+
+          <LoyaltyTermsSummary variant="wallet" />
 
           {layout.isMdUp ? (
             <View style={[styles.card, { padding: 16, gap: 8 }]}>

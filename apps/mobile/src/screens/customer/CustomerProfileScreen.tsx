@@ -23,6 +23,7 @@ import { useThemeStyles } from '../../theme/useThemeStyles';
 import { useAvailableRefreshments } from '../../hooks/useAvailableRefreshments';
 import { FitnessProfileSection } from '../../components/fitness/FitnessProfileSection';
 import { CustomerReviewsSection } from '../../components/reviews/CustomerReviewsSection';
+import LoyaltyTermsSummary from '../../features/wallet/components/LoyaltyTermsSummary';
 import type { AppScreenName } from '../../navigation/screenRegistry';
 
 type ProfileRecord = Record<string, unknown> & {
@@ -319,6 +320,7 @@ export function CustomerProfileScreen() {
             copiedCode={copiedCode}
             showReferral
           />
+          <LoyaltyTermsSummary variant="compact" />
           <NotificationHistorySection />
         </View>
       ) : null}

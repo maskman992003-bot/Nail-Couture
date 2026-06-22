@@ -19,6 +19,7 @@ import { useAppTheme } from '../../hooks/useAppTheme.js';
 import {
   LANDING_EXPERIENCE,
   LANDING_FEATURES,
+  LANDING_LOYALTY,
   LANDING_OPENING,
   LANDING_STORY,
   LANDING_WHY_CHOOSE,
@@ -27,6 +28,7 @@ import { getLandingCssVars, getLandingServices, scrollToLandingHash } from '../.
 import ThemedLandingFooter from './landing/ThemedLandingFooter.jsx';
 import ThemedLandingNav from './landing/ThemedLandingNav.jsx';
 import CustomerTestimonials from './CustomerTestimonials.jsx';
+import LoyaltyTermsSummary from '../../features/wallet/components/LoyaltyTermsSummary.jsx';
 
 import './landing/themedLanding.css';
 
@@ -257,6 +259,18 @@ export default function ThemedHomeLanding() {
           <div className="text-center mt-10">
             <Link to="/services" className="landing-btn-outline inline-flex">View All Services</Link>
           </div>
+        </div>
+      </section>
+
+      <section id="loyalty" className="landing-section px-4 sm:px-6 lg:px-8 border-t" style={{ borderColor: themeConfig.borderColor }}>
+        <div className={`mx-auto ${isBoutique ? 'max-w-3xl' : 'max-w-[720px]'}`}>
+          <h2 className="landing-heading text-center text-2xl sm:text-3xl lg:text-4xl tracking-[0.1em] uppercase mb-4">
+            {LANDING_LOYALTY.headline}
+          </h2>
+          <p className="text-sm text-center leading-relaxed mb-8" style={{ color: themeConfig.textSecondary }}>
+            {LANDING_LOYALTY.teaser}
+          </p>
+          <LoyaltyTermsSummary variant="wallet" surface="wallet" />
         </div>
       </section>
 

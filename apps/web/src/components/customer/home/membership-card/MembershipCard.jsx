@@ -5,36 +5,129 @@
  * @nail-couture/shared/constants/membershipCardLayout.js — edit `positions`
  * top/left percentages for each tier's name and id fields.
  *
- * Font sizes scale with card height via CSS container queries (cqh units).
+ * Font sizes scale from measured card height so text stays aligned at any size.
  */
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
-  MEMBERSHIP_CARD_FONT,
   MEMBERSHIP_CARD_FOUNDING_RESERVE,
   MEMBERSHIP_CARD_HERO,
+  MEMBERSHIP_CARD_NAME_MAX_WIDTH,
+  MEMBERSHIP_CARD_NAME_MIN_SCALE,
   formatMembershipCardId,
   getMembershipCardAlt,
+  getMembershipCardFieldFontSize,
+  getMembershipCardFontSizes,
   getMembershipCardLayout,
   getMembershipCardWebTextStyle,
 } from '@nail-couture/shared/constants/membershipCardLayout.js';
 import FoundingWaxSeal from './FoundingWaxSeal.jsx';
 
-function OverlayText({ value, position, fieldStyle, textShadow }) {
+function useFitTextToWidth(textRef, { enabled, baseFontSize, minScale = 0.65, deps = [] }) {
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    if (!el || !enabled || !baseFontSize) return;
+
+    const minSize = baseFontSize * minScale;
+    let size = baseFontSize;
+    el.style.fontSize = `${size}px`;
+
+    while (el.scrollWidth > el.clientWidth && size > minSize) {
+      size -= 0.5;
+      el.style.fontSize = `${size}px`;
+    }
+  }, [enabled, baseFontSize, minScale, ...deps]);
+}
+
+function OverlayText({
+  value,
+  position,
+  fieldStyle,
+  textShadow,
+  cardHeightPx,
+  fieldKey,
+  tierId,
+  fitToWidth = false,
+}) {
+  const textRef = useRef(null);
   const resolvedShadow = fieldStyle.textShadow ?? textShadow;
+  const baseFontSize = cardHeightPx && fieldKey
+    ? getMembershipCardFieldFontSize(cardHeightPx, fieldKey, tierId)
+    : null;
+
+  useFitTextToWidth(textRef, {
+    enabled: fitToWidth,
+    baseFontSize,
+    minScale: MEMBERSHIP_CARD_NAME_MIN_SCALE,
+    deps: [value, cardHeightPx, fieldKey, tierId],
+  });
 
   return (
     <p
-      className="absolute max-w-[90%] leading-none"
+      ref={textRef}
+      className={`absolute leading-none ${fitToWidth ? 'whitespace-nowrap overflow-hidden' : 'max-w-[90%]'}`}
       style={{
         top: position.top,
         left: position.left,
+        right: position.right,
+        textAlign: position.textAlign,
+        transformOrigin: position.right ? 'top right' : 'top left',
         textShadow: resolvedShadow,
         lineHeight: 1.15,
-        ...getMembershipCardWebTextStyle(fieldStyle),
+        ...(fitToWidth ? { maxWidth: `${MEMBERSHIP_CARD_NAME_MAX_WIDTH * 100}%` } : null),
+        ...getMembershipCardWebTextStyle(fieldStyle, cardHeightPx, fieldKey, tierId),
       }}
     >
       {value}
     </p>
   );
+}
+
+function FoundingBadgeText({ text, cardHeightPx, tierId }) {
+  const textRef = useRef(null);
+  const baseFontSize = getMembershipCardFieldFontSize(cardHeightPx, 'founding', tierId);
+
+  useFitTextToWidth(textRef, {
+    enabled: true,
+    baseFontSize,
+    minScale: 0.7,
+    deps: [text, cardHeightPx, tierId],
+  });
+
+  return (
+    <p
+      ref={textRef}
+      className="uppercase font-medium whitespace-nowrap leading-none w-full text-center overflow-hidden px-2"
+      style={{
+        color: '#8B5E4A',
+        fontSize: baseFontSize,
+        letterSpacing: '0.12em',
+        fontFamily: 'Inter, system-ui, sans-serif',
+      }}
+    >
+      {text}
+    </p>
+  );
+}
+
+function useCardHeight(ref) {
+  const [cardHeightPx, setCardHeightPx] = useState(MEMBERSHIP_CARD_HERO.heightPx);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+
+    const observer = new ResizeObserver((entries) => {
+      const height = entries[0]?.contentRect.height ?? 0;
+      if (height > 0) {
+        setCardHeightPx((prev) => (Math.abs(prev - height) > 0.5 ? height : prev));
+      }
+    });
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return cardHeightPx;
 }
 
 export default function MembershipCard({
@@ -49,13 +142,16 @@ export default function MembershipCard({
   foundingYear,
   sealPalette,
 }) {
+  const frameRef = useRef(null);
+  const cardHeightPx = useCardHeight(frameRef);
+  const scaledFonts = getMembershipCardFontSizes(cardHeightPx, tierId);
   const layout = getMembershipCardLayout(tierId);
   const alt = getMembershipCardAlt({ name, tier });
   const displayName = name?.trim() || 'Member';
 
   const frameClass = fillSlot
-    ? 'relative w-full h-full overflow-hidden [container-type:size]'
-    : 'relative aspect-[758/478] max-w-full border border-card overflow-hidden [container-type:size]';
+    ? 'relative w-full h-full overflow-hidden'
+    : 'relative aspect-[758/478] max-w-full border border-card overflow-hidden';
 
   const frameStyle = fillSlot
     ? { borderRadius: MEMBERSHIP_CARD_HERO.borderRadiusPx }
@@ -65,7 +161,7 @@ export default function MembershipCard({
       };
 
   return (
-    <div className={`${frameClass} ${className}`} style={frameStyle}>
+    <div ref={frameRef} className={`${frameClass} ${className}`} style={frameStyle}>
       <img
         key={backgroundImage}
         src={backgroundImage}
@@ -85,12 +181,19 @@ export default function MembershipCard({
           position={layout.positions.name}
           fieldStyle={layout.name}
           textShadow={layout.textShadow}
+          cardHeightPx={cardHeightPx}
+          fieldKey="name"
+          tierId={tierId}
+          fitToWidth
         />
         <OverlayText
           value={formatMembershipCardId(id)}
           position={layout.positions.id}
           fieldStyle={layout.id}
           textShadow={layout.textShadow}
+          cardHeightPx={cardHeightPx}
+          fieldKey="id"
+          tierId={tierId}
         />
       </div>
 
@@ -99,34 +202,28 @@ export default function MembershipCard({
           <div
             className="absolute z-10"
             style={{
-              top: 'clamp(2px, 0.8cqh, 6px)',
-              right: 'clamp(2px, 0.8cqh, 6px)',
-              width: 'clamp(56px, 20cqh, 88px)',
-              height: 'clamp(56px, 20cqh, 88px)',
+              top: Math.max(2, cardHeightPx * 0.008),
+              right: Math.max(2, cardHeightPx * 0.008),
+              width: scaledFonts.seal,
+              height: scaledFonts.seal,
             }}
           >
             <FoundingWaxSeal />
           </div>
           <div
-            className="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-center rounded-b-[inherit]"
+            className="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-center rounded-b-[inherit] overflow-hidden"
             style={{
               background: 'rgba(255,255,255,0.82)',
               borderTop: '1px solid rgba(183,110,121,0.45)',
-              paddingTop: 'clamp(4px, 1.6cqh, 8px)',
-              paddingBottom: 'clamp(4px, 1.6cqh, 8px)',
+              paddingTop: Math.max(3, cardHeightPx * 0.012),
+              paddingBottom: Math.max(3, cardHeightPx * 0.012),
             }}
           >
-            <p
-              className="uppercase font-medium whitespace-nowrap leading-none"
-              style={{
-                color: '#8B5E4A',
-                fontSize: MEMBERSHIP_CARD_FONT.founding,
-                letterSpacing: '0.12em',
-                fontFamily: 'Inter, system-ui, sans-serif',
-              }}
-            >
-              Founding Member • Est. {foundingYear}
-            </p>
+            <FoundingBadgeText
+              text={`Founding Member • Est. ${foundingYear}`}
+              cardHeightPx={cardHeightPx}
+              tierId={tierId}
+            />
           </div>
         </>
       ) : null}

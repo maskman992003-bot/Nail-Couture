@@ -19,6 +19,7 @@ import WalletStatsRow from './customer/home/WalletStatsRow';
 import TierProgressBanner from './customer/home/TierProgressBanner';
 import QuickActionGrid from './customer/home/QuickActionGrid';
 import ReferFriendModal from './customer/home/ReferFriendModal';
+import LoyaltyTermsSummary from '../features/wallet/components/LoyaltyTermsSummary';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -241,13 +242,14 @@ export default function ClientPortal() {
                 <>
                   <div className="text-primary font-heading text-base">{getNextTierUpsellBenefit(tier)}</div>
                   <div className="mt-3 text-sm text-secondary">
-                    {tierProgress.progressDetail}. Membership tier is based on calendar-year spend — redeeming points does not change your tier.
+                    {tierProgress.progressDetail}. Membership tier is based on rolling 12-month spend — redeeming points does not change your tier.
                   </div>
                 </>
               ) : (
                 <div className="text-sm text-secondary">{tierProgress.progressDetail}</div>
               )}
             </div>
+            <LoyaltyTermsSummary variant="compact" />
           </div>
         </AppModal>
 

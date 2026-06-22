@@ -60,14 +60,18 @@ function OverlayText({
   fieldStyle,
   textShadowColor,
   cardHeightPx,
+  fieldKey,
+  tierId,
 }: {
   value: string;
-  position: { top: string; left: string };
+  position: { top: string; left?: string; right?: string; textAlign?: 'left' | 'right' | 'center' };
   fieldStyle: Record<string, unknown>;
   textShadowColor: string;
   cardHeightPx: number;
+  fieldKey: 'name' | 'id';
+  tierId: string;
 }) {
-  const mobileStyle = getMembershipCardMobileTextStyle(fieldStyle, cardHeightPx);
+  const mobileStyle = getMembershipCardMobileTextStyle(fieldStyle, cardHeightPx, fieldKey, tierId);
   const hasTextOutline = Boolean(fieldStyle.textStroke);
 
   return (
@@ -80,6 +84,8 @@ function OverlayText({
         {
           top: position.top,
           left: position.left,
+          right: position.right,
+          textAlign: position.textAlign,
           textShadowColor: hasTextOutline ? '#000' : textShadowColor,
           textShadowOffset: hasTextOutline ? { width: 0, height: 0 } : { width: 0, height: 1 },
           textShadowRadius: hasTextOutline ? 2 : 3,
@@ -111,7 +117,7 @@ export function MembershipCard({
   const shadowColor = normalizedTier === 'diamond_couture'
     ? 'rgba(0,0,0,0.85)'
     : 'rgba(0,0,0,0.55)';
-  const scaledFonts = getMembershipCardFontSizes(cardHeightPx);
+  const scaledFonts = getMembershipCardFontSizes(cardHeightPx, tierId);
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const nextHeight = event.nativeEvent.layout.height;
@@ -150,6 +156,8 @@ export function MembershipCard({
           fieldStyle={layout.name}
           textShadowColor={shadowColor}
           cardHeightPx={cardHeightPx}
+          fieldKey="name"
+          tierId={tierId}
         />
         <OverlayText
           value={formatMembershipCardId(id)}
@@ -157,6 +165,8 @@ export function MembershipCard({
           fieldStyle={layout.id}
           textShadowColor={shadowColor}
           cardHeightPx={cardHeightPx}
+          fieldKey="id"
+          tierId={tierId}
         />
       </View>
 

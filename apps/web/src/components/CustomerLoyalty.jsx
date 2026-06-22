@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { fetchLoyaltyHistory, formatTransactionType } from '@nail-couture/shared/utils/loyaltyTransactions';
+import { fetchLoyaltyHistory } from '@nail-couture/shared/utils/loyaltyTransactions';
 import Sidebar from './Sidebar';
 import DigitalWallet from '../features/wallet/DigitalWallet';
+import LoyaltyPointsHistoryPanel from './customer/LoyaltyPointsHistoryPanel';
 
 export default function CustomerLoyalty() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export default function CustomerLoyalty() {
     try {
       const [{ data }, history] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
-        fetchLoyaltyHistory(userId),
+        fetchLoyaltyHistory(userId, null),
       ]);
       if (data) setProfile(data);
       setLoyaltyHistory(history);
@@ -117,25 +118,7 @@ export default function CustomerLoyalty() {
 
         {loyaltyHistory.available && loyaltyHistory.rows.length > 0 && (
           <div className="rounded-2xl p-8 border" style={{ borderColor: 'rgba(197, 160, 89, 0.15)', backgroundColor: theme === 'dark' ? '#111' : '#fff' }}>
-            <div className={`${labelMuted} text-xs uppercase tracking-widest mb-6`}>Points History</div>
-            <div className="space-y-3">
-              {loyaltyHistory.rows.map((tx) => (
-                <div key={tx.id} className={`flex justify-between items-start py-3 border-b last:border-0 ${theme === 'dark' ? 'border-white/5' : 'border-charcoal/5'}`}>
-                  <div>
-                    <div className={theme === 'dark' ? 'text-offwhite font-medium text-sm' : 'text-charcoal font-medium text-sm'}>
-                      {tx.description || formatTransactionType(tx.transaction_type)}
-                    </div>
-                    <div className={`${labelMuted} text-xs`}>
-                      {new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      {tx.redemption_code && ` · ${tx.redemption_code}`}
-                    </div>
-                  </div>
-                  <span className={`font-heading text-sm ${tx.points >= 0 ? 'text-green-500' : 'text-red-400'}`}>
-                    {tx.points >= 0 ? '+' : ''}{tx.points}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <LoyaltyPointsHistoryPanel rows={loyaltyHistory.rows} theme={theme} />
           </div>
         )}
       </div>
