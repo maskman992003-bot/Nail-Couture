@@ -2,8 +2,10 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import PageHelmet from './PageHelmet';
 import { DEFAULT_PAGE_SEO, resolveRouteSeo } from '../constants/pageSeo';
+import { useMobileBridge } from '../hooks/useMobileBridge';
 
 export default function RouteDocumentTitle() {
+  const { hideWebOnly } = useMobileBridge();
   const { pathname } = useLocation();
   const pageSeo = pathname === '/' ? DEFAULT_PAGE_SEO : resolveRouteSeo(pathname);
 
@@ -13,6 +15,10 @@ export default function RouteDocumentTitle() {
       document.activeElement.blur();
     }
   }, [pathname]);
+
+  if (hideWebOnly) {
+    return null;
+  }
 
   return (
     <PageHelmet

@@ -13,6 +13,7 @@ import { APP_PAGE_SEO } from './constants/pageSeo'
 import { usePublicHomePromotions } from './hooks/usePublicHomePromotions'
 import PromoSlideIn from './components/marketing/PromoSlideIn'
 import PromoDetailModal from './components/marketing/PromoDetailModal'
+import WebOnly from './components/WebOnly.jsx'
 import './index.css'
 
 function App() {
@@ -87,17 +88,25 @@ function App() {
 
   return (
     <>
-      <PageHelmet title={pageSeo.title} description={pageSeo.description} path={pageSeo.path} />
+      <WebOnly>
+        <PageHelmet title={pageSeo.title} description={pageSeo.description} path={pageSeo.path} />
+      </WebOnly>
     <div className="min-h-screen flex flex-col relative transition-colors duration-300">
       {showChrome && classicHome && (
-        <img
-          src={watermarkUrl}
-          alt=""
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] opacity-10 pointer-events-none z-50"
-          style={{ maxWidth: '600px' }}
-        />
+        <WebOnly>
+          <img
+            src={watermarkUrl}
+            alt=""
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] opacity-10 pointer-events-none z-50"
+            style={{ maxWidth: '600px' }}
+          />
+        </WebOnly>
       )}
-      {showChrome && <Navbar currentPage={currentPage} onNavigate={setCurrentPage} />}
+      {showChrome && (
+        <WebOnly>
+          <Navbar currentPage={currentPage} onNavigate={setCurrentPage} />
+        </WebOnly>
+      )}
 
       <main className="flex-1 relative z-10">
         {currentPage === 'home' && (
@@ -113,8 +122,13 @@ function App() {
         {currentPage === 'about' && <AboutContact />}
       </main>
 
-      {showChrome && <Footer />}
+      {showChrome && (
+        <WebOnly>
+          <Footer />
+        </WebOnly>
+      )}
 
+      <WebOnly>
       {promosEnabled && currentSlideInPromo && !detailPromo ? (
         <PromoSlideIn
           promo={currentSlideInPromo}
@@ -131,6 +145,7 @@ function App() {
           onCopy={copyCode}
         />
       ) : null}
+      </WebOnly>
 
       {promoError && import.meta.env.DEV ? (
         <div

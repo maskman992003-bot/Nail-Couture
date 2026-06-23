@@ -5,17 +5,20 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import PageHelmet from './PageHelmet';
 import { APP_PAGE_SEO } from '../constants/pageSeo';
+import WebOnly from './WebOnly.jsx';
 
 export default function Services({ embedded = false }) {
   const { user } = useAuth();
   const isStaff = user?.is_staff || false;
 
   const helmet = (
-    <PageHelmet
-      title={APP_PAGE_SEO['/services'].title}
-      description={APP_PAGE_SEO['/services'].description}
-      path={APP_PAGE_SEO['/services'].path}
-    />
+    <WebOnly>
+      <PageHelmet
+        title={APP_PAGE_SEO['/services'].title}
+        description={APP_PAGE_SEO['/services'].description}
+        path={APP_PAGE_SEO['/services'].path}
+      />
+    </WebOnly>
   );
 
   if (isStaff) {
@@ -35,11 +38,15 @@ export default function Services({ embedded = false }) {
     <>
       {helmet}
       <div className="min-h-screen bg-primary text-primary flex flex-col">
-        <Navbar currentPage="services" onNavigate={() => {}} />
+        <WebOnly>
+          <Navbar currentPage="services" onNavigate={() => {}} />
+        </WebOnly>
         <main className="flex-1">
           <ServicesPublic />
         </main>
-        <Footer />
+        <WebOnly>
+          <Footer />
+        </WebOnly>
       </div>
     </>
   );

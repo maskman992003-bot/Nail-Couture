@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { requestNotificationPermission } from '@nail-couture/shared/utils/technicianQueue';
+import { useMobileBridge } from '../../hooks/useMobileBridge';
 
 export default function TechnicianNotificationBanner() {
+  const { hideWebOnly } = useMobileBridge();
   const [dismissed, setDismissed] = useState(
     () => sessionStorage.getItem('tech_notif_banner_dismissed') === '1'
   );
@@ -9,7 +11,7 @@ export default function TechnicianNotificationBanner() {
     () => (typeof Notification !== 'undefined' ? Notification.permission : 'denied')
   );
 
-  if (dismissed || permission !== 'default') return null;
+  if (hideWebOnly || dismissed || permission !== 'default') return null;
 
   const handleEnable = async () => {
     const result = await requestNotificationPermission();

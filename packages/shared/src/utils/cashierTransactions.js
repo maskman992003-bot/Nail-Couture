@@ -66,20 +66,37 @@ export function isGiftCardSaleTransaction(tx) {
   return tx?.type === CASHIER_TX_GIFT_CARD_SALE;
 }
 
+export const CASHIER_TX_PERIOD_OPTIONS = [
+  { id: 'today', label: 'Today' },
+  { id: 'yesterday', label: 'Yesterday' },
+  { id: 'week', label: 'This week' },
+];
+
+export function getCashierTxPeriodLabel(period) {
+  const match = CASHIER_TX_PERIOD_OPTIONS.find((o) => o.id === period);
+  return match?.label || 'Today';
+}
+
 export async function fetchCashierTransactions(cashierId, period = 'today', callerPhone = null) {
   if (!cashierId) return [];
 
-  const periodStart = getTipPeriodRange(period).start.toISOString();
+  const { start, end } = getTipPeriodRange(period);
+  const periodStart = start.toISOString();
+  const periodEnd = end?.toISOString() || null;
+
+  let paymentsQuery = supabase
+    .from('payment_transactions')
+    .select(PAYMENT_SELECT)
+    .eq('cashier_id', cashierId)
+    .eq('status', 'completed')
+    .gte('created_at', periodStart);
+  if (periodEnd) {
+    paymentsQuery = paymentsQuery.lt('created_at', periodEnd);
+  }
 
   const [paymentsResult, giftCardPurchases] = await Promise.all([
-    supabase
-      .from('payment_transactions')
-      .select(PAYMENT_SELECT)
-      .eq('cashier_id', cashierId)
-      .eq('status', 'completed')
-      .gte('created_at', periodStart)
-      .order('created_at', { ascending: false }),
-    fetchGiftCardPurchases({ cashierId, callerPhone, periodStart }),
+    paymentsQuery.order('created_at', { ascending: false }),
+    fetchGiftCardPurchases({ cashierId, callerPhone, periodStart, periodEnd }),
   ]);
 
   if (paymentsResult.error) {

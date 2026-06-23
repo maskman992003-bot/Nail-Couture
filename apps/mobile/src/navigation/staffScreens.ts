@@ -11,6 +11,7 @@ import { CustomerSettingsScreen } from '../screens/customer/CustomerSettingsScre
 import { TechnicianHomeScreen } from '../screens/staff/TechnicianHomeScreen';
 import { TechnicianTipsScreen } from '../screens/staff/TechnicianTipsScreen';
 import { CashierHomeScreen } from '../screens/staff/CashierHomeScreen';
+import { CashierLobbyScreen } from '../screens/staff/CashierLobbyScreen';
 import { CashierCheckoutScreen } from '../screens/staff/CashierCheckoutScreen';
 import { CashierTransactionsScreen } from '../screens/staff/CashierTransactionsScreen';
 import { GiftCardSaleScreen } from '../screens/staff/GiftCardSaleScreen';
@@ -60,7 +61,7 @@ const TECHNICIAN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponen
 const CASHIER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> = {
   Home: CashierHomeScreen,
   Schedule: ScheduleScreen,
-  Lobby: AdminLobbyScreen,
+  Lobby: CashierLobbyScreen,
   Checkout: CashierCheckoutScreen,
   GiftCards: GiftCardSaleScreen,
   Transactions: CashierTransactionsScreen,

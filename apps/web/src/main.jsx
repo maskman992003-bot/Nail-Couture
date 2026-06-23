@@ -29,6 +29,7 @@ import Cashier from './components/Cashier.jsx'
 import Technician from './components/Technician.jsx'
 import TechnicianTips from './components/TechnicianTips.jsx'
 import AdminLobby from './components/AdminLobby.jsx'
+import CashierLobby from './components/CashierLobby.jsx'
 import AdminReports from './components/AdminReports.jsx'
 import CashierCheckout from './components/CashierCheckout.jsx'
 import CashierTransactions from './components/CashierTransactions.jsx'
@@ -52,6 +53,9 @@ import { APP_PAGE_SEO } from './constants/pageSeo.js'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import { IdleSessionProvider } from './contexts/IdleSessionContext.jsx'
 import { ThemeEngineProvider } from './context/ThemeEngineContext.jsx'
+import { MobileBridgeProvider } from './contexts/MobileBridgeContext.jsx'
+import NativeRouteGuard from './components/NativeRouteGuard.jsx'
+import NativeShellEffects from './components/NativeShellEffects.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 import RouteDocumentTitle from './components/RouteDocumentTitle.jsx'
 import { CHECK_IN_ROLE } from '@nail-couture/shared/utils/routes'
@@ -507,7 +511,7 @@ function AppRoutes() {
             } />
             <Route path="/cashier/lobby" element={
               <ProtectedRoute allowedRoles={['cashier']}>
-                <AdminLobby />
+                <CashierLobby />
               </ProtectedRoute>
             } />
             <Route path="/cashier/checkout" element={
@@ -688,14 +692,19 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <HelmetProvider>
       <ThemeEngineProvider>
+        <MobileBridgeProvider>
           <AuthProvider>
             <BrowserRouter>
               <IdleSessionProvider>
-                <RouteDocumentTitle />
-                <AppRoutes />
+                <NativeShellEffects />
+                <NativeRouteGuard>
+                  <RouteDocumentTitle />
+                  <AppRoutes />
+                </NativeRouteGuard>
               </IdleSessionProvider>
             </BrowserRouter>
           </AuthProvider>
+        </MobileBridgeProvider>
       </ThemeEngineProvider>
     </HelmetProvider>
   </StrictMode>,

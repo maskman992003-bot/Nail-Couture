@@ -318,7 +318,13 @@ export async function voidGiftCard({ callerPhone, giftCardId, reason = null }) {
   return data || { success: false, error: 'Unexpected response' };
 }
 
-export async function fetchGiftCardPurchases({ cashierId, callerPhone, periodStart } = {}) {
+export async function fetchGiftCardPurchases({ cashierId, callerPhone, periodStart, periodEnd } = {}) {
+  const filterByPeriodEnd = (purchases) => {
+    if (!periodEnd) return purchases;
+    const endMs = new Date(periodEnd).getTime();
+    return purchases.filter((p) => new Date(p.created_at).getTime() < endMs);
+  };
+
   if (callerPhone) {
     const { data, error } = await supabase.rpc('get_cashier_gift_card_purchases', {
       caller_phone: normalizePhoneDigits(callerPhone),
@@ -333,7 +339,7 @@ export async function fetchGiftCardPurchases({ cashierId, callerPhone, periodSta
       return [];
     }
 
-    return data?.purchases || [];
+    return filterByPeriodEnd(data?.purchases || []);
   }
 
   let query = supabase
@@ -348,6 +354,10 @@ export async function fetchGiftCardPurchases({ cashierId, callerPhone, periodSta
     `)
     .gte('created_at', periodStart)
     .order('created_at', { ascending: false });
+
+  if (periodEnd) {
+    query = query.lt('created_at', periodEnd);
+  }
 
   if (cashierId) {
     query = query.eq('cashier_id', cashierId);

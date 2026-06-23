@@ -5,19 +5,24 @@ import PageHelmet from '../PageHelmet';
 import { APP_PAGE_SEO } from '../../constants/pageSeo';
 import { NAIL_HEALTH_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import NailAssessmentDashboard from './NailAssessmentDashboard';
+import WebOnly from '../WebOnly.jsx';
 
 export default function NailAssessmentPublicPage() {
   if (!NAIL_HEALTH_ASSESSMENT) return <Navigate to="/" replace />;
 
   return (
     <>
-      <PageHelmet
-        title={APP_PAGE_SEO['/nail-assessment'].title}
-        description={APP_PAGE_SEO['/nail-assessment'].description}
-        path={APP_PAGE_SEO['/nail-assessment'].path}
-      />
+      <WebOnly>
+        <PageHelmet
+          title={APP_PAGE_SEO['/nail-assessment'].title}
+          description={APP_PAGE_SEO['/nail-assessment'].description}
+          path={APP_PAGE_SEO['/nail-assessment'].path}
+        />
+      </WebOnly>
       <div className="min-h-screen bg-primary text-primary">
-        <Navbar currentPage="nails" onNavigate={() => {}} />
+        <WebOnly>
+          <Navbar currentPage="nails" onNavigate={() => {}} />
+        </WebOnly>
         <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14 pb-24">
           <header className="mb-10 text-center md:text-left">
             <p className="text-[10px] uppercase tracking-[0.28em] text-gold mb-3">Nail Care Tools</p>
@@ -30,7 +35,9 @@ export default function NailAssessmentPublicPage() {
           </header>
           <NailAssessmentDashboard />
         </main>
-        <Footer />
+        <WebOnly>
+          <Footer />
+        </WebOnly>
       </div>
     </>
   );

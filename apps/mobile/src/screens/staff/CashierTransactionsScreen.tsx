@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Share, Text, View } from 'react-native';
 import {
   buildCashierReceiptContent,
+  CASHIER_TX_PERIOD_OPTIONS,
   fetchCashierTransactions,
+  getCashierTxPeriodLabel,
   getTransactionServiceLabel,
   isGiftCardSaleTransaction,
   sumTransactionTotals,
@@ -31,7 +33,7 @@ function formatMoney(value?: number | string | null) {
 export function CashierTransactionsScreen() {
   const { user } = useAuth();
   const styles = useThemeStyles();
-  const [period, setPeriod] = useState<'today' | 'week'>('today');
+  const [period, setPeriod] = useState<'today' | 'yesterday' | 'week'>('today');
   const [transactions, setTransactions] = useState<CashierTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -71,7 +73,7 @@ export function CashierTransactionsScreen() {
   };
 
   const totalRevenue = sumTransactionTotals(transactions);
-  const periodLabel = period === 'today' ? 'Today' : 'This week';
+  const periodLabel = getCashierTxPeriodLabel(period);
 
   return (
     <StaffScreenLayout
@@ -84,28 +86,28 @@ export function CashierTransactionsScreen() {
       }
     >
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-        {(['today', 'week'] as const).map((key) => (
+        {CASHIER_TX_PERIOD_OPTIONS.map(({ id, label }) => (
           <Pressable
-            key={key}
-            onPress={() => setPeriod(key)}
+            key={id}
+            onPress={() => setPeriod(id as 'today' | 'yesterday' | 'week')}
             style={[
               styles.card,
               {
                 paddingHorizontal: 16,
                 paddingVertical: 8,
-                borderColor: period === key ? styles.tokens.goldStrong : styles.tokens.cardBorder,
-                backgroundColor: period === key ? styles.tokens.goldStrong : styles.tokens.cardBg,
+                borderColor: period === id ? styles.tokens.goldStrong : styles.tokens.cardBorder,
+                backgroundColor: period === id ? styles.tokens.goldStrong : styles.tokens.cardBg,
               },
             ]}
           >
             <Text
               style={{
-                color: period === key ? '#121212' : styles.tokens.textSecondary,
+                color: period === id ? '#121212' : styles.tokens.textSecondary,
                 fontWeight: '600',
                 fontSize: 13,
               }}
             >
-              {key === 'today' ? 'Today' : 'This week'}
+              {label}
             </Text>
           </Pressable>
         ))}

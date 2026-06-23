@@ -10,6 +10,7 @@ import {
 } from './sitemap.routes.js';
 
 export default defineConfig({
+  // Keep absolute paths — required for Capacitor WebView (https://localhost). Do not use './'.
   base: '/',
   envDir: path.resolve(__dirname, '../..'),
   plugins: [

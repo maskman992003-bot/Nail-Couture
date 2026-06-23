@@ -18,6 +18,10 @@
     "sync:capacitor": "npm run sync -w @nail-couture/capacitor",
     "cap:ios": "npm run open:ios -w @nail-couture/capacitor",
     "cap:android": "npm run open:android -w @nail-couture/capacitor",
+    "build:capacitor-couture": "npm run build -w @nail-couture/web && npm run sync -w @nail-couture/capacitor-couture",
+    "sync:capacitor-couture": "npm run sync -w @nail-couture/capacitor-couture",
+    "cap:couture:ios": "npm run open:ios -w @nail-couture/capacitor-couture",
+    "cap:couture:android": "npm run open:android -w @nail-couture/capacitor-couture",
     "lint": "npm run lint -w @nail-couture/web"
   }
 }

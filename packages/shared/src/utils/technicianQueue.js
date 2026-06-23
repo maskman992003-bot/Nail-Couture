@@ -129,7 +129,7 @@ export function getTodayStartDate() {
   return today;
 }
 
-/** @typedef {'today' | 'week' | 'month'} TipPeriod */
+/** @typedef {'today' | 'yesterday' | 'week' | 'month'} TipPeriod */
 
 export const TIP_PERIOD_OPTIONS = [
   { id: 'today', label: 'Today' },
@@ -147,6 +147,10 @@ export function getTipPeriodRange(period = 'today') {
     start.setDate(start.getDate() - start.getDay());
     end = new Date(start);
     end.setDate(end.getDate() + 7);
+  } else if (period === 'yesterday') {
+    start.setDate(start.getDate() - 1);
+    end = new Date(start);
+    end.setDate(end.getDate() + 1);
   } else if (period === 'month') {
     start.setDate(1);
     end = new Date(start);
@@ -165,6 +169,7 @@ export function formatTipPeriodRange(period) {
   const { start, end } = getTipPeriodRange(period);
   const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   if (period === 'today') return fmt(start);
+  if (period === 'yesterday') return fmt(start);
   if (period === 'week') {
     const weekEnd = new Date(end);
     weekEnd.setDate(weekEnd.getDate() - 1);

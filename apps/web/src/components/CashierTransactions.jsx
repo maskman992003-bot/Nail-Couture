@@ -6,7 +6,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import {
   buildCashierReceiptContent,
+  CASHIER_TX_PERIOD_OPTIONS,
   fetchCashierTransactions,
+  getCashierTxPeriodLabel,
   getTransactionServiceLabel,
   isGiftCardSaleTransaction,
   sumTransactionTotals,
@@ -100,7 +102,7 @@ export default function CashierTransactions() {
   };
 
   const totalRevenue = sumTransactionTotals(transactions);
-  const periodLabel = period === 'today' ? 'Today' : 'This week';
+  const periodLabel = getCashierTxPeriodLabel(period);
   const selectedTx = transactions.find((tx) => tx.id === selectedId) || null;
 
   return (
@@ -126,21 +128,21 @@ export default function CashierTransactions() {
         </div>
 
         <div className="flex gap-2 mb-6">
-          {['today', 'week'].map((key) => (
+          {CASHIER_TX_PERIOD_OPTIONS.map(({ id, label }) => (
             <button
-              key={key}
+              key={id}
               type="button"
-              onClick={() => setPeriod(key)}
+              onClick={() => setPeriod(id)}
               className={clsx(
                 'px-4 py-2 text-sm rounded-lg border transition-colors',
-                period === key
+                period === id
                   ? 'bg-gold text-charcoal border-gold'
                   : isDark
                     ? 'border-offwhite/20 text-offwhite/70 hover:border-gold/40'
                     : 'border-charcoal/20 text-charcoal/70 hover:border-gold/40',
               )}
             >
-              {key === 'today' ? 'Today' : 'This week'}
+              {label}
             </button>
           ))}
         </div>
