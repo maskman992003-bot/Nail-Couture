@@ -10,7 +10,7 @@ import {
 } from '../utils/announcements.js';
 import { getSupabaseErrorMessage } from '../utils/supabaseErrors.js';
 
-const HISTORY_PAGE_SIZE = 20;
+const HISTORY_FETCH_LIMIT = 500;
 const ESTIMATE_DEBOUNCE_MS = 300;
 
 /**
@@ -29,8 +29,6 @@ export function useAnnouncements(userPhone, role) {
   const [estimate, setEstimate] = useState({ total: 0, customerCount: 0, staffCount: 0 });
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [announcements, setAnnouncements] = useState(/** @type {Array<Record<string, unknown>>} */ ([]));
-  const [historyOffset, setHistoryOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isDelivering, setIsDelivering] = useState(false);
@@ -81,22 +79,19 @@ export function useAnnouncements(userPhone, role) {
     }, ESTIMATE_DEBOUNCE_MS);
   }, [enabled, userPhone]);
 
-  const loadHistory = useCallback(async (reset = false) => {
+  const refreshHistory = useCallback(async () => {
     if (!enabled || !userPhone) return;
     setIsLoadingHistory(true);
-    const offset = reset ? 0 : historyOffset;
     try {
-      const rows = await listSalonAnnouncements(userPhone, HISTORY_PAGE_SIZE, offset);
-      setAnnouncements((prev) => (reset ? rows : [...prev, ...rows]));
-      setHasMore(rows.length === HISTORY_PAGE_SIZE);
-      setHistoryOffset(offset + rows.length);
+      const rows = await listSalonAnnouncements(userPhone, HISTORY_FETCH_LIMIT, 0);
+      setAnnouncements(rows);
       setError('');
     } catch (err) {
       setError(getSupabaseErrorMessage(err, 'Failed to load announcement history.'));
     } finally {
       setIsLoadingHistory(false);
     }
-  }, [enabled, userPhone, historyOffset]);
+  }, [enabled, userPhone]);
 
   const deliverAnnouncement = useCallback(async (announcementId) => {
     if (!enabled || !userPhone || !announcementId) return null;
@@ -109,23 +104,6 @@ export function useAnnouncements(userPhone, role) {
       throw new Error(getSupabaseErrorMessage(err, 'Failed to deliver announcement.'));
     } finally {
       setIsDelivering(false);
-    }
-  }, [enabled, userPhone]);
-
-  const refreshHistory = useCallback(async () => {
-    setHistoryOffset(0);
-    if (!enabled || !userPhone) return;
-    setIsLoadingHistory(true);
-    try {
-      const rows = await listSalonAnnouncements(userPhone, HISTORY_PAGE_SIZE, 0);
-      setAnnouncements(rows);
-      setHasMore(rows.length === HISTORY_PAGE_SIZE);
-      setHistoryOffset(rows.length);
-      setError('');
-    } catch (err) {
-      setError(getSupabaseErrorMessage(err, 'Failed to load announcement history.'));
-    } finally {
-      setIsLoadingHistory(false);
     }
   }, [enabled, userPhone]);
 
@@ -219,10 +197,10 @@ export function useAnnouncements(userPhone, role) {
     estimateLoading,
     estimateRecipients,
     announcements,
-    loadMore: () => loadHistory(false),
-    hasMore,
     isLoadingHistory,
     refreshHistory,
+    hasMore: false,
+    loadMore: () => {},
     isSending,
     isDelivering,
     sendAnnouncement,

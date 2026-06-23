@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnnouncementInbox } from '@nail-couture/shared/hooks/useAnnouncementInbox.js';
 import { formatAnnouncementDate } from '@nail-couture/shared/utils/announcementInbox.js';
+import {
+  SALON_UPDATES_PAGE_SIZE,
+  paginateRows,
+} from '@nail-couture/shared/utils/pagination.js';
 import Sidebar from './Sidebar';
 import AnnouncementAttachmentsList from '@nail-couture/shared/components/AnnouncementAttachmentsList.jsx';
+import ListPagination from './ListPagination.jsx';
 import clsx from 'clsx';
 
 const FILTERS = [
@@ -15,6 +20,7 @@ const FILTERS = [
 export default function SalonUpdates() {
   const { user } = useAuth();
   const [expandedId, setExpandedId] = useState(null);
+  const [page, setPage] = useState(1);
   const isCustomer = user?.role === 'customer';
 
   const {
@@ -29,6 +35,34 @@ export default function SalonUpdates() {
     toggleArchived,
     markNotificationRead,
   } = useAnnouncementInbox(user?.phone);
+
+  const updatesPagination = useMemo(
+    () => paginateRows(items, page, SALON_UPDATES_PAGE_SIZE),
+    [items, page],
+  );
+
+  useEffect(() => {
+    setPage(1);
+    setExpandedId(null);
+  }, [filter]);
+
+  useEffect(() => {
+    const needed = page * SALON_UPDATES_PAGE_SIZE;
+    if (needed > items.length && hasMore && !loading) {
+      loadMore();
+    }
+  }, [page, items.length, hasMore, loading, loadMore]);
+
+  const handlePageChange = (nextPage) => {
+    setExpandedId(null);
+    setPage(nextPage);
+  };
+
+  const handleFilterChange = (nextFilter) => {
+    setPage(1);
+    setExpandedId(null);
+    changeFilter(nextFilter);
+  };
 
   const handleExpand = (item) => {
     const id = item.announcement_id;
@@ -61,7 +95,7 @@ export default function SalonUpdates() {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => changeFilter(tab.id)}
+                onClick={() => handleFilterChange(tab.id)}
                 className={clsx(
                   'px-4 py-2 rounded-xl text-sm font-medium border transition-colors',
                   filter === tab.id
@@ -94,7 +128,7 @@ export default function SalonUpdates() {
             </div>
           ) : (
             <div className="space-y-4">
-              {items.map((item) => {
+              {updatesPagination.pageRows.map((item) => {
                 const isExpanded = expandedId === item.announcement_id;
                 return (
                   <article
@@ -177,16 +211,7 @@ export default function SalonUpdates() {
                 );
               })}
 
-              {hasMore ? (
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  disabled={loading}
-                  className="w-full py-3 rounded-xl border border-theme text-gold-strong text-sm hover:bg-gold/10 transition-colors disabled:opacity-50"
-                >
-                  {loading ? 'Loading…' : 'Load more'}
-                </button>
-              ) : null}
+              <ListPagination pagination={updatesPagination} onPageChange={handlePageChange} />
             </div>
           )}
         </div>

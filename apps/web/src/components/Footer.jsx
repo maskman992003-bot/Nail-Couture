@@ -56,7 +56,6 @@ export default function Footer() {
           <div className="space-y-3">
             <Link to="/" className={linkClass}>Home</Link>
             <Link to="/about" className={linkClass}>About</Link>
-            <Link to="/services" className={linkClass}>Services</Link>
           </div>
         </div>
       </div>

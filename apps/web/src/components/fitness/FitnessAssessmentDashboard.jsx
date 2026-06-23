@@ -124,7 +124,7 @@ export default function FitnessAssessmentDashboard({ className }) {
           <div>
             <h2 className="font-heading text-xl text-gold mb-1">Saved History</h2>
             <p className="text-sm text-secondary">
-              All assessments saved to your profile, newest first. Tap a row for full details.
+              All assessments saved to your profile, newest first. Tap a row for full details, or use the trash icon to delete.
             </p>
           </div>
           <FitnessAssessmentHistory

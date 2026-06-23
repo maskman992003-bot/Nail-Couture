@@ -508,30 +508,32 @@ export function CheckInScreen() {
               >
                 <Text style={styles.textSecondary}>Cancel</Text>
               </Pressable>
-              <Pressable
-                onPress={async () => {
-                  if (!result?.appointment?.id) return;
-                  setLoading(true);
-                  setError(null);
-                  try {
-                    await completeCheckIn(phone, result.appointment.id);
-                    setNewUserDetails({
-                      fullName: result?.name || 'Guest',
-                      refreshmentPref: (result?.appointment?.refreshment_pref as string) || '',
-                    });
-                    setNewUserSuccess(true);
-                  } catch (err) {
-                    const message = err instanceof Error ? err.message : 'Failed to complete check-in';
-                    setError(message);
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                disabled={loading}
-                style={[styles.buttonPrimary, { flex: 1, opacity: loading ? 0.5 : 1 }]}
-              >
-                <Text style={styles.buttonPrimaryText}>Confirm</Text>
-              </Pressable>
+              {selectedServices.length > 0 ? (
+                <Pressable
+                  onPress={async () => {
+                    if (!result?.appointment?.id) return;
+                    setLoading(true);
+                    setError(null);
+                    try {
+                      await completeCheckIn(phone, result.appointment.id);
+                      setNewUserDetails({
+                        fullName: result?.name || 'Guest',
+                        refreshmentPref: (result?.appointment?.refreshment_pref as string) || '',
+                      });
+                      setNewUserSuccess(true);
+                    } catch (err) {
+                      const message = err instanceof Error ? err.message : 'Failed to complete check-in';
+                      setError(message);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading}
+                  style={[styles.buttonPrimary, { flex: 1, opacity: loading ? 0.5 : 1 }]}
+                >
+                  <Text style={styles.buttonPrimaryText}>Confirm</Text>
+                </Pressable>
+              ) : null}
             </View>
           </View>
         </ScrollableContent>

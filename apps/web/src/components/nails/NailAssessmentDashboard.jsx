@@ -120,7 +120,7 @@ export default function NailAssessmentDashboard({ className }) {
           <div>
             <h2 className="font-heading text-xl text-gold mb-1">Saved History</h2>
             <p className="text-sm text-secondary">
-              All nail assessments saved to your profile, newest first. Tap a row for full details.
+              All nail assessments saved to your profile, newest first. Tap a row for full details, or use the trash icon to delete.
             </p>
           </div>
           <NailAssessmentHistory

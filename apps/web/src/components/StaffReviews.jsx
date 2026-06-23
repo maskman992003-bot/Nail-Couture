@@ -16,10 +16,11 @@ import ThemeSelect from './ThemeSelect';
 import AppModal, { modalBtnDanger, modalBtnSecondary } from './AppModal';
 import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
 import ReviewsList from './reviews/ReviewsList';
+import ListPagination from './ListPagination.jsx';
+import { REVIEWS_PAGE_SIZE } from '@nail-couture/shared/utils/pagination.js';
 
 const MANAGEMENT_ROLES = ['super_admin', 'owner', 'partner', 'admin'];
 const EXECUTIVE_ROLES = ['super_admin', 'owner', 'partner'];
-const PAGE_SIZE = 50;
 
 const DATE_PRESETS = [
   { id: 'today', label: 'Today' },
@@ -32,10 +33,9 @@ export default function StaffReviews() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [summary, setSummary] = useState({ avgRating: null, reviewCount: 0 });
-  const [hasMore, setHasMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [technicians, setTechnicians] = useState([]);
   const [technicianFilter, setTechnicianFilter] = useState('');
   const [moderatingReviewId, setModeratingReviewId] = useState(null);
@@ -96,14 +96,13 @@ export default function StaffReviews() {
       .then(({ data }) => setTechnicians(data || []));
   }, [canFilterTechnician]);
 
-  const loadReviews = useCallback(async ({ append = false, offset = 0 } = {}) => {
+  const loadReviews = useCallback(async () => {
     if (!user?.phone || !dateRange) return;
-    if (append) setLoadingMore(true);
-    else setLoading(true);
+    setLoading(true);
 
     const query = {
-      limit: PAGE_SIZE,
-      offset,
+      limit: REVIEWS_PAGE_SIZE,
+      offset: (currentPage - 1) * REVIEWS_PAGE_SIZE,
       fromDate: dateRange.fromDate,
       toDate: dateRange.toDate,
       search: searchTerm.trim() || null,
@@ -128,37 +127,41 @@ export default function StaffReviews() {
         setLoadError(result.error ? result.error.message || 'Could not load reviews.' : null);
         setFiltersClientSide(Boolean(result.filtersClientSide));
         setSummary(result.summary || { avgRating: null, reviewCount: 0 });
-        setReviews((prev) => (append ? [...prev, ...(result.reviews || [])] : result.reviews || []));
-        setHasMore(Boolean(result.hasMore));
-      } else if (!append) {
+        setReviews(result.reviews || []);
+        const total = result.summary?.reviewCount ?? result.totalCount ?? 0;
+        const maxPage = Math.max(1, Math.ceil(total / REVIEWS_PAGE_SIZE));
+        if (currentPage > maxPage) {
+          setCurrentPage(maxPage);
+        }
+      } else {
         setLoadError('Reviews are not set up yet. Run migrations 063–066 in Supabase SQL Editor.');
         setFiltersClientSide(false);
         setSummary({ avgRating: null, reviewCount: 0 });
         setReviews([]);
-        setHasMore(false);
       }
     } catch (err) {
       console.error('Failed to load reviews:', err);
-      if (!append) {
-        setLoadError('Could not load reviews. Try again or check your connection.');
-        setReviews([]);
-        setSummary({ avgRating: null, reviewCount: 0 });
-      }
+      setLoadError('Could not load reviews. Try again or check your connection.');
+      setReviews([]);
+      setSummary({ avgRating: null, reviewCount: 0 });
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
-  }, [user?.phone, user?.id, isTechnician, technicianFilter, dateRange, searchTerm, canViewHidden]);
+  }, [user?.phone, user?.id, isTechnician, technicianFilter, dateRange, searchTerm, canViewHidden, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [datePreset, customStart, customEnd, technicianFilter, searchTerm]);
 
   useEffect(() => {
     if (!dateRange || !user?.phone) return;
     loadReviews();
-  }, [dateRange, user?.phone, technicianFilter, searchTerm, loadReviews]);
+  }, [dateRange, user?.phone, technicianFilter, searchTerm, currentPage, loadReviews]);
 
-  const handleLoadMore = () => {
-    if (!hasMore || loadingMore) return;
-    loadReviews({ append: true, offset: reviews.length });
-  };
+  const reviewsPagination = useMemo(() => ({
+    currentPage,
+    totalPages: Math.max(1, Math.ceil((summary.reviewCount || 0) / REVIEWS_PAGE_SIZE)),
+  }), [currentPage, summary.reviewCount]);
 
   const handleModerate = async (review, action) => {
     if (!user?.phone || !canModerate) return;
@@ -347,18 +350,7 @@ export default function StaffReviews() {
                 publishingId={publishingReviewId}
                 onDeleteRequest={canModerate ? setReviewToDelete : undefined}
               />
-              {hasMore && (
-                <div className="mt-4 text-center">
-                  <button
-                    type="button"
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    className="px-6 py-2.5 rounded-xl border border-gold/40 text-gold text-sm font-heading uppercase tracking-wider hover:bg-gold/10 disabled:opacity-50"
-                  >
-                    {loadingMore ? 'Loading…' : 'Load more'}
-                  </button>
-                </div>
-              )}
+              <ListPagination pagination={reviewsPagination} onPageChange={setCurrentPage} className="mt-4" />
             </>
           )}
         </div>

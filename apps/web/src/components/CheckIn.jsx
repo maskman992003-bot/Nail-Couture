@@ -1126,29 +1126,31 @@ export default function CheckIn({ onNavigate }) {
             >
               CANCEL
             </button>
-            <button
-              onClick={async () => {
-                if (!result?.appointment?.id) return
-                setLoading(true)
-                setError(null)
-                try {
-                  await completeCheckIn(phone, result.appointment.id)
-                  setNewUserDetails({
-                    fullName: result?.name || 'Guest',
-                    refreshmentPref: result?.appointment?.refreshment_pref || ''
-                  })
-                  setNewUserSuccess(true)
-                } catch (err) {
-                  setError(err.message || 'Failed to complete check-in')
-                } finally {
-                  setLoading(false)
-                }
-              }}
-              disabled={loading}
-              className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              CONFIRM
-            </button>
+            {selectedServices.length > 0 && (
+              <button
+                onClick={async () => {
+                  if (!result?.appointment?.id) return
+                  setLoading(true)
+                  setError(null)
+                  try {
+                    await completeCheckIn(phone, result.appointment.id)
+                    setNewUserDetails({
+                      fullName: result?.name || 'Guest',
+                      refreshmentPref: result?.appointment?.refreshment_pref || ''
+                    })
+                    setNewUserSuccess(true)
+                  } catch (err) {
+                    setError(err.message || 'Failed to complete check-in')
+                  } finally {
+                    setLoading(false)
+                  }
+                }}
+                disabled={loading}
+                className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                CONFIRM
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -28,9 +28,9 @@ const VARIANT_STYLES = {
   },
 };
 
-function renderBody(body, bodyClass, mutedClass) {
+function renderBody(body, bodyClass, mutedClass, mutedStyle) {
   return body.split('\n\n').map((paragraph) => (
-    <p key={paragraph.slice(0, 24)} className={`${bodyClass} ${mutedClass}`}>
+    <p key={paragraph.slice(0, 24)} className={`${bodyClass} ${mutedClass}`} style={mutedStyle}>
       {paragraph}
     </p>
   ));
@@ -43,21 +43,25 @@ export default function LoyaltyTermsSummary({
   summaryLabel = LOYALTY_PROGRAM_TERMS_SUMMARY_LABEL,
   surface = 'app',
 }) {
-  const { theme } = useTheme();
+  const { themeConfig, isDark } = useTheme();
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
   const styles = VARIANT_STYLES[variant] ?? VARIANT_STYLES.wallet;
 
-  const useDarkCard = surface === 'wallet' || (surface === 'app' && theme === 'dark');
-  const muted = useDarkCard ? 'text-offwhite/55' : 'text-charcoal/55';
-  const borderStyle = {
-    borderColor: 'rgba(197,160,89,0.25)',
-    backgroundColor: useDarkCard ? '#111' : '#fff',
-  };
+  const useThemedLanding = surface === 'landing';
+  const useDarkCard = surface === 'wallet' || (surface === 'app' && isDark);
+  const mutedClass = useThemedLanding ? '' : (useDarkCard ? 'text-offwhite/55' : 'text-charcoal/55');
+  const mutedStyle = useThemedLanding ? { color: themeConfig.textMuted } : undefined;
+  const borderStyle = useThemedLanding
+    ? undefined
+    : {
+        borderColor: 'rgba(197,160,89,0.25)',
+        backgroundColor: useDarkCard ? '#111' : '#fff',
+      };
 
   return (
     <div
-      className={`rounded-2xl border ${styles.card}`}
+      className={`rounded-2xl border ${styles.card}${useThemedLanding ? ' landing-card' : ''}`}
       style={borderStyle}
     >
       <button
@@ -67,7 +71,7 @@ export default function LoyaltyTermsSummary({
         onClick={() => setOpen((value) => !value)}
         className="flex w-full items-center justify-between gap-3 text-left"
       >
-        <span className={`${styles.summaryLabel} ${muted}`}>{summaryLabel}</span>
+        <span className={`${styles.summaryLabel} ${mutedClass}`} style={mutedStyle}>{summaryLabel}</span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-gold transition-transform duration-300 ease-in-out ${open ? 'rotate-180' : ''}`}
           aria-hidden
@@ -93,11 +97,17 @@ export default function LoyaltyTermsSummary({
                 <div key={section.title}>
                   <h4 className={`${styles.sectionTitle} mb-1`}>{section.title}</h4>
                   <div className="space-y-2">
-                    {renderBody(section.body, styles.body, muted)}
+                    {renderBody(section.body, styles.body, mutedClass, mutedStyle)}
                   </div>
                 </div>
               ))}
-              <p className={`${styles.body} ${muted} pt-2 border-t border-gold/15`}>
+              <p
+                className={`${styles.body} ${mutedClass} pt-2 border-t${useThemedLanding ? '' : ' border-gold/15'}`}
+                style={{
+                  ...mutedStyle,
+                  ...(useThemedLanding ? { borderColor: themeConfig.borderLight } : undefined),
+                }}
+              >
                 {LOYALTY_PROGRAM_TERMS_FOOTER}
               </p>
             </div>

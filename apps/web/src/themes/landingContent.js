@@ -113,9 +113,8 @@ export const LANDING_SOCIAL_LINKS = [
 export const DEFAULT_NAV_LINKS = [
   { label: 'Home', href: '#home' },
   { label: 'Services', href: '#services' },
-  { label: 'Loyalty', href: '#loyalty' },
-  { label: 'About', href: '#about' },
   { label: 'Experience', href: '#experience' },
-  { label: 'Gallery', href: '#gallery' },
+  { label: 'Loyalty', href: '#loyalty' },
   { label: 'Contact', href: '#contact' },
+  { label: 'About', href: '#about' },
 ];

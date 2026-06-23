@@ -6,12 +6,17 @@ import { enrichAppointmentsWithServices } from '@nail-couture/shared/utils/appoi
 import { getAppointmentTechnicianNames } from '@nail-couture/shared/utils/appointmentServices.js';
 import { fetchReviewableAppointments } from '@nail-couture/shared/utils/customerReviewService.js';
 import { getDateRangeForPreset } from '@nail-couture/shared/utils/activityDateRange.js';
+import {
+  VISIT_HISTORY_PAGE_SIZE,
+  paginateRows,
+} from '@nail-couture/shared/utils/pagination.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
 import { AppointmentStatusBadge } from '../../components/customer/AppointmentStatusBadge';
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { ReviewFormModal } from '../../components/reviews/ReviewFormModal';
+import { ListPagination } from '../../components/ListPagination';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import { shareVisitReceiptWithAlert } from '../../utils/receiptShare';
 
@@ -73,6 +78,7 @@ export function CustomerHistoryScreen() {
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [historyPage, setHistoryPage] = useState(1);
   const [receiptLoadingId, setReceiptLoadingId] = useState<string | null>(null);
 
   const dateRange = useMemo(() => {
@@ -161,6 +167,21 @@ export function CustomerHistoryScreen() {
     }
     return result;
   }, [bookings, datePreset, dateRange, searchTerm, matchesSearch]);
+
+  const historyPagination = useMemo(
+    () => paginateRows(filteredBookings, historyPage, VISIT_HISTORY_PAGE_SIZE),
+    [filteredBookings, historyPage],
+  );
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [datePreset, customStart, customEnd, searchTerm]);
+
+  useEffect(() => {
+    if (historyPage > historyPagination.totalPages) {
+      setHistoryPage(historyPagination.totalPages);
+    }
+  }, [historyPage, historyPagination.totalPages]);
 
   const emptyMessage = useMemo(() => {
     if (bookings.length === 0) return 'No visits yet.';
@@ -377,7 +398,10 @@ export function CustomerHistoryScreen() {
             {emptyMessage}
           </Text>
         ) : (
-          filteredBookings.map(renderVisitRow)
+          <>
+            {historyPagination.pageRows.map(renderVisitRow)}
+            <ListPagination pagination={historyPagination} onPageChange={setHistoryPage} />
+          </>
         )}
       </View>
 

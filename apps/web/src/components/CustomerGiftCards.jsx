@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -16,8 +16,13 @@ import {
   transferGiftCard,
 } from '@nail-couture/shared/utils/giftCards';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
+import {
+  GIFT_CARDS_PAGE_SIZE,
+  paginateRows,
+} from '@nail-couture/shared/utils/pagination.js';
 import Sidebar from './Sidebar';
 import { GiftCardVisual } from './GiftCardVisual';
+import ListPagination from './ListPagination.jsx';
 import clsx from 'clsx';
 
 function GiftCardRow({ card, theme, onTransfer, showTransfer, hideFullCode }) {
@@ -67,6 +72,38 @@ export default function CustomerGiftCards() {
   const [transferMessage, setTransferMessage] = useState('');
   const [transferError, setTransferError] = useState('');
   const [transferring, setTransferring] = useState(false);
+  const [ownedPage, setOwnedPage] = useState(1);
+  const [purchasedPage, setPurchasedPage] = useState(1);
+
+  const ownedPagination = useMemo(
+    () => paginateRows(owned, ownedPage, GIFT_CARDS_PAGE_SIZE),
+    [owned, ownedPage],
+  );
+
+  const purchasedPagination = useMemo(
+    () => paginateRows(purchasedForOthers, purchasedPage, GIFT_CARDS_PAGE_SIZE),
+    [purchasedForOthers, purchasedPage],
+  );
+
+  useEffect(() => {
+    setOwnedPage(1);
+  }, [owned]);
+
+  useEffect(() => {
+    setPurchasedPage(1);
+  }, [purchasedForOthers]);
+
+  useEffect(() => {
+    if (ownedPage > ownedPagination.totalPages) {
+      setOwnedPage(ownedPagination.totalPages);
+    }
+  }, [ownedPage, ownedPagination.totalPages]);
+
+  useEffect(() => {
+    if (purchasedPage > purchasedPagination.totalPages) {
+      setPurchasedPage(purchasedPagination.totalPages);
+    }
+  }, [purchasedPage, purchasedPagination.totalPages]);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -180,20 +217,23 @@ export default function CustomerGiftCards() {
         <section className="mb-8">
           <h2 className="font-heading text-xl mb-4">My Cards</h2>
           {owned.length > 0 ? (
-            <div className="space-y-4">
-              {owned.map((card) => (
-                <GiftCardRow
-                  key={card.id}
-                  card={card}
-                  theme={theme}
-                  showTransfer
-                  onTransfer={openTransferModal}
-                />
-              ))}
-            </div>
+            <>
+              <div className="space-y-4">
+                {ownedPagination.pageRows.map((card) => (
+                  <GiftCardRow
+                    key={card.id}
+                    card={card}
+                    theme={theme}
+                    showTransfer
+                    onTransfer={openTransferModal}
+                  />
+                ))}
+              </div>
+              <ListPagination pagination={ownedPagination} onPageChange={setOwnedPage} className="mt-4" />
+            </>
           ) : (
             <p className={isDark ? 'text-offwhite/50' : 'text-charcoal/50'}>
-              No gift cards yet. Ask the front desk to purchase one for you.
+              No gift cards yet. Ask the front desk to purchase one for you or your beloved.
             </p>
           )}
         </section>
@@ -202,10 +242,11 @@ export default function CustomerGiftCards() {
           <section>
             <h2 className="font-heading text-xl mb-4">Purchased for Others</h2>
             <div className="space-y-4">
-              {purchasedForOthers.map((card) => (
+              {purchasedPagination.pageRows.map((card) => (
                 <GiftCardRow key={card.id} card={card} theme={theme} hideFullCode />
               ))}
             </div>
+            <ListPagination pagination={purchasedPagination} onPageChange={setPurchasedPage} className="mt-4" />
           </section>
         )}
 

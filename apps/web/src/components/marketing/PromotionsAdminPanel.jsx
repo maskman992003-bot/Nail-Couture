@@ -11,6 +11,7 @@ import {
   canHaveActivePromotion,
   getActivePromotionLimitMessage,
 } from '@nail-couture/shared/utils/promotions.js';
+import ListPagination from '../ListPagination.jsx';
 
 const KIND_OPTIONS = [
   { id: 'first_visit', label: 'First visit' },
@@ -137,9 +138,6 @@ export default function PromotionsAdminPanel({ userPhone, userRole }) {
     const start = (listPage - 1) * LIST_PAGE_SIZE;
     return filteredPromotions.slice(start, start + LIST_PAGE_SIZE);
   }, [filteredPromotions, listPage]);
-
-  const listRangeStart = filteredPromotions.length === 0 ? 0 : (listPage - 1) * LIST_PAGE_SIZE + 1;
-  const listRangeEnd = Math.min(listPage * LIST_PAGE_SIZE, filteredPromotions.length);
 
   const inputClass = clsx(
     'w-full rounded-xl border px-4 py-2.5 text-sm bg-input border-card text-primary',
@@ -486,38 +484,11 @@ export default function PromotionsAdminPanel({ userPhone, userRole }) {
               })}
             </div>
             {!loading && filteredPromotions.length > LIST_PAGE_SIZE ? (
-              <>
-                <p className="text-xs text-secondary mt-3">
-                  Showing {listRangeStart}–{listRangeEnd} of {filteredPromotions.length} promotion{filteredPromotions.length === 1 ? '' : 's'}
-                </p>
-                <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-card">
-                  <button
-                    type="button"
-                    onClick={() => setListPage((page) => Math.max(1, page - 1))}
-                    disabled={listPage === 1}
-                    className={clsx(
-                      'px-3 py-1.5 rounded-lg border border-card text-sm transition-colors',
-                      listPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:border-gold/40',
-                    )}
-                  >
-                    Previous
-                  </button>
-                  <span className="text-xs text-secondary">
-                    Page {listPage} of {totalListPages}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setListPage((page) => Math.min(totalListPages, page + 1))}
-                    disabled={listPage === totalListPages}
-                    className={clsx(
-                      'px-3 py-1.5 rounded-lg border border-card text-sm transition-colors',
-                      listPage === totalListPages ? 'opacity-40 cursor-not-allowed' : 'hover:border-gold/40',
-                    )}
-                  >
-                    Next
-                  </button>
-                </div>
-              </>
+              <ListPagination
+                pagination={{ currentPage: listPage, totalPages: totalListPages }}
+                onPageChange={setListPage}
+                className="mt-3"
+              />
             ) : null}
           </div>
         </div>

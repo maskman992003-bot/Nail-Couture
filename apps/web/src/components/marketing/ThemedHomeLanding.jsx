@@ -270,7 +270,7 @@ export default function ThemedHomeLanding() {
           <p className="text-sm text-center leading-relaxed mb-8" style={{ color: themeConfig.textSecondary }}>
             {LANDING_LOYALTY.teaser}
           </p>
-          <LoyaltyTermsSummary variant="wallet" surface="wallet" />
+          <LoyaltyTermsSummary variant="wallet" surface="landing" />
         </div>
       </section>
 

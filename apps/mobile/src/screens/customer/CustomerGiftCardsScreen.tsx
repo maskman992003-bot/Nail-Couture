@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -19,9 +19,14 @@ import {
   maskGiftCardCode,
   transferGiftCard,
 } from '@nail-couture/shared/utils/giftCards.js';
+import {
+  GIFT_CARDS_PAGE_SIZE,
+  paginateRows,
+} from '@nail-couture/shared/utils/pagination.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
+import { ListPagination } from '../../components/ListPagination';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type GiftCardRecord = Record<string, unknown> & {
@@ -112,6 +117,26 @@ export function CustomerGiftCardsScreen() {
   const [transferMessage, setTransferMessage] = useState('');
   const [transferError, setTransferError] = useState('');
   const [transferring, setTransferring] = useState(false);
+  const [ownedPage, setOwnedPage] = useState(1);
+  const [purchasedPage, setPurchasedPage] = useState(1);
+
+  const ownedPagination = useMemo(
+    () => paginateRows(owned, ownedPage, GIFT_CARDS_PAGE_SIZE),
+    [owned, ownedPage],
+  );
+
+  const purchasedPagination = useMemo(
+    () => paginateRows(purchasedForOthers, purchasedPage, GIFT_CARDS_PAGE_SIZE),
+    [purchasedForOthers, purchasedPage],
+  );
+
+  useEffect(() => {
+    setOwnedPage(1);
+  }, [owned]);
+
+  useEffect(() => {
+    setPurchasedPage(1);
+  }, [purchasedForOthers]);
 
   const loadCards = useCallback(async () => {
     if (!user?.phone) return;
@@ -170,11 +195,14 @@ export function CustomerGiftCardsScreen() {
     >
       <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600', marginBottom: 12 }]}>My Cards</Text>
       {owned.length > 0 ? (
-        owned.map((card) => (
-          <GiftCardRow key={card.id} card={card} showTransfer onTransfer={setTransferTarget} />
-        ))
+        <>
+          {ownedPagination.pageRows.map((card) => (
+            <GiftCardRow key={card.id} card={card} showTransfer onTransfer={setTransferTarget} />
+          ))}
+          <ListPagination pagination={ownedPagination} onPageChange={setOwnedPage} />
+        </>
       ) : (
-        <Text style={styles.textSecondary}>No gift cards yet. Ask the front desk to purchase one.</Text>
+        <Text style={styles.textSecondary}>No gift cards yet. Ask the front desk to purchase one for you or your beloved.</Text>
       )}
 
       {purchasedForOthers.length > 0 && (
@@ -182,9 +210,10 @@ export function CustomerGiftCardsScreen() {
           <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600', marginTop: 20, marginBottom: 12 }]}>
             Purchased for Others
           </Text>
-          {purchasedForOthers.map((card) => (
+          {purchasedPagination.pageRows.map((card) => (
             <GiftCardRow key={card.id} card={card} hideFullCode showRecipient />
           ))}
+          <ListPagination pagination={purchasedPagination} onPageChange={setPurchasedPage} />
         </>
       )}
 

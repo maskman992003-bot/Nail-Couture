@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { ScrollSelect } from '../../components/forms/ScrollSelect';
 import { Icon } from '../../components/icons/Icon';
+import { ListPagination } from '../../components/ListPagination';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 import type { CustomersStackParamList } from '../../navigation/staffTypes';
 
@@ -442,44 +443,10 @@ export function StaffCustomersScreen() {
         </View>
       )}
 
-      {sortedCustomers.length > ITEMS_PER_PAGE ? (
-        <View
-          style={[
-            styles.card,
-            {
-              marginTop: 16,
-              padding: 12,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            },
-          ]}
-        >
-          <Pressable
-            onPress={() => setCurrentPage((page) => Math.max(1, page - 1))}
-            disabled={currentPage === 1}
-            style={{ opacity: currentPage === 1 ? 0.3 : 1, padding: 8 }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Icon name="chevronLeft" size={16} color={styles.tokens.textPrimary} />
-              <Text style={styles.textPrimary}>Previous</Text>
-            </View>
-          </Pressable>
-          <Text style={[styles.textSecondary, { fontSize: 12 }]}>
-            Page {currentPage} of {totalPages}
-          </Text>
-          <Pressable
-            onPress={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-            disabled={currentPage === totalPages}
-            style={{ opacity: currentPage === totalPages ? 0.3 : 1, padding: 8 }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={styles.textPrimary}>Next</Text>
-              <Icon name="chevronRight" size={16} color={styles.tokens.textPrimary} />
-            </View>
-          </Pressable>
-        </View>
-      ) : null}
+      <ListPagination
+        pagination={{ currentPage, totalPages }}
+        onPageChange={setCurrentPage}
+      />
     </StaffScreenLayout>
   );
 }

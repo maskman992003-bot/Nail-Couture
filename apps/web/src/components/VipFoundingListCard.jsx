@@ -7,6 +7,7 @@ import {
   fetchVipFoundingList,
 } from '@nail-couture/shared/utils/vipFoundingListService.js';
 import { getSupabaseErrorMessage } from '@nail-couture/shared/utils/supabaseErrors.js';
+import ListPagination from './ListPagination.jsx';
 
 const MANAGEMENT_ROLES = ['super_admin', 'owner', 'partner', 'admin'];
 const PAGE_SIZE = 10;
@@ -137,16 +138,6 @@ export default function VipFoundingListCard({
       ? 'border-gold/30 text-gold hover:bg-gold/10'
       : 'border-gold/40 text-gold hover:bg-gold/10',
   );
-  const pageBtnClass = (active) => clsx(
-    'min-w-[2rem] px-2 py-1 text-xs font-medium rounded-lg border transition-colors',
-    active
-      ? theme === 'dark'
-        ? 'border-gold bg-gold/15 text-gold'
-        : 'border-gold bg-gold/10 text-gold'
-      : theme === 'dark'
-        ? 'border-gold/30 text-secondary hover:bg-gold/10'
-        : 'border-gold/40 text-charcoal/70 hover:bg-gold/10',
-  );
 
   return (
     <>
@@ -232,25 +223,11 @@ export default function VipFoundingListCard({
               </table>
             </div>
 
-            {totalPages > 1 && (
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                {Array.from({ length: totalPages }, (_, index) => {
-                  const pageNumber = index + 1;
-                  return (
-                    <button
-                      key={pageNumber}
-                      type="button"
-                      className={pageBtnClass(pageNumber === page)}
-                      onClick={() => setPage(pageNumber)}
-                      aria-label={`Page ${pageNumber}`}
-                      aria-current={pageNumber === page ? 'page' : undefined}
-                    >
-                      {pageNumber}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            <ListPagination
+              pagination={{ currentPage: page, totalPages }}
+              onPageChange={setPage}
+              className="mt-4"
+            />
           </>
         )}
       </AppModal>

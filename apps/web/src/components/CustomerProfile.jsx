@@ -392,10 +392,9 @@ export default function CustomerProfile() {
 
         {activeTab === 'overview' && stats && (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {[
                 { label: 'Total visits', value: stats.totalVisits },
-                { label: 'Total spent', value: `$${stats.totalSpent.toFixed(2)}` },
                 { label: 'Last visit', value: stats.lastVisit ? new Date(stats.lastVisit).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' },
                 { label: 'Favorite service', value: stats.favoriteService || '—' },
               ].map((item) => (
@@ -417,7 +416,7 @@ export default function CustomerProfile() {
                     </div>
                   )}
                   <div className={cardClass(theme)}>
-                    <span className={labelClass(theme)}>Services tried</span>
+                    <span className={labelClass(theme)}>Services</span>
                     <span className={valueClass(theme)}>{stats.servicesTried}</span>
                   </div>
                   {stats.favoriteService && stats.isUsualService && (

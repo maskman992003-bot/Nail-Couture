@@ -27,7 +27,9 @@ import {
 import { getSupabaseErrorMessage } from '@nail-couture/shared/utils/supabaseErrors.js';
 import { getHomePath } from '@nail-couture/shared/utils/routes.js';
 import { featureFlags } from '@nail-couture/shared/constants/featureFlags.js';
+import { paginateRows, ANNOUNCEMENTS_PAGE_SIZE } from '@nail-couture/shared/utils/pagination.js';
 import WebCameraCapture from './WebCameraCapture.jsx';
+import ListPagination from './ListPagination.jsx';
 import { clickFileInput, openWebCameraPicker } from '../utils/mobileFilePickers.js';
 
 const AUDIENCE_OPTIONS = [
@@ -82,6 +84,7 @@ export default function Announcements() {
   const [attachments, setAttachments] = useState([]);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
   const photoInputRef = useRef(null);
   const fileInputRef = useRef(null);
   const cameraFallbackInputRef = useRef(null);
@@ -94,8 +97,6 @@ export default function Announcements() {
     estimateLoading,
     estimateRecipients,
     announcements,
-    loadMore,
-    hasMore,
     isLoadingHistory,
     isSending,
     isDelivering,
@@ -179,6 +180,15 @@ export default function Announcements() {
     && !isDelivering
     && !isUploadingAttachment,
   );
+
+  const historyPagination = useMemo(
+    () => paginateRows(announcements, historyPage, ANNOUNCEMENTS_PAGE_SIZE),
+    [announcements, historyPage],
+  );
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [announcements.length]);
 
   const uploadFiles = async (files) => {
     if (!files.length || !user?.id) return;
@@ -593,7 +603,7 @@ export default function Announcements() {
             </div>
           ) : (
             <div className="space-y-3">
-              {announcements.map((row) => (
+              {historyPagination.pageRows.map((row) => (
                 <div
                   key={row.id}
                   className="rounded-xl border border-card bg-primary/20 p-4"
@@ -630,16 +640,7 @@ export default function Announcements() {
               ))}
             </div>
           )}
-          {hasMore && (
-            <button
-              type="button"
-              onClick={loadMore}
-              disabled={isLoadingHistory}
-              className="mt-4 w-full py-3 rounded-xl border border-theme text-gold-strong text-sm hover:bg-gold/10 transition-colors disabled:opacity-50"
-            >
-              {isLoadingHistory ? 'Loading...' : 'Load more'}
-            </button>
-          )}
+          <ListPagination pagination={historyPagination} onPageChange={setHistoryPage} className="mt-4" />
         </section>
           </>
         )}

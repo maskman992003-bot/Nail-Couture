@@ -422,12 +422,7 @@ export default function Sidebar() {
           className="py-5 px-3 lg:px-5 flex-shrink-0 flex justify-center lg:justify-start border-b"
           style={{ borderColor }}
         >
-          <div
-            className="flex items-center justify-center rounded-full p-1"
-            style={{ boxShadow: `0 0 0 1px ${borderColor}` }}
-          >
-            <BrandLogo className="h-8 w-8 lg:h-10 lg:w-10" />
-          </div>
+          <BrandLogo className="h-8 w-8 lg:h-10 lg:w-10" framed />
         </div>
 
         {/* Nav Items */}

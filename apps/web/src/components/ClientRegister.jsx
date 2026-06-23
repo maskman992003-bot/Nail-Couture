@@ -61,7 +61,7 @@ export default function ClientRegister() {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { theme } = useTheme();
+  const { theme, themeConfig } = useTheme();
 
   const cardClass = theme === 'dark'
     ? 'bg-[#111] border border-gold/20 rounded-2xl p-8 shadow-xl'
@@ -218,8 +218,13 @@ export default function ClientRegister() {
       <div className="w-full max-w-md">
         <div className={cardClass}>
           <div className="text-center mb-8">
-            <Link to="/" className="block">
-              <BrandLogo className="h-28 w-auto mx-auto" rounded={false} />
+            <Link to="/" className="inline-flex justify-center w-full">
+              <div
+                className="flex items-center justify-center rounded-full p-1.5"
+                style={{ boxShadow: `0 0 0 1px ${themeConfig.borderColor}` }}
+              >
+                <BrandLogo className="h-28 w-28" />
+              </div>
             </Link>
             <p className={subtitleClass}>Create Your Account</p>
             {formData.referral_code && (

@@ -1,4 +1,9 @@
 export const LOYALTY_HISTORY_PAGE_SIZE = 5;
+export const GIFT_CARDS_PAGE_SIZE = 3;
+export const VISIT_HISTORY_PAGE_SIZE = 6;
+export const SALON_UPDATES_PAGE_SIZE = 3;
+export const REVIEWS_PAGE_SIZE = 5;
+export const ANNOUNCEMENTS_PAGE_SIZE = 5;
 
 /**
  * Build numbered page items for pagination controls (1, 2, …, last).

@@ -21,9 +21,14 @@ import {
   getAppointmentTechnicianNames,
 } from '@nail-couture/shared/utils/appointmentServices';
 import { fetchReviewableAppointments } from '@nail-couture/shared/utils/customerReviewService';
+import {
+  VISIT_HISTORY_PAGE_SIZE,
+  paginateRows,
+} from '@nail-couture/shared/utils/pagination.js';
 import Sidebar from './Sidebar';
 import ReviewForm from './reviews/ReviewForm';
 import ReceiptPreviewModal from './ReceiptPreviewModal';
+import ListPagination from './ListPagination.jsx';
 
 const statusConfigDark = {
   waiting: { label: 'Waiting', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' },
@@ -92,6 +97,7 @@ export default function CustomerHistory() {
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [historyPage, setHistoryPage] = useState(1);
 
   const dateRange = useMemo(() => {
     if (datePreset === 'all') return null;
@@ -266,6 +272,21 @@ export default function CustomerHistory() {
   const emptyState = getEmptyHistoryState();
 
   const filteredBookings = bookingsInPeriod;
+
+  const historyPagination = useMemo(
+    () => paginateRows(filteredBookings, historyPage, VISIT_HISTORY_PAGE_SIZE),
+    [filteredBookings, historyPage],
+  );
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [datePreset, customStart, customEnd, searchTerm]);
+
+  useEffect(() => {
+    if (historyPage > historyPagination.totalPages) {
+      setHistoryPage(historyPagination.totalPages);
+    }
+  }, [historyPage, historyPagination.totalPages]);
 
   const statusConfig = theme === 'dark' ? statusConfigDark : statusConfigLight;
   const modalBg = theme === 'dark' ? '#1a1a1a' : '#ffffff';
@@ -537,8 +558,11 @@ export default function CustomerHistory() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredBookings.map(renderCard)}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {historyPagination.pageRows.map(renderCard)}
+            </div>
+            <ListPagination pagination={historyPagination} onPageChange={setHistoryPage} />
           </div>
         )}
 

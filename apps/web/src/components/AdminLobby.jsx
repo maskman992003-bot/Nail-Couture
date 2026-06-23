@@ -142,7 +142,7 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
       'animate-wiggle': wiggle
     },
     !dropHighlight && !isBusy && !isOnBreak && (
-      theme === 'dark' ? 'border-offwhite/20 bg-offwhite/5 hover:border-gold/50' : 'border-charcoal/20 bg-charcoal/5 hover:border-gold/50'
+      theme === 'dark' ? 'border-gold/30 bg-gold/10 hover:border-gold/50' : 'border-gold/40 bg-gold/10 hover:border-gold/60'
     )
   )
 
@@ -242,6 +242,27 @@ const ManageTechButton = ({ appointment, onManage, theme }) => (
   </button>
 )
 
+function BookingTypeBadge({ bookingType, theme }) {
+  const isWalkIn = bookingType === 'walk_in'
+
+  return (
+    <span
+      className={clsx(
+        'inline-flex items-center text-[10px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded-md border shrink-0',
+        isWalkIn
+          ? theme === 'dark'
+            ? 'border-sky-300/80 bg-sky-400/30 text-sky-50 shadow-[0_0_0_1px_rgba(125,211,252,0.15)]'
+            : 'border-sky-600/50 bg-sky-100 text-sky-800'
+          : theme === 'dark'
+            ? 'border-purple-300/70 bg-purple-400/25 text-purple-100'
+            : 'border-purple-600/40 bg-purple-100 text-purple-800',
+      )}
+    >
+      {isWalkIn ? 'Walk-in' : 'Online'}
+    </span>
+  )
+}
+
 const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, onManageTechs, showManageTechs, theme }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: appointment.id,
@@ -256,7 +277,7 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, onManageTechs
   }
 
   const cardClass = clsx('border rounded-xl p-4 sm:p-5 transition-all',
-    theme === 'dark' ? 'bg-offwhite/5 border-offwhite/10' : 'bg-charcoal/5 border-charcoal/10'
+    'bg-gold/10 border-gold/30'
   )
 
   const customerNameClass = clsx('font-heading text-lg truncate', 
@@ -299,30 +320,24 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, onManageTechs
     >
       <div className="flex items-start gap-2 mb-2">
         <DragHandle listeners={listeners} attributes={attributes} />
-        <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className={customerNameClass}>
-                {appointment.customer?.full_name || 'Guest'}
-              </h3>
-              {appointment.booking_type === 'walk_in' ? (
-                <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded shrink-0">Walk-in</span>
-              ) : (
-                <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/20 text-purple-400 rounded shrink-0">Online</span>
-              )}
-            </div>
+        <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className={customerNameClass}>
+              {appointment.customer?.full_name || 'Guest'}
+            </h3>
             <div className={customerDetailClass}>
               {appointment.customer?.phone && <span>📞 {appointment.customer.phone}</span>}
               {appointment.customer?.refreshment_pref && <span>☕ {appointment.customer.refreshment_pref}</span>}
             </div>
           </div>
-          <div className="flex items-start gap-2 shrink-0">
+          <div className="flex flex-col items-end gap-1 shrink-0">
             <span className={timeTextClass}>{formatTime(appointment.checked_in_at)}</span>
             <div className="flex items-center gap-1">
               {showManageTechs && <ManageTechButton appointment={appointment} onManage={onManageTechs} theme={theme} />}
               <button onPointerDown={stopDragActivation} onTouchStart={stopDragActivation} onClick={(e) => { e.stopPropagation(); onEdit(appointment) }} className={editBtnClass}>✎</button>
               <button onPointerDown={stopDragActivation} onTouchStart={stopDragActivation} onClick={(e) => { e.stopPropagation(); onCancel(appointment) }} className="text-red-400/50 hover:text-red-400 text-sm">✕</button>
             </div>
+            <BookingTypeBadge bookingType={appointment.booking_type} theme={theme} />
           </div>
         </div>
       </div>
@@ -1109,7 +1124,7 @@ export default function AdminLobby() {
                     </div>
                   ))}
                   {checkoutReadyAppointments.length === 0 && (
-                    <div className={`col-span-1 sm:col-span-2 text-center py-8 border rounded-xl ${theme === 'dark' ? 'bg-offwhite/5 border-offwhite/10' : 'bg-charcoal/5 border-charcoal/10'}`}>
+                    <div className="col-span-1 sm:col-span-2 text-center py-8 border border-gold/30 rounded-xl bg-gold/10">
                       <p className={`${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No clients waiting at checkout</p>
                     </div>
                   )}

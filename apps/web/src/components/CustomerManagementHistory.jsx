@@ -8,14 +8,18 @@ import { getCustomerDetailPath } from '@nail-couture/shared/utils/routes';
 import { canAccessStaffCrm } from '@nail-couture/shared/utils/staffCustomerAccess';
 import { ROLE_LABELS, formatPhone, formatProfileDate } from '@nail-couture/shared/utils/roleLabels';
 import { getStaffProfilePath } from '../utils/routes';
+import { paginateRows } from '@nail-couture/shared/utils/pagination.js';
+import ListPagination from './ListPagination.jsx';
 
 const STAFF_PROFILE_ROLES = ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'];
 const PROFILE_SEARCH_LIMIT = 50;
 
+const PROFILE_TOOLS_ROLES = ['super_admin', 'owner'];
+
 const PAGE_TABS = [
   { id: 'history', label: 'Customer History' },
-  { id: 'profiles', label: 'Profile Search', superAdminOnly: true },
-  { id: 'registry', label: 'Registered Profiles', superAdminOnly: true },
+  { id: 'profiles', label: 'Profile Search', profileToolsOnly: true },
+  { id: 'registry', label: 'Registered Profiles', profileToolsOnly: true },
 ];
 
 function escapeIlike(value) {
@@ -50,7 +54,8 @@ export default function CustomerManagementHistory() {
   const [customEndDate, setCustomEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const isSuperAdmin = user?.role === 'super_admin';
+  const normalizedViewerRole = user?.role?.toString().trim().toLowerCase() || '';
+  const canAccessProfileTools = PROFILE_TOOLS_ROLES.includes(normalizedViewerRole);
   const [activeTab, setActiveTab] = useState('history');
   const [profileSearchTerm, setProfileSearchTerm] = useState('');
   const [profileSearchResults, setProfileSearchResults] = useState([]);
@@ -235,7 +240,7 @@ export default function CustomerManagementHistory() {
   }, []);
 
   const fetchRegisteredProfiles = useCallback(async () => {
-    if (!isSuperAdmin) return;
+    if (!canAccessProfileTools) return;
 
     setRegistryLoading(true);
     setRegistryError('');
@@ -277,26 +282,26 @@ export default function CustomerManagementHistory() {
     } finally {
       setRegistryLoading(false);
     }
-  }, [isSuperAdmin, registrySort, registryPage, itemsPerPage]);
+  }, [canAccessProfileTools, registrySort, registryPage, itemsPerPage]);
 
   useEffect(() => {
-    if (activeTab !== 'profiles' || !isSuperAdmin) return undefined;
+    if (activeTab !== 'profiles' || !canAccessProfileTools) return undefined;
     const timer = setTimeout(() => {
       searchProfiles(profileSearchTerm);
     }, 300);
     return () => clearTimeout(timer);
-  }, [activeTab, isSuperAdmin, profileSearchTerm, searchProfiles]);
+  }, [activeTab, canAccessProfileTools, profileSearchTerm, searchProfiles]);
 
   useEffect(() => {
-    if (activeTab !== 'registry' || !isSuperAdmin) return undefined;
+    if (activeTab !== 'registry' || !canAccessProfileTools) return undefined;
     fetchRegisteredProfiles();
-  }, [activeTab, isSuperAdmin, fetchRegisteredProfiles]);
+  }, [activeTab, canAccessProfileTools, fetchRegisteredProfiles]);
 
   useEffect(() => {
-    if (!isSuperAdmin && (activeTab === 'profiles' || activeTab === 'registry')) {
+    if (!canAccessProfileTools && (activeTab === 'profiles' || activeTab === 'registry')) {
       setActiveTab('history');
     }
-  }, [isSuperAdmin, activeTab]);
+  }, [canAccessProfileTools, activeTab]);
 
   const searchFilteredCustomers = useMemo(() => {
     if (!searchTerm.trim()) return customers;
@@ -338,11 +343,10 @@ export default function CustomerManagementHistory() {
     return sorted;
   }, [dateFilteredCustomers, sortBy]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedCustomers.length / itemsPerPage));
-  const paginatedCustomers = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return sortedCustomers.slice(startIndex, startIndex + itemsPerPage);
-  }, [sortedCustomers, currentPage, itemsPerPage]);
+  const customerPagination = useMemo(
+    () => paginateRows(sortedCustomers, currentPage, itemsPerPage),
+    [sortedCustomers, currentPage, itemsPerPage],
+  );
 
   const summaryStats = useMemo(() => {
     const totalCustomers = sortedCustomers.length;
@@ -360,11 +364,8 @@ export default function CustomerManagementHistory() {
   };
   const handleCustomStartDateChange = (e) => { setCustomStartDate(e.target.value); setCurrentPage(1); };
   const handleCustomEndDateChange = (e) => { setCustomEndDate(e.target.value); setCurrentPage(1); };
-  const goToPreviousPage = () => { if (currentPage > 1) setCurrentPage(currentPage - 1); };
-  const goToNextPage = () => { if (currentPage < totalPages) setCurrentPage(currentPage + 1); };
-  const goToPage = (page) => { if (page >= 1 && page <= totalPages) setCurrentPage(page); };
 
-  const visibleTabs = PAGE_TABS.filter((tab) => !tab.superAdminOnly || isSuperAdmin);
+  const visibleTabs = PAGE_TABS.filter((tab) => !tab.profileToolsOnly || canAccessProfileTools);
 
   const handleProfileClick = (profile) => {
     const path = getProfileNavigationPath(user?.role, profile);
@@ -372,18 +373,13 @@ export default function CustomerManagementHistory() {
   };
 
   const registryTotalPages = Math.max(1, Math.ceil(registryTotalCount / itemsPerPage));
+  const registryPagination = useMemo(
+    () => ({ currentPage: registryPage, totalPages: registryTotalPages }),
+    [registryPage, registryTotalPages],
+  );
   const handleRegistrySortChange = (e) => {
     setRegistrySort(e.target.value);
     setRegistryPage(1);
-  };
-  const goToRegistryPreviousPage = () => {
-    if (registryPage > 1) setRegistryPage(registryPage - 1);
-  };
-  const goToRegistryNextPage = () => {
-    if (registryPage < registryTotalPages) setRegistryPage(registryPage + 1);
-  };
-  const goToRegistryPage = (page) => {
-    if (page >= 1 && page <= registryTotalPages) setRegistryPage(page);
   };
 
   const renderProfileListItem = (profile) => {
@@ -468,7 +464,7 @@ export default function CustomerManagementHistory() {
           )}
         </div>
 
-        {activeTab === 'profiles' && isSuperAdmin && (
+        {activeTab === 'profiles' && canAccessProfileTools && (
           <>
             <div className="bg-secondary border-card rounded-xl border p-6 mb-4">
               <label className="text-primary text-sm font-semibold tracking-widest block mb-2">Search All Profiles</label>
@@ -529,7 +525,7 @@ export default function CustomerManagementHistory() {
           </>
         )}
 
-        {activeTab === 'registry' && isSuperAdmin && (
+        {activeTab === 'registry' && canAccessProfileTools && (
           <>
             <div className="bg-secondary border-card rounded-xl border p-6 mb-4">
               <label className="text-primary text-sm font-semibold tracking-widest block mb-2">Sort Profiles</label>
@@ -584,56 +580,7 @@ export default function CustomerManagementHistory() {
             )}
 
             {!registryLoading && !registryError && registryTotalCount > itemsPerPage && (
-              <div className="flex items-center justify-between px-4 py-3 bg-secondary rounded-xl border border-light">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={goToRegistryPreviousPage}
-                    disabled={registryPage === 1}
-                    className={clsx(
-                      'flex items-center gap-2 px-3 py-2 rounded-lg transition-all',
-                      registryPage === 1 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-gold/10',
-                    )}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Previous
-                  </button>
-                  <span className="text-primary/80 text-xs uppercase tracking-widest">
-                    Page {registryPage} of {registryTotalPages}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={goToRegistryNextPage}
-                    disabled={registryPage === registryTotalPages}
-                    className={clsx(
-                      'flex items-center gap-2 px-3 py-2 rounded-lg transition-all',
-                      registryPage === registryTotalPages ? 'opacity-20 cursor-not-allowed' : 'hover:bg-gold/10',
-                    )}
-                  >
-                    Next
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-                {registryTotalPages > 5 && (
-                  <div className="relative">
-                    <select
-                      value={registryPage}
-                      onChange={(e) => goToRegistryPage(parseInt(e.target.value, 10))}
-                      className="w-20 px-3 py-2 bg-input border-input border rounded-xl text-primary focus:border-gold focus:outline-none"
-                    >
-                      {[...Array(registryTotalPages)].map((_, i) => (
-                        <option key={i} value={i + 1}>
-                          {i + 1}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
+              <ListPagination pagination={registryPagination} onPageChange={setRegistryPage} />
             )}
           </>
         )}
@@ -741,7 +688,7 @@ export default function CustomerManagementHistory() {
         )}
         {sortedCustomers.length > 0 && (
           <div className="space-y-4">
-            {paginatedCustomers.map((customer) => (
+            {customerPagination.pageRows.map((customer) => (
               <div
                 key={customer.id}
                 role="button"
@@ -779,55 +726,8 @@ export default function CustomerManagementHistory() {
             ))}
           </div>
         )}
-        {sortedCustomers.length > itemsPerPage && (
-          <div className="flex items-center justify-between px-4 py-3 bg-secondary rounded-xl border border-light">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={goToPreviousPage}
-                disabled={currentPage === 1}
-                className={clsx(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-all",
-                  currentPage === 1 ? "opacity-20 cursor-not-allowed" : "hover:bg-gold/10"
-                )}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Previous
-              </button>
-              <span className="text-primary/80 text-xs uppercase tracking-widest">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
-                className={clsx(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-all",
-                  currentPage === totalPages ? "opacity-20 cursor-not-allowed" : "hover:bg-gold/10"
-                )}
-              >
-                Next
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
-                </svg>
-              </button>
-            </div>
-            {totalPages > 5 && (
-              <div className="relative">
-                <select
-                  value={currentPage}
-                  onChange={(e) => goToPage(parseInt(e.target.value))}
-                  className="w-20 px-3 py-2 bg-input border-input border rounded-xl text-primary focus:border-gold focus:outline-none"
-                >
-                  {[...Array(totalPages)].map((_, i) => (
-                    <option key={i} value={i + 1}>
-                      {i + 1}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
+        {customerPagination.totalPages > 1 && (
+          <ListPagination pagination={customerPagination} onPageChange={setCurrentPage} />
         )}
           </>
         )}

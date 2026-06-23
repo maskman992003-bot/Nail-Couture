@@ -1,12 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useAnnouncementInbox } from '@nail-couture/shared/hooks/useAnnouncementInbox.js';
 import { formatAnnouncementDate } from '@nail-couture/shared/utils/announcementInbox.js';
+import {
+  SALON_UPDATES_PAGE_SIZE,
+  paginateRows,
+} from '@nail-couture/shared/utils/pagination.js';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   AnnouncementAttachmentsList,
   type AnnouncementAttachmentItem,
 } from '../../components/AnnouncementAttachmentsList';
+import { ListPagination } from '../../components/ListPagination';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { useThemeStyles } from '../../theme/useThemeStyles';
@@ -35,6 +40,7 @@ export function SalonUpdatesScreen() {
   const { user } = useAuth();
   const styles = useThemeStyles();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const isCustomer = user?.role === 'customer';
   const Layout = isCustomer ? CustomerScreenLayout : StaffScreenLayout;
 
@@ -55,6 +61,34 @@ export function SalonUpdatesScreen() {
     toggleArchived,
     markNotificationRead,
   } = useAnnouncementInbox(user?.phone);
+
+  const updatesPagination = useMemo(
+    () => paginateRows(items, page, SALON_UPDATES_PAGE_SIZE),
+    [items, page],
+  );
+
+  useEffect(() => {
+    setPage(1);
+    setExpandedId(null);
+  }, [filter]);
+
+  useEffect(() => {
+    const needed = page * SALON_UPDATES_PAGE_SIZE;
+    if (needed > items.length && hasMore && !loading) {
+      loadMore();
+    }
+  }, [page, items.length, hasMore, loading, loadMore]);
+
+  const handlePageChange = (nextPage: number) => {
+    setExpandedId(null);
+    setPage(nextPage);
+  };
+
+  const handleFilterChange = (nextFilter: (typeof FILTERS)[number]['id']) => {
+    setPage(1);
+    setExpandedId(null);
+    changeFilter(nextFilter);
+  };
 
   const handleExpand = (item: InboxItem) => {
     const next = expandedId === item.announcement_id ? null : item.announcement_id;
@@ -82,7 +116,7 @@ export function SalonUpdatesScreen() {
         {FILTERS.map((tab) => (
           <Pressable
             key={tab.id}
-            onPress={() => changeFilter(tab.id)}
+            onPress={() => handleFilterChange(tab.id)}
             style={chipStyle(filter === tab.id)}
           >
             <Text style={filter === tab.id ? styles.textGold : styles.textPrimary}>
@@ -112,7 +146,7 @@ export function SalonUpdatesScreen() {
         </View>
       ) : (
         <View style={{ gap: 12 }}>
-          {(items as InboxItem[]).map((item) => {
+          {(updatesPagination.pageRows as InboxItem[]).map((item) => {
             const isExpanded = expandedId === item.announcement_id;
             return (
               <View
@@ -191,24 +225,7 @@ export function SalonUpdatesScreen() {
             );
           })}
 
-          {hasMore ? (
-            <Pressable
-              onPress={loadMore}
-              disabled={loading}
-              style={{
-                borderWidth: 1,
-                borderColor: 'rgba(197,160,89,0.4)',
-                borderRadius: 12,
-                paddingVertical: 12,
-                alignItems: 'center',
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              <Text style={styles.textGold}>
-                {loading ? 'Loading…' : 'Load more'}
-              </Text>
-            </Pressable>
-          ) : null}
+          <ListPagination pagination={updatesPagination} onPageChange={handlePageChange} />
         </View>
       )}
     </Layout>

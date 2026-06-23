@@ -24,7 +24,7 @@ export default function CustomerHomeHeader() {
       </div>
 
       <div className="flex flex-col items-center min-w-0">
-        <BrandLogo className="h-9 w-9" />
+        <BrandLogo className="h-9 w-9" framed />
         <span className="text-[9px] uppercase tracking-[0.22em] text-secondary mt-1 font-medium whitespace-nowrap">
           Nail Couture
         </span>

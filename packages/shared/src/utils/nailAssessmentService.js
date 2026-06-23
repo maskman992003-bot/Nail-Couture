@@ -24,6 +24,8 @@ const HISTORY_RPC = 'get_nail_assessment_history';
 
 const SAVE_RPC = 'save_nail_assessment';
 
+const DELETE_RPC = 'delete_nail_assessment';
+
 const STAFF_LATEST_RPC = 'get_staff_nail_assessment_latest';
 
 
@@ -348,6 +350,62 @@ export async function saveNailAssessment(callerPhone, profileId, formInputs) {
   } catch (err) {
 
     return { data: null, error: err, available: true };
+
+  }
+
+}
+
+
+
+/** Permanently remove a saved assessment from profile history. */
+
+export async function deleteNailAssessment(callerPhone, profileId, assessmentId) {
+
+  if (!profileId || !callerPhone || !assessmentId) {
+
+    return { success: false, error: new Error('Missing required fields'), available: true };
+
+  }
+
+
+
+  try {
+
+    const { error } = await getSupabase().rpc(DELETE_RPC, {
+
+      caller_phone: callerPhone,
+
+      p_profile_id: profileId,
+
+      p_assessment_id: assessmentId,
+
+    });
+
+
+
+    if (error) {
+
+      if (isAssessmentUnavailable(error)) {
+
+        return { success: false, error, available: false };
+
+      }
+
+      console.error('[nailAssessment] delete error:', error);
+
+      return { success: false, error, available: true };
+
+    }
+
+
+
+    return { success: true, error: null, available: true };
+
+  } catch (err) {
+
+    console.error('[nailAssessment] delete exception:', err);
+
+    return { success: false, error: err, available: true };
 
   }
 

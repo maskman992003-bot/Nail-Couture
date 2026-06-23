@@ -146,8 +146,8 @@ export default function StaffManagement() {
   );
 
   const staffCardClass = clsx(
-    'border rounded-2xl p-5 flex flex-col justify-between hover:border-gold/20 transition-all group cursor-pointer',
-    theme === 'dark' ? 'bg-offwhite/5 border-white/5' : 'bg-charcoal/5 border-charcoal/5'
+    'border rounded-2xl p-5 flex flex-col justify-between hover:border-gold/50 transition-all group cursor-pointer',
+    'bg-gold/10 border-gold/30'
   );
 
   const openStaffProfile = (staffId) => {

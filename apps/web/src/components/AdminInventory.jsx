@@ -220,9 +220,6 @@ export default function AdminInventory() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-          <div className="mb-6 rounded-xl border border-card bg-gold/5 px-4 py-3 text-secondary text-sm">
-            Refreshment items with quantity above zero are shown in check-in, kiosk registration, and customer profile preference lists. Set quantity to zero to hide an item from customers.
-          </div>
           <div className="rounded-xl p-5 mb-6 bg-secondary border border-card">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex-1 w-full sm:max-w-sm">

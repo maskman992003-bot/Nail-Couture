@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import clsx from 'clsx';
+import { Trash2 } from 'lucide-react';
 import {
   assessmentRowToInputs,
+  deleteNailAssessment,
   fetchNailAssessmentHistory,
   formatAssessmentDate,
   formatAssessmentSummary,
@@ -9,7 +11,7 @@ import {
   getFlexibilityLabel,
   getSurfaceHealthLabel,
 } from '@nail-couture/shared/utils/nailAssessmentService.js';
-import { modalBtnPrimary } from '../AppModal';
+import AppModal, { modalBtnDanger, modalBtnPrimary, modalBtnSecondary } from '../AppModal';
 
 const toneClasses = {
   success: 'text-green-400',
@@ -49,6 +51,9 @@ export default function NailAssessmentHistory({
   const [loading, setLoading] = useState(Boolean(profileId));
   const [expandedId, setExpandedId] = useState(null);
   const [unavailable, setUnavailable] = useState(false);
+  const [confirmDeleteRow, setConfirmDeleteRow] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
 
   const loadHistory = useCallback(async () => {
     if (!profileId || !callerPhone) {
@@ -67,6 +72,39 @@ export default function NailAssessmentHistory({
   useEffect(() => {
     loadHistory();
   }, [loadHistory, refreshKey]);
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteRow?.id || !profileId || !callerPhone) return;
+
+    setDeletingId(confirmDeleteRow.id);
+    setDeleteError('');
+
+    const { success, error, available } = await deleteNailAssessment(
+      callerPhone,
+      profileId,
+      confirmDeleteRow.id,
+    );
+
+    setDeletingId(null);
+
+    if (!available) {
+      setDeleteError('Database not ready. Run sql/109_delete_nail_assessment.sql in Supabase.');
+      return;
+    }
+
+    if (!success) {
+      console.error('[NailAssessmentHistory] delete error:', error);
+      setDeleteError('Failed to delete assessment. Please try again.');
+      return;
+    }
+
+    if (expandedId === confirmDeleteRow.id) {
+      setExpandedId(null);
+    }
+
+    setConfirmDeleteRow(null);
+    await loadHistory();
+  };
 
   if (!profileId) return null;
 
@@ -101,67 +139,90 @@ export default function NailAssessmentHistory({
   }
 
   return (
-    <div className="space-y-3">
-      {rows.map((row) => {
-        const summary = formatAssessmentSummary(row);
-        if (!summary) return null;
-        const expanded = expandedId === summary.id;
-        const inputs = row.inputs || {};
-        const d = summary.diagnostics;
+    <>
+      <div className="space-y-3">
+        {rows.map((row) => {
+          const summary = formatAssessmentSummary(row);
+          if (!summary) return null;
+          const expanded = expandedId === summary.id;
+          const inputs = row.inputs || {};
+          const d = summary.diagnostics;
 
-        return (
-          <div
-            key={summary.id}
-            className={clsx(
-              'rounded-xl border transition-all duration-300',
-              theme === 'dark' ? 'border-gold/20 bg-offwhite/[0.02]' : 'border-gold/30 bg-white',
-              expanded && 'ring-1 ring-gold/30',
-            )}
-          >
-            <button
-              type="button"
-              onClick={() => setExpandedId(expanded ? null : summary.id)}
-              className="w-full text-left p-4"
+          return (
+            <div
+              key={summary.id}
+              className={clsx(
+                'rounded-xl border transition-all duration-300',
+                theme === 'dark' ? 'border-gold/20 bg-offwhite/[0.02]' : 'border-gold/30 bg-white',
+                expanded && 'ring-1 ring-gold/30',
+              )}
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="font-heading text-sm text-gold">
-                    {formatAssessmentDate(summary.savedAt)}
-                  </p>
-                  {!compact && (
-                    <p className="text-xs text-muted mt-1">
-                      {getSurfaceHealthLabel(inputs.surfaceHealth)}
-                      {inputs.flexibility ? ` · ${getFlexibilityLabel(inputs.flexibility)}` : ''}
-                      {inputs.currentEnhancement ? ` · ${getEnhancementLabel(inputs.currentEnhancement)}` : ''}
-                    </p>
-                  )}
+              <div className="p-4">
+                <div className="flex items-start gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(expanded ? null : summary.id)}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-heading text-sm text-gold">
+                          {formatAssessmentDate(summary.savedAt)}
+                        </p>
+                        {!compact && (
+                          <p className="text-xs text-muted mt-1">
+                            {getSurfaceHealthLabel(inputs.surfaceHealth)}
+                            {inputs.flexibility ? ` · ${getFlexibilityLabel(inputs.flexibility)}` : ''}
+                            {inputs.currentEnhancement ? ` · ${getEnhancementLabel(inputs.currentEnhancement)}` : ''}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-xs text-secondary">{expanded ? 'Hide' : 'Details'}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
+                      <MetricPill
+                        label="Base"
+                        value={d.recommendedBaseLabel}
+                        tone={summary.healthStatus?.tone}
+                        theme={theme}
+                      />
+                      <MetricPill
+                        label="Maintenance"
+                        value={d.maintenanceDays}
+                        unit="days"
+                        theme={theme}
+                      />
+                      <MetricPill
+                        label="Regrowth"
+                        value={d.monthsToRegrowth}
+                        unit="mo"
+                        theme={theme}
+                      />
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteError('');
+                      setConfirmDeleteRow(summary);
+                    }}
+                    disabled={deletingId === summary.id}
+                    aria-label={`Delete assessment from ${formatAssessmentDate(summary.savedAt)}`}
+                    className={clsx(
+                      'shrink-0 p-2 rounded-lg transition-colors disabled:opacity-50',
+                      theme === 'dark'
+                        ? 'text-red-400 hover:bg-red-500/10'
+                        : 'text-red-600 hover:bg-red-50',
+                    )}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-                <span className="text-xs text-secondary">{expanded ? 'Hide' : 'Details'}</span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
-                <MetricPill
-                  label="Base"
-                  value={d.recommendedBaseLabel}
-                  tone={summary.healthStatus?.tone}
-                  theme={theme}
-                />
-                <MetricPill
-                  label="Maintenance"
-                  value={d.maintenanceDays}
-                  unit="days"
-                  theme={theme}
-                />
-                <MetricPill
-                  label="Regrowth"
-                  value={d.monthsToRegrowth}
-                  unit="mo"
-                  theme={theme}
-                />
-              </div>
-            </button>
-
-            {expanded && (
+              {expanded && (
               <div
                 className={clsx(
                   'px-4 pb-4 pt-0 border-t',
@@ -193,10 +254,55 @@ export default function NailAssessmentHistory({
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <AppModal
+        open={Boolean(confirmDeleteRow)}
+        onClose={() => {
+          if (deletingId) return;
+          setConfirmDeleteRow(null);
+          setDeleteError('');
+        }}
+        title="Delete assessment?"
+        subtitle="This action cannot be undone."
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmDeleteRow(null);
+                setDeleteError('');
+              }}
+              disabled={Boolean(deletingId)}
+              className={modalBtnSecondary}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              disabled={Boolean(deletingId)}
+              className={modalBtnDanger}
+            >
+              {deletingId ? 'Deleting…' : 'Delete assessment'}
+            </button>
+          </>
+        }
+      >
+        <p className="text-secondary text-sm">
+          Permanently remove the assessment saved on{' '}
+          <span className="text-primary font-medium">
+            {confirmDeleteRow ? formatAssessmentDate(confirmDeleteRow.savedAt) : ''}
+          </span>
+          ? You will not be able to recover it.
+        </p>
+        {deleteError && <p className="text-sm text-red-400 mt-3">{deleteError}</p>}
+      </AppModal>
+    </>
   );
 }
