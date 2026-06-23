@@ -32,6 +32,7 @@ type ProfileRecord = Record<string, unknown> & {
   phone?: string;
   email?: string;
   birthday?: string;
+  birthday_locked_at?: string;
   loyalty_points?: number;
   loyalty_tier?: string;
   rolling_spend_12m?: number;
@@ -132,31 +133,37 @@ export function CustomerProfileScreen() {
       ? form.refreshment_pref || null
       : null;
 
-    let birthday = profile.birthday || null;
-    if (birthdayMonth && birthdayDay) {
-      if (!isValidDate(birthdayMonth, birthdayDay)) {
-        setError('Please select a valid birthday');
-        setSaving(false);
-        return;
+    const updatePayload: Record<string, unknown> = {
+      full_name: form.full_name,
+      email: form.email.trim() || null,
+      refreshment_pref: refreshmentPref,
+      nail_goal: form.nail_goal || null,
+    };
+
+    if (!profile.birthday_locked_at) {
+      let birthday = profile.birthday || null;
+      if (birthdayMonth && birthdayDay) {
+        if (!isValidDate(birthdayMonth, birthdayDay)) {
+          setError('Please select a valid birthday');
+          setSaving(false);
+          return;
+        }
+        birthday = `${birthdayMonth}-${birthdayDay}`;
       }
-      birthday = `${birthdayMonth}-${birthdayDay}`;
+      updatePayload.birthday = birthday;
     }
 
     const { data, error: updateErr } = await getSupabase()
       .from('profiles')
-      .update({
-        full_name: form.full_name,
-        email: form.email.trim() || null,
-        refreshment_pref: refreshmentPref,
-        nail_goal: form.nail_goal || null,
-        birthday,
-      })
+      .update(updatePayload)
       .eq('id', profile.id)
       .select()
       .single();
 
     if (updateErr) {
-      setError('Failed to save preferences');
+      setError(updateErr.message?.includes('Birthday cannot be changed')
+        ? updateErr.message
+        : 'Failed to save preferences');
     } else if (data) {
       setProfile(data as ProfileRecord);
       if (user) login({ ...user, ...data });
@@ -387,14 +394,23 @@ export function CustomerProfileScreen() {
                 />
               </Field>
               <Field label="Birthday">
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <View style={{ flex: 1 }}>
-                    <ScrollSelect value={birthdayMonth} onChange={setBirthdayMonth} options={MONTHS} placeholder="Month" />
+                {profile.birthday_locked_at ? (
+                  <View>
+                    <Text style={styles.textPrimary}>{profile.birthday || 'Not set'}</Text>
+                    <Text style={[styles.textSecondary, { marginTop: 6, fontSize: 12 }]}>
+                      Contact the salon to update your birthday.
+                    </Text>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <ScrollSelect value={birthdayDay} onChange={setBirthdayDay} options={DAYS} placeholder="Day" />
+                ) : (
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <View style={{ flex: 1 }}>
+                      <ScrollSelect value={birthdayMonth} onChange={setBirthdayMonth} options={MONTHS} placeholder="Month" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <ScrollSelect value={birthdayDay} onChange={setBirthdayDay} options={DAYS} placeholder="Day" />
+                    </View>
                   </View>
-                </View>
+                )}
               </Field>
               {error ? <Text style={{ color: '#f87171' }}>{error}</Text> : null}
               <View style={{ flexDirection: 'row', gap: 10 }}>

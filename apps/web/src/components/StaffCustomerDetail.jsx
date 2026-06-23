@@ -387,20 +387,37 @@ export default function StaffCustomerDetail() {
   };
 
   const handleSaveProfile = async () => {
-    if (!canEdit || !editForm) return;
+    if (!canEdit || !editForm || !profile) return;
     setSaving(true);
     setSaveMsg('');
-    const { error } = await supabase
+
+    const birthdayChanged = (editForm.birthday.trim() || null) !== (profile.birthday || null);
+
+    if (birthdayChanged) {
+      const { error: birthdayError } = await supabase.rpc('staff_update_customer_birthday', {
+        caller_phone: user?.phone,
+        profile_id: customerId,
+        new_birthday: editForm.birthday.trim() || '',
+      });
+      if (birthdayError) {
+        setSaving(false);
+        setSaveMsg(birthdayError.message);
+        return;
+      }
+    }
+
+    const { data, error } = await supabase
       .from('profiles')
       .update({
         full_name: editForm.full_name.trim(),
         email: editForm.email.trim(),
         phone: editForm.phone.trim(),
-        birthday: editForm.birthday.trim() || null,
         nail_goal: editForm.nail_goal || null,
         refreshment_pref: editForm.refreshment_pref || null,
       })
-      .eq('id', customerId);
+      .eq('id', customerId)
+      .select()
+      .single();
 
     setSaving(false);
     if (error) {
@@ -408,7 +425,8 @@ export default function StaffCustomerDetail() {
       return;
     }
     setSaveMsg('Saved');
-    setProfile((p) => ({ ...p, ...editForm }));
+    setProfile(data);
+    resetEditForm(data);
     setEditingProfile(false);
     setTimeout(() => setSaveMsg(''), 2500);
   };

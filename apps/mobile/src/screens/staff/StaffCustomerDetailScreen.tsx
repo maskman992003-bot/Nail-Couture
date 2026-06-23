@@ -441,20 +441,37 @@ export function StaffCustomerDetailScreen() {
   }, [visits, visitSearch, profile]);
 
   const handleSaveProfile = async () => {
-    if (!canEdit || !editForm) return;
+    if (!canEdit || !editForm || !profile) return;
     setSaving(true);
     setSaveMsg('');
-    const { error } = await getSupabase()
+
+    const birthdayChanged = (editForm.birthday.trim() || null) !== (profile.birthday || null);
+
+    if (birthdayChanged) {
+      const { error: birthdayError } = await getSupabase().rpc('staff_update_customer_birthday', {
+        caller_phone: user?.phone,
+        profile_id: customerId,
+        new_birthday: editForm.birthday.trim() || '',
+      });
+      if (birthdayError) {
+        setSaving(false);
+        setSaveMsg(birthdayError.message);
+        return;
+      }
+    }
+
+    const { data, error } = await getSupabase()
       .from('profiles')
       .update({
         full_name: editForm.full_name.trim(),
         email: editForm.email.trim(),
         phone: editForm.phone.trim(),
-        birthday: editForm.birthday.trim() || null,
         nail_goal: editForm.nail_goal || null,
         refreshment_pref: editForm.refreshment_pref || null,
       })
-      .eq('id', customerId);
+      .eq('id', customerId)
+      .select()
+      .single();
 
     setSaving(false);
     if (error) {
@@ -462,7 +479,8 @@ export function StaffCustomerDetailScreen() {
       return;
     }
     setSaveMsg('Saved');
-    setProfile((prev) => (prev ? { ...prev, ...editForm } : prev));
+    setProfile(data as ProfileRecord);
+    resetEditForm(data as ProfileRecord);
     setEditingProfile(false);
     setTimeout(() => setSaveMsg(''), 2500);
   };

@@ -26,6 +26,7 @@ async function main() {
   await Promise.all([
     writeCircularFavicon(16, 'favicon-16.png'),
     writeCircularFavicon(32, 'favicon-32.png'),
+    writeCircularFavicon(48, 'favicon-48.png'),
     writeCircularFavicon(180, 'apple-touch-icon.png'),
     writeCircularFavicon(512, 'favicon.png'),
   ]);

@@ -138,31 +138,37 @@ export default function CustomerSettings() {
       ? (form.refreshment_pref || null)
       : null;
 
-    let birthday = profile.birthday || null;
-    if (birthdayMonth && birthdayDay) {
-      if (!isValidDate(birthdayMonth, birthdayDay)) {
-        setSaveError('Please select a valid birthday');
-        setSaving(false);
-        return;
+    const updatePayload = {
+      full_name: form.full_name,
+      email: form.email.trim() || null,
+      refreshment_pref: refreshmentPref,
+      nail_goal: form.nail_goal || null,
+    };
+
+    if (!profile.birthday_locked_at) {
+      let birthday = profile.birthday || null;
+      if (birthdayMonth && birthdayDay) {
+        if (!isValidDate(birthdayMonth, birthdayDay)) {
+          setSaveError('Please select a valid birthday');
+          setSaving(false);
+          return;
+        }
+        birthday = `${birthdayMonth}-${birthdayDay}`;
       }
-      birthday = `${birthdayMonth}-${birthdayDay}`;
+      updatePayload.birthday = birthday;
     }
 
     const { data, error } = await supabase
       .from('profiles')
-      .update({
-        full_name: form.full_name,
-        email: form.email.trim() || null,
-        refreshment_pref: refreshmentPref,
-        nail_goal: form.nail_goal || null,
-        birthday,
-      })
+      .update(updatePayload)
       .eq('id', profile.id)
       .select()
       .single();
 
     if (error) {
-      setSaveError('Failed to save profile');
+      setSaveError(error.message?.includes('Birthday cannot be changed')
+        ? error.message
+        : 'Failed to save profile');
     } else if (data) {
       setProfile(data);
       if (user) login({ ...user, ...data });
@@ -295,10 +301,23 @@ export default function CustomerSettings() {
               </div>
               <div>
                 <label className={labelClass}>Birthday (optional)</label>
-                <div className="flex gap-3">
-                  <ScrollSelect value={birthdayMonth} onChange={setBirthdayMonth} options={MONTHS} placeholder="Month" className="flex-1" theme={theme} />
-                  <ScrollSelect value={birthdayDay} onChange={setBirthdayDay} options={DAYS} placeholder="Day" className="flex-1" theme={theme} />
-                </div>
+                {profile?.birthday_locked_at ? (
+                  <>
+                    <p className={theme === 'dark' ? 'text-sm text-offwhite/70 mb-2' : 'text-sm text-charcoal/70 mb-2'}>
+                      {profile?.birthday
+                        ? new Date(`2000-${profile.birthday}`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+                        : 'Not set'}
+                    </p>
+                    <p className={theme === 'dark' ? 'text-xs text-offwhite/40' : 'text-xs text-charcoal/40'}>
+                      Contact the salon to update your birthday.
+                    </p>
+                  </>
+                ) : (
+                  <div className="flex gap-3">
+                    <ScrollSelect value={birthdayMonth} onChange={setBirthdayMonth} options={MONTHS} placeholder="Month" className="flex-1" theme={theme} />
+                    <ScrollSelect value={birthdayDay} onChange={setBirthdayDay} options={DAYS} placeholder="Day" className="flex-1" theme={theme} />
+                  </div>
+                )}
               </div>
               {saveError && <p className="text-red-400 text-sm">{saveError}</p>}
               <div className="flex gap-3 pt-2">
