@@ -114,6 +114,10 @@ export function getNotificationWebPath(type, role) {
     return getSalonUpdatesPath(role);
   }
 
+  if (type === 'birthday_wish' && role === 'customer') {
+    return '/customer/loyalty';
+  }
+
   if (CHECKOUT_TYPES.has(type)) return checkoutPath(role);
   if (LOBBY_TYPES.has(type)) return lobbyPath(role);
   if (MANAGEMENT_TYPES.has(type)) {
@@ -153,6 +157,8 @@ export function getNotificationMobileScreen(type, role) {
   if (!type || !role) return null;
 
   if (type === 'salon_announcement') return 'SalonUpdates';
+
+  if (type === 'birthday_wish' && role === 'customer') return 'Loyalty';
 
   if (CHECKOUT_TYPES.has(type)) return 'Checkout';
   if (LOBBY_TYPES.has(type)) return 'Lobby';

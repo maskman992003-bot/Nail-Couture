@@ -17,10 +17,11 @@ export const featureFlags = {
     // Phase 2 (Future)
     onlineBooking: false,           // Main online booking toggle
     appointmentReminders: false,    // SMS/email reminders (Phase 3 — infra ready, off until enabled)
+    birthdayWishes: true,           // Daily automated birthday wishes + tier bonus points
     prepayOptions: false,           // Pay online in advance (Phase 3)
     giftCards: true,                // View and transfer gift cards
-    fitnessAssessment: false,       // Fitness assessment wellness tool
-    nailHealthAssessment: false,    // Nail health assessment wellness tool
+    fitnessAssessment: true,        // Fitness assessment wellness tool
+    nailHealthAssessment: true,     // Nail health assessment wellness tool
   },
   
   // Admin/Staff Features  
@@ -96,6 +97,7 @@ export const PUSH_NOTIFICATIONS = featureFlags.global.pushNotifications;
 export const EXTERNAL_MESSAGING = featureFlags.global.externalMessaging;
 export const NOTIFICATION_PREFERENCES = featureFlags.global.notificationPreferences;
 export const APPOINTMENT_REMINDERS = featureFlags.customer.appointmentReminders;
+export const BIRTHDAY_WISHES = featureFlags.customer.birthdayWishes;
 export const STAFF_ANNOUNCEMENTS = featureFlags.staff.announcements;
 export const STAFF_GIFT_CARDS = featureFlags.staff.giftCards;
 export const CUSTOMER_GIFT_CARDS = featureFlags.customer.giftCards;

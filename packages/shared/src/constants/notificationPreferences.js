@@ -142,13 +142,17 @@ export const NOTIFICATION_TYPE_LABELS = {
     label: 'Salon announcements',
     description: 'Promotions and updates from the salon',
   },
+  birthday_wish: {
+    label: 'Birthday wishes',
+    description: 'A birthday greeting and bonus points on your special day',
+  },
 };
 
 const SALON_UPDATES_GROUP = {
   id: 'salon_updates',
   label: 'Salon updates',
   description: 'Promotions and news from the salon',
-  types: ['salon_announcement'],
+  types: ['salon_announcement', 'birthday_wish'],
 };
 
 const CUSTOMER_GROUPS = [

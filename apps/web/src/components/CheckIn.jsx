@@ -1171,7 +1171,7 @@ export default function CheckIn({ onNavigate }) {
   if (kioskExitStep === 'pin' && kioskProfile) {
     return (
       <KioskPinKeypad
-        title="EXIT KIOSK"
+        title="Exit Check-in"
         subtitle="Enter your 4-digit PIN"
         onVerify={(pin) => verifyKioskPin(supabase, kioskProfile.id, pin)}
         onSuccess={() => {

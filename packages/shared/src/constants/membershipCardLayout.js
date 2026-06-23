@@ -15,6 +15,26 @@ export function getMembershipCardHeroWidth() {
 /** Space reserved at card bottom when founding badge is shown (overlay padding) */
 export const MEMBERSHIP_CARD_FOUNDING_RESERVE = '28%';
 
+/** Founding wax seal inset from card edges (ratio of card height + minimum px) */
+export const MEMBERSHIP_CARD_FOUNDING_SEAL_INSET = {
+  top: { ratio: 0.008, minPx: 2 },
+  right: { ratio: 0.04, minPx: 16 },
+};
+
+export function getMembershipCardFoundingSealInset(cardHeightPx) {
+  const height = cardHeightPx || MEMBERSHIP_CARD_HERO.heightPx;
+  return {
+    top: Math.max(
+      MEMBERSHIP_CARD_FOUNDING_SEAL_INSET.top.minPx,
+      height * MEMBERSHIP_CARD_FOUNDING_SEAL_INSET.top.ratio,
+    ),
+    right: Math.max(
+      MEMBERSHIP_CARD_FOUNDING_SEAL_INSET.right.minPx,
+      height * MEMBERSHIP_CARD_FOUNDING_SEAL_INSET.right.ratio,
+    ),
+  };
+}
+
 /** Card-height-relative font sizes for web (container query units — CSS fallback) */
 export const MEMBERSHIP_CARD_FONT = {
   name: 'clamp(6px, 4.2cqh, 17px)',
@@ -126,8 +146,8 @@ export const MEMBERSHIP_CARD_TIER_LAYOUT = {
   },
   diamond_couture: {
     positions: {
-      name: { top: '51%', left: '19%' },
-      id: { top: '30%', right: '3%', textAlign: 'right' },
+      name: { top: '58%', left: '23%' },
+      id: { top: '22%', right: '3%', textAlign: 'right' },
     },
     name: {
       color: '#F4F4F6',

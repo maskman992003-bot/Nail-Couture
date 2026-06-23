@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import {
+  LOYALTY_PROGRAM_TERMS_FOOTER,
   LOYALTY_PROGRAM_TERMS_SECTIONS,
   LOYALTY_PROGRAM_TERMS_SUMMARY_LABEL,
   LOYALTY_PROGRAM_TERMS_TITLE,
@@ -110,6 +111,20 @@ function TermsBody({ tokens, showDocTitle, textSecondary, textGoldStyle }: Terms
           {renderBodyParagraphs(section.body, tokens.body, textSecondary)}
         </View>
       ))}
+      <Text
+        style={[
+          tokens.body,
+          {
+            color: textSecondary,
+            marginTop: 8,
+            paddingTop: 12,
+            borderTopWidth: 1,
+            borderTopColor: 'rgba(197,160,89,0.15)',
+          },
+        ]}
+      >
+        {LOYALTY_PROGRAM_TERMS_FOOTER}
+      </Text>
     </>
   );
 }

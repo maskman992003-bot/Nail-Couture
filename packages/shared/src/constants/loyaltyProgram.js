@@ -82,6 +82,14 @@ export const POINT_EXPIRY_MONTHS = {
   diamond_couture: 12,
 };
 
+/** Birthday bonus points by tier (100 pts = $5 reward value) */
+export const BIRTHDAY_BONUS_POINTS = {
+  regular_customer: 0,
+  pearl: 200,
+  atelier: 300,
+  diamond_couture: 500,
+};
+
 export const VAULT_MILESTONES = [
   { points: 100, rewardLabel: '$5 reward', rewardValue: 5 },
   { points: 250, rewardLabel: '$15 reward', rewardValue: 15 },

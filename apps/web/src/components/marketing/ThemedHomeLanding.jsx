@@ -240,13 +240,13 @@ export default function ThemedHomeLanding() {
           <div className={`grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 ${isBoutique ? 'sm:grid-cols-3 lg:grid-cols-5' : 'md:grid-cols-3 lg:grid-cols-5 lg:gap-2.5'}`}>
             {services.map((service) => (
               <article key={service.name} className={`group flex flex-col ${isBoutique ? '' : 'landing-card overflow-hidden'}`}>
-                <div className="aspect-square overflow-hidden">
+                <Link to="/services" className="block aspect-square overflow-hidden cursor-pointer">
                   <img
                     src={service.image}
                     alt={service.alt ?? service.name}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                </div>
+                </Link>
                 <div className={isBoutique ? 'mt-4 text-left' : 'p-3 sm:p-4 text-center flex-1 flex flex-col justify-center'}>
                   <h3 className="text-[10px] sm:text-[11px] uppercase tracking-[0.1em] font-bold mb-1.5">{service.name}</h3>
                   <p className="text-[10px] sm:text-[11px] leading-relaxed" style={{ color: themeConfig.textSecondary }}>

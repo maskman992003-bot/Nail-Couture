@@ -47,6 +47,7 @@ export default function GiftCardSale() {
   const [giftMessage, setGiftMessage] = useState('');
   const [notes, setNotes] = useState('');
   const [lookingUp, setLookingUp] = useState(false);
+  const [lookingUpRecipient, setLookingUpRecipient] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -110,35 +111,45 @@ export default function GiftCardSale() {
   const labelClass = isDark ? 'block text-offwhite/80 text-sm mb-2' : 'block text-charcoal/80 text-sm mb-2';
   const cardClass = clsx('border rounded-xl p-6', isDark ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30');
 
-  const lookupBuyer = async () => {
-    const phone = buyerPhone.replace(/\D/g, '');
-    if (!phone) return;
-    setLookingUp(true);
+  const lookupCustomerByPhone = async (phone, { setName, setLoading }) => {
+    const digits = phone.replace(/\D/g, '');
+    if (!digits) return;
+    setLoading(true);
     setError('');
     try {
       const { data, error: lookupError } = await supabase
         .from('profiles')
         .select('full_name, phone, role')
-        .eq('phone', phone)
+        .eq('phone', digits)
         .maybeSingle();
       if (lookupError) throw lookupError;
       if (!data) {
-        setBuyerName('');
+        setName('');
         setError('Customer not found. They must register before purchasing a gift card.');
         return;
       }
       if (data.role !== 'customer') {
         setError('Gift cards can only be sold to registered customers.');
-        setBuyerName('');
+        setName('');
         return;
       }
-      setBuyerName(data.full_name || '');
+      setName(data.full_name || '');
     } catch (err) {
       setError(err.message || 'Lookup failed');
     } finally {
-      setLookingUp(false);
+      setLoading(false);
     }
   };
+
+  const lookupBuyer = () => lookupCustomerByPhone(buyerPhone, {
+    setName: setBuyerName,
+    setLoading: setLookingUp,
+  });
+
+  const lookupRecipient = () => lookupCustomerByPhone(recipientPhone, {
+    setName: setRecipientName,
+    setLoading: setLookingUpRecipient,
+  });
 
   const resolvedAmount = () => {
     const value = parseFloat(amount);
@@ -494,7 +505,7 @@ export default function GiftCardSale() {
                   </div>
                 ) : null}
                 <div className="mt-4 pt-4 border-t border-gold/20">
-                  <label className={labelClass}>Payment method for queue completions</label>
+                  <label className={labelClass}>Payment method</label>
                   <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className={inputClass}>
                     <option value="Card">Card</option>
                     <option value="Cash">Cash</option>
@@ -524,12 +535,11 @@ export default function GiftCardSale() {
                   setNotes={setNotes}
                   lookingUp={lookingUp}
                   lookupBuyer={lookupBuyer}
+                  lookingUpRecipient={lookingUpRecipient}
+                  lookupRecipient={lookupRecipient}
                   inputClass={inputClass}
                   labelClass={labelClass}
                   isDark={isDark}
-                  showPayment={false}
-                  paymentMethod={paymentMethod}
-                  setPaymentMethod={setPaymentMethod}
                 />
                 {error && <p className="text-red-400 text-sm">{error}</p>}
                 <button
@@ -566,12 +576,11 @@ export default function GiftCardSale() {
                   setNotes={setNotes}
                   lookingUp={lookingUp}
                   lookupBuyer={lookupBuyer}
+                  lookingUpRecipient={lookingUpRecipient}
+                  lookupRecipient={lookupRecipient}
                   inputClass={inputClass}
                   labelClass={labelClass}
                   isDark={isDark}
-                  showPayment
-                  paymentMethod={paymentMethod}
-                  setPaymentMethod={setPaymentMethod}
                 />
                 {error && <p className="text-red-400 text-sm">{error}</p>}
                 <button
@@ -647,12 +656,11 @@ function FormFields({
   setNotes,
   lookingUp,
   lookupBuyer,
+  lookingUpRecipient,
+  lookupRecipient,
   inputClass,
   labelClass,
   isDark,
-  showPayment,
-  paymentMethod,
-  setPaymentMethod,
 }) {
   return (
     <>
@@ -681,7 +689,7 @@ function FormFields({
 
       <div>
         <label className={labelClass}>Amount</label>
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-2 mb-3 items-center">
           {GIFT_CARD_PRESET_AMOUNTS.map((preset) => (
             <button
               key={preset}
@@ -697,6 +705,20 @@ function FormFields({
               ${preset}
             </button>
           ))}
+          <div className="relative w-28 sm:w-32">
+            <span className={clsx('absolute left-3 top-1/2 -translate-y-1/2', isDark ? 'text-offwhite/50' : 'text-charcoal/50')}>$</span>
+            <input
+              type="number"
+              min={GIFT_CARD_MIN_AMOUNT}
+              max={GIFT_CARD_MAX_AMOUNT}
+              step="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className={clsx(inputClass, 'pl-7 py-2 w-full')}
+              placeholder="Custom"
+              required
+            />
+          </div>
         </div>
         <GiftCardPreview
           amount={amount}
@@ -707,32 +729,7 @@ function FormFields({
           giftMessage={giftMessage}
           isDark={isDark}
         />
-        <div className="relative mt-3">
-          <span className={clsx('absolute left-4 top-1/2 -translate-y-1/2', isDark ? 'text-offwhite/50' : 'text-charcoal/50')}>$</span>
-          <input
-            type="number"
-            min={GIFT_CARD_MIN_AMOUNT}
-            max={GIFT_CARD_MAX_AMOUNT}
-            step="0.01"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className={clsx(inputClass, 'pl-8')}
-            placeholder="Custom amount"
-            required
-          />
-        </div>
       </div>
-
-      {showPayment && (
-        <div>
-          <label className={labelClass}>Payment Method</label>
-          <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className={inputClass}>
-            <option value="Card">Card</option>
-            <option value="Cash">Cash</option>
-            <option value="Transfer">Transfer</option>
-          </select>
-        </div>
-      )}
 
       <label className={clsx('flex items-center gap-3 cursor-pointer', isDark ? 'text-offwhite/80' : 'text-charcoal/80')}>
         <input type="checkbox" checked={giftToOther} onChange={(e) => setGiftToOther(e.target.checked)} />
@@ -743,11 +740,28 @@ function FormFields({
         <div className="space-y-4 pl-1 border-l-2 border-gold/30 ml-1">
           <div>
             <label className={labelClass}>Recipient Phone</label>
-            <input type="tel" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Recipient Name (optional)</label>
-            <input type="text" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} className={inputClass} />
+            <div className="flex gap-2">
+              <input
+                type="tel"
+                value={recipientPhone}
+                onChange={(e) => {
+                  setRecipientPhone(e.target.value);
+                  setRecipientName('');
+                }}
+                className={inputClass}
+                placeholder="Recipient phone"
+                required
+              />
+              <button
+                type="button"
+                onClick={lookupRecipient}
+                disabled={lookingUpRecipient}
+                className="px-4 py-2 bg-gold/20 text-gold border border-gold/30 rounded-lg whitespace-nowrap"
+              >
+                {lookingUpRecipient ? '...' : 'Lookup'}
+              </button>
+            </div>
+            {recipientName && <p className="text-sm text-gold mt-2">{recipientName}</p>}
           </div>
           <div>
             <label className={labelClass}>Gift Message (optional)</label>

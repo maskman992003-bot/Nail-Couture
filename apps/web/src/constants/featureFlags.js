@@ -18,8 +18,8 @@ export const featureFlags = {
     onlineBooking: false,           // Main online booking toggle
     appointmentReminders: false,    // SMS/email reminders (Phase 3)
     prepayOptions: false,           // Pay online in advance (Phase 3)
-    fitnessAssessment: false,       // Fitness assessment wellness tool
-    nailHealthAssessment: false,    // Nail health assessment wellness tool
+    fitnessAssessment: true,        // Fitness assessment wellness tool
+    nailHealthAssessment: true,     // Nail health assessment wellness tool
   },
   
   // Admin/Staff Features  

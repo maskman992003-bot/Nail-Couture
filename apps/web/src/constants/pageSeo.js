@@ -13,34 +13,34 @@ export function formatPageTitle(pageTitle) {
 export const DEFAULT_PAGE_SEO = {
   title: 'Beauty · Care · Affection',
   description:
-    'Discover luxury press-on nails and custom nail art at Nail Couture. Russian manicure precision, medical-grade sterilization, and premium non-toxic products.',
+    'Beauty · Care · Affection · Uptown New Orleans',
   path: '/',
 };
 
 export const APP_PAGE_SEO = {
   '/': DEFAULT_PAGE_SEO,
   '/lookbook': {
-    title: 'Luxury Custom Press-On Nail Gallery',
+    title: 'Luxury Custom Gallery',
     description:
-      'Browse our luxury custom press-on nail gallery. Explore bridal, minimalist, and extravagant nail art designs handcrafted at Nail Couture.',
+      'Browse our luxury custom gallery. Explore nail art designs handcrafted at Nail Couture.',
     path: '/lookbook',
   },
   '/booking': {
-    title: 'Book Your Custom Press-On Consultation',
+    title: 'Book Your Custom Consultation',
     description:
-      'Schedule your custom press-on nail consultation at Nail Couture. Book online for luxury nail art, Russian manicure, and bespoke styling.',
+      'Schedule your custom Nail consultation at Nail Couture.',
     path: '/booking',
   },
   '/about': {
     title: 'About Our Luxury Studio',
     description:
-      'Learn about Nail Couture, our luxury nail studio. Russian manicure expertise, medical-grade sterilization, and artisan custom nail art.',
+      'Learn about Nail Couture, our luxury nail salon. medical-grade sterilization, and artisan custom nail art.',
     path: '/about',
   },
   '/check-in': {
     title: 'Guest Check-In Portal',
     description:
-      'Check in for your Nail Couture appointment. Use our guest kiosk portal for fast salon arrivals, service selection, and visit registration.',
+      'Check in for your Nail Couture appointment. Use our guest check-in portal for fast salon arrivals, service selection, and visit registration.',
     path: '/check-in',
   },
   '/fitness-assessment': {
@@ -56,24 +56,24 @@ export const APP_PAGE_SEO = {
     path: '/nail-assessment',
   },
   '/services': {
-    title: 'Premium Russian Manicure & Nail Art Services',
+    title: 'Premium Manicure & Nail Art Services',
     description:
-      'View premium Russian manicure and nail art services at Nail Couture. Medical-grade sterilization, luxury press-on nails, and custom couture pricing.',
+      'View premium manicure and nail art services at Nail Couture. Medical-grade sterilization and custom couture pricing.',
     path: '/services',
   },
   '/login': {
     title: 'Sign In',
-    description: 'Sign in to your Nail Couture customer account.',
+    description: 'Sign in to your Nail Couture account.',
     path: '/login',
   },
   '/register': {
     title: 'Create Account',
-    description: 'Create your Nail Couture customer account.',
+    description: 'Create your Nail Couture account.',
     path: '/register',
   },
   '/portal': {
     title: 'My Portal',
-    description: 'Your Nail Couture customer home — bookings, loyalty, and salon updates.',
+    description: 'Your Nail Couture home — bookings, loyalty, and salon updates.',
     path: '/portal',
   },
   '/customer/book': {

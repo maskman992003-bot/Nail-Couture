@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import {
+  LOYALTY_PROGRAM_TERMS_FOOTER,
   LOYALTY_PROGRAM_TERMS_SECTIONS,
   LOYALTY_PROGRAM_TERMS_SUMMARY_LABEL,
   LOYALTY_PROGRAM_TERMS_TITLE,
@@ -96,6 +97,9 @@ export default function LoyaltyTermsSummary({
                   </div>
                 </div>
               ))}
+              <p className={`${styles.body} ${muted} pt-2 border-t border-gold/15`}>
+                {LOYALTY_PROGRAM_TERMS_FOOTER}
+              </p>
             </div>
           </motion.div>
         ) : null}

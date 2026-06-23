@@ -7,7 +7,7 @@ export default function BrandLogo({ className = 'h-8 w-8 sm:h-10 sm:w-10', alt =
     <img
       src={logoUrl}
       alt={alt}
-      className={`object-cover ${rounded ? 'rounded-full' : ''} ${className}`.trim()}
+      className={`object-contain ${rounded ? 'rounded-full bg-white' : ''} ${className}`.trim()}
     />
   );
 }

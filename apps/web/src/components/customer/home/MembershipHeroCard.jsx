@@ -1,10 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
 import { getProfileInitials } from '@nail-couture/shared/utils/avatarUpload.js';
 import { getMembershipCardWebSrc } from '../../../constants/membershipCardImages.js';
 import { getMembershipCardMemberId, MEMBERSHIP_CARD_HERO } from '@nail-couture/shared/constants/membershipCardLayout.js';
 import { FOUNDING_SEAL_PALETTES } from '@nail-couture/shared/constants/membershipCardThemes.js';
-import MembershipCard from './membership-card/MembershipCard.jsx';
+import MembershipCard, { FoundingMemberBar } from './membership-card/MembershipCard.jsx';
 
 const AVATAR_SIZE_PX = 132;
 
@@ -44,15 +45,15 @@ function ProfileAvatar({ profile }) {
   );
 }
 
-export function ProfileMembershipCard({ profile, onPress, fillSlot = false, asStatic = false }) {
+export function ProfileMembershipCard({ profile, onPress, fillSlot = false, asStatic = false, cardFrameRadius }) {
   const tier = getTierInfo(profile);
   const isFounding = Boolean(profile?.founding_spot);
-  const foundingYear = new Date().getFullYear();
   const cardSrc = getMembershipCardWebSrc(tier.id);
   const sealKey = profile?.founding_type === 'vanguard' || profile?.founding_type === 'legacy'
     ? profile.founding_type
     : 'default';
   const sealPalette = FOUNDING_SEAL_PALETTES[sealKey];
+  const resolvedRadius = cardFrameRadius ?? MEMBERSHIP_CARD_HERO.borderRadiusPx;
 
   const card = (
     <MembershipCard
@@ -63,56 +64,102 @@ export function ProfileMembershipCard({ profile, onPress, fillSlot = false, asSt
       backgroundImage={cardSrc}
       fillSlot={fillSlot}
       isFounding={isFounding}
-      foundingYear={foundingYear}
       sealPalette={sealPalette}
     />
   );
 
-  const wrapperClass = fillSlot
-    ? 'absolute inset-0 overflow-hidden block'
-    : 'text-left';
-
-  const wrapperStyle = fillSlot
-    ? { borderRadius: MEMBERSHIP_CARD_HERO.borderRadiusPx }
+  const containerClass = fillSlot ? 'absolute inset-0 overflow-hidden' : 'relative';
+  const containerStyle = fillSlot
+    ? { borderRadius: resolvedRadius }
     : undefined;
 
   if (onPress) {
     return (
-      <button type="button" onClick={onPress} className={wrapperClass} style={wrapperStyle}>
+      <div className={containerClass} style={containerStyle}>
         {card}
-      </button>
+        <button
+          type="button"
+          onClick={onPress}
+          className="absolute inset-0 z-[5] cursor-pointer border-0 bg-transparent p-0"
+          aria-label="View how to earn points"
+        />
+      </div>
     );
   }
 
   if (asStatic) {
     return (
-      <div className={fillSlot ? wrapperClass : 'block'} style={wrapperStyle}>
+      <div className={fillSlot ? containerClass : 'block'} style={containerStyle}>
         {card}
       </div>
     );
   }
 
   return (
-    <Link to="/customer/loyalty" className={fillSlot ? wrapperClass : 'block'} style={wrapperStyle}>
+    <div className={containerClass} style={containerStyle}>
       {card}
-    </Link>
+      <Link
+        to="/customer/loyalty"
+        className="absolute inset-0 z-[5] block"
+        aria-label="View loyalty program"
+      />
+    </div>
   );
 }
 
 export function MembershipCardSection({ profile, onCardPress, asStatic = false }) {
   const tier = getTierInfo(profile);
+  const cardFrameRef = useRef(null);
+  const [cardHeightPx, setCardHeightPx] = useState(MEMBERSHIP_CARD_HERO.heightPx);
+
+  useEffect(() => {
+    const el = cardFrameRef.current;
+    if (!el) return undefined;
+
+    const observer = new ResizeObserver((entries) => {
+      const height = entries[0]?.contentRect.height ?? 0;
+      if (height > 0) {
+        setCardHeightPx((prev) => (Math.abs(prev - height) > 0.5 ? height : prev));
+      }
+    });
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
+
   if (tier.id === 'regular_customer') {
     return null;
   }
 
+  const isFounding = Boolean(profile?.founding_spot);
+  const foundingYear = new Date().getFullYear();
+  const cardRadius = MEMBERSHIP_CARD_HERO.borderRadiusPx;
+  const cardFrameRadius = isFounding
+    ? `${cardRadius}px ${cardRadius}px 0 0`
+    : cardRadius;
+
   return (
-    <div className="w-full rounded-2xl border border-card bg-card p-3">
+    <div className="w-full rounded-2xl border border-card bg-card p-3 overflow-hidden">
       <div
+        ref={cardFrameRef}
         className="relative w-full aspect-[758/478] overflow-hidden"
-        style={{ borderRadius: MEMBERSHIP_CARD_HERO.borderRadiusPx }}
+        style={{ borderRadius: cardFrameRadius }}
       >
-        <ProfileMembershipCard profile={profile} onPress={onCardPress} fillSlot asStatic={asStatic} />
+        <ProfileMembershipCard
+          profile={profile}
+          onPress={onCardPress}
+          fillSlot
+          asStatic={asStatic}
+          cardFrameRadius={cardFrameRadius}
+        />
       </div>
+      {isFounding ? (
+        <FoundingMemberBar
+          text={`Founding Member • Est. ${foundingYear}`}
+          tierId={tier.id}
+          cardHeightPx={cardHeightPx}
+        />
+      ) : null}
     </div>
   );
 }

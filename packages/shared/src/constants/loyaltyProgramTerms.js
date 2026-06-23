@@ -30,3 +30,6 @@ export const LOYALTY_PROGRAM_TERMS_SECTIONS = [
       'We do not reset your status at the start of the year. We use a rolling 12-month window to ensure your rewards and status always reflect your current relationship with us. You can view your current tier, progress, and point expiry dates at any time within your Nail Couture digital wallet.',
   },
 ];
+
+export const LOYALTY_PROGRAM_TERMS_FOOTER =
+  'We want to keep making Nail Couture amazing! Because of this, we reserve the right to update program benefits, rules, or policies. Don\'t worry, we\'ll always give you reasonable notice before making major changes.';

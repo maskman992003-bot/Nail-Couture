@@ -24,6 +24,7 @@ SMS and email **do not send** until you explicitly enable them in the database (
 | [`sql/039_p1_notification_events.sql`](../sql/039_p1_notification_events.sql) | Waiver, staff, schedule, loyalty P1 alerts |
 | [`sql/040_notification_preferences.sql`](../sql/040_notification_preferences.sql) | Per-user mute toggles (`profiles.notification_preferences`) |
 | [`sql/042_notification_delete.sql`](../sql/042_notification_delete.sql) | Hard-delete RPCs for panel + profile history |
+| [`sql/106_birthday_wishes.sql`](../sql/106_birthday_wishes.sql) | Daily birthday wishes + tier bonus points |
 
 **Delete behavior:** Notifications removed via **Clear all** or per-row delete are **permanently deleted** from the database (not soft-deleted).
 
@@ -90,6 +91,7 @@ When ready:
    ```bash
    supabase functions deploy process-external-messages
    supabase functions deploy send-appointment-reminders
+   supabase functions deploy send-birthday-wishes
    ```
 
 2. Add secrets: `TWILIO_*`, `RESEND_*` (see previous table in git history or provider docs)
@@ -173,3 +175,34 @@ SELECT status, COUNT(*) FROM notification_push_queue GROUP BY status;
 ```
 
 Trigger a salon workflow with a logged-in mobile user → expect `pending` then `sent` after webhook + edge function are configured.
+
+## 10. Birthday wishes (migration 106)
+
+Run [`sql/106_birthday_wishes.sql`](../sql/106_birthday_wishes.sql) and follow [`sql/106_BIRTHDAY_WISHES_ROLLOUT.md`](../sql/106_BIRTHDAY_WISHES_ROLLOUT.md).
+
+Daily cron sends a personalized birthday wish to customers whose `profiles.birthday` (MM-DD) matches today (America/New_York). Tier-based bonus points are awarded automatically:
+
+| Tier | Points |
+|------|--------|
+| Regular Customer | 0 (message only) |
+| Pearl | 200 ($10) |
+| Atelier | 300 ($15) |
+| Diamond | 500 ($25) |
+
+**Enable:**
+
+```sql
+UPDATE notification_settings
+SET birthday_wishes_enabled = true, updated_at = now()
+WHERE id = 1;
+```
+
+**Schedule:** `send-birthday-wishes` edge function — `0 14 * * *` (9 AM US Eastern, standard time).
+
+Birthday SMS/email uses `profiles.email_promotions` as the opt-in gate (promotional). In-app and push work without external messaging enabled.
+
+**Manual test:**
+
+```sql
+SELECT send_birthday_wishes();
+```
