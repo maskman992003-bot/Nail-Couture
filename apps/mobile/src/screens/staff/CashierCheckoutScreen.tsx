@@ -18,8 +18,11 @@ import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCusto
 import { fetchVisitTechnicianData } from '@nail-couture/shared/utils/visitTechnicians.js';
 import {
   computeGiftCardCheckoutSplit,
-  isGiftCardExpired,
-  lookupGiftCardByCode,
+  getCheckoutGiftCards,
+  getGiftCardConfirmationLabel,
+  getGiftCardDisplayCode,
+  getGiftCardExpiryLabel,
+  verifyGiftCardForCheckout,
 } from '@nail-couture/shared/utils/giftCards.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { useAuth } from '../../contexts/AuthContext';
@@ -47,6 +50,15 @@ type AppointmentRecord = {
   technician_id?: string;
   visit_technicians?: Array<{ technician_id: string; full_name?: string; participation_type?: string }>;
   customer?: { full_name?: string; loyalty_points?: number };
+};
+
+type CheckoutGiftCard = {
+  id: string;
+  balance?: number;
+  initial_amount?: number;
+  expires_at?: string;
+  code_display?: string;
+  gifted_from_name?: string | null;
 };
 
 function computeTotals(
@@ -97,10 +109,14 @@ function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, use
   } | null>(null);
   const [tipAllocations, setTipAllocations] = useState<Array<{ technician_id: string; amount: number }>>([]);
   const [showTechManager, setShowTechManager] = useState(false);
-  const [giftCardCode, setGiftCardCode] = useState('');
+  const [customerGiftCards, setCustomerGiftCards] = useState<CheckoutGiftCard[]>([]);
+  const [loadingGiftCards, setLoadingGiftCards] = useState(false);
+  const [giftCardsLoadError, setGiftCardsLoadError] = useState('');
+  const [selectedGiftCardId, setSelectedGiftCardId] = useState('');
+  const [confirmationChars, setConfirmationChars] = useState('');
   const [appliedGiftCard, setAppliedGiftCard] = useState<Record<string, unknown> | null>(null);
   const [giftCardLookupError, setGiftCardLookupError] = useState('');
-  const [lookingUpGiftCard, setLookingUpGiftCard] = useState(false);
+  const [confirmingGiftCard, setConfirmingGiftCard] = useState(false);
   const [vaultCode, setVaultCode] = useState('');
   const [appliedVault, setAppliedVault] = useState<Record<string, unknown> | null>(null);
   const [vaultLookupError, setVaultLookupError] = useState('');
@@ -169,13 +185,42 @@ function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, use
     setNotes('');
     setPaymentMethod('Card');
     setLoyaltyRewardId('');
-    setGiftCardCode('');
+    setSelectedGiftCardId('');
+    setConfirmationChars('');
     setAppliedGiftCard(null);
     setGiftCardLookupError('');
+    setGiftCardsLoadError('');
+    setCustomerGiftCards([]);
     setVaultCode('');
     setAppliedVault(null);
     setVaultLookupError('');
   }, [appointment?.id]);
+
+  useEffect(() => {
+    if (!appointment?.customer_id || !callerPhone) {
+      setCustomerGiftCards([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingGiftCards(true);
+    setGiftCardsLoadError('');
+    getCheckoutGiftCards(callerPhone, appointment.customer_id)
+      .then((result) => {
+        if (cancelled) return;
+        setCustomerGiftCards((result.gift_cards || []) as CheckoutGiftCard[]);
+        setGiftCardsLoadError(result.error && !(result.gift_cards || []).length ? result.error : '');
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setCustomerGiftCards([]);
+          setGiftCardsLoadError(err instanceof Error ? err.message : 'Failed to load gift cards');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingGiftCards(false);
+      });
+    return () => { cancelled = true; };
+  }, [appointment?.customer_id, callerPhone]);
 
   useEffect(() => {
     if (!appointment) return;
@@ -230,39 +275,35 @@ function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, use
     }
   };
 
-  const handleLookupGiftCard = async () => {
-    if (!giftCardCode.trim() || !callerPhone) return;
-    setLookingUpGiftCard(true);
+  const handleConfirmGiftCard = async () => {
+    if (!selectedGiftCardId || !confirmationChars.trim() || !appointment?.customer_id || !callerPhone) return;
+    setConfirmingGiftCard(true);
     setGiftCardLookupError('');
     try {
-      const result = await lookupGiftCardByCode(callerPhone, giftCardCode.trim());
+      const result = await verifyGiftCardForCheckout({
+        callerPhone,
+        customerId: appointment.customer_id,
+        giftCardId: selectedGiftCardId,
+        confirmation: confirmationChars.trim(),
+      });
       if (!result.success) {
         setAppliedGiftCard(null);
-        setGiftCardLookupError(result.error || 'Gift card not found');
+        setGiftCardLookupError(result.error || 'Confirmation does not match.');
         return;
       }
-      const card = result.gift_card as Record<string, unknown>;
-      if (card.owner_id && appointment.customer_id && card.owner_id !== appointment.customer_id) {
-        setAppliedGiftCard(null);
-        setGiftCardLookupError(`This card belongs to ${String(card.owner_name || 'another customer')}.`);
-        return;
-      }
-      if (isGiftCardExpired(card)) {
-        setAppliedGiftCard(null);
-        setGiftCardLookupError('This gift card has expired.');
-        return;
-      }
-      if (card.status !== 'active' || Number(card.balance) <= 0) {
-        setAppliedGiftCard(null);
-        setGiftCardLookupError('Gift card has no remaining balance.');
-        return;
-      }
-      setAppliedGiftCard(card);
+      setAppliedGiftCard(result.gift_card as Record<string, unknown>);
     } catch (err) {
-      setGiftCardLookupError(err instanceof Error ? err.message : 'Lookup failed');
+      setGiftCardLookupError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
-      setLookingUpGiftCard(false);
+      setConfirmingGiftCard(false);
     }
+  };
+
+  const handleRemoveGiftCard = () => {
+    setAppliedGiftCard(null);
+    setSelectedGiftCardId('');
+    setConfirmationChars('');
+    setGiftCardLookupError('');
   };
 
   const handleConfirm = async () => {
@@ -491,27 +532,120 @@ function CheckoutModal({ appointment, open, onClose, onConfirm, callerPhone, use
       <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 4, marginTop: 12 }]}>
         Apply Gift Card
       </Text>
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-        <TextInput
-          value={giftCardCode}
-          onChangeText={(val) => setGiftCardCode(val.toUpperCase())}
-          placeholder="GC-XXXX-XXXX"
-          placeholderTextColor={styles.tokens.textMuted}
-          autoCapitalize="characters"
-          style={[styles.input, { flex: 1, marginBottom: 0 }]}
-        />
-        <Pressable
-          onPress={handleLookupGiftCard}
-          disabled={lookingUpGiftCard}
-          style={[styles.card, { paddingHorizontal: 14, justifyContent: 'center', marginBottom: 0 }]}
-        >
-          <Text style={styles.textGold}>{lookingUpGiftCard ? '…' : 'Apply'}</Text>
-        </Pressable>
-      </View>
-      {appliedGiftCard && (
-        <Text style={[styles.textGold, { fontSize: 12, marginBottom: 8 }]}>
-          {String(appliedGiftCard.code)} — ${Number(appliedGiftCard.balance || 0).toFixed(2)} available
+      {!appointment.customer_id ? (
+        <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 8 }]}>
+          Link a customer profile to this visit to use gift cards.
         </Text>
+      ) : appliedGiftCard ? (
+        <View style={{ marginBottom: 8 }}>
+          <Text style={[styles.textGold, { fontSize: 12 }]}>
+            {getGiftCardDisplayCode(appliedGiftCard as { code_display?: string; code?: string })}
+            {' — $'}
+            {Number(appliedGiftCard.balance || 0).toFixed(2)}
+            {' available'}
+          </Text>
+          <Pressable onPress={handleRemoveGiftCard} style={{ marginTop: 4 }}>
+            <Text style={[styles.textSecondary, { fontSize: 11, textDecorationLine: 'underline' }]}>
+              Remove
+            </Text>
+          </Pressable>
+        </View>
+      ) : loadingGiftCards ? (
+        <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 8 }]}>Loading gift cards…</Text>
+      ) : customerGiftCards.length === 0 ? (
+        <Text style={[{ fontSize: 12, marginBottom: 8 }, giftCardsLoadError ? { color: '#f87171' } : styles.textSecondary]}>
+          {giftCardsLoadError || 'No active gift cards with balance on file for this customer.'}
+        </Text>
+      ) : (
+        <View style={{ marginBottom: 8 }}>
+          {customerGiftCards.map((card) => {
+            const selected = selectedGiftCardId === card.id;
+            const expiryLabel = getGiftCardExpiryLabel(card);
+            return (
+              <Pressable
+                key={card.id}
+                onPress={() => {
+                  setSelectedGiftCardId(card.id);
+                  setConfirmationChars('');
+                  setGiftCardLookupError('');
+                }}
+                style={[
+                  styles.card,
+                  {
+                    marginBottom: 8,
+                    padding: 12,
+                    borderColor: selected ? styles.tokens.goldStrong : styles.tokens.borderLight,
+                    backgroundColor: selected ? `${styles.tokens.goldStrong}22` : undefined,
+                  },
+                ]}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.textGold, { fontFamily: 'monospace', fontSize: 13 }]}>
+                      {card.code_display}
+                    </Text>
+                    <Text style={[styles.textSecondary, { fontSize: 11, marginTop: 4 }]}>
+                      {card.gifted_from_name ? `Gifted from ${card.gifted_from_name}` : 'Owned'}
+                      {expiryLabel ? ` · ${expiryLabel}` : ''}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={[styles.textPrimary, { fontWeight: '600' }]}>
+                      ${Number(card.balance || 0).toFixed(2)}
+                    </Text>
+                    <Text style={[styles.textSecondary, { fontSize: 11 }]}>
+                      of ${Number(card.initial_amount || 0).toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
+          {selectedGiftCardId ? (
+            <View>
+              <Text style={[styles.textSecondary, { fontSize: 11, marginBottom: 6 }]}>
+                {getGiftCardConfirmationLabel()}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TextInput
+                  value={confirmationChars}
+                  onChangeText={(val) => setConfirmationChars(val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3))}
+                  placeholder="ABC"
+                  placeholderTextColor={styles.tokens.textMuted}
+                  autoCapitalize="characters"
+                  maxLength={3}
+                  autoComplete="off"
+                  style={[
+                    styles.input,
+                    {
+                      flex: 0,
+                      width: 96,
+                      marginBottom: 0,
+                      fontFamily: 'monospace',
+                      letterSpacing: 4,
+                      textTransform: 'uppercase',
+                    },
+                  ]}
+                />
+                <Pressable
+                  onPress={handleConfirmGiftCard}
+                  disabled={confirmingGiftCard || confirmationChars.length !== 3}
+                  style={[
+                    styles.card,
+                    {
+                      paddingHorizontal: 14,
+                      justifyContent: 'center',
+                      marginBottom: 0,
+                      opacity: confirmingGiftCard || confirmationChars.length !== 3 ? 0.5 : 1,
+                    },
+                  ]}
+                >
+                  <Text style={styles.textGold}>{confirmingGiftCard ? '…' : 'Confirm'}</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+        </View>
       )}
       {giftCardLookupError ? (
         <Text style={{ color: '#f87171', fontSize: 12, marginBottom: 8 }}>{giftCardLookupError}</Text>

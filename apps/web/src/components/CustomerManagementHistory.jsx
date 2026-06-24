@@ -9,7 +9,9 @@ import { canAccessStaffCrm } from '@nail-couture/shared/utils/staffCustomerAcces
 import { ROLE_LABELS, formatPhone, formatProfileDate } from '@nail-couture/shared/utils/roleLabels';
 import { getStaffProfilePath } from '../utils/routes';
 import { paginateRows } from '@nail-couture/shared/utils/pagination.js';
+import { getCallerPhone } from '@nail-couture/shared/utils/technicianQueue';
 import ListPagination from './ListPagination.jsx';
+import AppModal, { modalBtnDanger, modalBtnSecondary } from './AppModal.jsx';
 
 const STAFF_PROFILE_ROLES = ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'];
 const PROFILE_SEARCH_LIMIT = 50;
@@ -67,6 +69,9 @@ export default function CustomerManagementHistory() {
   const [registryError, setRegistryError] = useState('');
   const [registryPage, setRegistryPage] = useState(1);
   const [registryTotalCount, setRegistryTotalCount] = useState(0);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [deletingCustomerId, setDeletingCustomerId] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
 
   const isVisitInTimeFrame = (visitDateString, filterType, startDate, endDate) => {
     if (!visitDateString) return false;
@@ -382,7 +387,38 @@ export default function CustomerManagementHistory() {
     setRegistryPage(1);
   };
 
-  const renderProfileListItem = (profile) => {
+  const handleDeleteCustomerRequest = (profile, event) => {
+    event?.stopPropagation();
+    setDeleteError('');
+    setCustomerToDelete(profile);
+  };
+
+  const handleConfirmDeleteCustomer = async () => {
+    if (!customerToDelete?.id) return;
+
+    setDeletingCustomerId(customerToDelete.id);
+    setDeleteError('');
+    try {
+      const { error } = await supabase.rpc('delete_customer_profile', {
+        p_caller_phone: getCallerPhone(user?.phone),
+        p_profile_id: customerToDelete.id,
+      });
+      if (error) throw error;
+
+      setRegistryProfiles((prev) => prev.filter((p) => p.id !== customerToDelete.id));
+      setProfileSearchResults((prev) => prev.filter((p) => p.id !== customerToDelete.id));
+      setCustomers((prev) => prev.filter((p) => p.id !== customerToDelete.id));
+      setRegistryTotalCount((prev) => Math.max(0, prev - 1));
+      setCustomerToDelete(null);
+    } catch (error) {
+      console.error('Error deleting customer profile:', error);
+      setDeleteError(error.message || 'Could not delete customer profile.');
+    } finally {
+      setDeletingCustomerId(null);
+    }
+  };
+
+  const renderProfileListItem = (profile, { showDelete = false } = {}) => {
     const profilePath = getProfileNavigationPath(user?.role, profile);
     const roleKey = profile.role?.toString().trim().toLowerCase() || '';
     const displayName = profile.full_name || 'Unnamed profile';
@@ -416,10 +452,23 @@ export default function CustomerManagementHistory() {
               </div>
             </div>
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-secondary text-xs">Joined</div>
-            <div className="text-primary/80 text-sm">{formatProfileDate(profile.created_at)}</div>
-            {profilePath && <div className="text-gold text-sm whitespace-nowrap mt-2">View profile →</div>}
+          <div className="text-right shrink-0 flex flex-col items-end gap-2">
+            <div>
+              <div className="text-secondary text-xs">Joined</div>
+              <div className="text-primary/80 text-sm">{formatProfileDate(profile.created_at)}</div>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              {profilePath && <div className="text-gold text-sm whitespace-nowrap">View profile →</div>}
+              {showDelete && roleKey === 'customer' && (
+                <button
+                  type="button"
+                  onClick={(e) => handleDeleteCustomerRequest(profile, e)}
+                  className="text-red-400 hover:text-red-300 text-xs uppercase tracking-wider transition-colors"
+                >
+                  Delete customer
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -519,7 +568,7 @@ export default function CustomerManagementHistory() {
                   {profileSearchResults.length} result{profileSearchResults.length === 1 ? '' : 's'}
                   {profileSearchResults.length >= PROFILE_SEARCH_LIMIT ? ` (showing first ${PROFILE_SEARCH_LIMIT})` : ''}
                 </p>
-                {profileSearchResults.map(renderProfileListItem)}
+                {profileSearchResults.map((profile) => renderProfileListItem(profile, { showDelete: canAccessProfileTools }))}
               </div>
             )}
           </>
@@ -575,7 +624,7 @@ export default function CustomerManagementHistory() {
                 <p className="text-secondary text-xs uppercase tracking-widest">
                   {registryTotalCount} registered profile{registryTotalCount === 1 ? '' : 's'}
                 </p>
-                {registryProfiles.map(renderProfileListItem)}
+                {registryProfiles.map((profile) => renderProfileListItem(profile, { showDelete: canAccessProfileTools }))}
               </div>
             )}
 
@@ -732,6 +781,61 @@ export default function CustomerManagementHistory() {
           </>
         )}
       </div>
+
+      <AppModal
+        open={Boolean(customerToDelete)}
+        onClose={() => {
+          if (deletingCustomerId) return;
+          setCustomerToDelete(null);
+          setDeleteError('');
+        }}
+        title="Delete customer?"
+        subtitle="This action cannot be undone."
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setCustomerToDelete(null);
+                setDeleteError('');
+              }}
+              disabled={Boolean(deletingCustomerId)}
+              className={modalBtnSecondary}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDeleteCustomer}
+              disabled={Boolean(deletingCustomerId)}
+              className={modalBtnDanger}
+            >
+              {deletingCustomerId ? 'Deleting…' : 'Delete customer'}
+            </button>
+          </>
+        }
+      >
+        <p className="text-secondary text-sm">
+          Permanently remove{' '}
+          <span className="text-primary font-medium">
+            {customerToDelete?.full_name || 'this customer'}
+          </span>{' '}
+          from the database? Their profile, loyalty points, and linked account data will be deleted.
+          Visit and payment records may remain without a linked customer.
+        </p>
+        {customerToDelete?.email ? (
+          <p className="text-secondary text-sm mt-3">
+            Email: <span className="text-primary">{customerToDelete.email}</span>
+          </p>
+        ) : null}
+        {customerToDelete?.phone ? (
+          <p className="text-secondary text-sm mt-1">
+            Phone: <span className="text-primary">{formatPhone(customerToDelete.phone)}</span>
+          </p>
+        ) : null}
+        {deleteError ? <p className="text-red-400 text-sm mt-3">{deleteError}</p> : null}
+      </AppModal>
     </div>
   );
 }

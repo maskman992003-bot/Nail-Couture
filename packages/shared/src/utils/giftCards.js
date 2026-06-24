@@ -44,6 +44,65 @@ export function stripGiftCardCodeFromSaleResult(result, role) {
   };
 }
 
+export function stripGiftCardCodeFromLookupResult(result, role) {
+  if (!result?.gift_card || canViewGiftCardCode(role)) return result;
+  const { code, ...rest } = result.gift_card;
+  return {
+    ...result,
+    gift_card: {
+      ...rest,
+      code: null,
+      code_display: rest.code_display || maskGiftCardCode(code),
+    },
+  };
+}
+
+export function getGiftCardDisplayCode(card) {
+  if (!card) return '';
+  if (card.code_display) return card.code_display;
+  if (card.code) return maskGiftCardCode(card.code);
+  return 'GC-****-****';
+}
+
+export function getGiftCardConfirmationLabel() {
+  return 'Ask the customer for the first 3 characters of the middle section of their gift card code.';
+}
+
+export function getGiftCardMiddleConfirmChars(code) {
+  const raw = String(code || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  return raw.length >= 5 ? raw.slice(2, 5) : '';
+}
+
+export function toCheckoutGiftCard(card) {
+  if (!card) return null;
+  const giftedFromName = card.gifted_from_name
+    || (card.purchased_by_id && card.owner_id && card.purchased_by_id !== card.owner_id
+      ? card.purchased_by_name
+      : null);
+  return {
+    id: card.id,
+    balance: card.balance,
+    initial_amount: card.initial_amount,
+    expires_at: card.expires_at,
+    status: card.status,
+    code_display: card.code_display || maskGiftCardCode(card.code),
+    gifted_from_name: giftedFromName || null,
+    created_at: card.created_at,
+  };
+}
+
+export function filterRedeemableCheckoutGiftCards(cards, customerId) {
+  return (cards || [])
+    .filter((card) => (
+      card.owner_id === customerId
+      && card.status === 'active'
+      && Number(card.balance) > 0
+      && !isGiftCardExpired(card)
+    ))
+    .map(toCheckoutGiftCard)
+    .filter(Boolean);
+}
+
 function rpcUnavailable(error, fnName) {
   return error?.message?.includes(fnName) || error?.code === '42883';
 }
@@ -314,6 +373,82 @@ export async function getCustomerGiftCards(callerPhone, customerId) {
   }
 
   return data || { success: false, gift_cards: [] };
+}
+
+export async function getCheckoutGiftCards(callerPhone, customerId) {
+  const { data, error } = await supabase.rpc('get_checkout_gift_cards', {
+    caller_phone: callerPhone,
+    p_customer_id: customerId,
+  });
+
+  if (!error) {
+    const giftCards = data?.gift_cards || [];
+    if (giftCards.length > 0) {
+      return { success: true, gift_cards: giftCards, error: null };
+    }
+  } else if (!rpcUnavailable(error, 'get_checkout_gift_cards')) {
+    // Auth/other RPC errors may still work via CRM fallback below.
+    console.warn('get_checkout_gift_cards failed:', error.message || error);
+  }
+
+  try {
+    const fallback = await getCustomerGiftCards(callerPhone, customerId);
+    const giftCards = filterRedeemableCheckoutGiftCards(fallback.gift_cards, customerId);
+    if (giftCards.length > 0) {
+      return { success: true, gift_cards: giftCards, error: null };
+    }
+    if (error && rpcUnavailable(error, 'get_checkout_gift_cards')) {
+      return {
+        success: false,
+        gift_cards: [],
+        error: 'Gift card checkout unavailable. Run sql/116_gift_card_checkout_verify.sql in Supabase.',
+      };
+    }
+    return {
+      success: true,
+      gift_cards: [],
+      error: fallback.error || (error ? error.message : null),
+    };
+  } catch (fallbackError) {
+    if (error && rpcUnavailable(error, 'get_checkout_gift_cards')) {
+      return {
+        success: false,
+        gift_cards: [],
+        error: 'Gift card checkout unavailable. Run sql/116_gift_card_checkout_verify.sql in Supabase.',
+      };
+    }
+    return {
+      success: false,
+      gift_cards: [],
+      error: fallbackError.message || error?.message || 'Failed to load gift cards',
+    };
+  }
+}
+
+export async function verifyGiftCardForCheckout({
+  callerPhone,
+  customerId,
+  giftCardId,
+  confirmation,
+}) {
+  const { data, error } = await supabase.rpc('verify_gift_card_for_checkout', {
+    caller_phone: callerPhone,
+    p_customer_id: customerId,
+    p_gift_card_id: giftCardId,
+    p_confirmation: confirmation,
+  });
+
+  if (error) {
+    if (rpcUnavailable(error, 'verify_gift_card_for_checkout')) {
+      return {
+        success: false,
+        error: 'Gift card verification unavailable. Run sql/116_gift_card_checkout_verify.sql in Supabase.',
+      };
+    }
+    return { success: false, error: error.message || 'Verification failed' };
+  }
+
+  return data || { success: false, error: 'Verification failed' };
 }
 
 export async function voidGiftCard({ callerPhone, giftCardId, reason = null }) {

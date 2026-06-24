@@ -7,8 +7,11 @@ import { CASHIER_CHECKOUT, MULTI_TECH_VISITS } from '@nail-couture/shared/consta
 import { LOYALTY_REWARDS, validateVaultRedemptionCode } from '@nail-couture/shared/utils/loyaltyTransactions';
 import {
   computeGiftCardCheckoutSplit,
-  isGiftCardExpired,
-  lookupGiftCardByCode,
+  getCheckoutGiftCards,
+  getGiftCardConfirmationLabel,
+  getGiftCardDisplayCode,
+  getGiftCardExpiryLabel,
+  verifyGiftCardForCheckout,
 } from '@nail-couture/shared/utils/giftCards';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import {
@@ -71,10 +74,14 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
   const [visitTechData, setVisitTechData] = useState(null);
   const [tipAllocations, setTipAllocations] = useState([]);
   const [showTechManager, setShowTechManager] = useState(false);
-  const [giftCardCode, setGiftCardCode] = useState('');
+  const [customerGiftCards, setCustomerGiftCards] = useState([]);
+  const [loadingGiftCards, setLoadingGiftCards] = useState(false);
+  const [giftCardsLoadError, setGiftCardsLoadError] = useState('');
+  const [selectedGiftCardId, setSelectedGiftCardId] = useState('');
+  const [confirmationChars, setConfirmationChars] = useState('');
   const [appliedGiftCard, setAppliedGiftCard] = useState(null);
   const [giftCardLookupError, setGiftCardLookupError] = useState('');
-  const [lookingUpGiftCard, setLookingUpGiftCard] = useState(false);
+  const [confirmingGiftCard, setConfirmingGiftCard] = useState(false);
   const [vaultCode, setVaultCode] = useState('');
   const [appliedVault, setAppliedVault] = useState(null);
   const [vaultLookupError, setVaultLookupError] = useState('');
@@ -130,13 +137,42 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
   }, [appointment?.id, callerPhone]);
 
   useEffect(() => {
-    setGiftCardCode('');
+    setSelectedGiftCardId('');
+    setConfirmationChars('');
     setAppliedGiftCard(null);
     setGiftCardLookupError('');
+    setGiftCardsLoadError('');
+    setCustomerGiftCards([]);
     setVaultCode('');
     setAppliedVault(null);
     setVaultLookupError('');
   }, [appointment?.id]);
+
+  useEffect(() => {
+    if (!appointment?.customer_id || !callerPhone) {
+      setCustomerGiftCards([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingGiftCards(true);
+    setGiftCardsLoadError('');
+    getCheckoutGiftCards(callerPhone, appointment.customer_id)
+      .then((result) => {
+        if (cancelled) return;
+        setCustomerGiftCards(result.gift_cards || []);
+        setGiftCardsLoadError(result.error && !(result.gift_cards || []).length ? result.error : '');
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setCustomerGiftCards([]);
+          setGiftCardsLoadError(err.message || 'Failed to load gift cards');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingGiftCards(false);
+      });
+    return () => { cancelled = true; };
+  }, [appointment?.customer_id, callerPhone]);
 
   useEffect(() => {
     if (appliedVault) {
@@ -177,39 +213,35 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
 
   if (!appointment) return null;
 
-  const handleLookupGiftCard = async () => {
-    if (!giftCardCode.trim()) return;
-    setLookingUpGiftCard(true);
+  const handleConfirmGiftCard = async () => {
+    if (!selectedGiftCardId || !confirmationChars.trim() || !appointment?.customer_id) return;
+    setConfirmingGiftCard(true);
     setGiftCardLookupError('');
     try {
-      const result = await lookupGiftCardByCode(callerPhone, giftCardCode.trim());
+      const result = await verifyGiftCardForCheckout({
+        callerPhone,
+        customerId: appointment.customer_id,
+        giftCardId: selectedGiftCardId,
+        confirmation: confirmationChars.trim(),
+      });
       if (!result.success) {
         setAppliedGiftCard(null);
-        setGiftCardLookupError(result.error || 'Gift card not found');
+        setGiftCardLookupError(result.error || 'Confirmation does not match.');
         return;
       }
-      const card = result.gift_card;
-      if (card.owner_id && appointment.customer_id && card.owner_id !== appointment.customer_id) {
-        setAppliedGiftCard(null);
-        setGiftCardLookupError(`This card belongs to ${card.owner_name || 'another customer'}.`);
-        return;
-      }
-      if (isGiftCardExpired(card)) {
-        setAppliedGiftCard(null);
-        setGiftCardLookupError('This gift card has expired.');
-        return;
-      }
-      if (card.status !== 'active' || Number(card.balance) <= 0) {
-        setAppliedGiftCard(null);
-        setGiftCardLookupError('Gift card has no remaining balance.');
-        return;
-      }
-      setAppliedGiftCard(card);
+      setAppliedGiftCard(result.gift_card);
     } catch (err) {
-      setGiftCardLookupError(err.message || 'Lookup failed');
+      setGiftCardLookupError(err.message || 'Verification failed');
     } finally {
-      setLookingUpGiftCard(false);
+      setConfirmingGiftCard(false);
     }
+  };
+
+  const handleRemoveGiftCard = () => {
+    setAppliedGiftCard(null);
+    setSelectedGiftCardId('');
+    setConfirmationChars('');
+    setGiftCardLookupError('');
   };
 
   const handleLookupVaultCode = async () => {
@@ -462,27 +494,88 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
 
             <div className="rounded-lg p-3 border border-card bg-secondary">
               <label className={labelClass}>Apply Gift Card</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={giftCardCode}
-                  onChange={(e) => setGiftCardCode(e.target.value.toUpperCase())}
-                  className={inputClass}
-                  placeholder="GC-XXXX-XXXX"
-                />
-                <button
-                  type="button"
-                  onClick={handleLookupGiftCard}
-                  disabled={lookingUpGiftCard}
-                  className="px-4 py-2 bg-gold/20 text-gold border border-card rounded-lg whitespace-nowrap"
-                >
-                  {lookingUpGiftCard ? '...' : 'Apply'}
-                </button>
-              </div>
-              {appliedGiftCard && (
-                <div className="mt-2 text-sm text-gold">
-                  {appliedGiftCard.code} — ${Number(appliedGiftCard.balance).toFixed(2)} available
-                  <button type="button" onClick={() => { setAppliedGiftCard(null); setGiftCardCode(''); }} className="ml-3 text-xs underline">Remove</button>
+              {!appointment.customer_id ? (
+                <p className={clsx('text-sm', mutedClass)}>
+                  Link a customer profile to this visit to use gift cards.
+                </p>
+              ) : appliedGiftCard ? (
+                <div className="mt-1 text-sm text-gold">
+                  {getGiftCardDisplayCode(appliedGiftCard)} — ${Number(appliedGiftCard.balance).toFixed(2)} available
+                  <button type="button" onClick={handleRemoveGiftCard} className="ml-3 text-xs underline">Remove</button>
+                </div>
+              ) : loadingGiftCards ? (
+                <p className={clsx('text-sm', mutedClass)}>Loading gift cards…</p>
+              ) : customerGiftCards.length === 0 ? (
+                <p className={clsx('text-sm', giftCardsLoadError ? 'text-red-400' : mutedClass)}>
+                  {giftCardsLoadError || 'No active gift cards with balance on file for this customer.'}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    {customerGiftCards.map((card) => {
+                      const selected = selectedGiftCardId === card.id;
+                      const expiryLabel = getGiftCardExpiryLabel(card);
+                      return (
+                        <button
+                          key={card.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedGiftCardId(card.id);
+                            setConfirmationChars('');
+                            setGiftCardLookupError('');
+                          }}
+                          className={clsx(
+                            'w-full text-left rounded-lg p-3 border transition-colors',
+                            selected
+                              ? 'border-gold bg-gold/10'
+                              : 'border-light bg-card hover:border-gold/40',
+                          )}
+                        >
+                          <div className="flex justify-between items-start gap-3">
+                            <div>
+                              <div className="font-mono text-gold text-sm">{card.code_display}</div>
+                              <div className={clsx('text-xs mt-1', mutedClass)}>
+                                {card.gifted_from_name ? `Gifted from ${card.gifted_from_name}` : 'Owned'}
+                                {expiryLabel ? ` · ${expiryLabel}` : ''}
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className={clsx('font-heading', textClass)}>
+                                ${Number(card.balance || 0).toFixed(2)}
+                              </div>
+                              <div className={clsx('text-xs', mutedClass)}>
+                                of ${Number(card.initial_amount || 0).toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedGiftCardId && (
+                    <div>
+                      <p className={clsx('text-xs mb-2', mutedClass)}>{getGiftCardConfirmationLabel()}</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={confirmationChars}
+                          onChange={(e) => setConfirmationChars(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3))}
+                          className={clsx(inputClass, 'max-w-[8rem] font-mono tracking-widest uppercase')}
+                          placeholder="ABC"
+                          maxLength={3}
+                          autoComplete="off"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleConfirmGiftCard}
+                          disabled={confirmingGiftCard || confirmationChars.length !== 3}
+                          className="px-4 py-2 bg-gold/20 text-gold border border-card rounded-lg whitespace-nowrap disabled:opacity-50"
+                        >
+                          {confirmingGiftCard ? '...' : 'Confirm'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {giftCardLookupError && <p className="text-red-400 text-xs mt-2">{giftCardLookupError}</p>}
