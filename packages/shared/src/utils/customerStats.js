@@ -149,7 +149,7 @@ export async function fetchVisitPayments(customerIds) {
 }
 
 export async function fetchVisitPayment(appointmentId) {
-  const baseSelect = 'amount, discount_amount, discount_type, final_amount, payment_method, created_at';
+  const baseSelect = 'amount, discount_amount, discount_type, final_amount, payment_method, created_at, gift_card_amount';
   let { data: payment, error } = await supabase
     .from('payment_transactions')
     .select(`${baseSelect}, extras_amount`)
@@ -159,10 +159,10 @@ export async function fetchVisitPayment(appointmentId) {
     .limit(1)
     .maybeSingle();
 
-  if (error?.code === '42703' || error?.message?.includes('extras_amount')) {
+  if (error?.code === '42703' || error?.message?.includes('extras_amount') || error?.message?.includes('gift_card_amount')) {
     ({ data: payment, error } = await supabase
       .from('payment_transactions')
-      .select(baseSelect)
+      .select('amount, discount_amount, discount_type, final_amount, payment_method, created_at')
       .eq('appointment_id', appointmentId)
       .eq('status', 'completed')
       .order('created_at', { ascending: false })
@@ -176,6 +176,7 @@ export async function fetchVisitPayment(appointmentId) {
   return {
     ...payment,
     extras_amount: payment.extras_amount != null ? Number(payment.extras_amount) : 0,
+    gift_card_amount: payment.gift_card_amount != null ? Number(payment.gift_card_amount) : 0,
   };
 }
 

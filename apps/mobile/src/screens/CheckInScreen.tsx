@@ -253,7 +253,9 @@ export function CheckInScreen() {
 
       const appointmentId = result?.appointment?.id;
       if (appointmentId && result?.isNew) {
-        await completeCheckIn(profilePhone || phone, appointmentId);
+        await completeCheckIn(profilePhone || phone, appointmentId, {
+          refreshmentPref: (result?.appointment?.refreshment_pref as string) || newUserDetails.refreshmentPref || null,
+        });
       }
 
       if (result?.isNew) {
@@ -515,7 +517,16 @@ export function CheckInScreen() {
                     setLoading(true);
                     setError(null);
                     try {
-                      await completeCheckIn(phone, result.appointment.id);
+                      await completeCheckIn(
+                        (result?.profile?.phone as string) || phone,
+                        result.appointment.id,
+                        {
+                          profilePhone: (result?.profile?.phone as string) || phone,
+                          services: selectedServices,
+                          addOns: selectedAddOns,
+                          refreshmentPref: (result?.appointment?.refreshment_pref as string) || null,
+                        },
+                      );
                       setNewUserDetails({
                         fullName: result?.name || 'Guest',
                         refreshmentPref: (result?.appointment?.refreshment_pref as string) || '',

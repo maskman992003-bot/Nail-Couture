@@ -1295,37 +1295,61 @@ function ServiceChangeStep({ entry, stepNumber, isLast }) {
 
 function PaymentSummaryRows({ paymentSummary }) {
   if (!paymentSummary) return null;
-  const { subtotal, discount, discountType, tip, totalPaid, paymentMethod } = paymentSummary;
+  const {
+    subtotal,
+    discount,
+    discountType,
+    tip,
+    giftCardAmount = 0,
+    visitTotal,
+    totalPaid,
+    paymentMethod,
+  } = paymentSummary;
   const discountLabel = discountType === 'percentage' || discountType === 'percent'
-    ? 'Discount'
+    ? 'Discount (%)'
     : discountType === 'loyalty'
-      ? 'Loyalty discount'
-      : 'Discount';
+      ? 'Loyalty deduction'
+      : discountType === 'coupon'
+        ? 'Coupon discount'
+        : 'Discount';
+  const showVisitTotal = (giftCardAmount > 0 || discount > 0 || tip > 0) && visitTotal > 0;
 
   return (
     <div className="p-4 rounded-xl bg-gold/5 border border-gold/20 space-y-2 text-sm">
       <h4 className="font-heading text-gold text-sm uppercase tracking-wider mb-3">Payment summary</h4>
       <div className="flex justify-between">
-        <span className="text-secondary">Services subtotal</span>
+        <span className="text-secondary">Services & add-ons</span>
         <span className="text-primary">${Number(subtotal).toFixed(2)}</span>
       </div>
-      {discount > 0 && (
-        <div className="flex justify-between">
-          <span className="text-secondary">{discountLabel}</span>
-          <span className="text-red-300">−${Number(discount).toFixed(2)}</span>
-        </div>
-      )}
       {tip > 0 && (
         <div className="flex justify-between">
           <span className="text-secondary">Tip</span>
           <span className="text-primary">+${Number(tip).toFixed(2)}</span>
         </div>
       )}
+      {discount > 0 && (
+        <div className="flex justify-between">
+          <span className="text-secondary">{discountLabel}</span>
+          <span className="text-red-300">−${Number(discount).toFixed(2)}</span>
+        </div>
+      )}
+      {giftCardAmount > 0 && (
+        <div className="flex justify-between">
+          <span className="text-secondary">Gift card</span>
+          <span className="text-gold">−${Number(giftCardAmount).toFixed(2)}</span>
+        </div>
+      )}
+      {showVisitTotal && (
+        <div className="flex justify-between pt-2 border-t border-gold/20">
+          <span className="text-secondary">Visit total</span>
+          <span className="text-primary">${Number(visitTotal).toFixed(2)}</span>
+        </div>
+      )}
       <div className="flex justify-between pt-2 border-t border-gold/20 font-medium">
-        <span className="text-gold font-heading">Total paid</span>
+        <span className="text-gold font-heading">{giftCardAmount > 0 ? 'Amount paid' : 'Total paid'}</span>
         <span className="text-gold font-heading text-lg">${Number(totalPaid).toFixed(2)}</span>
       </div>
-      {paymentMethod && (
+      {paymentMethod && paymentMethod !== 'N/A' && (
         <div className="text-secondary text-xs pt-1">Paid via {paymentMethod}</div>
       )}
     </div>

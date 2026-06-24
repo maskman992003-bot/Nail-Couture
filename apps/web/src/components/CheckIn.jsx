@@ -630,7 +630,7 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
             </button>
             <button
               type="submit"
-              disabled={loading || !fullName || !email || !nailGoal || selectedServices.length === 0}
+              disabled={loading || !fullName || !email || !nailGoal || !birthdayMonth || !birthdayDay || selectedServices.length === 0}
               className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'CREATING...' : 'JOIN CLUB'}
@@ -676,10 +676,24 @@ export default function CheckIn({ onNavigate }) {
   const [reservedReward, setReservedReward] = useState(null)
   const [rewardError, setRewardError] = useState('')
   const [rewardSaving, setRewardSaving] = useState(false)
+  const [refreshmentList, setRefreshmentList] = useState([])
+  const [refreshmentsLoading, setRefreshmentsLoading] = useState(false)
+  const [refreshmentPref, setRefreshmentPref] = useState('')
 
   useEffect(() => {
     getServices().then(setServices).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!result || result.isNew || !result.appointment) return
+    setRefreshmentsLoading(true)
+    getAvailableRefreshments()
+      .then(setRefreshmentList)
+      .catch(() => {})
+      .finally(() => setRefreshmentsLoading(false))
+    const pref = result.appointment?.refreshment_pref || result.profile?.refreshment_pref || ''
+    setRefreshmentPref(pref || '')
+  }, [result?.appointment?.id, result?.profile?.id, result?.isNew])
 
   useEffect(() => {
     if (!result?.profile?.id && !result?.appointment?.customer_id) return
@@ -740,6 +754,7 @@ export default function CheckIn({ onNavigate }) {
       setResult(null)
       setSelectedServices([])
       setSelectedAddOns([])
+      setRefreshmentPref('')
       setShowServiceSelection(false)
     }, 7000)
     return () => clearTimeout(timer)
@@ -841,7 +856,7 @@ export default function CheckIn({ onNavigate }) {
         ? (refreshmentPref || null)
         : null
       const { error: updateError } = await supabase.rpc('update_my_appointment', {
-        caller_phone: phone,
+        caller_phone: getCallerPhoneForAppointmentRpc(),
         appointment_id: result.appointment.id,
         p_service_id: services[0]?.id || null,
         p_add_ons: addOnsValue,
@@ -864,6 +879,64 @@ export default function CheckIn({ onNavigate }) {
     setSelectedServices(services)
     setSelectedAddOns(addOns)
     setShowServiceSelection(false)
+  }
+
+  const getCallerPhoneForAppointmentRpc = () => {
+    const fromProfile = result?.profile?.phone
+    if (fromProfile) return fromProfile
+    return phone.replace(/\D/g, '')
+  }
+
+  const resetCheckInFlow = () => {
+    setPhone('')
+    setResult(null)
+    setSelectedServices([])
+    setSelectedAddOns([])
+    setRefreshmentPref('')
+    setShowServiceSelection(false)
+    setError(null)
+  }
+
+  const exitCheckIn = () => {
+    resetCheckInFlow()
+    if (onNavigate) onNavigate('home')
+    else navigate('/')
+  }
+
+  const handleConfirmExistingUserCheckIn = async () => {
+    const appointmentId = result?.appointment?.id
+    if (!appointmentId) {
+      setError('No active appointment found. Please check in again.')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const availableRefreshments = await getAvailableRefreshments()
+      const safeRefreshmentPref = isRefreshmentAvailable(refreshmentPref, availableRefreshments)
+        ? (refreshmentPref || null)
+        : null
+
+      await completeCheckIn(result?.profile?.phone || phone, appointmentId, {
+        profilePhone: getCallerPhoneForAppointmentRpc(),
+        services: selectedServices,
+        addOns: selectedAddOns,
+        refreshmentPref: safeRefreshmentPref,
+      })
+
+      setNewUserDetails({
+        fullName: result?.name || 'Guest',
+        refreshmentPref: safeRefreshmentPref || '',
+      })
+      setNewUserSuccess(true)
+    } catch (err) {
+      console.error('Check-in confirm error:', err)
+      setError(err.message || 'Failed to complete check-in')
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Handle saving the waiver to the database safely 
@@ -900,7 +973,10 @@ export default function CheckIn({ onNavigate }) {
 
       const appointmentId = result?.appointment?.id
       if (appointmentId && result?.isNew) {
-        await completeCheckIn(profilePhone || phone, appointmentId)
+        await completeCheckIn(profilePhone || phone, appointmentId, {
+          profilePhone: profilePhone || phone,
+          refreshmentPref: result?.appointment?.refreshment_pref || newUserDetails.refreshmentPref || null,
+        })
       }
       
       // Show success screen first, then hide waiver — prevents intermediate RegistrationModal re-mount
@@ -940,6 +1016,7 @@ export default function CheckIn({ onNavigate }) {
           setError(null)
           setSelectedServices([])
           setSelectedAddOns([])
+          setRefreshmentPref('')
           onNavigate('home') // Go back home
         }}
       />
@@ -972,6 +1049,7 @@ export default function CheckIn({ onNavigate }) {
                 setResult(null)
                 setSelectedServices([])
                 setSelectedAddOns([])
+                setRefreshmentPref('')
                 setShowServiceSelection(false)
                 navigate('/')
               }}
@@ -1003,7 +1081,6 @@ export default function CheckIn({ onNavigate }) {
   }
 
   if (result && !result.isNew && result.appointment) {
-    const addOns = services.filter((s) => isAddOnBookable(s))
     const selectedAddOnDetails = selectedAddOns
     const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0) + selectedAddOnDetails.reduce((sum, a) => sum + (a.price || 0), 0)
 
@@ -1026,61 +1103,33 @@ export default function CheckIn({ onNavigate }) {
           </button>
 
           {selectedServices.length > 0 && (
-            <div className="bg-secondary border border-theme rounded-xl p-4 mb-6">
+            <div className="bg-secondary border border-theme rounded-xl p-4 mb-6 text-left">
               <p className="text-secondary text-sm mb-2">Selected:</p>
-              {selectedServices.map((s) => (
-                <p key={s.id} className="text-primary font-heading text-base">{s.name} — ${s.price}</p>
-              ))}
-              {selectedAddOnDetails.length > 0 && (
-                <p className="text-secondary text-sm mt-1">Add-ons: + {selectedAddOnDetails.map((a) => a.name).join(', ')}</p>
-              )}
+              <div className="space-y-1">
+                {selectedServices.map((s) => (
+                  <p key={s.id} className="text-primary font-heading text-base">{s.name} — ${s.price}</p>
+                ))}
+                {selectedAddOnDetails.map((a) => (
+                  <p key={a.id} className="text-primary font-heading text-base">{a.name} — ${a.price}</p>
+                ))}
+              </div>
               <div className="text-gold font-heading text-2xl mt-2">${totalPrice.toFixed(2)}</div>
             </div>
           )}
 
-          {addOns.length > 0 && selectedServices.length > 0 && (
-            <div className="mb-6">
-              <p className="text-secondary text-sm mb-3">Add-Ons (Optional)</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {addOns.map((addOn) => {
-                  const isSelected = selectedAddOns.some((a) => a.id === addOn.id)
-                  return (
-                    <button
-                      key={addOn.id}
-                      onClick={() => {
-                        if (isSelected) {
-                          setSelectedAddOns((prev) => prev.filter((a) => a.id !== addOn.id))
-                        } else {
-                          setSelectedAddOns((prev) => [...prev, addOn])
-                        }
-                      }}
-                      className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${
-                        isSelected ? 'border-theme bg-card' : 'border-light hover:border-theme'
-                      }`}
-                    >
-                      <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
-                        isSelected ? 'border-gold bg-gold' : 'border-light'
-                      }`}>
-                        {isSelected && (
-                          <svg className="w-2.5 h-2.5 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-primary font-heading text-sm">{addOn.name}</div>
-                        <div className="text-muted text-xs">+{addOn.duration_minutes} min</div>
-                      </div>
-                      <div className="text-gold font-heading text-sm">+${addOn.price}</div>
-                    </button>
-                  )
-                })}
-              </div>
+          {selectedServices.length > 0 && (
+            <div className="mb-6 text-left">
+              <RefreshmentSelect
+                label="Complementary Drink"
+                labelClassName="block text-secondary text-sm mb-2"
+                value={refreshmentPref}
+                onChange={(e) => setRefreshmentPref(e.target.value)}
+                refreshments={refreshmentList}
+                loading={refreshmentsLoading}
+                emptyLabel="Select a drink (optional)"
+                showUnavailableNote
+              />
             </div>
-          )}
-
-          {addOns.length === 0 && selectedServices.length > 0 && (
-            <div className="mb-6 text-muted text-sm">No add-ons available</div>
           )}
 
           {selectedServices.length > 0 && customerPoints > 0 && (
@@ -1119,39 +1168,29 @@ export default function CheckIn({ onNavigate }) {
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-in">
             <button
               type="button"
-              onClick={() => {
-                setPhone(''); setResult(null); setSelectedServices([]); setSelectedAddOns([]); setShowServiceSelection(false); onNavigate('home')
-              }}
-              className="min-w-[120px] px-5 py-3 rounded-full border border-light text-secondary text-sm font-heading uppercase tracking-[0.24em] hover:border-theme hover:text-gold-strong transition-all"
+              onClick={exitCheckIn}
+              disabled={loading}
+              className="min-w-[120px] px-5 py-3 rounded-full border border-light text-secondary text-sm font-heading uppercase tracking-[0.24em] hover:border-theme hover:text-gold-strong transition-all disabled:opacity-50"
             >
               CANCEL
             </button>
             {selectedServices.length > 0 && (
               <button
-                onClick={async () => {
-                  if (!result?.appointment?.id) return
-                  setLoading(true)
-                  setError(null)
-                  try {
-                    await completeCheckIn(phone, result.appointment.id)
-                    setNewUserDetails({
-                      fullName: result?.name || 'Guest',
-                      refreshmentPref: result?.appointment?.refreshment_pref || ''
-                    })
-                    setNewUserSuccess(true)
-                  } catch (err) {
-                    setError(err.message || 'Failed to complete check-in')
-                  } finally {
-                    setLoading(false)
-                  }
-                }}
+                type="button"
+                onClick={handleConfirmExistingUserCheckIn}
                 disabled={loading}
                 className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                CONFIRM
+                {loading ? 'CONFIRMING...' : 'CONFIRM'}
               </button>
             )}
           </div>
+
+          {error && (
+            <div className="mt-4 rounded-xl border border-red-400/40 bg-red-400/10 px-4 py-3 text-left">
+              <p className="text-red-400 text-sm font-medium">{error}</p>
+            </div>
+          )}
         </div>
       </div>
     )

@@ -23,6 +23,7 @@ const MANAGEMENT_ROLES = ['super_admin', 'owner', 'partner', 'admin'];
 const EXECUTIVE_ROLES = ['super_admin', 'owner', 'partner'];
 
 const DATE_PRESETS = [
+  { id: 'all', label: 'All time' },
   { id: 'today', label: 'Today' },
   { id: '7_days', label: 'Last 7 days' },
   { id: '30_days', label: 'Last 30 days' },
@@ -42,7 +43,7 @@ export default function StaffReviews() {
   const [publishingReviewId, setPublishingReviewId] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [filtersClientSide, setFiltersClientSide] = useState(false);
-  const [datePreset, setDatePreset] = useState('today');
+  const [datePreset, setDatePreset] = useState('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,7 +98,10 @@ export default function StaffReviews() {
   }, [canFilterTechnician]);
 
   const loadReviews = useCallback(async () => {
-    if (!user?.phone || !dateRange) return;
+    if (!user?.phone || !dateRange) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     const query = {
@@ -218,10 +222,15 @@ export default function StaffReviews() {
   const emptyMessage = useMemo(() => {
     if (datePreset === 'custom' && !dateRange) return 'Select a start and end date to load reviews.';
     if (searchTerm.trim()) return 'No reviews match your search for this period.';
-    if (isTechnician) return 'No reviews for this period yet. Try Last 7 days or Last 30 days.';
-    if (technicianFilter) return 'No reviews for this technician in this period. Try a wider date range.';
-    if (datePreset === 'today') return 'No reviews today. Try Last 7 days or Last 30 days.';
-    return 'No reviews for this period. Try a wider date range.';
+    if (datePreset === 'all') {
+      if (isTechnician) return 'No reviews yet. Feedback appears here after clients rate completed visits.';
+      if (technicianFilter) return 'No reviews for this technician yet.';
+      return 'No customer reviews yet. They appear here after clients submit post-visit feedback.';
+    }
+    if (isTechnician) return 'No reviews for this period yet. Try All time or Last 30 days.';
+    if (technicianFilter) return 'No reviews for this technician in this period. Try All time or a wider date range.';
+    if (datePreset === 'today') return 'No reviews today. Try All time or Last 30 days.';
+    return 'No reviews for this period. Try All time or a wider date range.';
   }, [isTechnician, technicianFilter, searchTerm, datePreset, dateRange]);
 
   return (
@@ -326,7 +335,11 @@ export default function StaffReviews() {
             {!loading && dateRange && (
               <p className="text-secondary text-sm">
                 {summary.reviewCount} review{summary.reviewCount !== 1 ? 's' : ''}
-                {searchTerm.trim() ? ' matching search' : ' in this period'}
+                {searchTerm.trim()
+                  ? ' matching search'
+                  : datePreset === 'all'
+                    ? ' total'
+                    : ' in this period'}
               </p>
             )}
           </div>

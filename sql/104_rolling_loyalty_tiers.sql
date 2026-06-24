@@ -9,8 +9,21 @@
 -- 1) Schema
 -- ============================================================================
 
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'calendar_spend_ytd'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'rolling_spend_12m'
+  ) THEN
+    ALTER TABLE profiles RENAME COLUMN calendar_spend_ytd TO rolling_spend_12m;
+  END IF;
+END $$;
+
 ALTER TABLE profiles
-  RENAME COLUMN calendar_spend_ytd TO rolling_spend_12m;
+  ADD COLUMN IF NOT EXISTS rolling_spend_12m numeric NOT NULL DEFAULT 0;
 
 COMMENT ON COLUMN profiles.rolling_spend_12m IS
   'Completed checkout spend in the last 365 days (final_amount + gift_card_amount)';

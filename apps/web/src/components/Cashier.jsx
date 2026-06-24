@@ -151,11 +151,6 @@ export default function Cashier() {
               <h3 className={clsx('font-heading text-2xl mb-2', theme === 'dark' ? 'text-offwhite' : 'text-charcoal')}>Gift Cards</h3>
               <p className={welcomeSubclass}>Complete gift card sales or send requests to cashier</p>
             </Link>
-            <Link to="/cashier/reports" className={linkCard}>
-              <div className="text-4xl mb-3">📊</div>
-              <h3 className={clsx('font-heading text-2xl mb-2', theme === 'dark' ? 'text-offwhite' : 'text-charcoal')}>Daily Reports</h3>
-              <p className={welcomeSubclass}>View transactions and revenue</p>
-            </Link>
           </div>
 
           <div className={cardClass}>

@@ -2,9 +2,9 @@ import { supabase } from '../lib/supabase';
 
 export const LOYALTY_REWARDS = [
   { id: 'vault-100', name: 'Vault $5 Reward', points: 100, discountAmount: 5, description: 'Claim in The Vault first, or redeem here (deducts 100 pts)' },
-  { id: 'vault-250', name: 'Vault $15 Reward', points: 250, discountAmount: 15, description: 'Claim in The Vault first, or redeem here (deducts 250 pts)' },
-  { id: 'vault-500', name: 'Vault $35 Reward', points: 500, discountAmount: 35, description: 'Claim in The Vault first, or redeem here (deducts 500 pts)' },
-  { id: 'vault-1000', name: 'Vault $75 Reward', points: 1000, discountAmount: 75, description: 'Claim in The Vault first, or redeem here (deducts 1000 pts)' },
+  { id: 'vault-250', name: 'Vault $12 Reward', points: 250, discountAmount: 12, description: 'Claim in The Vault first, or redeem here (deducts 250 pts)' },
+  { id: 'vault-500', name: 'Vault $25 Reward', points: 500, discountAmount: 25, description: 'Claim in The Vault first, or redeem here (deducts 500 pts)' },
+  { id: 'vault-1000', name: 'Vault $60 Reward', points: 1000, discountAmount: 60, description: 'Claim in The Vault first, or redeem here (deducts 1000 pts)' },
 ];
 
 const TYPE_LABELS = {

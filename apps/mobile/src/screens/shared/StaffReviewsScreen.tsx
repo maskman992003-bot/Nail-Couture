@@ -18,6 +18,7 @@ const EXECUTIVE_ROLES = new Set(['super_admin', 'owner', 'partner']);
 const PAGE_SIZE = 50;
 
 const DATE_PRESETS = [
+  { id: 'all', label: 'All time' },
   { id: 'today', label: 'Today' },
   { id: '7_days', label: '7 days' },
   { id: '30_days', label: '30 days' },
@@ -51,7 +52,7 @@ export function StaffReviewsScreen() {
   const [technicianFilter, setTechnicianFilter] = useState('');
   const [moderatingId, setModeratingId] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
-  const [datePreset, setDatePreset] = useState<(typeof DATE_PRESETS)[number]['id']>('today');
+  const [datePreset, setDatePreset] = useState<(typeof DATE_PRESETS)[number]['id']>('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -214,8 +215,9 @@ export function StaffReviewsScreen() {
   const emptyMessage = useMemo(() => {
     if (datePreset === 'custom' && !dateRange) return 'Select start and end dates.';
     if (searchTerm.trim()) return 'No reviews match your search.';
-    if (datePreset === 'today') return 'No reviews today. Try Last 7 or 30 days.';
-    return 'No reviews for this period. Try a wider date range.';
+    if (datePreset === 'all') return 'No customer reviews yet.';
+    if (datePreset === 'today') return 'No reviews today. Try All time or Last 30 days.';
+    return 'No reviews for this period. Try All time or a wider date range.';
   }, [datePreset, dateRange, searchTerm]);
 
   return (

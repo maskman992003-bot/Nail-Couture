@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { getAppointmentServiceLabels } from './appointmentServices';
+import { resolveReceiptTotals } from './customerStats.js';
 
 const CHECK_IN_SOURCES = new Set(['check_in', 'kiosk', 'customer_kiosk']);
 
@@ -160,25 +161,36 @@ export function parseVisitLineItems(visit, priceMap = {}) {
 
 export function buildVisitPaymentSummary(payment, lineItems) {
   const catalogSubtotal = sumLineItems(lineItems.mainItems) + sumLineItems(lineItems.addonItems);
-  const subtotal = payment?.amount != null ? Number(payment.amount) : catalogSubtotal;
-  const discount = Number(payment?.discount_amount ?? 0);
-  const tip = Number(payment?.extras_amount ?? 0);
-  const totalPaid = payment?.final_amount != null
-    ? Number(payment.final_amount)
-    : Math.max(0, subtotal - discount) + tip;
+  const totals = resolveReceiptTotals(
+    payment,
+    catalogSubtotal > 0 ? { computedServiceTotal: catalogSubtotal } : null,
+  );
 
   return {
-    subtotal,
-    discount,
+    subtotal: totals.serviceSubtotal,
+    discount: totals.discount,
     discountType: payment?.discount_type || null,
-    tip,
-    totalPaid,
-    paymentMethod: payment?.payment_method || null,
+    tip: totals.tip,
+    giftCardAmount: totals.giftCardAmount,
+    visitTotal: totals.total,
+    totalPaid: totals.cashAmount ?? totals.total,
+    paymentMethod: totals.paymentMethod,
   };
 }
 
 export function sumLineItems(items) {
   return (items || []).reduce((sum, item) => sum + (item.price ?? 0), 0);
+}
+
+/** Sum catalog prices for all final main services and add-ons on a visit. */
+export function computeVisitCatalogSubtotal(visit, priceMap = {}) {
+  const { mainItems, addonItems } = parseVisitFinalServices(visit, priceMap);
+  const withPrices = enrichFinalServicesWithPrices({ mainItems, addonItems }, priceMap);
+  return roundMoney(sumLineItems(withPrices.mainItems) + sumLineItems(withPrices.addonItems));
+}
+
+function roundMoney(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
 }
 
 function enrichStep(step, priceMap) {

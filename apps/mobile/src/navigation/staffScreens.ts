@@ -67,7 +67,6 @@ const CASHIER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>>
   Transactions: CashierTransactionsScreen,
   Customers: CustomersStackNavigator,
   Reviews: StaffReviewsScreen,
-  Reports: AdminReportsScreen,
   FitnessAssessment: CustomerFitnessAssessmentScreen,
   SalonUpdates: SalonUpdatesScreen,
   Settings: StaffSettingsScreen,

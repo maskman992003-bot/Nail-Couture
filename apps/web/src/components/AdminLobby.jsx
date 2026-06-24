@@ -34,6 +34,8 @@ import { getWorkstationStatus, WORKSTATION_ON_BREAK } from '@nail-couture/shared
 import usePullToRefresh from '../hooks/usePullToRefresh'
 import PullToRefreshIndicator from './PullToRefreshIndicator'
 import VisitTechnicianManager, { MultiTechBadge } from './VisitTechnicianManager'
+import { getAppointmentTotalPrice } from '@nail-couture/shared/utils/appointmentHelpers'
+import { getAppointmentServiceLabels } from '@nail-couture/shared/utils/appointmentServices'
 
 const LOBBY_DROP_ID = 'lobby'
 
@@ -327,7 +329,9 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, onManageTechs
             </h3>
             <div className={customerDetailClass}>
               {appointment.customer?.phone && <span>📞 {appointment.customer.phone}</span>}
-              {appointment.customer?.refreshment_pref && <span>☕ {appointment.customer.refreshment_pref}</span>}
+              {(appointment.refreshment_pref || appointment.customer?.refreshment_pref) && (
+                <span>☕ {appointment.refreshment_pref || appointment.customer.refreshment_pref}</span>
+              )}
             </div>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
@@ -371,24 +375,6 @@ const DraggableAppointmentCard = ({ appointment, onEdit, onCancel, onManageTechs
 const formatTime = (timestamp) => {
   if (!timestamp) return ''
   return new Date(timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-}
-
-const getAppointmentTotalPrice = (appointment, availableServices = []) => {
-  if (appointment.total_price != null) {
-    return Number(appointment.total_price) || 0
-  }
-
-  const basePrice = appointment.services?.price || 0
-  const addOnNames = appointment.add_ons
-    ? appointment.add_ons.split(',').map(n => n.trim()).filter(Boolean)
-    : []
-
-  const addonTotal = addOnNames.reduce((sum, name) => {
-    const addon = availableServices.find(s => s.name === name && s.is_addon)
-    return sum + (addon?.price || 0)
-  }, 0)
-
-  return basePrice + addonTotal
 }
 
 const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
@@ -1043,15 +1029,15 @@ export default function AdminLobby() {
                 <h2 className="font-heading text-xl text-gold mt-8 mb-4">Currently Serving ({servingAppointments.length})</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {servingAppointments.map(appointment => (
-                    <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className={`font-heading text-lg ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{appointment.customer?.full_name || 'Guest'}</h3>
+                    <div key={appointment.id} className="bg-gold/10 border border-gold/30 rounded-xl p-5 overflow-hidden min-w-0">
+                      <div className="mb-2">
+                        <div className="min-w-0">
+                          <h3 className={`font-heading text-lg break-words ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{appointment.customer?.full_name || 'Guest'}</h3>
                           {appointment.customer?.phone && (
                             <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>📞 {appointment.customer.phone}</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
                           {showManageTechs && (
                             <button type="button" onClick={() => setManagingTechsFor(appointment)} className="text-xs text-gold hover:text-gold/80">Manage techs</button>
                           )}
@@ -1095,23 +1081,23 @@ export default function AdminLobby() {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                   {checkoutReadyAppointments.map(appointment => (
-                    <div key={appointment.id} className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className={`font-heading text-lg ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{appointment.customer?.full_name || 'Guest'}</h3>
+                    <div key={appointment.id} className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 overflow-hidden min-w-0">
+                      <div className="mb-2">
+                        <div className="min-w-0">
+                          <h3 className={`font-heading text-lg break-words ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{appointment.customer?.full_name || 'Guest'}</h3>
                           {appointment.technician && (
                             <span className={`text-xs ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>with {appointment.technician.full_name}</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
                           {showManageTechs && (
                             <button type="button" onClick={() => setManagingTechsFor(appointment)} className="text-xs text-gold hover:text-gold/80">Manage techs</button>
                           )}
-                          <span className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400">Awaiting payment</span>
+                          <span className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400 whitespace-nowrap">Awaiting payment</span>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 text-sm items-center">
-                        {appointment.services && <span className="text-gold font-heading">{appointment.services.name}</span>}
+                        <span className="text-gold font-heading">{getAppointmentServiceLabels(appointment).join(', ')}</span>
                         <span className="text-amber-400 font-medium">
                           ${getAppointmentTotalPrice(appointment, services).toFixed(2)}
                         </span>

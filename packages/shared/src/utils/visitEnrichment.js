@@ -19,10 +19,20 @@ export async function enrichVisits(rawVisits) {
   let paymentsResult = customerIds.length
     ? await supabase
       .from('payment_transactions')
-      .select('appointment_id, customer_id, discount_amount, discount_type, payment_method, final_amount, amount, extras_amount')
+      .select('appointment_id, customer_id, discount_amount, discount_type, payment_method, final_amount, amount, extras_amount, gift_card_amount')
       .in('customer_id', customerIds)
       .eq('status', 'completed')
     : { data: [] };
+
+  if (paymentsResult.error?.code === '42703' || paymentsResult.error?.message?.includes('extras_amount') || paymentsResult.error?.message?.includes('gift_card_amount')) {
+    paymentsResult = customerIds.length
+      ? await supabase
+        .from('payment_transactions')
+        .select('appointment_id, customer_id, discount_amount, discount_type, payment_method, final_amount, amount, extras_amount')
+        .in('customer_id', customerIds)
+        .eq('status', 'completed')
+      : { data: [] };
+  }
 
   if (paymentsResult.error?.code === '42703' || paymentsResult.error?.message?.includes('extras_amount')) {
     paymentsResult = customerIds.length
@@ -42,6 +52,7 @@ export async function enrichVisits(rawVisits) {
       paymentMap[p.appointment_id] = {
         ...p,
         extras_amount: p.extras_amount != null ? Number(p.extras_amount) : 0,
+        gift_card_amount: p.gift_card_amount != null ? Number(p.gift_card_amount) : 0,
       };
     }
   });

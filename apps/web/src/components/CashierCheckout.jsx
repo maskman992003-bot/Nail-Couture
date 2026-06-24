@@ -279,7 +279,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
           <h3 className="font-heading text-2xl text-gold-strong">Settle Payment</h3>
           <button type="button" onClick={onClose} className="text-secondary hover:text-primary text-2xl">&times;</button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
           <div className="rounded-lg p-4 mb-6 bg-secondary border border-light">
             <div className="flex justify-between items-center mb-2">
               <span className={mutedClass}>Customer</span>
@@ -512,8 +512,10 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
               </select>
             </div>
           </div>
+        </div>
 
-          <div className="bg-gold/10 border border-card rounded-lg p-4 mt-6">
+        <div className="shrink-0 border-t border-light bg-card p-4 sm:p-6 space-y-4">
+          <div className="bg-gold/10 border border-card rounded-lg p-4">
             <div className="flex justify-between items-center mb-2">
               <span className={mutedClass}>Services</span>
               <span className={textClass}>${serviceSubtotal.toFixed(2)}</span>
@@ -548,21 +550,21 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme, callerPhone, us
                 <span>-${giftSplit.giftCardAmount.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between items-center pt-2 border-t border-gold/20">
-              <span className={clsx('font-medium', textClass)}>{appliedGiftCard ? 'Due Now' : 'Final Total'}</span>
-              <span className="font-heading text-2xl text-gold">${finalTotal.toFixed(2)}</span>
-            </div>
             {appliedGiftCard && (
-              <div className={clsx('flex justify-between items-center mt-2 text-sm', mutedClass)}>
+              <div className={clsx('flex justify-between items-center mb-2 text-sm', mutedClass)}>
                 <span>Visit total</span>
                 <span>${visitTotal.toFixed(2)}</span>
               </div>
             )}
+            <div className="flex justify-between items-center pt-2 border-t border-gold/20">
+              <span className={clsx('font-medium', textClass)}>{appliedGiftCard ? 'Due Now' : 'Final Total'}</span>
+              <span className="font-heading text-2xl text-gold">${finalTotal.toFixed(2)}</span>
+            </div>
           </div>
 
-          {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+          {error && <p className="text-red-400 text-sm">{error}</p>}
 
-          <div className="flex gap-3 mt-6">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}

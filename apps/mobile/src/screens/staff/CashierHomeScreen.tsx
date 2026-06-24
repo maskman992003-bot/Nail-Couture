@@ -178,14 +178,6 @@ export function CashierHomeScreen() {
         </Text>
       </Pressable>
 
-      <Pressable onPress={() => navigation.navigate('Reports')} style={linkCard}>
-        <Text style={{ fontSize: 32, marginBottom: 8 }}>📊</Text>
-        <Text style={[styles.textPrimary, { fontSize: 20, fontWeight: '600' }]}>Daily Reports</Text>
-        <Text style={[styles.textSecondary, { marginTop: 4, textAlign: 'center' }]}>
-          View transactions and revenue
-        </Text>
-      </Pressable>
-
       <View style={[styles.card, { padding: 16, marginTop: 8 }]}>
         <Text style={[styles.textPrimary, { fontSize: 18, fontWeight: '600', marginBottom: 12 }]}>
           Today&apos;s Transactions

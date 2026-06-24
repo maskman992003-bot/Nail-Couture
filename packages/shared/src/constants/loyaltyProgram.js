@@ -92,9 +92,9 @@ export const BIRTHDAY_BONUS_POINTS = {
 
 export const VAULT_MILESTONES = [
   { points: 100, rewardLabel: '$5 reward', rewardValue: 5 },
-  { points: 250, rewardLabel: '$15 reward', rewardValue: 15 },
-  { points: 500, rewardLabel: '$35 reward', rewardValue: 35 },
-  { points: 1000, rewardLabel: '$75 reward', rewardValue: 75 },
+  { points: 250, rewardLabel: '$12 reward', rewardValue: 12 },
+  { points: 500, rewardLabel: '$25 reward', rewardValue: 25 },
+  { points: 1000, rewardLabel: '$60 reward', rewardValue: 60 },
 ];
 
 export const VAULT_MAX_POINTS = VAULT_MILESTONES.reduce(

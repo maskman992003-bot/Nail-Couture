@@ -530,7 +530,7 @@ function AppRoutes() {
               </ProtectedRoute>
             } />
             <Route path="/cashier/reports" element={
-              <ProtectedRoute allowedRoles={['cashier', 'super_admin', 'owner', 'partner']}>
+              <ProtectedRoute allowedRoles={['super_admin', 'owner', 'partner']}>
                 <AdminReports />
               </ProtectedRoute>
             } />

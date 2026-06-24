@@ -9,12 +9,14 @@ import Sidebar from './Sidebar';
 import AppModal from './AppModal';
 import AppointmentServicesPanel from './AppointmentServicesPanel';
 import AppointmentVisitNotesPanel from './AppointmentVisitNotesPanel';
+import AppointmentPriceBreakdown from './AppointmentPriceBreakdown';
 import {
   getAppointmentFinalPrice,
   getAppointmentServices,
 } from '@nail-couture/shared/utils/appointmentHelpers';
 import { loadVisitServiceSummary } from '@nail-couture/shared/utils/appointmentServiceHistory';
 import { fetchAppointmentVisitNotes } from '@nail-couture/shared/utils/appointmentVisitNotes';
+import { fetchVisitPayment } from '@nail-couture/shared/utils/customerStats';
 import VipFoundingListCard from './VipFoundingListCard.jsx';
 
 function prefetchAppointmentDetails(appointment) {
@@ -51,6 +53,8 @@ export default function SuperAdmin() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedAppointmentPayment, setSelectedAppointmentPayment] = useState(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     const phone = user?.phone;
@@ -172,6 +176,29 @@ export default function SuperAdmin() {
       setActiveTab('dashboard');
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!selectedAppointment?.id) {
+      setSelectedAppointmentPayment(null);
+      setPaymentLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setPaymentLoading(true);
+    fetchVisitPayment(selectedAppointment.id)
+      .then((payment) => {
+        if (!cancelled) setSelectedAppointmentPayment(payment);
+      })
+      .catch(() => {
+        if (!cancelled) setSelectedAppointmentPayment(null);
+      })
+      .finally(() => {
+        if (!cancelled) setPaymentLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [selectedAppointment?.id]);
 
   const panelCardStyle = {
     backgroundColor: themeConfig.backgroundSecondary,
@@ -347,10 +374,11 @@ export default function SuperAdmin() {
                         </div>
                       </div>
 
-                      <div className="rounded-3xl border border-gold/30 bg-gold/10 p-5 text-right mt-4">
-                        <div className="text-secondary text-xs uppercase tracking-[0.2em] mb-2">Total Final Price</div>
-                        <div className="text-3xl font-heading text-gold-strong">${getAppointmentFinalPrice(selectedAppointment).toFixed(2)}</div>
-                      </div>
+                      <AppointmentPriceBreakdown
+                        appointment={selectedAppointment}
+                        payment={selectedAppointmentPayment}
+                        loading={paymentLoading}
+                      />
                   </AppModal>
                 )}
 

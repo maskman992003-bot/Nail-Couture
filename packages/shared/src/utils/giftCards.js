@@ -29,6 +29,21 @@ export function canAccessGiftCardSales(role) {
   return GIFT_CARD_SALES_ACCESS_ROLES.includes(role);
 }
 
+export function canViewGiftCardCode(role) {
+  return role === 'super_admin';
+}
+
+export function stripGiftCardCodeFromSaleResult(result, role) {
+  if (!result?.gift_card || canViewGiftCardCode(role)) return result;
+  return {
+    ...result,
+    gift_card: {
+      ...result.gift_card,
+      code: null,
+    },
+  };
+}
+
 function rpcUnavailable(error, fnName) {
   return error?.message?.includes(fnName) || error?.code === '42883';
 }

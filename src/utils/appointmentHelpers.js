@@ -6,4 +6,5 @@ export {
   getAppointmentServices,
   getAppointmentServiceGroups,
   getAppointmentFinalPrice,
+  buildAppointmentPriceDisplay,
 } from '../../packages/shared/src/utils/appointmentHelpers.js';

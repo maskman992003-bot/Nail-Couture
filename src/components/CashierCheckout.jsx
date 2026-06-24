@@ -112,7 +112,7 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
           <h3 className="font-heading text-2xl text-gold">Settle Payment</h3>
           <button type="button" onClick={onClose} className={clsx(isDark ? 'text-offwhite/50 hover:text-offwhite' : 'text-charcoal/50 hover:text-charcoal', 'text-2xl')}>&times;</button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
           <div className={clsx('rounded-lg p-4 mb-6', isDark ? 'bg-offwhite/5' : 'bg-charcoal/5')}>
             <div className="flex justify-between items-center mb-2">
               <span className={mutedClass}>Customer</span>
@@ -221,8 +221,10 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
               </select>
             </div>
           </div>
+        </div>
 
-          <div className="bg-gold/10 border border-gold/30 rounded-lg p-4 mt-6">
+        <div className={clsx('shrink-0 border-t p-4 sm:p-6 space-y-4', isDark ? 'border-gold/10 bg-[#111]' : 'border-gold/20 bg-white')}>
+          <div className="bg-gold/10 border border-gold/30 rounded-lg p-4">
             <div className="flex justify-between items-center mb-2">
               <span className={mutedClass}>Services</span>
               <span className={textClass}>${serviceSubtotal.toFixed(2)}</span>
@@ -251,9 +253,9 @@ const CheckoutModal = ({ appointment, onConfirm, onClose, theme }) => {
             </div>
           </div>
 
-          {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+          {error && <p className="text-red-400 text-sm">{error}</p>}
 
-          <div className="flex gap-3 mt-6">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}

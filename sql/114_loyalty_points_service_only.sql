@@ -1,142 +1,28 @@
--- Migration 100: Digital Wallet — founding members, calendar-year tiers, vault milestones
--- Run once in Supabase SQL Editor after 099_role_session_settings.sql
+-- Loyalty points at checkout: earn on services/add-ons only (after discounts).
+-- Excludes tips. Cash and gift card both count toward the service total.
+-- Run after sql/104_rolling_loyalty_tiers.sql (or includes 104 compatibility patches below).
 
 -- ============================================================================
--- 1) Config tables
+-- 104 compatibility — rolling_spend_12m + RPCs that still referenced calendar_spend_ytd
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS loyalty_tiers (
-  id text PRIMARY KEY,
-  display_name text NOT NULL,
-  spend_threshold numeric NOT NULL DEFAULT 0,
-  earn_multiplier numeric NOT NULL DEFAULT 1.0,
-  booking_window_days integer NOT NULL DEFAULT 0,
-  sort_order integer NOT NULL DEFAULT 0,
-  tagline text,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-INSERT INTO loyalty_tiers (id, display_name, spend_threshold, earn_multiplier, booking_window_days, sort_order, tagline)
-VALUES
-  ('pearl', 'Pearl', 500, 1.0, 0, 1, 'Your introduction to the Nail Couture experience.'),
-  ('atelier', 'Atelier', 1500, 1.25, 14, 2, 'For clients who make self-care part of their lifestyle.'),
-  ('diamond_couture', 'Diamond Couture', 3000, 1.5, 30, 3, 'Reserved for our most valued clients.')
-ON CONFLICT (id) DO UPDATE SET
-  display_name = EXCLUDED.display_name,
-  spend_threshold = EXCLUDED.spend_threshold,
-  earn_multiplier = EXCLUDED.earn_multiplier,
-  booking_window_days = EXCLUDED.booking_window_days,
-  sort_order = EXCLUDED.sort_order,
-  tagline = EXCLUDED.tagline;
-
-CREATE TABLE IF NOT EXISTS loyalty_milestones (
-  points integer PRIMARY KEY,
-  reward_label text NOT NULL,
-  reward_value numeric NOT NULL,
-  sort_order integer NOT NULL DEFAULT 0
-);
-
-INSERT INTO loyalty_milestones (points, reward_label, reward_value, sort_order)
-VALUES
-  (100, '$5 reward', 5, 1),
-  (250, '$12 reward', 12, 2),
-  (500, '$25 reward', 25, 3),
-  (1000, '$60 reward', 60, 4)
-ON CONFLICT (points) DO UPDATE SET
-  reward_label = EXCLUDED.reward_label,
-  reward_value = EXCLUDED.reward_value,
-  sort_order = EXCLUDED.sort_order;
-
-CREATE TABLE IF NOT EXISTS loyalty_milestone_redemptions (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  milestone_points integer NOT NULL REFERENCES loyalty_milestones(points),
-  redemption_code text NOT NULL,
-  redeemed_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT loyalty_milestone_redemptions_unique UNIQUE (profile_id, milestone_points)
-);
-
-CREATE INDEX IF NOT EXISTS idx_loyalty_milestone_redemptions_profile
-  ON loyalty_milestone_redemptions (profile_id);
-
-CREATE TABLE IF NOT EXISTS founding_members (
-  profile_id uuid PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
-  spot_number integer NOT NULL UNIQUE CHECK (spot_number BETWEEN 1 AND 100),
-  founding_type text NOT NULL CHECK (founding_type IN ('vanguard', 'legacy')),
-  payment_transaction_id uuid NOT NULL REFERENCES payment_transactions(id),
-  appointment_id uuid NOT NULL REFERENCES appointments(id),
-  awarded_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_founding_members_spot ON founding_members (spot_number);
-
-ALTER TABLE loyalty_milestone_redemptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE founding_members ENABLE ROW LEVEL SECURITY;
-
--- ============================================================================
--- 2) Profile columns
--- ============================================================================
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'calendar_spend_ytd'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'rolling_spend_12m'
+  ) THEN
+    ALTER TABLE profiles RENAME COLUMN calendar_spend_ytd TO rolling_spend_12m;
+  END IF;
+END $$;
 
 ALTER TABLE profiles
-  ADD COLUMN IF NOT EXISTS founding_type text CHECK (founding_type IS NULL OR founding_type IN ('vanguard', 'legacy')),
-  ADD COLUMN IF NOT EXISTS founding_spot integer,
-  ADD COLUMN IF NOT EXISTS founding_awarded_at timestamptz,
-  ADD COLUMN IF NOT EXISTS calendar_spend_ytd numeric NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS loyalty_tier text NOT NULL DEFAULT 'pearl',
-  ADD COLUMN IF NOT EXISTS loyalty_tier_earned text NOT NULL DEFAULT 'pearl',
-  ADD COLUMN IF NOT EXISTS tier_unlocked_at timestamptz,
-  ADD COLUMN IF NOT EXISTS tier_grace_until date;
+  ADD COLUMN IF NOT EXISTS rolling_spend_12m numeric NOT NULL DEFAULT 0;
 
-COMMENT ON COLUMN profiles.calendar_spend_ytd IS 'Completed checkout spend in current calendar year';
-COMMENT ON COLUMN profiles.loyalty_tier IS 'Effective tier (includes grace/lock and vanguard override)';
-COMMENT ON COLUMN profiles.loyalty_tier_earned IS 'Tier from current calendar-year spend only';
-
--- ============================================================================
--- 3) Helpers
--- ============================================================================
-
-CREATE OR REPLACE FUNCTION loyalty_tier_rank(p_tier text)
-RETURNS integer
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE p_tier
-    WHEN 'diamond_couture' THEN 3
-    WHEN 'atelier' THEN 2
-    WHEN 'pearl' THEN 1
-    ELSE 0
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION loyalty_tier_from_spend(p_spend numeric)
-RETURNS text
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE
-    WHEN COALESCE(p_spend, 0) >= 3000 THEN 'diamond_couture'
-    WHEN COALESCE(p_spend, 0) >= 1500 THEN 'atelier'
-    ELSE 'pearl'
-  END;
-$$;
-
-CREATE OR REPLACE FUNCTION format_founding_badge(p_type text, p_spot integer)
-RETURNS text
-LANGUAGE sql
-IMMUTABLE
-AS $$
-  SELECT CASE p_type
-    WHEN 'vanguard' THEN lpad(p_spot::text, 2, '0') || '/25'
-    WHEN 'legacy' THEN (p_spot - 25)::text || '/75'
-    ELSE NULL
-  END;
-$$;
-
--- ============================================================================
--- 4) Spend + tier computation
--- ============================================================================
-
-CREATE OR REPLACE FUNCTION recalculate_calendar_spend(p_profile_id uuid)
+CREATE OR REPLACE FUNCTION recalculate_rolling_spend(p_profile_id uuid)
 RETURNS numeric
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -150,25 +36,14 @@ BEGIN
   FROM payment_transactions
   WHERE customer_id = p_profile_id
     AND status = 'completed'
-    AND created_at >= date_trunc('year', now());
+    AND created_at >= now() - interval '365 days';
 
   UPDATE profiles
-  SET calendar_spend_ytd = v_spend
+  SET rolling_spend_12m = v_spend
   WHERE id = p_profile_id;
 
   RETURN COALESCE(v_spend, 0);
 END;
-$$;
-
-CREATE OR REPLACE FUNCTION get_tier_earn_multiplier(p_tier text)
-RETURNS numeric
-LANGUAGE sql
-STABLE
-AS $$
-  SELECT COALESCE(
-    (SELECT earn_multiplier FROM loyalty_tiers WHERE id = p_tier),
-    1.0
-  );
 $$;
 
 CREATE OR REPLACE FUNCTION compute_loyalty_tier(p_profile_id uuid)
@@ -181,80 +56,52 @@ DECLARE
   v_profile RECORD;
   v_earned text;
   v_effective text;
-  v_now date := (now())::date;
-  v_grace_end date;
+  v_floor text;
 BEGIN
+  PERFORM recalculate_rolling_spend(p_profile_id);
+
   SELECT
     founding_type,
+    founding_spot,
     founding_awarded_at,
-    calendar_spend_ytd,
-    loyalty_tier,
-    tier_unlocked_at,
-    tier_grace_until
+    rolling_spend_12m,
+    loyalty_tier
   INTO v_profile
   FROM profiles
   WHERE id = p_profile_id
   FOR UPDATE;
 
   IF NOT FOUND THEN
-    RETURN 'pearl';
+    RETURN 'regular_customer';
   END IF;
 
-  v_earned := loyalty_tier_from_spend(v_profile.calendar_spend_ytd);
-  v_effective := COALESCE(v_profile.loyalty_tier, 'pearl');
+  v_earned := loyalty_tier_from_spend(v_profile.rolling_spend_12m);
+  v_effective := v_earned;
+  v_floor := NULL;
 
-  -- Vanguard Year 1 → at least Diamond Couture
-  IF v_profile.founding_type = 'vanguard'
+  IF v_profile.founding_spot IS NOT NULL
     AND v_profile.founding_awarded_at IS NOT NULL
-    AND v_profile.founding_awarded_at >= now() - interval '1 year'
+    AND v_profile.founding_awarded_at + interval '1 year' > now()
   THEN
-    IF loyalty_tier_rank('diamond_couture') > loyalty_tier_rank(v_effective) THEN
-      v_effective := 'diamond_couture';
-      UPDATE profiles SET
-        loyalty_tier = v_effective,
-        loyalty_tier_earned = v_earned,
-        tier_unlocked_at = COALESCE(tier_unlocked_at, now()),
-        tier_grace_until = make_date(extract(year FROM now())::int + 1, 12, 31)
-      WHERE id = p_profile_id;
-      RETURN v_effective;
-    END IF;
-  END IF;
+    v_floor := CASE v_profile.founding_type
+      WHEN 'vanguard' THEN 'diamond_couture'
+      WHEN 'legacy' THEN 'atelier'
+      ELSE NULL
+    END;
 
-  -- Upgrade immediately
-  IF loyalty_tier_rank(v_earned) > loyalty_tier_rank(v_effective) THEN
-    v_effective := v_earned;
-    UPDATE profiles SET
-      loyalty_tier = v_effective,
-      loyalty_tier_earned = v_earned,
-      tier_unlocked_at = now(),
-      tier_grace_until = make_date(extract(year FROM now())::int + 1, 12, 31)
-    WHERE id = p_profile_id;
-    RETURN v_effective;
-  END IF;
-
-  -- Grace period or 6-month floor
-  IF loyalty_tier_rank(v_earned) < loyalty_tier_rank(v_effective) THEN
-    IF (v_profile.tier_grace_until IS NOT NULL AND v_now <= v_profile.tier_grace_until)
-      OR (v_profile.tier_unlocked_at IS NOT NULL AND now() < v_profile.tier_unlocked_at + interval '6 months')
+    IF v_floor IS NOT NULL
+      AND loyalty_tier_rank(v_floor) > loyalty_tier_rank(v_earned)
     THEN
-      UPDATE profiles SET loyalty_tier_earned = v_earned WHERE id = p_profile_id;
-      RETURN v_effective;
+      v_effective := v_floor;
     END IF;
-
-    v_effective := v_earned;
   END IF;
 
   UPDATE profiles SET
     loyalty_tier = v_effective,
     loyalty_tier_earned = v_earned,
     tier_unlocked_at = CASE
-      WHEN v_effective IS DISTINCT FROM COALESCE(v_profile.loyalty_tier, 'pearl') THEN now()
+      WHEN v_effective IS DISTINCT FROM COALESCE(v_profile.loyalty_tier, 'regular_customer') THEN now()
       ELSE tier_unlocked_at
-    END,
-    tier_grace_until = CASE
-      WHEN loyalty_tier_rank(v_effective) > loyalty_tier_rank(COALESCE(v_profile.loyalty_tier, 'pearl'))
-        THEN make_date(extract(year FROM now())::int + 1, 12, 31)
-      ELSE tier_grace_until
     END
   WHERE id = p_profile_id;
 
@@ -262,98 +109,9 @@ BEGIN
 END;
 $$;
 
--- ============================================================================
--- 5) Founding member claim (non-blocking on cap)
--- ============================================================================
-
-CREATE OR REPLACE FUNCTION claim_founding_member_spot(
-  p_profile_id uuid,
-  p_payment_id uuid,
-  p_appointment_id uuid
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_existing RECORD;
-  v_count integer;
-  v_spot integer;
-  v_type text;
-  v_badge text;
-BEGIN
-  IF p_profile_id IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'reason', 'no_customer');
-  END IF;
-
-  SELECT spot_number, founding_type
-  INTO v_existing
-  FROM founding_members
-  WHERE profile_id = p_profile_id;
-
-  IF FOUND THEN
-    v_badge := format_founding_badge(v_existing.founding_type, v_existing.spot_number);
-    RETURN jsonb_build_object(
-      'success', true,
-      'already_member', true,
-      'spot', v_existing.spot_number,
-      'type', v_existing.founding_type,
-      'badge_label', v_badge
-    );
-  END IF;
-
-  PERFORM pg_advisory_xact_lock(424250);
-
-  SELECT count(*)::int INTO v_count FROM founding_members;
-
-  IF v_count >= 100 THEN
-    RETURN jsonb_build_object('success', false, 'reason', 'cap_reached');
-  END IF;
-
-  v_spot := v_count + 1;
-  v_type := CASE WHEN v_spot <= 25 THEN 'vanguard' ELSE 'legacy' END;
-  v_badge := format_founding_badge(v_type, v_spot);
-
-  INSERT INTO founding_members (
-    profile_id, spot_number, founding_type,
-    payment_transaction_id, appointment_id
-  ) VALUES (
-    p_profile_id, v_spot, v_type, p_payment_id, p_appointment_id
-  );
-
-  UPDATE profiles SET
-    founding_type = v_type,
-    founding_spot = v_spot,
-    founding_awarded_at = now()
-  WHERE id = p_profile_id;
-
-  IF v_type = 'vanguard' THEN
-    PERFORM compute_loyalty_tier(p_profile_id);
-    UPDATE profiles SET
-      loyalty_tier = 'diamond_couture',
-      tier_unlocked_at = COALESCE(tier_unlocked_at, now()),
-      tier_grace_until = make_date(extract(year FROM now())::int + 1, 12, 31)
-    WHERE id = p_profile_id;
-  END IF;
-
-  RETURN jsonb_build_object(
-    'success', true,
-    'spot', v_spot,
-    'type', v_type,
-    'badge_label', v_badge
-  );
-END;
-$$;
-
--- ============================================================================
--- 6) Wallet snapshot + milestone redemption
--- ============================================================================
-
 CREATE OR REPLACE FUNCTION get_wallet_snapshot(p_profile_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
-STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
@@ -364,17 +122,25 @@ DECLARE
   v_spend_to_next numeric;
   v_milestones jsonb;
   v_founding jsonb;
-  v_locked_until timestamptz;
+  v_fm_floor_active boolean := false;
+  v_fm_floor_until timestamptz;
+  v_points_expiring_soon integer := 0;
+  v_next_points_expiry timestamptz;
+  v_balance integer;
 BEGIN
+  PERFORM expire_loyalty_points(p_profile_id);
+  PERFORM recalculate_rolling_spend(p_profile_id);
+  PERFORM compute_loyalty_tier(p_profile_id);
+  v_balance := sync_loyalty_points_from_lots(p_profile_id);
+
   SELECT
     loyalty_points,
     loyalty_tier,
     loyalty_tier_earned,
-    calendar_spend_ytd,
-    tier_grace_until,
-    tier_unlocked_at,
+    rolling_spend_12m,
     founding_type,
-    founding_spot
+    founding_spot,
+    founding_awarded_at
   INTO v_profile
   FROM profiles
   WHERE id = p_profile_id;
@@ -385,13 +151,13 @@ BEGIN
 
   SELECT id, spend_threshold INTO v_next_tier, v_next_threshold
   FROM loyalty_tiers
-  WHERE spend_threshold > COALESCE(v_profile.calendar_spend_ytd, 0)
+  WHERE spend_threshold > COALESCE(v_profile.rolling_spend_12m, 0)
   ORDER BY spend_threshold ASC
   LIMIT 1;
 
   v_spend_to_next := CASE
     WHEN v_next_threshold IS NULL THEN 0
-    ELSE GREATEST(v_next_threshold - COALESCE(v_profile.calendar_spend_ytd, 0), 0)
+    ELSE GREATEST(v_next_threshold - COALESCE(v_profile.rolling_spend_12m, 0), 0)
   END;
 
   SELECT COALESCE(jsonb_agg(
@@ -400,7 +166,7 @@ BEGIN
       'reward_label', m.reward_label,
       'reward_value', m.reward_value,
       'unlocked', (
-        COALESCE(v_profile.loyalty_points, 0) >= m.points
+        COALESCE(v_balance, 0) >= m.points
         OR EXISTS (
           SELECT 1 FROM loyalty_milestone_redemptions r
           WHERE r.profile_id = p_profile_id AND r.milestone_points = m.points
@@ -435,143 +201,47 @@ BEGIN
     ELSE NULL
   END;
 
-  v_locked_until := CASE
-    WHEN v_profile.tier_unlocked_at IS NOT NULL
-      THEN v_profile.tier_unlocked_at + interval '6 months'
-    ELSE NULL
-  END;
+  IF v_profile.founding_spot IS NOT NULL AND v_profile.founding_awarded_at IS NOT NULL THEN
+    v_fm_floor_until := v_profile.founding_awarded_at + interval '1 year';
+    v_fm_floor_active := v_fm_floor_until > now();
+  END IF;
+
+  SELECT
+    COALESCE(SUM(points_remaining), 0)::int,
+    MIN(expires_at)
+  INTO v_points_expiring_soon, v_next_points_expiry
+  FROM loyalty_point_lots
+  WHERE profile_id = p_profile_id
+    AND points_remaining > 0
+    AND expires_at > now()
+    AND expires_at <= now() + interval '30 days';
 
   RETURN jsonb_build_object(
     'success', true,
-    'points', COALESCE(v_profile.loyalty_points, 0),
-    'tier', COALESCE(v_profile.loyalty_tier, 'pearl'),
-    'tier_earned', COALESCE(v_profile.loyalty_tier_earned, 'pearl'),
-    'calendar_spend_ytd', COALESCE(v_profile.calendar_spend_ytd, 0),
-    'tier_grace_until', v_profile.tier_grace_until,
-    'tier_locked_until', v_locked_until,
+    'points', COALESCE(v_balance, 0),
+    'tier', COALESCE(v_profile.loyalty_tier, 'regular_customer'),
+    'tier_earned', COALESCE(v_profile.loyalty_tier_earned, 'regular_customer'),
+    'rolling_spend_12m', COALESCE(v_profile.rolling_spend_12m, 0),
+    'calendar_spend_ytd', COALESCE(v_profile.rolling_spend_12m, 0),
     'next_tier', v_next_tier,
     'spend_to_next_tier', v_spend_to_next,
     'founding', v_founding,
+    'fm_floor_active', v_fm_floor_active,
+    'fm_floor_until', v_fm_floor_until,
+    'points_expiring_soon', COALESCE(v_points_expiring_soon, 0),
+    'next_points_expiry', v_next_points_expiry,
     'milestones', v_milestones,
-    'earn_rate', get_tier_earn_multiplier(COALESCE(v_profile.loyalty_tier, 'pearl'))
+    'earn_rate', get_tier_earn_multiplier(COALESCE(v_profile.loyalty_tier, 'regular_customer'))
   );
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION redeem_vault_milestone(
-  p_profile_id uuid,
-  p_milestone_points integer
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_balance integer;
-  v_new integer;
-  v_milestone RECORD;
-  v_existing text;
-  v_code text;
-BEGIN
-  SELECT * INTO v_milestone
-  FROM loyalty_milestones
-  WHERE points = p_milestone_points;
-
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object('success', false, 'error', 'invalid_milestone');
-  END IF;
-
-  SELECT redemption_code INTO v_existing
-  FROM loyalty_milestone_redemptions
-  WHERE profile_id = p_profile_id AND milestone_points = p_milestone_points;
-
-  IF v_existing IS NOT NULL THEN
-    RETURN jsonb_build_object(
-      'success', true,
-      'already_redeemed', true,
-      'redemption_code', v_existing,
-      'milestone_points', p_milestone_points
-    );
-  END IF;
-
-  SELECT loyalty_points INTO v_balance
-  FROM profiles
-  WHERE id = p_profile_id
-  FOR UPDATE;
-
-  IF v_balance IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'error', 'profile_not_found');
-  END IF;
-
-  IF v_balance < p_milestone_points THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'error', 'insufficient_points',
-      'balance', v_balance,
-      'required', p_milestone_points
-    );
-  END IF;
-
-  v_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12));
-
-  v_new := v_balance - p_milestone_points;
-  UPDATE profiles SET loyalty_points = v_new WHERE id = p_profile_id;
-
-  INSERT INTO loyalty_transactions (
-    profile_id, transaction_type, points, balance_after, description, redemption_code
-  ) VALUES (
-    p_profile_id,
-    'redeem',
-    -p_milestone_points,
-    v_new,
-    format('Vault %s claimed', v_milestone.reward_label),
-    v_code
-  );
-
-  INSERT INTO loyalty_milestone_redemptions (profile_id, milestone_points, redemption_code)
-  VALUES (p_profile_id, p_milestone_points, v_code);
-
-  RETURN jsonb_build_object(
-    'success', true,
-    'redemption_code', v_code,
-    'milestone_points', p_milestone_points,
-    'reward_label', v_milestone.reward_label,
-    'new_balance', v_new
-  );
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION backfill_wallet_state()
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_profile_id uuid;
-  v_count integer := 0;
-BEGIN
-  FOR v_profile_id IN SELECT id FROM profiles LOOP
-    PERFORM recalculate_calendar_spend(v_profile_id);
-    PERFORM compute_loyalty_tier(v_profile_id);
-    v_count := v_count + 1;
-  END LOOP;
-
-  RETURN jsonb_build_object('success', true, 'profiles_updated', v_count);
-END;
-$$;
-
-GRANT EXECUTE ON FUNCTION recalculate_calendar_spend(uuid) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION recalculate_rolling_spend(uuid) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION compute_loyalty_tier(uuid) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION get_tier_earn_multiplier(text) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION claim_founding_member_spot(uuid, uuid, uuid) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION get_wallet_snapshot(uuid) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION redeem_vault_milestone(uuid, integer) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION backfill_wallet_state() TO anon, authenticated;
 
 -- ============================================================================
--- 7) process_checkout — tier multiplier, founding claim, wallet in response
+-- process_checkout — service-only loyalty points
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION process_checkout(
@@ -588,7 +258,8 @@ CREATE OR REPLACE FUNCTION process_checkout(
   p_extras_amount numeric DEFAULT 0,
   p_tip_allocations jsonb DEFAULT NULL,
   p_gift_card_id uuid DEFAULT NULL,
-  p_gift_card_amount numeric DEFAULT NULL
+  p_gift_card_amount numeric DEFAULT NULL,
+  p_vault_redemption_code text DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -610,6 +281,7 @@ DECLARE
   v_discount_type text;
   v_payment_method text;
   v_points_earned integer;
+  v_points_base numeric;
   v_inventory_id uuid;
   v_refreshment text;
   v_loyalty_redeem integer;
@@ -626,6 +298,10 @@ DECLARE
   v_wallet_snapshot jsonb;
   v_tier text;
   v_multiplier numeric;
+  v_skip_loyalty_deduct boolean := false;
+  v_vault_redemption_id uuid;
+  v_vault_code text;
+  v_vault_discount numeric;
 BEGIN
   SELECT id, role INTO caller_id, caller_role FROM profiles WHERE phone = caller_phone;
   IF caller_role IS NULL OR caller_role NOT IN ('cashier', 'super_admin', 'owner', 'partner') THEN
@@ -649,16 +325,70 @@ BEGIN
   v_extras := COALESCE(p_extras_amount, 0);
   v_amount := COALESCE(p_amount, appt.final_price, 0);
   v_discount := LEAST(COALESCE(p_discount_amount, 0), v_amount);
+  v_loyalty_redeem := 0;
+  v_loyalty_name := NULL;
+  v_vault_code := NULL;
 
-  IF appt.loyalty_points_cost IS NOT NULL AND appt.loyalty_points_cost > 0 THEN
+  IF p_vault_redemption_code IS NOT NULL AND trim(p_vault_redemption_code) != '' AND appt.customer_id IS NOT NULL THEN
+    SELECT
+      r.id,
+      r.milestone_points,
+      r.redemption_code,
+      m.reward_label,
+      m.reward_value
+    INTO
+      v_vault_redemption_id,
+      v_loyalty_redeem,
+      v_vault_code,
+      v_loyalty_name,
+      v_vault_discount
+    FROM loyalty_milestone_redemptions r
+    JOIN loyalty_milestones m ON m.points = r.milestone_points
+    WHERE r.profile_id = appt.customer_id
+      AND r.redemption_code = upper(trim(p_vault_redemption_code))
+      AND r.used_at IS NULL;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Invalid or already used vault redemption code.';
+    END IF;
+
+    IF v_discount = 0 THEN
+      v_discount := LEAST(v_vault_discount, v_amount);
+    END IF;
+    v_skip_loyalty_deduct := true;
+  ELSIF appt.loyalty_points_cost IS NOT NULL AND appt.loyalty_points_cost > 0 THEN
     v_loyalty_redeem := appt.loyalty_points_cost;
     v_loyalty_name := appt.loyalty_reward_name;
     IF v_discount = 0 AND COALESCE(appt.loyalty_discount_amount, 0) > 0 THEN
       v_discount := LEAST(appt.loyalty_discount_amount, v_amount);
     END IF;
+
+    IF appt.loyalty_redemption_code IS NOT NULL AND appt.customer_id IS NOT NULL THEN
+      SELECT r.id INTO v_vault_redemption_id
+      FROM loyalty_milestone_redemptions r
+      WHERE r.profile_id = appt.customer_id
+        AND r.redemption_code = appt.loyalty_redemption_code
+        AND r.used_at IS NULL;
+      IF FOUND THEN
+        v_skip_loyalty_deduct := true;
+      END IF;
+    END IF;
   ELSE
     v_loyalty_redeem := COALESCE(p_loyalty_points_redeem, 0);
     v_loyalty_name := p_loyalty_reward_name;
+
+    IF v_loyalty_redeem > 0 AND appt.customer_id IS NOT NULL THEN
+      SELECT r.id INTO v_vault_redemption_id
+      FROM loyalty_milestone_redemptions r
+      WHERE r.profile_id = appt.customer_id
+        AND r.milestone_points = v_loyalty_redeem
+        AND r.used_at IS NULL
+      ORDER BY r.redeemed_at ASC
+      LIMIT 1;
+      IF FOUND THEN
+        v_skip_loyalty_deduct := true;
+      END IF;
+    END IF;
   END IF;
 
   v_service_due := GREATEST(v_amount - v_discount, 0);
@@ -718,7 +448,7 @@ BEGIN
     v_receipt_method := v_payment_method;
   END IF;
 
-  IF v_loyalty_redeem > 0 AND appt.customer_id IS NOT NULL THEN
+  IF v_loyalty_redeem > 0 AND appt.customer_id IS NOT NULL AND NOT v_skip_loyalty_deduct THEN
     PERFORM redeem_loyalty_reward(
       appt.customer_id,
       v_loyalty_redeem,
@@ -738,6 +468,12 @@ BEGIN
     CASE WHEN v_gc_apply > 0 THEN v_gc_apply ELSE 0 END
   )
   RETURNING id INTO payment_id;
+
+  IF v_vault_redemption_id IS NOT NULL THEN
+    UPDATE loyalty_milestone_redemptions
+    SET used_at = now(), payment_transaction_id = payment_id
+    WHERE id = v_vault_redemption_id;
+  END IF;
 
   IF v_gc_apply > 0 THEN
     v_new_balance := round((v_card.balance - v_gc_apply)::numeric, 2);
@@ -794,15 +530,14 @@ BEGIN
     loyalty_redemption_code = NULL
   WHERE id = appointment_id;
 
-  -- Digital Wallet: spend, tier, founding (non-blocking)
   v_founding_result := NULL;
   IF appt.customer_id IS NOT NULL THEN
-    PERFORM recalculate_calendar_spend(appt.customer_id);
+    PERFORM recalculate_rolling_spend(appt.customer_id);
     PERFORM compute_loyalty_tier(appt.customer_id);
     v_founding_result := claim_founding_member_spot(appt.customer_id, payment_id, appointment_id);
 
     SELECT loyalty_tier INTO v_tier FROM profiles WHERE id = appt.customer_id;
-    v_multiplier := get_tier_earn_multiplier(COALESCE(v_tier, 'pearl'));
+    v_multiplier := get_tier_earn_multiplier(COALESCE(v_tier, 'regular_customer'));
     v_wallet_snapshot := get_wallet_snapshot(appt.customer_id);
   END IF;
 
@@ -826,15 +561,19 @@ BEGIN
     END IF;
   END IF;
 
-  IF appt.customer_id IS NOT NULL AND v_cash_due > 0 THEN
-    v_points_earned := FLOOR(v_cash_due * COALESCE(v_multiplier, 1.0))::integer;
+  -- Points: service/add-on total after discounts (not tips). Gift card and cash both count.
+  v_points_base := GREATEST(v_service_due, 0);
+
+  IF appt.customer_id IS NOT NULL AND v_points_base > 0 THEN
+    v_points_earned := FLOOR(v_points_base * COALESCE(v_multiplier, 1.0))::integer;
     IF v_points_earned > 0 THEN
       PERFORM award_loyalty_points(
         appt.customer_id,
         v_points_earned,
-        format('Points earned from visit checkout (%s tier)', COALESCE(v_tier, 'pearl')),
+        format('Points earned from visit checkout (%s tier)', COALESCE(v_tier, 'regular_customer')),
         'earn',
-        appointment_id
+        appointment_id,
+        v_tier
       );
       v_wallet_snapshot := get_wallet_snapshot(appt.customer_id);
     END IF;
@@ -922,20 +661,17 @@ BEGIN
     'gift_card_amount', v_gc_apply,
     'cash_amount', v_cash_due,
     'points_earned', COALESCE(v_points_earned, 0),
+    'points_base', COALESCE(v_points_base, 0),
     'tier', v_tier,
     'founding_result', COALESCE(v_founding_result, jsonb_build_object('success', false, 'reason', 'no_customer')),
-    'wallet_snapshot', v_wallet_snapshot
+    'wallet_snapshot', v_wallet_snapshot,
+    'vault_code_applied', v_vault_code
   ) INTO result;
 
   RETURN result;
 END;
 $$;
 
--- Enable Realtime on profiles for founding reveal (ignore error if already added)
-DO $$
-BEGIN
-  ALTER PUBLICATION supabase_realtime ADD TABLE profiles;
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-  WHEN undefined_object THEN NULL;
-END $$;
+GRANT EXECUTE ON FUNCTION process_checkout(
+  text, uuid, numeric, numeric, text, numeric, text, text, integer, text, numeric, jsonb, uuid, numeric, text
+) TO anon, authenticated;

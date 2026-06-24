@@ -21,6 +21,8 @@ import {
   canCompleteGiftCardSale,
   canRequestGiftCardSale,
   canAccessGiftCardSales,
+  canViewGiftCardCode,
+  stripGiftCardCodeFromSaleResult,
 } from '@nail-couture/shared/utils/giftCards.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
@@ -32,6 +34,7 @@ export function GiftCardSaleScreen() {
   const styles = useThemeStyles();
   const canComplete = canCompleteGiftCardSale(user?.role);
   const canRequest = canRequestGiftCardSale(user?.role);
+  const canViewCode = canViewGiftCardCode(user?.role);
 
   const [buyerPhone, setBuyerPhone] = useState('');
   const [buyerName, setBuyerName] = useState('');
@@ -178,7 +181,7 @@ export function GiftCardSaleScreen() {
         setError(String(response.error || 'Purchase failed'));
         return;
       }
-      setResult(response as Record<string, unknown>);
+      setResult(stripGiftCardCodeFromSaleResult(response, user.role) as Record<string, unknown>);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Purchase failed');
     } finally {
@@ -203,7 +206,7 @@ export function GiftCardSaleScreen() {
         setError(String(response.error || 'Purchase failed'));
         return;
       }
-      setResult(response as Record<string, unknown>);
+      setResult(stripGiftCardCodeFromSaleResult(response, user.role) as Record<string, unknown>);
       await loadQueue();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Purchase failed');
@@ -217,28 +220,41 @@ export function GiftCardSaleScreen() {
 
   if (result && giftCard) {
     return (
-      <StaffScreenLayout title="Gift Card Created" subtitle="Share the code with the customer">
+      <StaffScreenLayout
+        title="Gift Card Created"
+        subtitle={canViewCode ? 'Share the code with the customer' : 'The code was sent to the customer in the app'}
+      >
         <View style={[styles.card, { padding: 16, gap: 12 }]}>
-          <Text style={styles.textSecondary}>Code</Text>
-          <Text style={[styles.textGold, { fontSize: 24, fontFamily: 'monospace' }]}>
-            {formatGiftCardCode(String(giftCard.code || ''))}
-          </Text>
+          {!canViewCode ? (
+            <Text style={styles.textSecondary}>
+              Sale completed. Cashiers cannot view gift card codes — the customer will find theirs in the app.
+            </Text>
+          ) : (
+            <>
+              <Text style={styles.textSecondary}>Code</Text>
+              <Text style={[styles.textGold, { fontSize: 24, fontFamily: 'monospace' }]}>
+                {formatGiftCardCode(String(giftCard.code || ''))}
+              </Text>
+            </>
+          )}
           <Text style={styles.textPrimary}>
             ${Number(giftCard.initial_amount || 0).toFixed(2)} — {String(result.owner_name || '')}
           </Text>
           {getGiftCardExpiryLabel(giftCard) ? (
             <Text style={styles.textSecondary}>{getGiftCardExpiryLabel(giftCard)}</Text>
           ) : null}
-          <Pressable
-            onPress={async () => {
-              await Clipboard.setStringAsync(String(giftCard.code || ''));
-              setCopied(true);
-              setTimeout(() => setCopied(false), 2000);
-            }}
-            style={[styles.card, { padding: 12, alignItems: 'center' }]}
-          >
-            <Text style={styles.textGold}>{copied ? 'Copied!' : 'Copy Code'}</Text>
-          </Pressable>
+          {canViewCode ? (
+            <Pressable
+              onPress={async () => {
+                await Clipboard.setStringAsync(String(giftCard.code || ''));
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              style={[styles.card, { padding: 12, alignItems: 'center' }]}
+            >
+              <Text style={styles.textGold}>{copied ? 'Copied!' : 'Copy Code'}</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={() => {
               setResult(null);

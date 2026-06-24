@@ -599,7 +599,7 @@ const RegistrationModal = ({ phone, onClose, onCompleteWaiverTrigger }) => {
             </button>
             <button
               type="submit"
-              disabled={loading || !fullName || !email || !nailGoal || selectedServices.length === 0}
+              disabled={loading || !fullName || !email || !nailGoal || !birthdayMonth || !birthdayDay || selectedServices.length === 0}
               className="min-w-[140px] px-5 py-3 rounded-full bg-gold text-charcoal text-sm font-heading uppercase tracking-[0.24em] hover:bg-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'CREATING...' : 'JOIN CLUB'}

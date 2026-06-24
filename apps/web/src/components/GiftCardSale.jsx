@@ -21,6 +21,8 @@ import {
   canCompleteGiftCardSale,
   canRequestGiftCardSale,
   canAccessGiftCardSales,
+  canViewGiftCardCode,
+  stripGiftCardCodeFromSaleResult,
 } from '@nail-couture/shared/utils/giftCards';
 import { copyTextToClipboard, downloadTextFile } from '@nail-couture/shared/utils/customerStats';
 import Sidebar from './Sidebar';
@@ -36,6 +38,7 @@ export default function GiftCardSale() {
 
   const canComplete = canCompleteGiftCardSale(user?.role);
   const canRequest = canRequestGiftCardSale(user?.role);
+  const canViewCode = canViewGiftCardCode(user?.role);
 
   const [buyerPhone, setBuyerPhone] = useState('');
   const [buyerName, setBuyerName] = useState('');
@@ -262,7 +265,7 @@ export default function GiftCardSale() {
         setError(response.error || 'Purchase failed');
         return;
       }
-      setResult(response);
+      setResult(stripGiftCardCodeFromSaleResult(response, user.role));
       setActiveRequestId(null);
       await loadQueue();
     } catch (err) {
@@ -290,7 +293,7 @@ export default function GiftCardSale() {
         setError(response.error || 'Purchase failed');
         return;
       }
-      setResult(response);
+      setResult(stripGiftCardCodeFromSaleResult(response, user.role));
       await loadQueue();
     } catch (err) {
       setError(err.message || 'Purchase failed');
@@ -401,20 +404,31 @@ export default function GiftCardSale() {
         {result ? (
           <div className={cardClass}>
             <h2 className="font-heading text-2xl text-gold mb-4">Gift Card Created</h2>
+            {canViewCode ? (
+              <p className={clsx('text-sm mb-4', isDark ? 'text-offwhite/60' : 'text-charcoal/60')}>
+                Share the code with the customer or they can find it in the app.
+              </p>
+            ) : (
+              <p className={clsx('text-sm mb-4', isDark ? 'text-offwhite/60' : 'text-charcoal/60')}>
+                Sale completed. The gift card code was sent to the customer in the app — cashiers cannot view gift card codes.
+              </p>
+            )}
             <div className="space-y-3 mb-6">
-              <div className="flex justify-between items-center gap-3">
-                <span className={isDark ? 'text-offwhite/60' : 'text-charcoal/60'}>Code</span>
-                <button
-                  type="button"
-                  onClick={() => setCodeRevealed((v) => !v)}
-                  className="font-mono text-gold text-lg hover:underline"
-                  title={codeRevealed ? 'Hide code' : 'Show full code'}
-                >
-                  {codeRevealed
-                    ? formatGiftCardCode(result.gift_card?.code)
-                    : maskGiftCardCode(result.gift_card?.code)}
-                </button>
-              </div>
+              {canViewCode && (
+                <div className="flex justify-between items-center gap-3">
+                  <span className={isDark ? 'text-offwhite/60' : 'text-charcoal/60'}>Code</span>
+                  <button
+                    type="button"
+                    onClick={() => setCodeRevealed((v) => !v)}
+                    className="font-mono text-gold text-lg hover:underline"
+                    title={codeRevealed ? 'Hide code' : 'Show full code'}
+                  >
+                    {codeRevealed
+                      ? formatGiftCardCode(result.gift_card?.code)
+                      : maskGiftCardCode(result.gift_card?.code)}
+                  </button>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className={isDark ? 'text-offwhite/60' : 'text-charcoal/60'}>Amount</span>
                 <span>${Number(result.gift_card?.initial_amount || 0).toFixed(2)}</span>
@@ -431,9 +445,11 @@ export default function GiftCardSale() {
               )}
             </div>
             <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={handleCopyCode} className="px-4 py-2 bg-gold text-charcoal rounded-lg font-heading">
-                {copied ? 'Copied!' : 'Copy Code'}
-              </button>
+              {canViewCode && (
+                <button type="button" onClick={handleCopyCode} className="px-4 py-2 bg-gold text-charcoal rounded-lg font-heading">
+                  {copied ? 'Copied!' : 'Copy Code'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => downloadTextFile(receiptText, `gift-card-receipt-${result.gift_card?.id || 'download'}.txt`)}

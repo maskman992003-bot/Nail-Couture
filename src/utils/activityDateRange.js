@@ -6,6 +6,8 @@ export function getDateRangeForPreset(preset, customStart = '', customEnd = '') 
   startOfToday.setHours(0, 0, 0, 0);
 
   switch (preset) {
+    case 'all':
+      return { fromDate: null, toDate: null };
     case 'today':
       return { fromDate: startOfToday.toISOString(), toDate: end.toISOString() };
     case '7_days': {
