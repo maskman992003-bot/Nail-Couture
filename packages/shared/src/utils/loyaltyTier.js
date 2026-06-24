@@ -163,3 +163,11 @@ export function isBirthdayMonth(birthday) {
   const now = new Date();
   return month === String(now.getMonth() + 1).padStart(2, '0');
 }
+
+export function getTierBenefitsList(tierInfo) {
+  if (!tierInfo) return [];
+  if ('benefits' in tierInfo && Array.isArray(tierInfo.benefits) && tierInfo.benefits.length > 0) {
+    return tierInfo.benefits;
+  }
+  return tierInfo.benefit ? [tierInfo.benefit] : [];
+}

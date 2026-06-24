@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { redeemVaultMilestone } from '@nail-couture/shared/utils/loyaltyWallet.js';
-import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier';
+import { getTierInfo, getTierBenefitsList } from '@nail-couture/shared/utils/loyaltyTier';
 import { getActiveVaultCodes, resolveMilestonePress } from '@nail-couture/shared/utils/vaultMilestones.js';
 import {
   formatFmFloorUntil,
@@ -62,10 +62,7 @@ export default function DigitalWallet() {
   const tierInfo = getTierInfo(walletProfile);
   const progress = getTierProgressSummary(tierInfo, walletProfile, snapshot);
 
-  const tierBenefits =
-    'benefits' in tierInfo && Array.isArray(tierInfo.benefits)
-      ? tierInfo.benefits
-      : [tierInfo.benefit].filter(Boolean);
+  const tierBenefits = getTierBenefitsList(tierInfo);
 
   const handleMilestonePress = async (milestonePoints) => {
     if (!user?.id || redeeming) return;
@@ -171,7 +168,7 @@ export default function DigitalWallet() {
             <LoyaltyTermsSummary variant="wallet" />
           </div>
           <div
-            className="hidden lg:block rounded-2xl p-6 border mt-0 min-w-0"
+            className="rounded-2xl p-6 border mt-0 min-w-0"
             style={{ borderColor: 'rgba(197,160,89,0.25)', backgroundColor: theme === 'dark' ? '#111' : '#fff' }}
           >
             <p className={`text-[10px] uppercase tracking-widest mb-4 ${muted}`}>Tier Benefits</p>

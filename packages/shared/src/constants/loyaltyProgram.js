@@ -45,6 +45,7 @@ export const TIER_CONFIG = {
     tagline: 'For clients who make self-care part of their lifestyle.',
     benefits: [
       'Everything in Pearl',
+      'Birthday gift ($15 reward)',
       'Priority waitlist placement',
       'Complimentary nail repair (1 per visit)',
       'Quarterly surprise gift',
@@ -66,7 +67,7 @@ export const TIER_CONFIG = {
       'Concierge priority booking',
       'First access to holiday appointments',
       'Complimentary upgrade 4× per year',
-      'VIP birthday experience',
+      'VIP birthday experience ($25 Vault bonus + in-salon perk)',
       'Private product previews',
       'Dedicated support',
       'Book 30 days before public release',
@@ -144,4 +145,26 @@ export function getFoundingFloorTier(foundingType) {
   if (foundingType === 'vanguard') return LOYALTY_TIER_IDS.DIAMOND;
   if (foundingType === 'legacy') return LOYALTY_TIER_IDS.ATELIER;
   return null;
+}
+
+/** 100 pts = $5 Vault value */
+export function getBirthdayVaultRewardLabel(tierId) {
+  const pts = BIRTHDAY_BONUS_POINTS[tierId] ?? 0;
+  if (pts <= 0) return null;
+  return `$${pts / 20} Vault bonus`;
+}
+
+export const BIRTHDAY_PERK_NOTE_PREFIX = 'Birthday perk applied: ';
+
+export function getStaffBirthdayMonthGuidance(tierId) {
+  const vaultLabel = getBirthdayVaultRewardLabel(tierId);
+  if (tierId === LOYALTY_TIER_IDS.DIAMOND) {
+    return vaultLabel
+      ? `${vaultLabel} is sent automatically on their birthday. Offer VIP in-salon perk (e.g. complimentary upgrade) and log it in Notes.`
+      : 'Offer VIP birthday in-salon perk and log it in Notes.';
+  }
+  if (vaultLabel) {
+    return `${vaultLabel} is sent automatically on their birthday. Offer any in-salon birthday perk per policy and log it in Notes.`;
+  }
+  return 'Birthday month — offer eligible birthday promotions per policy and log any perk in Notes.';
 }

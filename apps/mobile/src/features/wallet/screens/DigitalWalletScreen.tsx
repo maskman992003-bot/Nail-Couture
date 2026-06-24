@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { redeemVaultMilestone } from '@nail-couture/shared/utils/loyaltyWallet.js';
-import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
+import { getTierInfo, getTierBenefitsList } from '@nail-couture/shared/utils/loyaltyTier.js';
 import { getActiveVaultCodes, resolveMilestonePress } from '@nail-couture/shared/utils/vaultMilestones.js';
 import {
   formatFmFloorUntil,
@@ -12,7 +12,6 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../../components/customer/CustomerScreenLayout';
 import { TierProgressBanner } from '../../../components/customer/home/TierProgressBanner';
 import { useThemeStyles } from '../../../theme/useThemeStyles';
-import { useLayout } from '../../../theme/useLayout';
 import { useWalletState } from '../hooks/useWalletState';
 import { useFoundingMemberRealtime } from '../hooks/useFoundingMemberRealtime';
 import { WalletCardDeck } from '../components/cards/WalletCardDeck';
@@ -26,7 +25,6 @@ import LoyaltyTermsSummary from '../components/LoyaltyTermsSummary';
 export function DigitalWalletScreen() {
   const { user } = useAuth();
   const styles = useThemeStyles();
-  const layout = useLayout({ withBottomTabBar: true });
   const { snapshot, loading, isStale, refresh } = useWalletState(user?.id);
   const { revealPayload, dismissReveal } = useFoundingMemberRealtime(user?.id);
   const [unboxingCode, setUnboxingCode] = useState<string | null>(null);
@@ -68,10 +66,7 @@ export function DigitalWalletScreen() {
   const tierInfo = getTierInfo(walletProfile);
   const progress = getTierProgressSummary(tierInfo, walletProfile, snapshot);
 
-  const tierBenefits =
-    'benefits' in tierInfo && Array.isArray(tierInfo.benefits)
-      ? tierInfo.benefits
-      : [tierInfo.benefit].filter(Boolean);
+  const tierBenefits = getTierBenefitsList(tierInfo);
 
   const handleMilestonePress = async (milestonePoints: number) => {
     if (!user?.id || redeeming) return;
@@ -179,14 +174,12 @@ export function DigitalWalletScreen() {
 
           <LoyaltyTermsSummary variant="wallet" />
 
-          {layout.isMdUp ? (
-            <View style={[styles.card, { padding: 16, gap: 8 }]}>
-              <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2 }]}>TIER BENEFITS</Text>
-              {tierBenefits.map((b: string) => (
-                <Text key={b} style={styles.textSecondary}>· {b}</Text>
-              ))}
-            </View>
-          ) : null}
+          <View style={[styles.card, { padding: 16, gap: 8 }]}>
+            <Text style={[styles.textSecondary, { fontSize: 10, letterSpacing: 2 }]}>TIER BENEFITS</Text>
+            {tierBenefits.map((b: string) => (
+              <Text key={b} style={styles.textSecondary}>· {b}</Text>
+            ))}
+          </View>
         </View>
       )}
 

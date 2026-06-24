@@ -20,9 +20,14 @@ import {
   computeServingDurationMinutes,
 } from '@nail-couture/shared/utils/customerStats.js';
 import { parseVisitFinalServices } from '@nail-couture/shared/utils/appointmentServiceHistory.js';
-import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier.js';
+import { getTierInfo, isBirthdayMonth, getTierBenefitsList } from '@nail-couture/shared/utils/loyaltyTier.js';
 import { formatTierSpend } from '@nail-couture/shared/utils/tierProgress.js';
-import { formatFoundingBadge, getTierConfig } from '@nail-couture/shared/constants/loyaltyProgram.js';
+import {
+  formatFoundingBadge,
+  getTierConfig,
+  BIRTHDAY_PERK_NOTE_PREFIX,
+  getStaffBirthdayMonthGuidance,
+} from '@nail-couture/shared/constants/loyaltyProgram.js';
 import {
   parseProfilePreferences,
   labelForOption,
@@ -485,6 +490,11 @@ export function StaffCustomerDetailScreen() {
     setTimeout(() => setSaveMsg(''), 2500);
   };
 
+  const handleLogBirthdayPerk = () => {
+    setActiveTab('notes');
+    setNewNote((prev) => (prev.trim() ? prev : BIRTHDAY_PERK_NOTE_PREFIX));
+  };
+
   const handleAddNote = async () => {
     if (!canAddNotes || !newNote.trim()) return;
     setNoteSaving(true);
@@ -622,6 +632,9 @@ export function StaffCustomerDetailScreen() {
 
   const tier = getTierInfo(profile);
   const foundingBadge = formatFoundingBadge(profile.founding_type, profile.founding_spot);
+  const birthdayMonthActive = isBirthdayMonth(profile.birthday);
+  const birthdayGuidance = birthdayMonthActive ? getStaffBirthdayMonthGuidance(tier.id) : null;
+  const tierBenefits = getTierBenefitsList(tier);
   const tierColor = TIER_COLORS[tier.name] || styles.tokens.goldStrong;
   const prefs = parseProfilePreferences(profile.preferences);
   const initials = profile.full_name?.charAt(0)?.toUpperCase() || '?';
@@ -771,6 +784,31 @@ export function StaffCustomerDetailScreen() {
           </View>
         ) : null}
       </View>
+
+      {birthdayMonthActive ? (
+        <View
+          style={{
+            marginBottom: 12,
+            padding: 14,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: `${styles.tokens.goldStrong}55`,
+            backgroundColor: `${styles.tokens.goldStrong}18`,
+            gap: 10,
+          }}
+        >
+          <Text style={[styles.textGold, { fontWeight: '600' }]}>Birthday month</Text>
+          <Text style={styles.textSecondary}>{birthdayGuidance}</Text>
+          {canAddNotes && notesAvailable ? (
+            <Pressable
+              onPress={handleLogBirthdayPerk}
+              style={[styles.buttonPrimary, { borderRadius: 10, alignSelf: 'flex-start' }]}
+            >
+              <Text style={styles.buttonPrimaryText}>Log birthday perk</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
         <View style={{ flexDirection: 'row', gap: 4 }}>
@@ -1103,9 +1141,13 @@ export function StaffCustomerDetailScreen() {
               </Text>
               <View>
                 <Text style={{ color: tierColor, fontWeight: '600' }}>{tier.name} tier</Text>
-                <Text style={styles.textSecondary}>{tier.benefit}</Text>
               </View>
             </View>
+            {tierBenefits.map((benefit) => (
+              <Text key={benefit} style={[styles.textSecondary, { marginBottom: 4 }]}>
+                · {benefit}
+              </Text>
+            ))}
             {canAdjust ? (
               <View
                 style={{

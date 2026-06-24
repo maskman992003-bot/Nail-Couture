@@ -10,7 +10,7 @@ import {
   fetchReferralInfo,
   fetchCustomerVisitPhotos,
 } from '@nail-couture/shared/utils/customerStats';
-import { getTierInfo, generateReferralCode, isBirthdayMonth } from '@nail-couture/shared/utils/loyaltyTier';
+import { getTierInfo, generateReferralCode, isBirthdayMonth, getTierBenefitsList } from '@nail-couture/shared/utils/loyaltyTier';
 import { getNextTierUpsellBenefit, getTierProgressSummary } from '@nail-couture/shared/utils/tierProgress.js';
 import {
   parseProfilePreferences,
@@ -596,7 +596,16 @@ export default function CustomerProfile() {
                   </p>
                 </div>
               )}
-              <p className={`text-center text-sm ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>{tier.benefit}</p>
+              <div className="mt-4 pt-4 border-t border-gold/10">
+                <p className={`text-[10px] uppercase tracking-widest mb-3 text-center ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>
+                  Tier benefits
+                </p>
+                <ul className={`space-y-1.5 text-sm max-w-sm mx-auto ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>
+                  {getTierBenefitsList(tier).map((benefit) => (
+                    <li key={benefit} className="text-center">· {benefit}</li>
+                  ))}
+                </ul>
+              </div>
               {tier.nextTier && (
                 <p className={`text-center text-xs mt-3 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>
                   {getNextTierUpsellBenefit(tier)}

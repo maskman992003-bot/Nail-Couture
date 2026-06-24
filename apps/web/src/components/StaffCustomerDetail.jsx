@@ -15,9 +15,9 @@ import {
 import {
   parseVisitFinalServices,
 } from '@nail-couture/shared/utils/appointmentServiceHistory';
-import { getTierInfo } from '@nail-couture/shared/utils/loyaltyTier';
+import { getTierInfo, isBirthdayMonth, getTierBenefitsList } from '@nail-couture/shared/utils/loyaltyTier';
 import { formatTierSpend } from '@nail-couture/shared/utils/tierProgress.js';
-import { formatFoundingBadge, getTierConfig } from '@nail-couture/shared/constants/loyaltyProgram.js';
+import { formatFoundingBadge, getTierConfig, BIRTHDAY_PERK_NOTE_PREFIX, getStaffBirthdayMonthGuidance } from '@nail-couture/shared/constants/loyaltyProgram.js';
 import {
   parseProfilePreferences,
   labelForOption,
@@ -431,6 +431,11 @@ export default function StaffCustomerDetail() {
     setTimeout(() => setSaveMsg(''), 2500);
   };
 
+  const handleLogBirthdayPerk = () => {
+    setActiveTab('notes');
+    setNewNote((prev) => (prev.trim() ? prev : BIRTHDAY_PERK_NOTE_PREFIX));
+  };
+
   const handleAddNote = async () => {
     if (!canAddStaffNotes(user?.role) || !newNote.trim()) return;
     setNoteSaving(true);
@@ -569,6 +574,9 @@ export default function StaffCustomerDetail() {
 
   const tier = getTierInfo(profile);
   const foundingBadge = formatFoundingBadge(profile.founding_type, profile.founding_spot);
+  const birthdayMonthActive = isBirthdayMonth(profile.birthday);
+  const birthdayGuidance = birthdayMonthActive ? getStaffBirthdayMonthGuidance(tier.id) : null;
+  const tierBenefits = getTierBenefitsList(tier);
   const prefs = parseProfilePreferences(profile.preferences);
   const initials = profile.full_name?.charAt(0)?.toUpperCase() || '?';
   const readOnlyBadge = !canEdit;
@@ -651,6 +659,24 @@ export default function StaffCustomerDetail() {
             )}
           </div>
         </div>
+
+        {birthdayMonthActive && (
+          <div className="rounded-xl border border-gold/30 bg-gold/10 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="font-heading text-gold text-sm tracking-wide">Birthday month</p>
+              <p className="text-secondary text-sm mt-1">{birthdayGuidance}</p>
+            </div>
+            {canAddStaffNotes(user?.role) && notesAvailable && (
+              <button
+                type="button"
+                onClick={handleLogBirthdayPerk}
+                className="shrink-0 px-4 py-2 bg-gold text-charcoal rounded-lg text-sm font-semibold"
+              >
+                Log birthday perk
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-1 overflow-x-auto border-b border-light pb-px">
           {visibleTabs.map((tab) => (
@@ -997,9 +1023,13 @@ export default function StaffCustomerDetail() {
                 <div className="text-3xl font-heading text-gold">{profile.loyalty_points || 0}</div>
                 <div>
                   <div className={clsx('font-heading', tier.color)}>{tier.name} tier</div>
-                  <div className="text-secondary text-sm">{tier.benefit}</div>
                 </div>
               </div>
+              <ul className="space-y-1.5 text-sm text-secondary mb-4">
+                {tierBenefits.map((benefit) => (
+                  <li key={benefit}>· {benefit}</li>
+                ))}
+              </ul>
               {canAdjust && (
                 <div className="p-4 border border-light rounded-lg bg-secondary/50 space-y-3">
                   <p className="text-sm text-secondary">Manual adjustment (logged to ledger)</p>
