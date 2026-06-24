@@ -82,3 +82,5 @@ COMMENT ON FUNCTION delete_customer_profile IS
   'Permanently deletes a registered customer profile and related gift-card records (owner / super_admin only).';
 
 GRANT EXECUTE ON FUNCTION delete_customer_profile(TEXT, UUID) TO anon, authenticated;
+
+NOTIFY pgrst, 'reload schema';

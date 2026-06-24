@@ -412,7 +412,14 @@ export default function CustomerManagementHistory() {
       setCustomerToDelete(null);
     } catch (error) {
       console.error('Error deleting customer profile:', error);
-      setDeleteError(error.message || 'Could not delete customer profile.');
+      const message = error.message || '';
+      if (message.includes('delete_customer_profile') && message.includes('schema cache')) {
+        setDeleteError(
+          'Delete is not set up on the database yet. Run sql/118_delete_customer_profile.sql in the Supabase SQL Editor, then try again.',
+        );
+      } else {
+        setDeleteError(message || 'Could not delete customer profile.');
+      }
     } finally {
       setDeletingCustomerId(null);
     }
