@@ -252,3 +252,176 @@ body {
     transform: none;
   }
 }
+
+/* Mystery Gift hero — celebration accents (respects reduced motion) */
+@keyframes nc-mystery-card-glow {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+}
+
+@keyframes nc-mystery-countdown-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+    box-shadow: 0 0 0 rgba(197, 160, 89, 0);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.12);
+    filter: brightness(1.35);
+    box-shadow: 0 0 18px rgba(197, 160, 89, 0.65);
+  }
+}
+
+@keyframes nc-mystery-gift-wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  15% { transform: rotate(-12deg) scale(1.12); }
+  30% { transform: rotate(12deg) scale(1.12); }
+  45% { transform: rotate(-8deg) scale(1.08); }
+  60% { transform: rotate(8deg) scale(1.08); }
+  75% { transform: rotate(-4deg) scale(1.04); }
+}
+
+@keyframes nc-mystery-sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(0) scale(0.3);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.2);
+  }
+  55% {
+    opacity: 0.85;
+    transform: translateY(-10px) scale(1);
+  }
+  80% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.5);
+  }
+}
+
+@keyframes nc-mystery-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px) rotate(0deg) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(36px) rotate(220deg) scale(1);
+  }
+}
+
+.nc-mystery-gift-shell {
+  position: relative;
+}
+
+.nc-mystery-gift-hero-ring {
+  inset: -3px;
+  border-radius: 1.1rem;
+  border: 2px solid rgba(197, 160, 89, 0.5);
+  box-shadow:
+    0 0 28px rgba(197, 160, 89, 0.35),
+    0 0 56px rgba(197, 160, 89, 0.15);
+  animation: nc-mystery-card-glow 2s ease-in-out infinite;
+  z-index: 0;
+}
+
+.nc-mystery-gift-hero {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 0 28px rgba(197, 160, 89, 0.12);
+}
+
+.nc-mystery-gift-sparkles {
+  z-index: 4;
+}
+
+.nc-mystery-gift-countdown {
+  animation: nc-mystery-countdown-pulse 1.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.nc-mystery-gift-icon {
+  animation: nc-mystery-gift-wiggle 2s ease-in-out infinite;
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+.nc-mystery-sparkle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--gold-strong);
+  box-shadow: 0 0 10px rgba(197, 160, 89, 0.9);
+  pointer-events: none;
+  animation: nc-mystery-sparkle 2.2s ease-in-out infinite;
+}
+
+.nc-mystery-confetti {
+  position: absolute;
+  width: 5px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--gold-strong);
+  box-shadow: 0 0 6px rgba(197, 160, 89, 0.75);
+  opacity: 0;
+  pointer-events: none;
+  animation: nc-mystery-confetti-fall 2.8s ease-in infinite;
+}
+
+.nc-mystery-gift-modal-panel {
+  position: relative;
+  box-shadow:
+    0 0 32px rgba(197, 160, 89, 0.22),
+    0 0 64px rgba(197, 160, 89, 0.08);
+}
+
+.nc-mystery-gift-modal-panel::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 2px solid rgba(197, 160, 89, 0.45);
+  animation: nc-mystery-card-glow 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nc-mystery-gift-hero-ring,
+  .nc-mystery-gift-countdown,
+  .nc-mystery-gift-icon,
+  .nc-mystery-sparkle,
+  .nc-mystery-confetti {
+    animation: none;
+  }
+
+  .nc-mystery-gift-hero-ring {
+    opacity: 0.7;
+    transform: none;
+  }
+
+  .nc-mystery-gift-countdown {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    box-shadow: none;
+  }
+
+  .nc-mystery-gift-modal-panel::before {
+    animation: none;
+    opacity: 0.7;
+  }
+}

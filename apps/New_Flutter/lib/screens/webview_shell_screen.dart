@@ -1,4 +1,5 @@
-﻿import 'dart:collection';
+﻿import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,38 +16,59 @@ class WebViewShellScreen extends StatefulWidget {
 }
 
 class _WebViewShellScreenState extends State<WebViewShellScreen> {
+  static const _loadTimeout = Duration(seconds: 30);
+
+  final GlobalKey _webViewKey = GlobalKey();
+
   InAppWebViewController? _webViewController;
+  Timer? _loadTimeoutTimer;
+
   double _progress = 0;
+  bool _pageVisible = false;
+  bool _hasError = false;
+  String? _errorMessage;
 
-  static const _androidMediaResources = <String>{
-    'android.webkit.resource.VIDEO_CAPTURE',
-    'android.webkit.resource.AUDIO_CAPTURE',
-  };
+  @override
+  void dispose() {
+    _loadTimeoutTimer?.cancel();
+    super.dispose();
+  }
 
-  static final _mediaResources = <PermissionResourceType>{
-    PermissionResourceType.CAMERA,
-    PermissionResourceType.MICROPHONE,
-    PermissionResourceType.CAMERA_AND_MICROPHONE,
-    PermissionResourceType.GEOLOCATION,
-  };
+  void _armLoadTimeout() {
+    _loadTimeoutTimer?.cancel();
+    _loadTimeoutTimer = Timer(_loadTimeout, () {
+      if (!mounted || _pageVisible || _hasError) {
+        return;
+      }
+      setState(() {
+        _hasError = true;
+        _errorMessage =
+            'Timed out loading ${AppConfig.webUrl}. Check your internet connection and try again.';
+      });
+    });
+  }
 
-  // ignore: deprecated_member_use
-  Future<PermissionRequestResponse?> _grantAndroidPermissionRequest(
-    List<String> resources,
-  ) async {
-    final allowed =
-        resources.where(_androidMediaResources.contains).toList();
+  void _clearLoadTimeout() {
+    _loadTimeoutTimer?.cancel();
+    _loadTimeoutTimer = null;
+  }
 
-    if (allowed.isEmpty) {
-      return PermissionRequestResponse(
-        resources: resources,
-        action: PermissionRequestResponseAction.DENY,
-      );
+  Future<void> _reloadWebView() async {
+    setState(() {
+      _hasError = false;
+      _errorMessage = null;
+      _pageVisible = false;
+      _progress = 0;
+    });
+    _armLoadTimeout();
+
+    final controller = _webViewController;
+    if (controller == null) {
+      return;
     }
 
-    return PermissionRequestResponse(
-      resources: allowed,
-      action: PermissionRequestResponseAction.GRANT,
+    await controller.loadUrl(
+      urlRequest: URLRequest(url: WebUri(AppConfig.webUrl)),
     );
   }
 
@@ -70,84 +92,187 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
         }
       },
       child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              if (_progress < 1)
-                LinearProgressIndicator(
-                  value: _progress,
-                  minHeight: 2,
-                  backgroundColor: Colors.transparent,
-                ),
-              Expanded(
-                child: InAppWebView(
-                  initialUrlRequest: URLRequest(
-                    url: WebUri(AppConfig.webUrl),
-                  ),
-                  initialSettings: InAppWebViewSettings(
-                    javaScriptEnabled: true,
-                    domStorageEnabled: true,
-                    mediaPlaybackRequiresUserGesture: false,
-                    allowsInlineMediaPlayback: true,
-                    allowsBackForwardNavigationGestures: true,
-                    geolocationEnabled: true,
-                    iframeAllow: 'camera; microphone',
-                    useHybridComposition: true,
-                  ),
-                  initialUserScripts: UnmodifiableListView<UserScript>([
-                    UserScript(
-                      source: nativeBridgeInjectionScript,
-                      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        body: Column(
+          children: [
+            if (_progress > 0 && _progress < 1)
+              LinearProgressIndicator(
+                value: _progress,
+                minHeight: 3,
+                color: const Color(0xFFC9A962),
+                backgroundColor: const Color(0xFF2A2A2A),
+              ),
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  InAppWebView(
+                    key: _webViewKey,
+                    initialUrlRequest: URLRequest(
+                      url: WebUri(AppConfig.webUrl),
                     ),
-                  ]),
-                  onWebViewCreated: (controller) {
-                    _webViewController = controller;
-                    controller.addJavaScriptHandler(
-                      handlerName: 'NativeBridge',
-                      callback: NativeBridgeHandler.handle,
-                    );
-                  },
-                  onProgressChanged: (controller, progress) {
-                    setState(() => _progress = progress / 100);
-                  },
-                  androidOnPermissionRequest: (
-                    controller,
-                    origin,
-                    resources,
-                  ) {
-                    return _grantAndroidPermissionRequest(resources);
-                  },
-                  onPermissionRequest: (controller, request) async {
-                    final allowed = request.resources
-                        .where(_mediaResources.contains)
-                        .toList();
-
-                    if (allowed.isEmpty) {
+                    initialSettings: InAppWebViewSettings(
+                      javaScriptEnabled: true,
+                      domStorageEnabled: true,
+                      databaseEnabled: true,
+                      thirdPartyCookiesEnabled: true,
+                      mediaPlaybackRequiresUserGesture: false,
+                      allowsInlineMediaPlayback: true,
+                      allowsBackForwardNavigationGestures: true,
+                      geolocationEnabled: true,
+                      iframeAllow: 'camera; microphone',
+                      mixedContentMode:
+                          MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+                      cacheEnabled: true,
+                      transparentBackground: false,
+                      underPageBackgroundColor: const Color(0xFF121212),
+                      useWideViewPort: true,
+                      loadWithOverviewMode: true,
+                      supportZoom: false,
+                      useOnRenderProcessGone: true,
+                      useHybridComposition: true,
+                      userAgent:
+                          'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+                    ),
+                    initialUserScripts: UnmodifiableListView<UserScript>([
+                      UserScript(
+                        source: nativeBridgeInjectionScript,
+                        injectionTime:
+                            UserScriptInjectionTime.AT_DOCUMENT_START,
+                      ),
+                    ]),
+                    onWebViewCreated: (controller) {
+                      _webViewController = controller;
+                      controller.addJavaScriptHandler(
+                        handlerName: 'NativeBridge',
+                        callback: NativeBridgeHandler.handle,
+                      );
+                      _armLoadTimeout();
+                    },
+                    onProgressChanged: (controller, progress) {
+                      setState(() => _progress = progress / 100);
+                    },
+                    onLoadStart: (controller, url) {
+                      setState(() {
+                        _hasError = false;
+                        _errorMessage = null;
+                        _pageVisible = false;
+                      });
+                      _armLoadTimeout();
+                    },
+                    onPageCommitVisible: (controller, url) {
+                      setState(() => _pageVisible = true);
+                      _clearLoadTimeout();
+                    },
+                    onLoadStop: (controller, url) {
+                      setState(() {
+                        _hasError = false;
+                        _errorMessage = null;
+                        _pageVisible = true;
+                      });
+                      _clearLoadTimeout();
+                    },
+                    onReceivedError: (controller, request, error) {
+                      if (request.isForMainFrame != true) {
+                        return;
+                      }
+                      _clearLoadTimeout();
+                      setState(() {
+                        _hasError = true;
+                        _errorMessage =
+                            'Unable to load ${AppConfig.webUrl}\n${error.description}';
+                      });
+                    },
+                    onReceivedHttpError:
+                        (controller, request, errorResponse) {
+                      if (request.isForMainFrame != true) {
+                        return;
+                      }
+                      final statusCode = errorResponse.statusCode;
+                      if (statusCode != null && statusCode < 400) {
+                        return;
+                      }
+                      _clearLoadTimeout();
+                      setState(() {
+                        _hasError = true;
+                        _errorMessage =
+                            'HTTP error $statusCode: ${errorResponse.reasonPhrase ?? 'Unknown'}';
+                      });
+                    },
+                    onRenderProcessGone: (controller, detail) {
+                      _clearLoadTimeout();
+                      setState(() {
+                        _hasError = true;
+                        _errorMessage =
+                            'The browser process stopped unexpectedly. Tap Retry.';
+                        _pageVisible = false;
+                      });
+                    },
+                    onReceivedServerTrustAuthRequest:
+                        (controller, challenge) async {
+                      return ServerTrustAuthResponse(
+                        action: ServerTrustAuthResponseAction.PROCEED,
+                      );
+                    },
+                    onConsoleMessage: (controller, consoleMessage) {
+                      debugPrint(
+                        'WebView console [${consoleMessage.messageLevel}]: ${consoleMessage.message}',
+                      );
+                    },
+                    onPermissionRequest: (controller, request) async {
                       return PermissionResponse(
                         resources: request.resources,
-                        action: PermissionResponseAction.DENY,
+                        action: PermissionResponseAction.GRANT,
                       );
-                    }
-
-                    return PermissionResponse(
-                      resources: allowed,
-                      action: PermissionResponseAction.GRANT,
-                    );
-                  },
-                  onGeolocationPermissionsShowPrompt: (
-                    controller,
-                    origin,
-                  ) async {
-                    return GeolocationPermissionShowPromptResponse(
-                      origin: origin,
-                      allow: true,
-                      retain: true,
-                    );
-                  },
-                ),
+                    },
+                    onGeolocationPermissionsShowPrompt: (
+                      controller,
+                      origin,
+                    ) async {
+                      return GeolocationPermissionShowPromptResponse(
+                        origin: origin,
+                        allow: true,
+                        retain: true,
+                      );
+                    },
+                  ),
+                  if (_hasError)
+                    ColoredBox(
+                      color: const Color(0xFF121212),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Colors.white70,
+                                size: 64,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _errorMessage ?? 'Unable to load the web page.',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              FilledButton.icon(
+                                onPressed: _reloadWebView,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

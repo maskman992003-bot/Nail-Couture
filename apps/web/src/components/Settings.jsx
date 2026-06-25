@@ -9,6 +9,7 @@ import Sidebar from './Sidebar';
 import NotificationPreferencesPanel from '@nail-couture/shared/components/NotificationPreferencesPanel.jsx';
 import SessionTimeoutSettingsPanel from './SessionTimeoutSettingsPanel.jsx';
 import StuckCheckInsPanel from './StuckCheckInsPanel.jsx';
+import MysteryGiftPanel from './MysteryGiftPanel.jsx';
 import clsx from 'clsx';
 
 const roleLabels = {
@@ -412,6 +413,7 @@ export default function Settings() {
   const initials = displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
   const role = profile?.role || user?.role;
   const isSuperAdmin = role === 'super_admin';
+  const canManageMysteryGift = role === 'owner' || role === 'super_admin';
   const isTechnician = role === 'technician';
   const showWorkStats = isTechnician || ['cashier', 'admin', 'super_admin', 'owner', 'partner'].includes(role);
   const todayLabel = isTechnician ? 'Services completed' : 'Transactions processed';
@@ -597,6 +599,10 @@ export default function Settings() {
               </div>
             </div>
           </div>
+        )}
+
+        {canManageMysteryGift && (
+          <MysteryGiftPanel callerPhone={user?.phone} role={role} />
         )}
 
         {isSuperAdmin && (

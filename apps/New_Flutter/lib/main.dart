@@ -1,21 +1,18 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:nail_couture_webview/screens/webview_shell_screen.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await _requestStartupPermissions();
-  runApp(const NailCoutureWebViewApp());
-}
 
-Future<void> _requestStartupPermissions() async {
-  await [
-    Permission.camera,
-    Permission.microphone,
-    Permission.locationWhenInUse,
-    Permission.contacts,
-    Permission.photos,
-  ].request();
+  if (!kIsWeb && Platform.isAndroid) {
+    await InAppWebViewController.setWebContentsDebuggingEnabled(kDebugMode);
+  }
+
+  runApp(const NailCoutureWebViewApp());
 }
 
 class NailCoutureWebViewApp extends StatelessWidget {

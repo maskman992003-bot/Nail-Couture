@@ -61,6 +61,16 @@
     @android.webkit.JavascriptInterface <methods>;
 }
 
+# Keep Android WebView classes used by flutter_inappwebview in release builds
+-keep class android.webkit.** { *; }
+-keep class androidx.webkit.** { *; }
+-dontwarn android.webkit.**
+-dontwarn androidx.webkit.**
+
 # Preserve line numbers for debugging
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# Keep flutter_inappwebview plugin classes when code shrinking is enabled
+-keep class com.pichillilorenzo.** { *; }
+-dontwarn com.pichillilorenzo.**

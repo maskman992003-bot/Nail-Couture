@@ -20,6 +20,7 @@ export const featureFlags = {
     birthdayWishes: true,           // Daily automated birthday wishes + tier bonus points
     prepayOptions: false,           // Pay online in advance (Phase 3)
     giftCards: true,                // View and transfer gift cards
+    mysteryGift: true,              // Grand opening Mystery Gift teaser
     fitnessAssessment: true,        // Fitness assessment wellness tool
     nailHealthAssessment: true,     // Nail health assessment wellness tool
   },
@@ -45,6 +46,7 @@ export const featureFlags = {
     announcements: true,           // Management salon announcements tab
     promotions: true,                // Management home-screen promotions tab
     giftCards: true,                 // Sell gift cards at front desk
+    mysteryGiftAdmin: true,          // Owner/super_admin Mystery Gift campaign
   },
   
   // Inventory & Operations

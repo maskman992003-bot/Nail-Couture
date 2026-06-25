@@ -18,6 +18,7 @@ type AppModalProps = {
   onClose: () => void;
   title?: string;
   subtitle?: string;
+  headerExtra?: ReactNode;
   children?: ReactNode;
   footer?: ReactNode;
   scrollBody?: boolean;
@@ -30,6 +31,7 @@ export function AppModal({
   onClose,
   title,
   subtitle,
+  headerExtra,
   children,
   footer,
   scrollBody = false,
@@ -65,7 +67,7 @@ export function AppModal({
           ]}
           onPress={(event) => event.stopPropagation()}
         >
-          {(title || subtitle) && (
+          {(title || subtitle || headerExtra) && (
             <View
               style={[
                 layout.modalHeader,
@@ -83,6 +85,7 @@ export function AppModal({
                     {subtitle}
                   </Text>
                 ) : null}
+                {headerExtra}
               </View>
             </View>
           )}

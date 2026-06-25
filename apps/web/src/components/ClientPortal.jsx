@@ -11,12 +11,16 @@ import Sidebar from './Sidebar';
 import AppModal, { modalBtnPrimary, modalLabelClass } from './AppModal';
 import PromoSlideIn from './marketing/PromoSlideIn';
 import PromoDetailModal from './marketing/PromoDetailModal';
+import MysteryGiftSlideIn from './marketing/MysteryGiftSlideIn';
 import { useCustomerHomePromotions } from '../hooks/useCustomerHomePromotions';
+import { useMysteryGiftTeaser } from '@nail-couture/shared/hooks/useMysteryGift';
 import { useWalletState } from '../features/wallet/hooks/useWalletState';
 import CustomerHomeHeader from './customer/home/CustomerHomeHeader';
 import MembershipHeroCard, { MembershipCardSection } from './customer/home/MembershipHeroCard';
 import WalletStatsRow from './customer/home/WalletStatsRow';
 import TierProgressBanner from './customer/home/TierProgressBanner';
+import MysteryGiftHero from './customer/home/MysteryGiftHero';
+import MysteryGiftDetailModal from './customer/home/MysteryGiftDetailModal';
 import QuickActionGrid from './customer/home/QuickActionGrid';
 import ReferFriendModal from './customer/home/ReferFriendModal';
 import LoyaltyTermsSummary from '../features/wallet/components/LoyaltyTermsSummary';
@@ -60,6 +64,15 @@ export default function ClientPortal() {
     closeSlideInDetail,
     toast: promoToast,
   } = useCustomerHomePromotions(user?.phone);
+  const {
+    showHero: showMysteryGiftHero,
+    showSlideIn: showMysteryGiftSlideIn,
+    detailOpen: mysteryGiftDetailOpen,
+    status: mysteryGiftStatus,
+    openDetail: openMysteryGiftDetail,
+    closeDetail: closeMysteryGiftDetail,
+    dismissSlideIn: dismissMysteryGiftSlideIn,
+  } = useMysteryGiftTeaser();
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -137,6 +150,13 @@ export default function ClientPortal() {
       <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-2xl mx-auto space-y-5">
         <CustomerHomeHeader />
+
+        {showMysteryGiftHero ? (
+          <MysteryGiftHero
+            status={mysteryGiftStatus}
+            onOpenDetail={openMysteryGiftDetail}
+          />
+        ) : null}
 
         <MembershipHeroCard profile={profile} />
 
@@ -321,6 +341,19 @@ export default function ClientPortal() {
           />
         </>
       ) : null}
+      {showMysteryGiftSlideIn ? (
+        <MysteryGiftSlideIn
+          visible={showMysteryGiftSlideIn}
+          detailOpen={mysteryGiftDetailOpen}
+          onOpenDetail={openMysteryGiftDetail}
+          onAutoHide={dismissMysteryGiftSlideIn}
+        />
+      ) : null}
+      <MysteryGiftDetailModal
+        open={mysteryGiftDetailOpen}
+        status={mysteryGiftStatus}
+        onClose={closeMysteryGiftDetail}
+      />
       {promoToast ? (
         <div
           role="status"

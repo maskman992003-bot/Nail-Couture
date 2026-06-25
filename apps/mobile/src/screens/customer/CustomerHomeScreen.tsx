@@ -13,12 +13,16 @@ import { AppointmentStatusBadge } from '../../components/customer/AppointmentSta
 import { MembershipHeroCard } from '../../components/customer/home/MembershipHeroCard';
 import { WalletStatsRow, PointsBalanceBar } from '../../components/customer/home/WalletStatsRow';
 import { TierProgressBanner } from '../../components/customer/home/TierProgressBanner';
+import { MysteryGiftHero } from '../../components/customer/home/MysteryGiftHero';
+import { MysteryGiftDetailModal } from '../../components/customer/home/MysteryGiftDetailModal';
 import { QuickActionGrid } from '../../components/customer/home/QuickActionGrid';
 import { ReferFriendModal } from '../../components/customer/home/ReferFriendModal';
 import LoyaltyTermsSummary from '../../features/wallet/components/LoyaltyTermsSummary';
 import { PromoSlideIn } from '../../components/marketing/PromoSlideIn';
 import { PromoDetailModal } from '../../components/marketing/PromoDetailModal';
+import { MysteryGiftSlideIn } from '../../components/marketing/MysteryGiftSlideIn';
 import { useCustomerHomePromotions } from '../../hooks/useCustomerHomePromotions';
+import { useMysteryGiftTeaser } from '@nail-couture/shared/hooks/useMysteryGift';
 import { useWalletState } from '../../features/wallet/hooks/useWalletState';
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { useThemeStyles } from '../../theme/useThemeStyles';
@@ -70,6 +74,15 @@ export function CustomerHomeScreen() {
     closeSlideInDetail,
     toast: promoToast,
   } = useCustomerHomePromotions(user?.phone);
+  const {
+    showHero: showMysteryGiftHero,
+    showSlideIn: showMysteryGiftSlideIn,
+    detailOpen: mysteryGiftDetailOpen,
+    status: mysteryGiftStatus,
+    openDetail: openMysteryGiftDetail,
+    closeDetail: closeMysteryGiftDetail,
+    dismissSlideIn: dismissMysteryGiftSlideIn,
+  } = useMysteryGiftTeaser();
 
   const fetchUserData = useCallback(async () => {
     const userId = user?.id;
@@ -151,6 +164,13 @@ export function CustomerHomeScreen() {
         subtitle=""
       >
         <View style={{ gap: 16 }}>
+          {showMysteryGiftHero ? (
+            <MysteryGiftHero
+              status={mysteryGiftStatus}
+              onOpenDetail={openMysteryGiftDetail}
+            />
+          ) : null}
+
           <MembershipHeroCard profile={profile} />
 
           <WalletStatsRow
@@ -330,6 +350,19 @@ export function CustomerHomeScreen() {
           />
         </>
       ) : null}
+      {showMysteryGiftSlideIn ? (
+        <MysteryGiftSlideIn
+          visible={showMysteryGiftSlideIn}
+          detailOpen={mysteryGiftDetailOpen}
+          onOpenDetail={openMysteryGiftDetail}
+          onAutoHide={dismissMysteryGiftSlideIn}
+        />
+      ) : null}
+      <MysteryGiftDetailModal
+        open={mysteryGiftDetailOpen}
+        status={mysteryGiftStatus}
+        onClose={closeMysteryGiftDetail}
+      />
       {promoToast ? (
         <View
           style={{

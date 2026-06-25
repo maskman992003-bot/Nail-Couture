@@ -30,10 +30,12 @@ export default function AppModal({
   zIndex = 'z-[200]',
   scrollBody = false,
   panelClassName = '',
+  panelOverlay = null,
   headerExtra,
   centered = false,
 }) {
   const panelRef = useFocusTrap(open, onClose);
+  const layeredPanel = Boolean(panelOverlay);
 
   if (!open) return null;
 
@@ -59,13 +61,23 @@ export default function AppModal({
           'max-h-[min(92dvh,calc(100dvh-2rem))] sm:max-h-[min(90dvh,calc(100dvh-3rem))]',
           centered ? 'rounded-2xl' : 'rounded-t-2xl sm:rounded-2xl',
           scrollBody && 'overflow-hidden min-h-0',
+          layeredPanel && 'relative overflow-hidden',
           maxWidth,
           panelClassName,
         )}
         onClick={(e) => e.stopPropagation()}
       >
+        {panelOverlay ? (
+          <div className="nc-mystery-gift-sparkles absolute inset-0 pointer-events-none" aria-hidden>
+            {panelOverlay}
+          </div>
+        ) : null}
         {(title || onClose || headerExtra) && (
-          <div className="flex items-start justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4 border-b border-light shrink-0">
+          <div className={clsx(
+            'flex items-start justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4 border-b border-light shrink-0',
+            layeredPanel && 'relative z-[3]',
+          )}
+          >
             <div className="min-w-0 flex-1">
               {title && (
                 <h2 id="app-modal-title" className="font-heading text-lg sm:text-xl text-gold-strong leading-snug">
@@ -91,6 +103,7 @@ export default function AppModal({
           className={clsx(
             'px-4 py-3 sm:px-5 sm:py-4 text-sm sm:text-base leading-relaxed',
             scrollBody && 'overflow-y-auto overscroll-contain min-h-0 flex-1',
+            layeredPanel && 'relative z-[3]',
           )}
         >
           {children}
@@ -100,6 +113,7 @@ export default function AppModal({
             className={clsx(
               'px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:py-4 border-t border-light shrink-0',
               modalFooterClass,
+              layeredPanel && 'relative z-[3]',
             )}
           >
             {footer}
