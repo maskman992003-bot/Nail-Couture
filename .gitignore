@@ -24,6 +24,9 @@ dist-ssr
 *.sw?
 .env
 
+# Local Android/Flutter build caches (D: drive)
+.toolcache/
+
 # Local-only docs (not for version control)
 docs/FULL_TESTING_PLAN.md
 
