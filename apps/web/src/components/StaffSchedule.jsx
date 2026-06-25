@@ -525,7 +525,7 @@ export default function StaffSchedule() {
       <Sidebar />
       <style>{`.staff-schedule select, .staff-schedule option { background: var(--input-bg); color: var(--text-primary); } .staff-schedule input[type="time"] { color-scheme: ${theme}; }`}</style>
 
-      <div className="staff-schedule p-3 sm:p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto w-full min-w-0 overflow-x-hidden">
+      <div className="staff-schedule p-3 sm:p-4 md:p-6 lg:p-8 mobile-page max-w-7xl mx-auto w-full min-w-0 overflow-x-hidden">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-gold/10 pb-4 sm:pb-6 mb-4 sm:mb-6">
           <div className="min-w-0">
             <h1 className="font-heading text-2xl sm:text-3xl text-gold tracking-wide">Staff Schedule</h1>

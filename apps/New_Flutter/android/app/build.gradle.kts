@@ -7,6 +7,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val googleServicesFile = file("google-services.json")
+if (googleServicesFile.exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // Load signing properties
 val keystorePropertiesFile = rootProject.file("android/key.properties")
 val keystoreProperties = Properties()

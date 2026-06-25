@@ -243,6 +243,7 @@ export default function Announcements() {
     openWebCameraPicker({
       nativeCameraInputRef: cameraFallbackInputRef,
       onDesktopCamera: () => setShowCamera(true),
+      onNativeCapture: handleCameraCapture,
     });
   };
 
@@ -318,7 +319,7 @@ export default function Announcements() {
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className={clsx('mx-auto', activeTab === 'home-offers' ? 'max-w-6xl' : 'max-w-3xl')}>
           <header className="mb-8">
             <h1 className="font-heading text-3xl text-gold mb-2">Announcements</h1>

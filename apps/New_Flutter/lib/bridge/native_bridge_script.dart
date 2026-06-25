@@ -27,6 +27,15 @@
     },
     startSmsListener: function () {
       return callNative('startSmsListener');
+    },
+    openCamera: function () {
+      return callNative('openCamera');
+    },
+    saveFile: function (options) {
+      return callNative('saveFile', options || {});
+    },
+    registerPushToken: function (options) {
+      return callNative('registerPushToken', options || {});
     }
   };
 })();

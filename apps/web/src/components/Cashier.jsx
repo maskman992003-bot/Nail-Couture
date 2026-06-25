@@ -108,13 +108,13 @@ export default function Cashier() {
   return (
     <div className={bgClass}>
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className={headerBorderClass}>
           <h1 className="font-heading text-3xl text-gold">Cashier Dashboard</h1>
           <p className={welcomeSubclass}>Welcome, {user?.full_name}</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 sm:p-8 pb-24 lg:pb-8">
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 mobile-page">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div className={statCard}>
               <div className="text-3xl font-heading text-amber-400">{queueCount}</div>

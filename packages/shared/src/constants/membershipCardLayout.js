@@ -78,7 +78,7 @@ export function getMembershipCardFontSizes(cardHeightPx, tierId) {
     name: getMembershipCardFieldFontSize(height, 'name', resolvedTier),
     id: getMembershipCardFieldFontSize(height, 'id', resolvedTier),
     founding: getMembershipCardFieldFontSize(height, 'founding', resolvedTier),
-    seal: Math.min(88, Math.max(56, height * 0.20)),
+    seal: Math.min(88, Math.max(44, height * 0.18)),
   };
 }
 

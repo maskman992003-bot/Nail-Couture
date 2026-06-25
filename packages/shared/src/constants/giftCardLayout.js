@@ -16,9 +16,9 @@ export const GIFT_CARD_FONT = {
  */
 export const GIFT_CARD_LAYOUT = {
   positions: {
-    balance: { top: '57%', left: '28%' },
-    code: { top: '4.5%', left: '56%' },
-    owner: { top: '77%', left: '16%' },
+    balance: { top: '85%', left: '50%' },
+    code: { top: '4.5%', left: '65%' },
+    owner: { top: '90%', left: '16%' },
   },
   balance: {
     color: '#D4AF37',
@@ -47,12 +47,29 @@ export const GIFT_CARD_LAYOUT = {
   textShadow: '0 1px 2px rgba(0,0,0,0.55), 0 0 5px rgba(0,0,0,0.35)',
 };
 
+/** Default font scale ratios (% of card height) with px bounds */
+export const GIFT_CARD_FIELD_FONT = {
+  balance: { ratio: 0.075, min: 18, max: 34 },
+  code: { ratio: 0.028, min: 8, max: 11 },
+  owner: { ratio: 0.03, min: 8, max: 12 },
+};
+
+export function getGiftCardFieldFontSize(cardHeightPx, fieldKey) {
+  const height = cardHeightPx || 200;
+  const { ratio, min, max } = GIFT_CARD_FIELD_FONT[fieldKey] || GIFT_CARD_FIELD_FONT.balance;
+  return Math.min(max, Math.max(min, height * ratio));
+}
+
 export function getGiftCardLayout() {
   return GIFT_CARD_LAYOUT;
 }
 
-export function getGiftCardWebTextStyle(fieldStyle) {
-  return getMembershipCardWebTextStyle(fieldStyle);
+export function getGiftCardWebTextStyle(fieldStyle, cardHeightPx, fieldKey) {
+  const base = getMembershipCardWebTextStyle(fieldStyle);
+  if (cardHeightPx && fieldKey) {
+    return { ...base, fontSize: getGiftCardFieldFontSize(cardHeightPx, fieldKey) };
+  }
+  return base;
 }
 
 export function formatGiftCardBalance(balance) {

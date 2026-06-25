@@ -17,6 +17,9 @@ class WebViewShellScreen extends StatefulWidget {
 
 class _WebViewShellScreenState extends State<WebViewShellScreen> {
   static const _loadTimeout = Duration(seconds: 30);
+  static const _userAgentSuffix = ' NailCoutureFlutter/1.0';
+  static const _baseUserAgent =
+      'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
   final GlobalKey _webViewKey = GlobalKey();
 
@@ -102,10 +105,15 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
                 backgroundColor: const Color(0xFF2A2A2A),
               ),
             Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  InAppWebView(
+              child: SafeArea(
+                top: true,
+                bottom: true,
+                left: false,
+                right: false,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    InAppWebView(
                     key: _webViewKey,
                     initialUrlRequest: URLRequest(
                       url: WebUri(AppConfig.webUrl),
@@ -130,8 +138,7 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
                       supportZoom: false,
                       useOnRenderProcessGone: true,
                       useHybridComposition: true,
-                      userAgent:
-                          'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+                      userAgent: '$_baseUserAgent$_userAgentSuffix',
                     ),
                     initialUserScripts: UnmodifiableListView<UserScript>([
                       UserScript(
@@ -269,7 +276,8 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
                         ),
                       ),
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

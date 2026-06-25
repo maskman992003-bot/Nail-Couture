@@ -295,7 +295,7 @@ export default function CustomerProfile() {
     <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
       <Sidebar />
 
-      <div className="profile-section p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-4xl mx-auto">
+      <div className="profile-section p-4 md:p-6 lg:p-8 mobile-page max-w-4xl mx-auto">
         <div className="border-b border-gold/10 pb-6 mb-6">
           <h1 className="font-heading text-3xl text-gold tracking-wide">My Account</h1>
           <p className={theme === 'dark' ? 'text-xs text-offwhite/40 mt-1' : 'text-xs text-charcoal/40 mt-1'}>

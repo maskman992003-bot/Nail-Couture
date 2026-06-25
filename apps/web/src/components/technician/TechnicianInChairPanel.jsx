@@ -142,6 +142,7 @@ export default function TechnicianInChairPanel({
     openWebCameraPicker({
       nativeCameraInputRef: cameraCaptureInputRef,
       onDesktopCamera: () => setShowCamera(true),
+      onNativeCapture: handleCameraCapture,
     });
   };
 

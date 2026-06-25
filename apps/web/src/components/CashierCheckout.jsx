@@ -882,7 +882,7 @@ export default function CashierCheckout() {
   return (
     <div className={bgClass}>
       <Sidebar />
-      <div className="max-w-7xl mx-auto px-6 py-8 pb-24 lg:pb-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 mobile-page">
         <div className="mb-8">
           <h1 className="font-heading text-3xl text-gold mb-2">Checkout Station</h1>
           <p className={mutedClass}>Process payments for clients ready at the front desk</p>

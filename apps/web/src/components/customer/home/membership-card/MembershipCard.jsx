@@ -190,7 +190,7 @@ export default function MembershipCard({
       />
 
       <div
-        className="absolute inset-0 pointer-events-none z-[1]"
+        className={`absolute inset-0 pointer-events-none ${isFounding ? 'z-[20]' : 'z-[1]'}`}
         aria-hidden="true"
       >
         <OverlayText

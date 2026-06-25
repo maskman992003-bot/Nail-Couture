@@ -225,7 +225,7 @@ export default function CustomerSettings() {
     <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${shellClass}`}>
       <Sidebar />
 
-      <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-24 lg:pb-8">
+      <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 mobile-page">
         <div className="border-b border-gold/10 pb-6 mb-6">
           <h1 className="font-heading text-3xl text-gold tracking-wide">Settings</h1>
           <p className={theme === 'dark' ? 'text-xs text-offwhite/40 mt-1' : 'text-xs text-charcoal/40 mt-1'}>

@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
+import usePullToRefresh from '../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 import AppModal, {
   modalLabelClass,
   modalInputClass,
@@ -213,6 +215,11 @@ export default function AdminBookings() {
       setLoading(false);
     }
   }, []);
+
+  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+    onRefresh: () => fetchBookings(true),
+    disabled: loading,
+  });
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -507,7 +514,12 @@ const { error } = await supabase.from('appointments').insert({
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        pullProgress={pullProgress}
+      />
+      <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: theme === 'dark' ? 'rgba(197,160,89,0.1)' : 'rgba(197,160,89,0.2)' }}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>

@@ -12,4 +12,16 @@
     }
     return productionWebUrl;
   }
+
+  /// Supabase project URL for native push token registration.
+  static String get supabaseUrl {
+    const fromEnv = String.fromEnvironment('SUPABASE_URL');
+    return fromEnv;
+  }
+
+  /// Supabase anon key for native push token registration.
+  static String get supabaseAnonKey {
+    const fromEnv = String.fromEnvironment('SUPABASE_ANON_KEY');
+    return fromEnv;
+  }
 }

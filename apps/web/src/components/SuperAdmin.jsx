@@ -220,7 +220,7 @@ export default function SuperAdmin() {
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page">
          <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-theme">
         <div className="flex items-center justify-between">
               <div>
@@ -246,7 +246,7 @@ export default function SuperAdmin() {
            </div>
          )}
 
-        <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
+        <div className="flex-1 overflow-y-auto p-8 mobile-page">
           {activeTab === 'dashboard' && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">

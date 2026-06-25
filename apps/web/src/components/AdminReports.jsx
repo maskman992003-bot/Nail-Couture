@@ -7,6 +7,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import Sidebar from './Sidebar'
 import clsx from 'clsx'
 import { fetchGiftCardSummary } from '@nail-couture/shared/utils/giftCards'
+import { downloadExportFile } from '../utils/nativeDownload.js'
 
 const getDateRange = (period) => {
   const now = new Date()
@@ -240,11 +241,7 @@ const exportPeriodData = async (period) => {
     ...customerData.map((row) => Object.values(row).map(csvEscape).join(','))
   ].join('\n')
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = `${fileName}.csv`
-  link.click()
+  await downloadExportFile(csvContent, `${fileName}.csv`)
 }
 
 const exportCustomRangeData = async (fromDate, toDate) => {
@@ -306,13 +303,12 @@ const exportCustomRangeData = async (fromDate, toDate) => {
     ...customerData.map((row) => Object.values(row).map(csvEscape).join(','))
   ].join('\n')
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
   const fromFormatted = new Date(fromDate).toISOString().slice(0, 10)
   const toFormatted = new Date(toDate).toISOString().slice(0, 10)
-  link.download = `custom_report_${fromFormatted}_to_${toFormatted}.csv`
-  link.click()
+  await downloadExportFile(
+    csvContent,
+    `custom_report_${fromFormatted}_to_${toFormatted}.csv`,
+  )
 }
 
 const COLORS = {
@@ -456,6 +452,7 @@ export default function AdminReports() {
         }
         await exportCustomRangeData(customFromDate, customToDate)
       }
+      alert('Report exported successfully')
     } catch (err) {
       console.error('Export error:', err)
       alert('Failed to export data')
@@ -647,7 +644,7 @@ export default function AdminReports() {
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-heading text-2xl sm:text-3xl text-gold">

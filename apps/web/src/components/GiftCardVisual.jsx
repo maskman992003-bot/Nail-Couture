@@ -1,6 +1,53 @@
+import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
-import { formatGiftCardBalance } from '@nail-couture/shared/constants/giftCardLayout.js';
+import {
+  formatGiftCardBalance,
+  getGiftCardLayout,
+  getGiftCardWebTextStyle,
+} from '@nail-couture/shared/constants/giftCardLayout.js';
 import { GIFT_CARD_WEB_IMAGE } from '../constants/giftCardImages.js';
+
+function useCardHeight(ref) {
+  const [cardHeightPx, setCardHeightPx] = useState(200);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+
+    const observer = new ResizeObserver((entries) => {
+      const height = entries[0]?.contentRect.height ?? 0;
+      if (height > 0) {
+        setCardHeightPx((prev) => (Math.abs(prev - height) > 0.5 ? height : prev));
+      }
+    });
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return cardHeightPx;
+}
+
+function OverlayText({ value, position, fieldStyle, textShadow, cardHeightPx, fieldKey }) {
+  if (!value) return null;
+
+  return (
+    <p
+      className="absolute leading-none max-w-[55%] whitespace-nowrap overflow-hidden"
+      style={{
+        top: position.top,
+        left: position.left,
+        right: position.right,
+        textAlign: position.textAlign,
+        textShadow: fieldStyle.textShadow ?? textShadow,
+        lineHeight: 1.15,
+        ...getGiftCardWebTextStyle(fieldStyle, cardHeightPx, fieldKey),
+      }}
+    >
+      {value}
+    </p>
+  );
+}
 
 export function GiftCardVisual({
   isDark,
@@ -15,96 +62,112 @@ export function GiftCardVisual({
   codeDisplay = 'GC-****-****',
   codeInteractive = false,
   onCodeClick,
+  showInitialOnCard = false,
   footer,
 }) {
+  const layout = getGiftCardLayout();
+  const frameRef = useRef(null);
+  const cardHeightPx = useCardHeight(frameRef);
   const hasBalance = balance != null && Number.isFinite(Number(balance));
   const hasInitial = initialAmount != null && Number.isFinite(Number(initialAmount));
   const muted = isDark ? 'text-offwhite/70' : 'text-charcoal/70';
   const faint = isDark ? 'text-offwhite/50' : 'text-charcoal/50';
+  const displayBalance = hasBalance ? formatGiftCardBalance(balance) : null;
+  const displayOwner = ownerName?.trim() || null;
+  const displayInitial = showInitialOnCard && hasInitial
+    ? `$${Number(initialAmount).toFixed(2)}`
+    : null;
 
   return (
-    <div className="relative rounded-xl border overflow-hidden border-gold/25 bg-[#0d0c0a]">
-      <img
-        src={GIFT_CARD_WEB_IMAGE}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-contain object-center"
-        decoding="async"
-        draggable={false}
-      />
+    <div className="space-y-3">
       <div
-        className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/45"
-        aria-hidden="true"
-      />
+        ref={frameRef}
+        className="relative aspect-[758/478] max-w-full rounded-xl border overflow-hidden border-gold/25 bg-[#0d0c0a]"
+      >
+        <img
+          src={GIFT_CARD_WEB_IMAGE}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+          decoding="async"
+          draggable={false}
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-black/25 via-transparent to-black/30 pointer-events-none"
+          aria-hidden="true"
+        />
 
-      <div className="relative z-[1]">
-        <div className="px-4 py-2.5 flex items-center justify-between border-b border-gold/15">
-          <span className="font-heading text-gold/90 text-sm truncate">Gift Card</span>
-          {codeInteractive ? (
-            <button
-              type="button"
-              onClick={onCodeClick}
-              className="font-mono text-xs shrink-0 text-gold hover:underline"
-            >
-              {codeDisplay}
-            </button>
-          ) : (
-            <span className="font-mono text-xs shrink-0 text-gold/70">{codeDisplay}</span>
-          )}
+        <div className="absolute inset-0 pointer-events-none z-[1]" aria-hidden="true">
+          <OverlayText
+            value={displayBalance}
+            position={layout.positions.balance}
+            fieldStyle={layout.balance}
+            textShadow={layout.textShadow}
+            cardHeightPx={cardHeightPx}
+            fieldKey="balance"
+          />
+          {!codeInteractive ? (
+            <OverlayText
+              value={codeDisplay}
+              position={layout.positions.code}
+              fieldStyle={layout.code}
+              textShadow={layout.textShadow}
+              cardHeightPx={cardHeightPx}
+              fieldKey="code"
+            />
+          ) : null}
+          <OverlayText
+            value={displayOwner}
+            position={layout.positions.owner}
+            fieldStyle={layout.owner}
+            textShadow={layout.textShadow}
+            cardHeightPx={cardHeightPx}
+            fieldKey="owner"
+          />
+          {displayInitial ? (
+            <OverlayText
+              value={displayInitial}
+              position={{ top: '22%', right: '6%', textAlign: 'right' }}
+              fieldStyle={layout.balance}
+              textShadow={layout.textShadow}
+              cardHeightPx={cardHeightPx}
+              fieldKey="balance"
+            />
+          ) : null}
         </div>
 
-        <div className="px-4 py-3 flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            {hasBalance ? (
-              <div className="font-heading text-3xl text-gold leading-none">
-                {formatGiftCardBalance(balance)}
-              </div>
-            ) : (
-              <div className={clsx('font-heading text-2xl leading-none', faint)}>$—</div>
-            )}
-            {ownerName && (
-              <div className={clsx('text-xs mt-1.5 truncate', muted)}>{ownerName}</div>
-            )}
-            {statusText && (
-              <div className={clsx('text-xs mt-1', muted)}>{statusText}</div>
-            )}
-            {expiryText && (
-              <div className={clsx('text-xs mt-0.5', expiryExpired ? 'text-red-400/90' : faint)}>
-                {expiryText}
-              </div>
-            )}
-            {giftedFromText && (
-              <div className={clsx('text-xs mt-1', muted)}>{giftedFromText}</div>
-            )}
-          </div>
-          <div className="text-right shrink-0">
-            {hasInitial ? (
-              <div className="font-heading text-5xl text-gold leading-none">
-                ${Number(initialAmount).toFixed(2)}
-              </div>
-            ) : (
-              <div className={clsx('font-heading text-4xl leading-none', faint)}>$—</div>
-            )}
-          </div>
-        </div>
-
-        {giftMessage && (
-          <p className={clsx('px-4 pb-3 text-xs italic', muted)}>
-            &ldquo;{giftMessage}&rdquo;
-          </p>
-        )}
-
-        {footer && (
-          <div
-            className={clsx(
-              'px-4 pb-3 flex items-center justify-end gap-3',
-              giftMessage ? 'pt-0' : 'border-t border-gold/15 pt-3',
-            )}
+        {codeInteractive ? (
+          <button
+            type="button"
+            onClick={onCodeClick}
+            className="absolute z-[2] font-mono text-gold hover:underline max-w-[40%] truncate"
+            style={{
+              top: layout.positions.code.top,
+              left: layout.positions.code.left,
+              ...getGiftCardWebTextStyle(layout.code, cardHeightPx, 'code'),
+            }}
           >
-            {footer}
-          </div>
-        )}
+            {codeDisplay}
+          </button>
+        ) : null}
       </div>
+
+      {(statusText || expiryText || giftedFromText || giftMessage) ? (
+        <div className={clsx('space-y-1 text-xs px-1', muted)}>
+          {statusText ? <p>{statusText}</p> : null}
+          {expiryText ? (
+            <p className={expiryExpired ? 'text-red-400/90' : faint}>{expiryText}</p>
+          ) : null}
+          {giftedFromText ? <p>{giftedFromText}</p> : null}
+          {giftMessage ? <p className="italic">&ldquo;{giftMessage}&rdquo;</p> : null}
+        </div>
+      ) : null}
+
+      {footer ? (
+        <div className="flex items-center justify-end gap-3 px-1">
+          {footer}
+        </div>
+      ) : null}
     </div>
   );
 }

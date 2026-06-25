@@ -267,7 +267,7 @@ export default function StaffProfile() {
   return (
     <div className={containerClass}>
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className={headerBorderClass}>
           <div className="flex items-center justify-between">
             <div>
@@ -283,7 +283,7 @@ export default function StaffProfile() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 mobile-page">
           <div className="flex flex-col lg:flex-row gap-8">
             <div className={profileCardClass}>
               <div className="w-24 h-24 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">

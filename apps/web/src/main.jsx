@@ -54,6 +54,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import { IdleSessionProvider } from './contexts/IdleSessionContext.jsx'
 import { ThemeEngineProvider } from './context/ThemeEngineContext.jsx'
 import { MobileBridgeProvider } from './contexts/MobileBridgeContext.jsx'
+import FlutterPushRegistrar from './components/FlutterPushRegistrar.jsx'
 import NativeRouteGuard from './components/NativeRouteGuard.jsx'
 import NativeShellEffects from './components/NativeShellEffects.jsx'
 import { ProtectedRoute } from './components/ProtectedRoute.jsx'
@@ -696,6 +697,7 @@ createRoot(document.getElementById('root')).render(
           <AuthProvider>
             <BrowserRouter>
               <IdleSessionProvider>
+                <FlutterPushRegistrar />
                 <NativeShellEffects />
                 <NativeRouteGuard>
                   <RouteDocumentTitle />

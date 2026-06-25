@@ -428,7 +428,7 @@ export default function Settings() {
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
       <style>{`.settings-page select, .settings-page option { background: var(--input-bg); color: var(--text-primary); }`}</style>
-      <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-24 lg:pb-8">
+      <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 mobile-page">
         <div className="mb-8">
           <h1 className="font-heading text-3xl text-gold mb-2">Profile Settings</h1>
           <p className="text-secondary">Manage your account details and security</p>

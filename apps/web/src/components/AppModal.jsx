@@ -73,10 +73,12 @@ export default function AppModal({
           </div>
         ) : null}
         {(title || onClose || headerExtra) && (
-          <div className={clsx(
-            'flex items-start justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4 border-b border-light shrink-0',
-            layeredPanel && 'relative z-[3]',
-          )}
+          <div
+            className={clsx(
+              'flex items-start justify-between gap-3 px-4 pb-3 sm:px-5 sm:py-4 border-b border-light shrink-0',
+              layeredPanel && 'relative z-[3]',
+              !centered && 'pt-[max(0.75rem,env(safe-area-inset-top))]',
+            )}
           >
             <div className="min-w-0 flex-1">
               {title && (

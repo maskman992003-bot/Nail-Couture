@@ -53,3 +53,14 @@ label {
     scroll-margin-bottom: 120px;
   }
 }
+
+/* Bottom padding for mobile pages above fixed bottom tab bar + safe area */
+.mobile-page {
+  padding-bottom: max(6rem, calc(4.5rem + env(safe-area-inset-bottom, 0px)));
+}
+
+@media (min-width: 1024px) {
+  .mobile-page {
+    padding-bottom: 2rem;
+  }
+}

@@ -200,7 +200,7 @@ export default function EditBooking() {
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <Link to="/customer/history" className="text-offwhite/40 hover:text-gold text-sm">My Bookings</Link>

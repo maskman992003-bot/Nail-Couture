@@ -98,7 +98,7 @@ export default function TechnicianDashboard({
         </div>
       )}
 
-      <div className="technician-dashboard p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="technician-dashboard p-4 md:p-6 lg:p-8 mobile-page">
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-light">
           <div>
             <h1 className="font-heading text-3xl text-gold-strong">Hello, {firstName}</h1>

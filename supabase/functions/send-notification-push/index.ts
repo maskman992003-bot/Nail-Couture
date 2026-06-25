@@ -84,35 +84,87 @@ Deno.serve(async (req) => {
       return json({ success: true, skipped: true, reason: 'no_tokens' });
     }
 
-    const messages = tokens.map((row) => ({
-      to: row.expo_push_token,
-      sound: 'default',
-      title: notification.title,
-      body: notification.body,
-      data: {
-        notificationId: notification.id,
-        type: notification.type,
-        referenceId: notification.reference_id,
-      },
-    }));
+    const expoMessages = [];
+    const fcmTokens: string[] = [];
 
-    const expoResponse = await fetch(EXPO_PUSH_URL, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Accept-Encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(messages),
-    });
+    for (const row of tokens) {
+      const token = row.expo_push_token;
+      if (token.startsWith('fcm:')) {
+        fcmTokens.push(token.slice(4));
+      } else {
+        expoMessages.push({
+          to: token,
+          sound: 'default',
+          title: notification.title,
+          body: notification.body,
+          data: {
+            notificationId: notification.id,
+            type: notification.type,
+            referenceId: notification.reference_id,
+          },
+        });
+      }
+    }
 
-    const expoResult = await expoResponse.json();
-    const tickets: ExpoTicket[] = expoResult?.data ?? [];
-    const errors = tickets.filter((t) => t.status === 'error');
+    const errors: string[] = [];
 
-    if (errors.length === tickets.length && tickets.length > 0) {
-      const errMsg = errors.map((e) => e.message ?? e.details?.error).join('; ');
-      await markFailed(supabase, queueId, errMsg);
+    if (expoMessages.length > 0) {
+      const expoResponse = await fetch(EXPO_PUSH_URL, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Accept-Encoding': 'gzip, deflate',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(expoMessages),
+      });
+
+      const expoResult = await expoResponse.json();
+      const tickets: ExpoTicket[] = expoResult?.data ?? [];
+      const expoErrors = tickets.filter((t) => t.status === 'error');
+      if (expoErrors.length === tickets.length && tickets.length > 0) {
+        errors.push(...expoErrors.map((e) => e.message ?? e.details?.error ?? 'Expo push failed'));
+      }
+    }
+
+    if (fcmTokens.length > 0) {
+      const fcmServerKey = Deno.env.get('FCM_SERVER_KEY');
+      if (!fcmServerKey) {
+        errors.push('FCM_SERVER_KEY not configured');
+      } else {
+        const fcmResponse = await fetch('https://fcm.googleapis.com/fcm/send', {
+          method: 'POST',
+          headers: {
+            Authorization: `key=${fcmServerKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            registration_ids: fcmTokens,
+            notification: {
+              title: notification.title,
+              body: notification.body,
+            },
+            data: {
+              notificationId: notification.id,
+              type: notification.type ?? '',
+              referenceId: notification.reference_id ?? '',
+            },
+          }),
+        });
+
+        if (!fcmResponse.ok) {
+          errors.push(`FCM HTTP ${fcmResponse.status}`);
+        } else {
+          const fcmResult = await fcmResponse.json();
+          if (fcmResult.failure > 0 && fcmResult.success === 0) {
+            errors.push('FCM delivery failed for all tokens');
+          }
+        }
+      }
+    }
+
+    if (errors.length > 0 && expoMessages.length + fcmTokens.length > 0) {
+      await markFailed(supabase, queueId, errors.join('; '));
       return json({ success: false, errors }, 502);
     }
 
@@ -121,11 +173,14 @@ Deno.serve(async (req) => {
       .update({
         status: 'sent',
         processed_at: new Date().toISOString(),
-        last_error: errors.length ? errors.map((e) => e.message).join('; ') : null,
+        last_error: errors.length ? errors.join('; ') : null,
       })
       .eq('id', queueId);
 
-    return json({ success: true, sent: messages.length, tickets });
+    return json({
+      success: true,
+      sent: expoMessages.length + fcmTokens.length,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return json({ error: message }, 500);

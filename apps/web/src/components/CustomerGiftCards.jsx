@@ -23,6 +23,7 @@ import {
 import Sidebar from './Sidebar';
 import { GiftCardVisual } from './GiftCardVisual';
 import ListPagination from './ListPagination.jsx';
+import AppModal, { modalBtnPrimary, modalBtnSecondary, modalFooterClass, modalInputClass, modalTextareaClass } from './AppModal';
 import clsx from 'clsx';
 
 function GiftCardRow({ card, theme, onTransfer, showTransfer, hideFullCode }) {
@@ -190,10 +191,6 @@ export default function CustomerGiftCards() {
     'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64',
     isDark ? 'bg-primary text-primary' : 'bg-white text-charcoal',
   );
-  const inputClass = isDark
-    ? 'w-full px-4 py-3 bg-offwhite/10 border border-offwhite/20 text-offwhite rounded-lg'
-    : 'w-full px-4 py-3 bg-charcoal/5 border border-charcoal/20 text-charcoal rounded-lg';
-  const cardClass = clsx('border rounded-xl p-6', isDark ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30');
 
   if (loading) {
     return (
@@ -209,7 +206,7 @@ export default function CustomerGiftCards() {
   return (
     <div className={bgClass}>
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-2xl mx-auto">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page max-w-2xl mx-auto">
         <div className={clsx('px-2 py-4 border-b mb-6', isDark ? 'border-gold/10' : 'border-gold/30')}>
           <h1 className="font-heading text-3xl text-gold">Gift Cards</h1>
         </div>
@@ -252,63 +249,69 @@ export default function CustomerGiftCards() {
 
       </div>
 
-      {transferTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          {transferStep === 'form' ? (
-            <form onSubmit={handleTransferFormSubmit} className={clsx('w-full max-w-md rounded-xl p-6 border', cardClass)}>
-              <h3 className="font-heading text-xl text-gold mb-2">Gift Your Card</h3>
-              <p className={clsx('text-sm mb-4', isDark ? 'text-offwhite/60' : 'text-charcoal/60')}>
-                Transfer ${Number(transferTarget.balance || 0).toFixed(2)} to another registered customer.
-              </p>
-              <label className={clsx('block text-sm mb-2', isDark ? 'text-offwhite/80' : 'text-charcoal/80')}>Recipient Phone</label>
-              <input
-                type="tel"
-                value={recipientPhone}
-                onChange={(e) => setRecipientPhone(e.target.value)}
-                className={clsx(inputClass, 'mb-4')}
-                required
-              />
-              <label className={clsx('block text-sm mb-2', isDark ? 'text-offwhite/80' : 'text-charcoal/80')}>Message (optional)</label>
-              <textarea
-                value={transferMessage}
-                onChange={(e) => setTransferMessage(e.target.value)}
-                className={clsx(inputClass, 'mb-4 resize-none')}
-                rows={2}
-              />
-              {transferError && <p className="text-red-400 text-sm mb-3">{transferError}</p>}
-              <div className="flex gap-3">
-                <button type="button" onClick={closeTransferModal} className={clsx('flex-1 py-2 border rounded-lg', isDark ? 'border-offwhite/20' : 'border-charcoal/20')}>
+      {transferTarget ? (
+        transferStep === 'form' ? (
+          <AppModal
+            open
+            onClose={closeTransferModal}
+            title="Gift Your Card"
+            subtitle={`Transfer $${Number(transferTarget.balance || 0).toFixed(2)} to another registered customer.`}
+            scrollBody
+            footer={(
+              <>
+                <button type="button" onClick={closeTransferModal} className={modalBtnSecondary}>
                   Cancel
                 </button>
-                <button type="submit" className="flex-1 py-2 bg-gold text-charcoal rounded-lg font-heading">
+                <button
+                  type="submit"
+                  form="gift-card-transfer-form"
+                  className={modalBtnPrimary}
+                >
                   Continue
                 </button>
+              </>
+            )}
+          >
+            <form id="gift-card-transfer-form" onSubmit={handleTransferFormSubmit} className="space-y-4">
+              <div>
+                <label className={clsx('block text-sm mb-2', isDark ? 'text-offwhite/80' : 'text-charcoal/80')}>
+                  Recipient Phone
+                </label>
+                <input
+                  type="tel"
+                  value={recipientPhone}
+                  onChange={(e) => setRecipientPhone(e.target.value)}
+                  className={modalInputClass}
+                  required
+                />
               </div>
+              <div>
+                <label className={clsx('block text-sm mb-2', isDark ? 'text-offwhite/80' : 'text-charcoal/80')}>
+                  Message (optional)
+                </label>
+                <textarea
+                  value={transferMessage}
+                  onChange={(e) => setTransferMessage(e.target.value)}
+                  className={modalTextareaClass}
+                  rows={2}
+                />
+              </div>
+              {transferError ? <p className="text-red-400 text-sm">{transferError}</p> : null}
             </form>
-          ) : (
-            <div className={clsx('w-full max-w-md rounded-xl p-6 border', cardClass)}>
-              <h3 className="font-heading text-xl text-gold mb-2">Confirm Gift Transfer</h3>
-              <p className={clsx('text-sm mb-3', isDark ? 'text-offwhite/70' : 'text-charcoal/70')}>
-                Send your{' '}
-                <span className="text-gold font-semibold">${Number(transferTarget.balance || 0).toFixed(2)}</span>
-                {' '}gift card to{' '}
-                <span className="font-medium">{recipientPhone.trim()}</span>?
-              </p>
-              {transferMessage.trim() && (
-                <p className={clsx('text-sm mb-3 italic', isDark ? 'text-offwhite/60' : 'text-charcoal/60')}>
-                  Message: &ldquo;{transferMessage.trim()}&rdquo;
-                </p>
-              )}
-              <p className={clsx('text-sm mb-4', isDark ? 'text-offwhite/50' : 'text-charcoal/50')}>
-                This transfer cannot be undone. You will lose access to this card once it is sent.
-              </p>
-              {transferError && <p className="text-red-400 text-sm mb-3">{transferError}</p>}
-              <div className="flex gap-3">
+          </AppModal>
+        ) : (
+          <AppModal
+            open
+            onClose={() => { if (!transferring) closeTransferModal(); }}
+            title="Confirm Gift Transfer"
+            scrollBody
+            footer={(
+              <div className={modalFooterClass}>
                 <button
                   type="button"
                   onClick={() => { setTransferStep('form'); setTransferError(''); }}
                   disabled={transferring}
-                  className={clsx('flex-1 py-2 border rounded-lg disabled:opacity-50', isDark ? 'border-offwhite/20' : 'border-charcoal/20')}
+                  className={modalBtnSecondary}
                 >
                   Back
                 </button>
@@ -316,15 +319,31 @@ export default function CustomerGiftCards() {
                   type="button"
                   onClick={confirmTransfer}
                   disabled={transferring}
-                  className="flex-1 py-2 bg-gold text-charcoal rounded-lg font-heading disabled:opacity-50"
+                  className={modalBtnPrimary}
                 >
                   {transferring ? 'Sending…' : 'Confirm & Send'}
                 </button>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          >
+            <p className={clsx('text-sm mb-3', isDark ? 'text-offwhite/70' : 'text-charcoal/70')}>
+              Send your{' '}
+              <span className="text-gold font-semibold">${Number(transferTarget.balance || 0).toFixed(2)}</span>
+              {' '}gift card to{' '}
+              <span className="font-medium">{recipientPhone.trim()}</span>?
+            </p>
+            {transferMessage.trim() ? (
+              <p className={clsx('text-sm mb-3 italic', isDark ? 'text-offwhite/60' : 'text-charcoal/60')}>
+                Message: &ldquo;{transferMessage.trim()}&rdquo;
+              </p>
+            ) : null}
+            <p className={clsx('text-sm', isDark ? 'text-offwhite/50' : 'text-charcoal/50')}>
+              This transfer cannot be undone. You will lose access to this card once it is sent.
+            </p>
+            {transferError ? <p className="text-red-400 text-sm mt-3">{transferError}</p> : null}
+          </AppModal>
+        )
+      ) : null}
     </div>
   );
 }

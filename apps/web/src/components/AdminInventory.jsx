@@ -181,7 +181,7 @@ export default function AdminInventory() {
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-light flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
@@ -219,7 +219,7 @@ export default function AdminInventory() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 mobile-page">
           <div className="rounded-xl p-5 mb-6 bg-secondary border border-card">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex-1 w-full sm:max-w-sm">

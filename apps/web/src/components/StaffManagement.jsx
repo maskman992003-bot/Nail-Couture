@@ -169,7 +169,7 @@ export default function StaffManagement() {
       <Sidebar />
       <style>{`.staff-mgmt select, .staff-mgmt option { ${theme === 'dark' ? 'background: #1a1a1a; color: #fff;' : 'background: #fff; color: #1a1a1a;'} }`}</style>
 
-      <div className="staff-mgmt p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto">
+      <div className="staff-mgmt p-4 md:p-6 lg:p-8 mobile-page max-w-7xl mx-auto">
         <div className={headerBorderClass}>
           <div>
             <h1 className="font-heading text-3xl text-gold tracking-wide">Staff Management</h1>

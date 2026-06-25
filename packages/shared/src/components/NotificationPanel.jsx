@@ -64,6 +64,8 @@ export default function NotificationPanel({
         style={{
           backgroundColor: bg,
           borderLeft: `1px solid ${theme === 'dark' ? 'rgba(197,160,89,0.2)' : 'rgba(197,160,89,0.3)'}`,
+          paddingTop: 'var(--safe-top)',
+          paddingBottom: 'var(--safe-bottom)',
         }}
         onClick={(e) => e.stopPropagation()}
       >

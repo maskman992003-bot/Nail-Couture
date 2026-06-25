@@ -78,7 +78,7 @@ export default function TechnicianTips() {
   return (
     <div className={bgClass}>
       <Sidebar />
-      <div className="max-w-3xl mx-auto px-6 py-8 pb-24 lg:pb-8">
+      <div className="max-w-3xl mx-auto px-6 py-8 mobile-page">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="font-heading text-3xl text-gold">My Tips</h1>

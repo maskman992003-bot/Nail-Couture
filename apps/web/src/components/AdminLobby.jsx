@@ -986,7 +986,7 @@ export default function AdminLobby() {
           isRefreshing={isRefreshing}
           pullProgress={pullProgress}
         />
-        <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+        <div className="p-4 md:p-6 lg:p-8 mobile-page">
             <div className="mb-6">
               <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
               <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Hold the grip handle and drag to assign, reassign, or return customers to waiting. Pull down to refresh on mobile.</p>

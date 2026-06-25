@@ -6,6 +6,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from './Sidebar';
 import VipFoundingListCard from './VipFoundingListCard.jsx';
+import usePullToRefresh from '../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 import clsx from 'clsx';
 
 export default function Admin() {
@@ -37,6 +39,14 @@ export default function Admin() {
       setLoading(false);
     }
   };
+
+  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+    onRefresh: async () => {
+      setLoading(true);
+      await fetchDashboardData();
+    },
+    disabled: loading,
+  });
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -78,13 +88,18 @@ export default function Admin() {
   return (
     <div className={bgClass}>
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        pullProgress={pullProgress}
+      />
+      <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className={headerBorderClass}>
           <h1 className="font-heading text-3xl text-gold">Admin Dashboard</h1>
           <p className={welcomeSubclass}>Welcome, {user?.full_name}</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 pb-24 lg:pb-8">
+        <div className="flex-1 overflow-y-auto p-8 mobile-page">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             <div className={statCardClass}>
               <div className={subtextClass}>Active Technicians</div>

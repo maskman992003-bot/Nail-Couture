@@ -376,7 +376,7 @@ export default function GiftCardSale() {
   return (
     <div className={bgClass}>
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-2xl mx-auto">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page max-w-2xl mx-auto">
         <div className={clsx('px-2 py-4 border-b mb-6', isDark ? 'border-gold/10' : 'border-gold/30')}>
           <h1 className="font-heading text-3xl text-gold">{pageTitle}</h1>
           <p className={clsx('text-sm mt-1', isDark ? 'text-offwhite/60' : 'text-charcoal/60')}>

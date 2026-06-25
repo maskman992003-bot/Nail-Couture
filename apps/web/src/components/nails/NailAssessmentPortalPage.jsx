@@ -21,7 +21,7 @@ export default function NailAssessmentPortalPage() {
       }`}
     >
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-8">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-8">
         <div>
           <h1 className="font-heading text-4xl text-gold">Nail Health Assessment</h1>
           <p

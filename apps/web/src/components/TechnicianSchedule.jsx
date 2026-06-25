@@ -172,7 +172,7 @@ export default function TechnicianSchedule() {
     <div className="technician-schedule min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
 
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-gold/10 pb-6 mb-6">
           <div>
             <h1 className="font-heading text-2xl sm:text-3xl text-gold tracking-wide">My Schedule</h1>

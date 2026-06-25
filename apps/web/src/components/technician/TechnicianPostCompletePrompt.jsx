@@ -85,10 +85,33 @@ export default function TechnicianPostCompletePrompt({ data, onDismiss, userRole
     }
   };
 
+  const handleCameraCapture = async (file) => {
+    if (!file || !canUploadVisitPhotos(user?.role)) return;
+    setPhotoUploading(true);
+    setMessage('');
+    setMessageIsError(false);
+    const result = await uploadVisitPhoto(
+      data.customerId,
+      data.appointmentId,
+      file,
+      photoType,
+      user?.id
+    );
+    setPhotoUploading(false);
+    if (result.success) {
+      setMessage(`${photoType === 'before' ? 'Before' : 'After'} photo uploaded`);
+      setMessageIsError(false);
+    } else {
+      setMessage(result.error || 'Upload failed');
+      setMessageIsError(true);
+    }
+  };
+
   const openCamera = () => {
     if (photoUploading) return;
     openWebCameraPicker({
       nativeCameraInputRef: cameraCaptureInputRef,
+      onNativeCapture: handleCameraCapture,
     });
   };
 

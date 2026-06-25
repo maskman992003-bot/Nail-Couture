@@ -84,7 +84,7 @@ export default function CustomerLoyalty() {
   return (
     <div className={shellClass}>
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-10">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-10">
         <DigitalWallet />
 
         {profile.referral_code && (

@@ -496,7 +496,7 @@ export default function CustomerManagementHistory() {
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
-      <div className="p-4 md:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
+      <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-6">
         <div className="mb-6">
           <h1 className="font-heading text-3xl text-gold">Customer Management History</h1>
           {visibleTabs.length > 1 && (
