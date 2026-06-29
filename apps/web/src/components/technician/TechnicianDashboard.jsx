@@ -12,7 +12,7 @@ import {
   WORKSTATION_AVAILABLE,
   WORKSTATION_ON_BREAK,
   fetchWorkstationStatus,
-  setWorkstationStatus,
+  setTechnicianBreakStatus,
 } from '@nail-couture/shared/utils/technicianWorkstation';
 
 export default function TechnicianDashboard({
@@ -58,18 +58,16 @@ export default function TechnicianDashboard({
   }, [user?.id]);
 
   const toggleBreak = useCallback(async () => {
-    if (!user?.id || statusSaving) return;
-    const next = workstationStatus === WORKSTATION_ON_BREAK
-      ? WORKSTATION_AVAILABLE
-      : WORKSTATION_ON_BREAK;
+    if (!user?.phone || statusSaving) return;
+    const goingOnBreak = workstationStatus !== WORKSTATION_ON_BREAK;
     setStatusSaving(true);
-    const result = await setWorkstationStatus(user.id, next, profilePreferences);
+    const result = await setTechnicianBreakStatus(user.phone, goingOnBreak);
     setStatusSaving(false);
     if (result.success) {
-      setWorkstationStatusState(next);
+      setWorkstationStatusState(result.workstationStatus || (goingOnBreak ? WORKSTATION_ON_BREAK : WORKSTATION_AVAILABLE));
       if (result.preferences) setProfilePreferences(result.preferences);
     }
-  }, [user?.id, statusSaving, workstationStatus, profilePreferences]);
+  }, [user?.phone, statusSaving, workstationStatus]);
 
   const onBreak = workstationStatus === WORKSTATION_ON_BREAK;
 

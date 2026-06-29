@@ -36,6 +36,11 @@ import {
   WORKSTATION_ON_BREAK,
   WORKSTATION_BUSY,
 } from '@nail-couture/shared/utils/technicianWorkstation'
+import ToggleSwitch from '@nail-couture/shared/components/ToggleSwitch'
+import {
+  fetchLobbyAutoAssignEnabled,
+  setLobbyAutoAssignEnabled,
+} from '@nail-couture/shared/utils/lobbyAutoAssign'
 import usePullToRefresh from '../hooks/usePullToRefresh'
 import PullToRefreshIndicator from './PullToRefreshIndicator'
 import VisitTechnicianManager, { MultiTechBadge } from './VisitTechnicianManager'
@@ -129,17 +134,17 @@ const DraggablePendingCustomer = ({ appointment, children }) => {
   )
 }
 
-const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, isOnBreak, dailyPoints, assignmentPriority, lastDispatchReason, updating, onAccept, onSendToCheckout, onManageTechs, showManageTechs, wiggle, activeDragId, theme }) => {
+const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, isOnBreak, isStaleBusy, dailyPoints, assignmentPriority, lastDispatchReason, updating, onAccept, onSendToCheckout, onManageTechs, showManageTechs, wiggle, activeDragId, theme }) => {
   const isDraggingThisPending = activeDragId && pendingCustomer && String(pendingCustomer.id) === String(activeDragId)
   const isServing = Boolean(activeCustomer?.id)
-  const dropDisabled = isServing || isPending || isOnBreak || isDraggingThisPending
+  const dropDisabled = isServing || isPending || isOnBreak || isStaleBusy || isDraggingThisPending
   const { isOver, setNodeRef } = useDroppable({
     id: tech.id,
     disabled: dropDisabled
   })
 
   const showAcceptButton = !!pendingCustomer
-  const dropHighlight = isOver && !isServing && !isOnBreak && !isPending
+  const dropHighlight = isOver && !isServing && !isOnBreak && !isPending && !isStaleBusy
 
   const gridItemClass = clsx(
     'rounded-xl p-5 border-2 transition-all',
@@ -148,9 +153,10 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
       'border-red-500/50 bg-red-900/10': isServing && !dropHighlight,
       'border-yellow-500/40 bg-yellow-900/10': isOnBreak && !isServing && !dropHighlight,
       'border-amber-500/40 bg-amber-900/10': isPending && !isServing && !isOnBreak && !dropHighlight,
+      'border-orange-500/40 bg-orange-900/10': isStaleBusy && !dropHighlight,
       'animate-wiggle': wiggle
     },
-    !dropHighlight && !isServing && !isOnBreak && !isPending && (
+    !dropHighlight && !isServing && !isOnBreak && !isPending && !isStaleBusy && (
       theme === 'dark' ? 'border-gold/30 bg-gold/10 hover:border-gold/50' : 'border-gold/40 bg-gold/10 hover:border-gold/60'
     )
   )
@@ -159,14 +165,16 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
     'text-red-400': isServing,
     'text-yellow-400': isOnBreak && !isServing,
     'text-amber-400': isPending && !isServing && !isOnBreak,
-    [theme === 'dark' ? 'text-offwhite' : 'text-charcoal']: !isServing && !isOnBreak && !isPending
+    'text-orange-400': isStaleBusy && !isServing && !isOnBreak && !isPending,
+    [theme === 'dark' ? 'text-offwhite' : 'text-charcoal']: !isServing && !isOnBreak && !isPending && !isStaleBusy
   })
 
   const statusBadgeClass = clsx('text-xs px-2 py-1 rounded', {
     'bg-red-500/30 text-red-400': isServing,
     'bg-yellow-500/30 text-yellow-400': isOnBreak && !isServing,
     'bg-amber-500/30 text-amber-400': isPending && !isServing && !isOnBreak,
-  }, !isServing && !isOnBreak && !isPending && (
+    'bg-orange-500/30 text-orange-400': isStaleBusy && !isServing && !isOnBreak && !isPending,
+  }, !isServing && !isOnBreak && !isPending && !isStaleBusy && (
     theme === 'dark' ? 'bg-offwhite/20 text-offwhite/50' : 'bg-charcoal/20 text-charcoal/50'
   ))
 
@@ -178,7 +186,7 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
 
   const tooltipLines = [
     `Daily points: ${dailyPoints ?? 0}`,
-    isOnBreak ? 'Status: on break' : isServing ? 'Status: serving' : isPending ? 'Status: pending assignment' : 'Status: available',
+    isOnBreak ? 'Status: on break' : isServing ? 'Status: serving' : isPending ? 'Status: pending assignment' : isStaleBusy ? 'Status: unavailable (stale busy — auto-assign will heal)' : 'Status: available',
     assignmentPriority ? 'Next in fairness queue — does not block lobby assignments while busy' : null,
     lastDispatchReason ? `Last pick: ${lastDispatchReason}` : null,
   ].filter(Boolean).join(' · ')
@@ -206,7 +214,7 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
             </span>
           )}
           <span className={statusBadgeClass}>
-          {isServing ? 'Serving' : isOnBreak ? 'On Break' : isPending ? 'Pending' : 'Available'}
+          {isServing ? 'Serving' : isOnBreak ? 'On Break' : isPending ? 'Pending' : isStaleBusy ? 'Unavailable' : 'Available'}
         </span>
         </div>
       </div>
@@ -253,6 +261,10 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
       ) : isOnBreak ? (
         <div className="text-sm text-yellow-400/80">
           On break — cannot assign
+        </div>
+      ) : isStaleBusy ? (
+        <div className="text-sm text-orange-400/80">
+          Unavailable — stale busy flag. Auto-assign will heal when enabled.
         </div>
       ) : (
         <div className={dropHintTextClass}>
@@ -631,9 +643,8 @@ export default function AdminLobby() {
   const [pendingAppointments, setPendingAppointments] = useState([])
   const [technicians, setTechnicians] = useState([])
   const [techWorkload, setTechWorkload] = useState({})
-  const [dispatchLog, setDispatchLog] = useState([])
-  const [showDispatchLog, setShowDispatchLog] = useState(false)
-  const [autoAssigning, setAutoAssigning] = useState(false)
+  const [autoAssignEnabled, setAutoAssignEnabled] = useState(true)
+  const [autoAssignToggling, setAutoAssignToggling] = useState(false)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
   const [notification, setNotification] = useState(null)
@@ -671,7 +682,11 @@ export default function AdminLobby() {
 
   useEffect(() => {
     const init = async () => {
-      await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal(), fetchDispatchLog()])
+      const [autoAssign] = await Promise.all([
+        fetchLobbyAutoAssignEnabled(),
+        Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()]),
+      ])
+      setAutoAssignEnabled(autoAssign.enabled)
       setLoading(false)
     }
     init()
@@ -680,13 +695,15 @@ export default function AdminLobby() {
     const channel = supabase
       .channel('floor-manager')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, async () => {
-        await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal(), fetchDispatchLog()])
+        await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, async () => {
         await fetchTechnicians()
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dispatch_audit_log' }, async () => {
-        await fetchDispatchLog()
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_configurations' }, (payload) => {
+        if (payload.new?.lobby_auto_assign_enabled !== undefined) {
+          setAutoAssignEnabled(payload.new.lobby_auto_assign_enabled !== false)
+        }
       })
       .subscribe()
 
@@ -749,14 +766,6 @@ export default function AdminLobby() {
     setTechWorkload(map)
   }, [])
 
-  const fetchDispatchLog = useCallback(async () => {
-    const { data, error } = await supabase.rpc('get_dispatch_audit_log', {
-      caller_phone: getCallerPhone(),
-      p_limit: 20,
-    })
-    if (!error) setDispatchLog(data || [])
-  }, [])
-
   const fetchTodayTotal = useCallback(async () => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -777,7 +786,6 @@ export default function AdminLobby() {
       fetchPendingAppointments(),
       fetchTechnicians(),
       fetchTodayTotal(),
-      fetchDispatchLog(),
     ])
   }, [
     fetchAppointments,
@@ -786,7 +794,6 @@ export default function AdminLobby() {
     fetchPendingAppointments,
     fetchTechnicians,
     fetchTodayTotal,
-    fetchDispatchLog,
   ])
 
   const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
@@ -794,30 +801,30 @@ export default function AdminLobby() {
     disabled: Boolean(activeId),
   })
 
-  const handleAutoAssign = async () => {
-    setAutoAssigning(true)
+  const handleAutoAssignToggle = async (nextEnabled) => {
+    if (autoAssignToggling || nextEnabled === autoAssignEnabled) return
+    setAutoAssignToggling(true)
     try {
-      const { data, error } = await supabase.rpc('run_cumulative_effort_dispatcher', {
-        caller_phone: getCallerPhone(),
-      })
-      if (error) {
-        setNotification({ message: 'Auto-assign failed', name: error.message })
+      const result = await setLobbyAutoAssignEnabled(getCallerPhone(), nextEnabled)
+      if (result.success) {
+        setAutoAssignEnabled(result.enabled)
+        if (nextEnabled) {
+          const assignedCount = result.dispatch?.assigned_count || 0
+          setNotification({
+            message: assignedCount > 0
+              ? `Auto-assign on — assigned ${assignedCount} client(s)`
+              : 'Auto-assign on',
+            name: 'Dispatcher',
+          })
+        } else {
+          setNotification({ message: 'Auto-assign off — assign manually', name: 'Floor Manager' })
+        }
+        await refreshFloorManager()
       } else {
-        const results = data?.results || []
-        const assignedCount = data?.assigned_count || 0
-        const lastAssigned = [...results].reverse().find((r) => r?.assigned)
-        const lastResult = results.length > 0 ? results[results.length - 1] : null
-        setNotification({
-          message: lastAssigned?.reason_detail
-            || (assignedCount > 0 ? `Assigned ${assignedCount} client(s)` : null)
-            || lastResult?.reason_detail
-            || 'No clients waiting to assign',
-          name: 'Dispatcher',
-        })
+        setNotification({ message: 'Failed to update auto-assign', name: result.error || 'Error' })
       }
-      await refreshFloorManager()
     } finally {
-      setAutoAssigning(false)
+      setAutoAssignToggling(false)
       setTimeout(() => setNotification(null), 4000)
     }
   }
@@ -1086,55 +1093,24 @@ export default function AdminLobby() {
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
-                <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Hold the grip handle and drag to assign, reassign, or return customers to waiting. Pull down to refresh on mobile.</p>
+                <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Hold the grip handle and drag to assign, reassign, or return customers to waiting. Turn auto-assign off to distribute manually. Pull down to refresh on mobile.</p>
               </div>
               <div className="flex flex-wrap gap-2 shrink-0 self-start">
-                <button
-                  type="button"
-                  onClick={handleAutoAssign}
-                  disabled={autoAssigning || isRefreshing || Boolean(activeId)}
-                  className="px-3 py-1.5 text-sm bg-gold text-charcoal rounded-lg hover:bg-gold/90 disabled:opacity-50 min-h-[44px]"
-                >
-                  {autoAssigning ? 'Assigning…' : 'Auto-assign'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDispatchLog((v) => !v)}
-                  className="px-3 py-1.5 text-sm bg-secondary border border-light rounded-lg text-secondary hover:border-theme min-h-[44px]"
-                >
-                  {showDispatchLog ? 'Hide log' : 'Dispatcher log'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => refreshFloorManager()}
-                  disabled={isRefreshing || Boolean(activeId)}
-                  className="px-3 py-1.5 text-sm bg-secondary border border-light rounded-lg text-secondary hover:border-theme disabled:opacity-50 min-h-[44px]"
-                >
-                  {isRefreshing ? 'Refreshing…' : 'Refresh'}
-                </button>
+                <div className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg border min-h-[44px] ${theme === 'dark' ? 'bg-offwhite/5 border-offwhite/10' : 'bg-charcoal/5 border-charcoal/10'}`}>
+                  <span className={`text-sm whitespace-nowrap ${theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}`}>Auto-assign</span>
+                  <ToggleSwitch
+                    checked={autoAssignEnabled}
+                    disabled={autoAssignToggling || Boolean(activeId)}
+                    onChange={handleAutoAssignToggle}
+                    theme={theme}
+                    ariaLabel="Toggle lobby auto-assign"
+                  />
+                  <span className={`text-xs font-medium min-w-[1.5rem] ${autoAssignEnabled ? 'text-gold' : theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>
+                    {autoAssignToggling ? '…' : autoAssignEnabled ? 'On' : 'Off'}
+                  </span>
+                </div>
               </div>
             </div>
-
-            {showDispatchLog && (
-              <div className={`mb-6 rounded-xl border p-4 ${theme === 'dark' ? 'border-offwhite/10 bg-offwhite/5' : 'border-charcoal/10 bg-charcoal/5'}`}>
-                <h3 className="font-heading text-gold text-sm mb-3">Dispatcher log (today)</h3>
-                {dispatchLog.length === 0 ? (
-                  <p className={`text-sm ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No dispatch decisions yet today.</p>
-                ) : (
-                  <ul className="space-y-2 max-h-48 overflow-y-auto text-sm">
-                    {dispatchLog.map((entry) => (
-                      <li key={entry.id} className={theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}>
-                        <span className="text-gold/80">{formatTime(entry.created_at)}</span>
-                        {' — '}
-                        {entry.customer_name || 'Client'}
-                        {entry.technician_name ? ` → ${entry.technician_name}` : ''}
-                        {entry.reason_detail ? `: ${entry.reason_detail}` : ''}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
 
             {notification && (
               <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gold text-charcoal px-4 sm:px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw]">
@@ -1277,6 +1253,7 @@ export default function AdminLobby() {
                     const isServing = Boolean(activeCustomer)
                     const isPending = Boolean(pendingCustomer)
                     const isOnBreak = wsStatus === WORKSTATION_ON_BREAK
+                    const isStaleBusy = wsStatus === WORKSTATION_BUSY && !isServing && !isPending && !isOnBreak
                     const assignmentPriority = workload.assignment_priority ?? getAssignmentPriority(tech.preferences)
                     
                     return (
@@ -1288,6 +1265,7 @@ export default function AdminLobby() {
                         isBusy={isServing}
                         isPending={isPending}
                         isOnBreak={isOnBreak}
+                        isStaleBusy={isStaleBusy}
                         dailyPoints={workload.daily_points}
                         assignmentPriority={assignmentPriority}
                         lastDispatchReason={workload.last_dispatch_reason}

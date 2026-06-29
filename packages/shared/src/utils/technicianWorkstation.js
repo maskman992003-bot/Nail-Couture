@@ -64,3 +64,28 @@ export async function setWorkstationStatus(profileId, status, currentPreferences
     return { success: false, error: err.message || 'Failed to update status' };
   }
 }
+
+export async function setTechnicianBreakStatus(callerPhone, onBreak) {
+  if (!callerPhone) return { success: false, error: 'Missing phone' };
+  try {
+    const { data, error } = await supabase.rpc('set_technician_break_status', {
+      caller_phone: callerPhone,
+      on_break: onBreak,
+    });
+    if (error) {
+      if (error.message?.includes('set_technician_break_status')) {
+        return { success: false, error: 'Run sql/127_fix_lobby_dispatch_stuck.sql in Supabase.' };
+      }
+      return { success: false, error: error.message };
+    }
+    const workstationStatus = data?.workstation_status || (onBreak ? WORKSTATION_ON_BREAK : WORKSTATION_AVAILABLE);
+    return {
+      success: Boolean(data?.success),
+      workstationStatus,
+      preferences: data?.preferences || {},
+      dispatch: data?.dispatch,
+    };
+  } catch (err) {
+    return { success: false, error: err.message || 'Failed to update break status' };
+  }
+}

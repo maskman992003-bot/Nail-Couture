@@ -4,6 +4,7 @@ import {
   Animated,
   PanResponder,
   Pressable,
+  Switch,
   Text,
   View,
 } from 'react-native';
@@ -18,6 +19,10 @@ import {
   WORKSTATION_ON_BREAK,
   WORKSTATION_BUSY,
 } from '@nail-couture/shared/utils/technicianWorkstation.js';
+import {
+  fetchLobbyAutoAssignEnabled,
+  setLobbyAutoAssignEnabled,
+} from '@nail-couture/shared/utils/lobbyAutoAssign.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
@@ -53,14 +58,6 @@ type TechWorkload = {
   last_dispatch_reason?: string;
 };
 
-type DispatchLogEntry = {
-  id: string;
-  created_at: string;
-  customer_name?: string;
-  technician_name?: string;
-  reason_detail?: string;
-};
-
 type ServiceItem = { id: number; name: string; price: number; is_addon?: boolean };
 
 export function AdminLobbyScreen() {
@@ -72,9 +69,8 @@ export function AdminLobbyScreen() {
   const [pendingAppointments, setPendingAppointments] = useState<AppointmentRecord[]>([]);
   const [technicians, setTechnicians] = useState<TechnicianRecord[]>([]);
   const [techWorkload, setTechWorkload] = useState<Record<string, TechWorkload>>({});
-  const [dispatchLog, setDispatchLog] = useState<DispatchLogEntry[]>([]);
-  const [showDispatchLog, setShowDispatchLog] = useState(false);
-  const [autoAssigning, setAutoAssigning] = useState(false);
+  const [autoAssignEnabled, setAutoAssignEnabled] = useState(true);
+  const [autoAssignToggling, setAutoAssignToggling] = useState(false);
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -108,14 +104,13 @@ export function AdminLobbyScreen() {
     const phone = user.phone;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const [waiting, serving, checkout, pending, techs, workload, audit, countRes] = await Promise.all([
+    const [waiting, serving, checkout, pending, techs, workload, countRes] = await Promise.all([
       getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'waiting', order_asc: true }),
       getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'serving', order_asc: true }),
       getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'ready_for_checkout', order_asc: true }),
       getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'assigned_pending', order_asc: true }),
       getSupabase().from('profiles').select('*').eq('role', 'technician').order('full_name'),
       getSupabase().rpc('get_floor_technician_workload'),
-      getSupabase().rpc('get_dispatch_audit_log', { caller_phone: phone, p_limit: 20 }),
       getSupabase().rpc('get_appointments_count', { caller_phone: phone, status_filter: 'completed', date_from: today.toISOString() }),
     ]);
     setLobbyAppointments((waiting.data as AppointmentRecord[]) || []);
@@ -128,47 +123,56 @@ export function AdminLobbyScreen() {
       map[row.id] = row;
     });
     setTechWorkload(map);
-    setDispatchLog((audit.data as DispatchLogEntry[]) || []);
     setTodayTotal((countRes.data as number) || 0);
     setLoading(false);
   }, [user?.phone]);
 
   useEffect(() => {
-    fetchAll();
+    const init = async () => {
+      const [autoAssign] = await Promise.all([
+        fetchLobbyAutoAssignEnabled(),
+        fetchAll(),
+      ]);
+      setAutoAssignEnabled(autoAssign.enabled);
+    };
+    init();
     getServices().then((data) => setServices(data as ServiceItem[])).catch(() => {});
     const channel = getSupabase()
       .channel('floor-manager')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => fetchAll())
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => fetchAll())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_configurations' }, (payload) => {
+        const row = payload.new as { lobby_auto_assign_enabled?: boolean } | undefined;
+        if (row?.lobby_auto_assign_enabled !== undefined) {
+          setAutoAssignEnabled(row.lobby_auto_assign_enabled !== false);
+        }
+      })
       .subscribe();
     return () => { getSupabase().removeChannel(channel); };
   }, [fetchAll]);
 
-  const handleAutoAssign = async () => {
-    if (!user?.phone) return;
-    setAutoAssigning(true);
+  const handleAutoAssignToggle = async (nextEnabled: boolean) => {
+    if (!user?.phone || autoAssignToggling || nextEnabled === autoAssignEnabled) return;
+    setAutoAssignToggling(true);
     try {
-      const { data, error } = await getSupabase().rpc('run_cumulative_effort_dispatcher', {
-        caller_phone: user.phone,
-      });
-      if (error) {
-        showToast('Auto-assign failed', error.message);
+      const result = await setLobbyAutoAssignEnabled(user.phone, nextEnabled);
+      if (result.success) {
+        setAutoAssignEnabled(result.enabled);
+        if (nextEnabled) {
+          const assignedCount = (result.dispatch as { assigned_count?: number } | undefined)?.assigned_count || 0;
+          showToast(
+            assignedCount > 0 ? `Auto-assign on — assigned ${assignedCount} client(s)` : 'Auto-assign on',
+            'Dispatcher',
+          );
+        } else {
+          showToast('Auto-assign off — assign manually', 'Floor Manager');
+        }
+        await fetchAll();
       } else {
-        const results = (data?.results as Array<{ assigned?: boolean; reason_detail?: string }>) || [];
-        const assignedCount = data?.assigned_count || 0;
-        const lastAssigned = [...results].reverse().find((r) => r?.assigned);
-        const lastResult = results.length > 0 ? results[results.length - 1] : null;
-        showToast(
-          lastAssigned?.reason_detail
-            || (assignedCount > 0 ? `Assigned ${assignedCount} client(s)` : null)
-            || lastResult?.reason_detail
-            || 'No clients waiting to assign',
-          'Dispatcher',
-        );
+        showToast('Failed to update auto-assign', result.error || 'Error');
       }
-      await fetchAll();
     } finally {
-      setAutoAssigning(false);
+      setAutoAssignToggling(false);
     }
   };
 
@@ -492,57 +496,37 @@ export function AdminLobbyScreen() {
       title="Floor Manager"
       subtitle={`${todayTotal} completed today`}
       headerRight={
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Pressable
-            onPress={handleAutoAssign}
-            disabled={autoAssigning}
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <View
             style={{
-              backgroundColor: styles.tokens.goldStrong,
-              borderRadius: 8,
-              paddingHorizontal: 10,
-              paddingVertical: 8,
-              opacity: autoAssigning ? 0.5 : 1,
-            }}
-          >
-            <Text style={{ color: '#121212', fontWeight: '600', fontSize: 12 }}>
-              {autoAssigning ? '…' : 'Auto'}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setShowDispatchLog((v) => !v)}
-            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
               borderWidth: 1,
               borderColor: styles.tokens.borderLight,
               borderRadius: 8,
               paddingHorizontal: 10,
-              paddingVertical: 8,
+              paddingVertical: 6,
             }}
           >
-            <Text style={{ color: styles.tokens.textSecondary, fontSize: 12 }}>Log</Text>
-          </Pressable>
+            <Text style={{ color: styles.tokens.textSecondary, fontSize: 12 }}>Auto</Text>
+            <Switch
+              value={autoAssignEnabled}
+              onValueChange={handleAutoAssignToggle}
+              disabled={autoAssignToggling}
+              trackColor={{ false: styles.tokens.borderLight, true: styles.tokens.goldStrong }}
+              thumbColor="#ffffff"
+            />
+            <Text style={{ color: autoAssignEnabled ? styles.tokens.goldStrong : styles.tokens.textSecondary, fontSize: 11, fontWeight: '600', minWidth: 20 }}>
+              {autoAssignToggling ? '…' : autoAssignEnabled ? 'On' : 'Off'}
+            </Text>
+          </View>
         </View>
       }
     >
       {notification && (
         <View style={{ backgroundColor: 'rgba(197,160,89,0.15)', borderRadius: 10, padding: 12, marginBottom: 12 }}>
           <Text style={styles.textGold}>{notification.name ? `${notification.name}: ` : ''}{notification.message}</Text>
-        </View>
-      )}
-
-      {showDispatchLog && (
-        <View style={[styles.card, { padding: 12, marginBottom: 12 }]}>
-          <Text style={[styles.textGold, { fontWeight: '600', marginBottom: 8 }]}>Dispatcher log (today)</Text>
-          {dispatchLog.length === 0 ? (
-            <Text style={styles.textSecondary}>No dispatch decisions yet today.</Text>
-          ) : (
-            dispatchLog.map((entry) => (
-              <Text key={entry.id} style={[styles.textSecondary, { fontSize: 12, marginBottom: 4 }]}>
-                {entry.customer_name || 'Client'}
-                {entry.technician_name ? ` → ${entry.technician_name}` : ''}
-                {entry.reason_detail ? `: ${entry.reason_detail}` : ''}
-              </Text>
-            ))
-          )}
         </View>
       )}
 
