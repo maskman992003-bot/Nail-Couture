@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getHomePath, isCheckInRole } from '@nail-couture/shared/utils/routes';
 import { verifyKioskPin } from '@nail-couture/shared/constants/kiosk';
+import { CLIENT_LOGIN_PHONE_NOT_FOUND_MESSAGE } from '@nail-couture/shared/constants/clientAuth';
+import { claimPendingGiftCards } from '@nail-couture/shared/utils/giftCards';
 import { useTheme } from '../contexts/ThemeContext';
 import BrandLogo from './BrandLogo.jsx';
 import KioskPinKeypad from './KioskPinKeypad.jsx';
@@ -81,6 +83,9 @@ export default function ClientLogin() {
   };
 
   const doLogin = (profileData) => {
+    if (profileData?.role === 'customer' && profileData?.id) {
+      claimPendingGiftCards(profileData.id).catch(() => {});
+    }
     login(profileData);
     navigate(getHomePath(profileData.role || 'customer'));
   };
@@ -114,7 +119,7 @@ export default function ClientLogin() {
       }
 
       if (!data) {
-        setError('No account found with this phone number. Please check in at the kiosk first.');
+        setError(CLIENT_LOGIN_PHONE_NOT_FOUND_MESSAGE);
         setLoading(false);
         return;
       }

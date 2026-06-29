@@ -141,7 +141,7 @@ export function getNotificationWebPath(type, role) {
   if (type === 'gift_card_sale_completed' && ['owner', 'partner', 'admin'].includes(role)) {
     return getGiftCardsPath(role);
   }
-  if (type === 'gift_card_purchased' || type === 'gift_card_received') {
+  if (type === 'gift_card_purchased' || type === 'gift_card_received' || type === 'gift_card_pending_share' || type === 'gift_card_claimed') {
     return role === 'customer' ? '/customer/gift-cards' : getHomePath(role);
   }
 
@@ -182,7 +182,7 @@ export function getNotificationMobileScreen(type, role) {
   if (type === 'gift_card_sale_completed' && ['owner', 'partner', 'admin'].includes(role)) {
     return 'GiftCards';
   }
-  if ((type === 'gift_card_purchased' || type === 'gift_card_received') && role === 'customer') {
+  if ((type === 'gift_card_purchased' || type === 'gift_card_received' || type === 'gift_card_pending_share' || type === 'gift_card_claimed') && role === 'customer') {
     return 'GiftCards';
   }
 

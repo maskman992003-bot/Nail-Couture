@@ -16,7 +16,9 @@ import {
   getMyGiftCards,
   GIFT_CARD_STATUS_LABELS,
   isGiftCardExpired,
+  isGiftCardPendingClaim,
   maskGiftCardCode,
+  sanitizeDisplayGiftMessage,
   transferGiftCard,
 } from '@nail-couture/shared/utils/giftCards.js';
 import {
@@ -27,6 +29,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { CustomerScreenLayout } from '../../components/customer/CustomerScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
 import { ListPagination } from '../../components/ListPagination';
+import { GiftCardSharePanel } from '../../components/giftCards/GiftCardSharePanel';
 import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type GiftCardRecord = Record<string, unknown> & {
@@ -38,6 +41,10 @@ type GiftCardRecord = Record<string, unknown> & {
   gift_message?: string;
   owner_name?: string;
   gifted_from_name?: string;
+  claim_token?: string;
+  pending_recipient_phone?: string;
+  recipient_name?: string;
+  claim_status?: string;
 };
 
 function GiftCardRow({
@@ -55,9 +62,14 @@ function GiftCardRow({
 }) {
   const styles = useThemeStyles();
   const [revealed, setRevealed] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const pending = isGiftCardPendingClaim(card);
   const maskedCode = maskGiftCardCode(String(card.code || ''));
   const giftedFromLabel = getGiftCardGiftedFromLabel(card);
   const recipientLabel = showRecipient ? getGiftCardRecipientLabel(card) : null;
+  const statusLabel = pending
+    ? 'Waiting for friend to claim'
+    : (GIFT_CARD_STATUS_LABELS[getGiftCardDisplayStatus(card)] || card.status);
 
   return (
     <View style={[styles.card, { padding: 16, marginBottom: 12, gap: 8 }]}>
@@ -75,7 +87,7 @@ function GiftCardRow({
         </View>
       </View>
       <Text style={styles.textSecondary}>
-        {GIFT_CARD_STATUS_LABELS[getGiftCardDisplayStatus(card)] || card.status}
+        {statusLabel}
       </Text>
       {getGiftCardExpiryLabel(card) ? (
         <Text style={[styles.textSecondary, { fontSize: 12 }, isGiftCardExpired(card) && { color: '#f87171' }]}>
@@ -85,8 +97,8 @@ function GiftCardRow({
       {giftedFromLabel ? (
         <Text style={[styles.textSecondary, { fontSize: 12 }]}>{giftedFromLabel}</Text>
       ) : null}
-      {hideFullCode ? (
-        <Text style={[styles.textGold, { fontFamily: 'monospace' }]}>{maskedCode}</Text>
+      {hideFullCode || pending ? (
+        <Text style={[styles.textGold, { fontFamily: 'monospace' }]}>{pending ? '' : maskedCode}</Text>
       ) : (
         <Pressable onPress={() => setRevealed((v) => !v)}>
           <Text style={[styles.textGold, { fontFamily: 'monospace' }]}>
@@ -94,13 +106,31 @@ function GiftCardRow({
           </Text>
         </Pressable>
       )}
+      {pending && card.claim_token ? (
+        <>
+          <Pressable onPress={() => setShareOpen((v) => !v)}>
+            <Text style={styles.textGold}>{shareOpen ? 'Hide share link' : 'Share claim link'}</Text>
+          </Pressable>
+          {shareOpen ? (
+            <GiftCardSharePanel
+              claimToken={String(card.claim_token)}
+              amount={Number(card.initial_amount || 0)}
+              recipientName={String(card.recipient_name || card.owner_name || '')}
+              pendingRecipientPhone={String(card.pending_recipient_phone || '')}
+              compact
+            />
+          ) : null}
+        </>
+      ) : null}
       {showTransfer && canTransferGiftCard(card) && onTransfer && (
         <Pressable onPress={() => onTransfer(card)}>
           <Text style={styles.textGold}>Gift to a friend</Text>
         </Pressable>
       )}
-      {card.gift_message ? (
-        <Text style={[styles.textSecondary, { fontStyle: 'italic' }]}>{String(card.gift_message)}</Text>
+      {sanitizeDisplayGiftMessage(card.gift_message) ? (
+        <Text style={[styles.textSecondary, { fontStyle: 'italic' }]}>
+          {sanitizeDisplayGiftMessage(card.gift_message)}
+        </Text>
       ) : null}
     </View>
   );

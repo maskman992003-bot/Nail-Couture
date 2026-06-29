@@ -6,6 +6,8 @@ import { useAppTheme } from '../hooks/useAppTheme.js';
 import { STAFF_GIFT_CARDS } from '@nail-couture/shared/constants/featureFlags';
 import { getGiftCardsPath, getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from './Sidebar';
+import usePullToRefresh from '../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 import AppModal from './AppModal';
 import AppointmentServicesPanel from './AppointmentServicesPanel';
 import AppointmentVisitNotesPanel from './AppointmentVisitNotesPanel';
@@ -55,6 +57,7 @@ export default function SuperAdmin() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [selectedAppointmentPayment, setSelectedAppointmentPayment] = useState(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     const phone = user?.phone;
@@ -206,6 +209,20 @@ export default function SuperAdmin() {
     borderRadius: themeConfig.cardStyle.borderRadius,
   };
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchData();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchData]);
+
+  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    disabled: loading || refreshing,
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
@@ -220,6 +237,11 @@ export default function SuperAdmin() {
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        pullProgress={pullProgress}
+      />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
          <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-theme">
         <div className="flex items-center justify-between">

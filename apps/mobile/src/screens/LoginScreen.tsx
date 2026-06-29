@@ -12,6 +12,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { spacing } from '@nail-couture/shared/theme/layout.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
+import { CLIENT_LOGIN_PHONE_NOT_FOUND_MESSAGE } from '@nail-couture/shared/constants/clientAuth.js';
 import { useAuth } from '../contexts/AuthContext';
 import { Icon } from '../components/icons/Icon';
 import { layout } from '../theme/layoutStyles';
@@ -105,7 +106,7 @@ export function LoginScreen() {
       }
 
       if (!data) {
-        setError('No account found with this phone number. Please check in at the kiosk first.');
+        setError(CLIENT_LOGIN_PHONE_NOT_FOUND_MESSAGE);
         setLoading(false);
         return;
       }

@@ -23,7 +23,7 @@ const PREVIEW_PROFILES = {
   preview: {
     balance: 100,
     ownerName: 'Recipient Name',
-    expiryText: 'Valid for 1 year',
+    expiryText: 'Valid for 6 months',
     giftMessage: 'Enjoy your spa day!',
     codeDisplay: 'GC-****-****',
   },

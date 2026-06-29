@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -20,6 +20,11 @@ import { Icon } from '../components/icons/Icon';
 import { layout } from '../theme/layoutStyles';
 import { useLayout } from '../theme/useLayout';
 import { useThemeStyles } from '../theme/useThemeStyles';
+import {
+  claimPendingGiftCards,
+  getGiftCardClaimPreview,
+  maskPhoneForDisplay,
+} from '@nail-couture/shared/utils/giftCards.js';
 import type { RootStackParamList } from '../navigation/publicTypes';
 
 function generateReferralCode(name: string) {
@@ -35,6 +40,8 @@ export function RegisterScreen() {
   const styles = useThemeStyles();
   const pageLayout = useLayout();
 
+  const giftToken = route.params?.gift || '';
+
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -46,6 +53,30 @@ export function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successProfile, setSuccessProfile] = useState<Record<string, unknown> | null>(null);
+  const [giftPreview, setGiftPreview] = useState<Record<string, unknown> | null>(null);
+  const [giftClaimCount, setGiftClaimCount] = useState(0);
+  const [phoneLocked, setPhoneLocked] = useState(false);
+
+  useEffect(() => {
+    if (!giftToken) return;
+    let cancelled = false;
+    (async () => {
+      const preview = await getGiftCardClaimPreview(giftToken);
+      if (cancelled) return;
+      if (preview?.success && preview.phone_for_registration) {
+        setGiftPreview(preview as Record<string, unknown>);
+        setFormData((prev) => ({
+          ...prev,
+          phone: String(preview.phone_for_registration),
+          full_name: prev.full_name || String(preview.recipient_name || ''),
+        }));
+        setPhoneLocked(true);
+      } else if (preview?.error === 'account_exists') {
+        setError(String(preview.message || 'Please log in to receive your gift.'));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [giftToken]);
 
   const handleSubmit = async () => {
     if (
@@ -131,6 +162,12 @@ export function RegisterScreen() {
         .single();
 
       if (insertError) throw insertError;
+
+      const claimResult = await claimPendingGiftCards(data.id);
+      if (claimResult?.count > 0) {
+        setGiftClaimCount(claimResult.count);
+      }
+
       setSuccessProfile(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
@@ -163,6 +200,11 @@ export function RegisterScreen() {
           <Text style={[styles.textPrimary, { fontSize: 22, marginTop: 12, textAlign: 'center' }]}>
             {formData.full_name}
           </Text>
+          {giftClaimCount > 0 ? (
+            <Text style={[styles.textSecondary, { marginTop: 12, textAlign: 'center' }]}>
+              Your <Text style={styles.textGold}>gift card{giftClaimCount > 1 ? 's are' : ' is'}</Text> in your wallet.
+            </Text>
+          ) : null}
           {formData.referral_code ? (
             <Text style={[styles.textSecondary, { marginTop: 12, textAlign: 'center' }]}>
               Your <Text style={styles.textGold}>50 loyalty points</Text> are being added
@@ -202,6 +244,14 @@ export function RegisterScreen() {
               resizeMode="contain"
             />
             <Text style={styles.textSecondary}>Create Your Account</Text>
+            {giftPreview?.success ? (
+              <Text style={[styles.textGold, { marginTop: 8, textAlign: 'center', fontSize: 13 }]}>
+                {giftPreview.buyer_first_name
+                  ? `${String(giftPreview.buyer_first_name)} sent you a $${Number(giftPreview.amount || 0).toFixed(0)} gift card!`
+                  : `Claim your $${Number(giftPreview.amount || 0).toFixed(0)} gift card`}
+                {' '}Register with {maskPhoneForDisplay(String(giftPreview.phone_for_registration || ''))}.
+              </Text>
+            ) : null}
             {formData.referral_code ? (
               <Text style={{ color: '#4ade80', marginTop: 8, textAlign: 'center', fontSize: 13 }}>
                 You have a referral code! You'll earn 50 loyalty points after signup.
@@ -227,14 +277,21 @@ export function RegisterScreen() {
               <TextInput
                 value={formData.phone}
                 onChangeText={(phone) => {
+                  if (phoneLocked) return;
                   setFormData((current) => ({ ...current, phone }));
                   setError('');
                 }}
                 placeholder="Enter your phone number"
                 placeholderTextColor={styles.tokens.textMuted}
                 keyboardType="phone-pad"
-                style={styles.input}
+                editable={!phoneLocked}
+                style={[styles.input, phoneLocked && { opacity: 0.75 }]}
               />
+              {phoneLocked ? (
+                <Text style={[styles.textSecondary, { fontSize: 11, marginTop: 4 }]}>
+                  Phone is locked to match your gift card.
+                </Text>
+              ) : null}
             </FormField>
 
             <FormField label="Email">

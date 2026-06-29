@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { STAFF_SHIFTS } from '@nail-couture/shared/constants/featureFlags';
 import Sidebar from './Sidebar';
+import usePullToRefresh from '../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 import AppModal, {
   modalLabelClass,
   modalInputClass,
@@ -53,6 +55,7 @@ export default function StaffManagement() {
   const [addForm, setAddForm] = useState({ phone: '', full_name: '', role: 'technician' });
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   const roleColors = theme === 'dark' ? roleColorsDark : roleColorsLight;
 
@@ -164,9 +167,33 @@ export default function StaffManagement() {
     theme === 'dark' ? 'bg-offwhite/5 border-white/5' : 'bg-charcoal/5 border-charcoal/5'
   );
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('role', ['admin', 'cashier', 'technician', 'owner', 'partner'])
+        .order('full_name');
+      if (data) setStaff(data);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    disabled: loading || refreshing,
+  });
+
   return (
     <div className={containerClass}>
       <Sidebar />
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        pullProgress={pullProgress}
+      />
       <style>{`.staff-mgmt select, .staff-mgmt option { ${theme === 'dark' ? 'background: #1a1a1a; color: #fff;' : 'background: #fff; color: #1a1a1a;'} }`}</style>
 
       <div className="staff-mgmt p-4 md:p-6 lg:p-8 mobile-page max-w-7xl mx-auto">

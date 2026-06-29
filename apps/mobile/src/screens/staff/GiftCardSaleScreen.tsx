@@ -25,6 +25,7 @@ import {
   stripGiftCardCodeFromSaleResult,
 } from '@nail-couture/shared/utils/giftCards.js';
 import { useAuth } from '../../contexts/AuthContext';
+import { GiftCardSharePanel } from '../../components/giftCards/GiftCardSharePanel';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { ScrollSelect } from '../../components/forms/ScrollSelect';
 import { useThemeStyles } from '../../theme/useThemeStyles';
@@ -54,6 +55,7 @@ export function GiftCardSaleScreen() {
   const [pendingRequests, setPendingRequests] = useState<Record<string, unknown>[]>([]);
   const [loadingQueue, setLoadingQueue] = useState(false);
   const [completingRequestId, setCompletingRequestId] = useState<string | null>(null);
+  const [recipientPendingClaim, setRecipientPendingClaim] = useState(false);
 
   const loadQueue = useCallback(async () => {
     if (!user?.phone || !canComplete) return;
@@ -100,6 +102,37 @@ export function GiftCardSaleScreen() {
         return;
       }
       setBuyerName(data.full_name || '');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Lookup failed');
+    } finally {
+      setLookingUp(false);
+    }
+  };
+
+  const lookupRecipient = async () => {
+    const phone = recipientPhone.trim();
+    if (!phone) return;
+    setLookingUp(true);
+    setError('');
+    try {
+      const { data, error: lookupError } = await getSupabase()
+        .from('profiles')
+        .select('full_name, role')
+        .eq('phone', phone.replace(/\D/g, ''))
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+      if (!data) {
+        setRecipientName('');
+        setRecipientPendingClaim(true);
+        return;
+      }
+      setRecipientPendingClaim(false);
+      if (data.role !== 'customer') {
+        setRecipientName('');
+        setError('Recipient must be a registered customer.');
+        return;
+      }
+      setRecipientName(data.full_name || '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Lookup failed');
     } finally {
@@ -255,6 +288,15 @@ export function GiftCardSaleScreen() {
               <Text style={styles.textGold}>{copied ? 'Copied!' : 'Copy Code'}</Text>
             </Pressable>
           ) : null}
+          {(result.pending_claim || result.claim_token) && (
+            <GiftCardSharePanel
+              claimToken={String(result.claim_token || giftCard.claim_token || '')}
+              amount={Number(giftCard.initial_amount || 0)}
+              recipientName={String(result.owner_name || recipientName || '')}
+              pendingRecipientPhone={String(giftCard.pending_recipient_phone || recipientPhone || '')}
+              compact
+            />
+          )}
           <Pressable
             onPress={() => {
               setResult(null);
@@ -422,14 +464,29 @@ export function GiftCardSaleScreen() {
 
             {giftToOther && (
               <>
-                <TextInput
-                  value={recipientPhone}
-                  onChangeText={setRecipientPhone}
-                  keyboardType="phone-pad"
-                  placeholder="Recipient phone"
-                  placeholderTextColor={styles.tokens.textMuted}
-                  style={styles.input}
-                />
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TextInput
+                    value={recipientPhone}
+                    onChangeText={(value) => {
+                      setRecipientPhone(value);
+                      setRecipientName('');
+                      setRecipientPendingClaim(false);
+                    }}
+                    keyboardType="phone-pad"
+                    placeholder="Recipient phone"
+                    placeholderTextColor={styles.tokens.textMuted}
+                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                  />
+                  <Pressable onPress={lookupRecipient} style={[styles.card, { paddingHorizontal: 14, justifyContent: 'center' }]}>
+                    <Text style={styles.textGold}>{lookingUp ? '…' : 'Lookup'}</Text>
+                  </Pressable>
+                </View>
+                {recipientName ? <Text style={styles.textGold}>{recipientName}</Text> : null}
+                {recipientPendingClaim ? (
+                  <Text style={{ color: '#fbbf24', fontSize: 13 }}>
+                    Not registered yet — share the claim link after sale.
+                  </Text>
+                ) : null}
                 <TextInput
                   value={recipientName}
                   onChangeText={setRecipientName}

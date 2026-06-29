@@ -81,7 +81,7 @@ export default function ThemedLandingFooter() {
           </div>
 
           <form onSubmit={handleVipSubmit} className={`flex flex-col w-full gap-2 ${isBoutique ? 'max-w-md lg:w-auto' : 'max-w-xl lg:max-w-none lg:flex-1'}`}>
-            <div className={`flex w-full gap-2 ${isBoutique ? '' : 'flex-col sm:flex-row'}`}>
+            <div className="flex w-full flex-col gap-2 sm:flex-row">
               <input
                 type="email"
                 required
@@ -97,8 +97,13 @@ export default function ThemedLandingFooter() {
                 disabled={submitting}
                 className="landing-input"
               />
-              <button type="submit" className="landing-btn-primary shrink-0 h-11" disabled={submitting}>
-                {submitting ? 'Joining…' : submitted ? 'Thank You!' : 'Join Our VIP Founding List'}
+              <button type="submit" className="landing-btn-primary w-full sm:w-auto shrink-0 h-11" disabled={submitting}>
+                {submitting ? 'Joining…' : submitted ? 'Thank You!' : (
+                  <>
+                    <span className="sm:hidden">Join VIP List</span>
+                    <span className="hidden sm:inline">Join Our VIP Founding List</span>
+                  </>
+                )}
               </button>
             </div>
             {error && (

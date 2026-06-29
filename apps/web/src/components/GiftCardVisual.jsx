@@ -6,6 +6,11 @@ import {
   getGiftCardWebTextStyle,
 } from '@nail-couture/shared/constants/giftCardLayout.js';
 import { GIFT_CARD_WEB_IMAGE } from '../constants/giftCardImages.js';
+import {
+  maskClaimPreviewText,
+  sanitizeClaimPreviewOwnerName,
+  sanitizeDisplayGiftMessage,
+} from '@nail-couture/shared/utils/giftCards';
 
 function useCardHeight(ref) {
   const [cardHeightPx, setCardHeightPx] = useState(200);
@@ -63,6 +68,7 @@ export function GiftCardVisual({
   codeInteractive = false,
   onCodeClick,
   showInitialOnCard = false,
+  claimPreview = false,
   footer,
 }) {
   const layout = getGiftCardLayout();
@@ -73,7 +79,14 @@ export function GiftCardVisual({
   const muted = isDark ? 'text-offwhite/70' : 'text-charcoal/70';
   const faint = isDark ? 'text-offwhite/50' : 'text-charcoal/50';
   const displayBalance = hasBalance ? formatGiftCardBalance(balance) : null;
-  const displayOwner = ownerName?.trim() || null;
+  const displayOwner = claimPreview
+    ? sanitizeClaimPreviewOwnerName(ownerName)
+    : (ownerName?.trim() || null);
+  const sanitizedGiftMessage = sanitizeDisplayGiftMessage(giftMessage);
+  const displayGiftMessage = sanitizedGiftMessage
+    ? (claimPreview ? maskClaimPreviewText(sanitizedGiftMessage) : sanitizedGiftMessage)
+    : null;
+  const displayCode = claimPreview ? null : codeDisplay;
   const displayInitial = showInitialOnCard && hasInitial
     ? `$${Number(initialAmount).toFixed(2)}`
     : null;
@@ -108,7 +121,7 @@ export function GiftCardVisual({
           />
           {!codeInteractive ? (
             <OverlayText
-              value={codeDisplay}
+              value={displayCode}
               position={layout.positions.code}
               fieldStyle={layout.code}
               textShadow={layout.textShadow}
@@ -152,20 +165,23 @@ export function GiftCardVisual({
         ) : null}
       </div>
 
-      {(statusText || expiryText || giftedFromText || giftMessage) ? (
+      {(statusText || expiryText || giftedFromText || displayGiftMessage || footer) ? (
         <div className={clsx('space-y-1 text-xs px-1', muted)}>
-          {statusText ? <p>{statusText}</p> : null}
+          {(statusText || footer) ? (
+            <div className="flex items-center justify-between gap-3">
+              {statusText ? <p className="min-w-0">{statusText}</p> : <span />}
+              {footer ? (
+                <div className="flex items-center gap-3 shrink-0">
+                  {footer}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {expiryText ? (
             <p className={expiryExpired ? 'text-red-400/90' : faint}>{expiryText}</p>
           ) : null}
           {giftedFromText ? <p>{giftedFromText}</p> : null}
-          {giftMessage ? <p className="italic">&ldquo;{giftMessage}&rdquo;</p> : null}
-        </div>
-      ) : null}
-
-      {footer ? (
-        <div className="flex items-center justify-end gap-3 px-1">
-          {footer}
+          {displayGiftMessage ? <p className="italic">&ldquo;{displayGiftMessage}&rdquo;</p> : null}
         </div>
       ) : null}
     </div>

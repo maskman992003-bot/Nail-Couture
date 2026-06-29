@@ -28,6 +28,7 @@ import { copyTextToClipboard, downloadTextFile } from '@nail-couture/shared/util
 import Sidebar from './Sidebar';
 import { GiftCardVisual } from './GiftCardVisual';
 import AppModal, { modalBtnPrimary, modalBtnSecondary } from './AppModal';
+import GiftCardSharePanel from './GiftCardSharePanel';
 import clsx from 'clsx';
 
 export default function GiftCardSale() {
@@ -63,6 +64,7 @@ export default function GiftCardSale() {
   const [activeRequestId, setActiveRequestId] = useState(null);
   const [completingRequestId, setCompletingRequestId] = useState(null);
   const [completeConfirm, setCompleteConfirm] = useState(null);
+  const [recipientPendingClaim, setRecipientPendingClaim] = useState(false);
 
   const loadQueue = useCallback(async () => {
     if (!canComplete) return;
@@ -114,7 +116,7 @@ export default function GiftCardSale() {
   const labelClass = isDark ? 'block text-offwhite/80 text-sm mb-2' : 'block text-charcoal/80 text-sm mb-2';
   const cardClass = clsx('border rounded-xl p-6', isDark ? 'bg-offwhite/5 border-gold/20' : 'bg-white border-gold/30');
 
-  const lookupCustomerByPhone = async (phone, { setName, setLoading }) => {
+  const lookupCustomerByPhone = async (phone, { setName, setLoading, allowUnregistered = false }) => {
     const digits = phone.replace(/\D/g, '');
     if (!digits) return;
     setLoading(true);
@@ -127,9 +129,16 @@ export default function GiftCardSale() {
         .maybeSingle();
       if (lookupError) throw lookupError;
       if (!data) {
+        if (allowUnregistered) {
+          setRecipientPendingClaim(true);
+          return;
+        }
         setName('');
         setError('Customer not found. They must register before purchasing a gift card.');
         return;
+      }
+      if (allowUnregistered) {
+        setRecipientPendingClaim(false);
       }
       if (data.role !== 'customer') {
         setError('Gift cards can only be sold to registered customers.');
@@ -152,12 +161,13 @@ export default function GiftCardSale() {
   const lookupRecipient = () => lookupCustomerByPhone(recipientPhone, {
     setName: setRecipientName,
     setLoading: setLookingUpRecipient,
+    allowUnregistered: true,
   });
 
   const resolvedAmount = () => {
     const value = parseFloat(amount);
     if (!Number.isFinite(value)) return null;
-    return value;
+    return Math.round(value * 100) / 100;
   };
 
   const resetForm = () => {
@@ -169,6 +179,7 @@ export default function GiftCardSale() {
     setGiftToOther(false);
     setRecipientPhone('');
     setRecipientName('');
+    setRecipientPendingClaim(false);
     setGiftMessage('');
     setNotes('');
     setCopied(false);
@@ -187,12 +198,21 @@ export default function GiftCardSale() {
       setError('Enter the buyer phone number.');
       return null;
     }
+    const buyerDigits = buyerPhone.replace(/\D/g, '');
+    if (!activeRequestId && buyerDigits.length !== 10) {
+      setError('Enter a valid 10-digit buyer phone number.');
+      return null;
+    }
     if (!value || value < GIFT_CARD_MIN_AMOUNT || value > GIFT_CARD_MAX_AMOUNT) {
       setError(`Amount must be between $${GIFT_CARD_MIN_AMOUNT} and $${GIFT_CARD_MAX_AMOUNT}.`);
       return null;
     }
     if (giftToOther && !recipientPhone.trim()) {
       setError('Enter the recipient phone number.');
+      return null;
+    }
+    if (giftToOther && recipientPhone.replace(/\D/g, '').length !== 10) {
+      setError('Enter a valid 10-digit recipient phone number.');
       return null;
     }
     return value;
@@ -240,7 +260,14 @@ export default function GiftCardSale() {
     setError('');
     const value = validateForm();
     if (value == null && !activeRequestId) return;
-    setCompleteConfirm({ kind: 'walkin' });
+    setCompleteConfirm({
+      kind: 'walkin',
+      amount: value ?? 0,
+      buyer: buyerName || buyerPhone.trim() || 'customer',
+      recipient: giftToOther
+        ? (recipientName || recipientPhone.trim() || 'recipient')
+        : (buyerName || buyerPhone.trim() || 'customer'),
+    });
   };
 
   const executePurchase = async () => {
@@ -305,7 +332,13 @@ export default function GiftCardSale() {
 
   const handleCompleteRequestClick = (request) => {
     setError('');
-    setCompleteConfirm({ kind: 'queue', request });
+    setCompleteConfirm({
+      kind: 'queue',
+      amount: Number(request.amount) || 0,
+      buyer: request.buyer_name || request.buyer_phone || 'customer',
+      recipient: request.owner_name || request.buyer_name || 'recipient',
+      request,
+    });
   };
 
   const confirmCompleteSale = async () => {
@@ -359,19 +392,13 @@ export default function GiftCardSale() {
     ? 'Complete pending sales after collecting payment, or sell directly (super admin / cashier).'
     : 'Send gift card details to the cashier queue. Payment is collected at the front desk.';
 
-  const confirmAmount = completeConfirm?.kind === 'queue'
-    ? Number(completeConfirm.request.amount || 0)
-    : Number(resolvedAmount() || 0);
+  const confirmAmount = Number(completeConfirm?.amount ?? 0);
+  const confirmAmountLabel = Number.isFinite(confirmAmount) ? confirmAmount.toFixed(2) : '0.00';
 
   const confirmPaymentLabel = paymentMethod === 'Transfer' ? 'transfer' : paymentMethod.toLowerCase();
 
-  const confirmRecipient = completeConfirm?.kind === 'queue'
-    ? completeConfirm.request.owner_name || completeConfirm.request.buyer_name
-    : (giftToOther ? (recipientName || recipientPhone.trim() || 'recipient') : (buyerName || buyerPhone.trim() || 'customer'));
-
-  const confirmBuyer = completeConfirm?.kind === 'queue'
-    ? completeConfirm.request.buyer_name
-    : (buyerName || buyerPhone.trim() || 'customer');
+  const confirmRecipient = completeConfirm?.recipient || 'customer';
+  const confirmBuyer = completeConfirm?.buyer || 'customer';
 
   return (
     <div className={bgClass}>
@@ -444,6 +471,17 @@ export default function GiftCardSale() {
                 </div>
               )}
             </div>
+            {(result.pending_claim || result.claim_token) && (
+              <div className="mb-6">
+                <GiftCardSharePanel
+                  claimToken={result.claim_token || result.gift_card?.claim_token}
+                  amount={result.gift_card?.initial_amount}
+                  recipientName={result.owner_name || recipientName}
+                  pendingRecipientPhone={result.gift_card?.pending_recipient_phone || recipientPhone}
+                  isDark={isDark}
+                />
+              </div>
+            )}
             <div className="flex flex-wrap gap-3">
               {canViewCode && (
                 <button type="button" onClick={handleCopyCode} className="px-4 py-2 bg-gold text-charcoal rounded-lg font-heading">
@@ -464,8 +502,93 @@ export default function GiftCardSale() {
           </div>
         ) : (
           <>
+            {canRequest && !canComplete && (
+              <form onSubmit={handleRequest} className={clsx('space-y-6', cardClass)}>
+                <FormFields
+                  buyerPhone={buyerPhone}
+                  setBuyerPhone={setBuyerPhone}
+                  buyerName={buyerName}
+                  amount={amount}
+                  setAmount={setAmount}
+                  giftToOther={giftToOther}
+                  setGiftToOther={setGiftToOther}
+                  recipientPhone={recipientPhone}
+                  setRecipientPhone={setRecipientPhone}
+                  recipientName={recipientName}
+                  setRecipientName={setRecipientName}
+                  recipientPendingClaim={recipientPendingClaim}
+                  setRecipientPendingClaim={setRecipientPendingClaim}
+                  giftMessage={giftMessage}
+                  setGiftMessage={setGiftMessage}
+                  notes={notes}
+                  setNotes={setNotes}
+                  lookingUp={lookingUp}
+                  lookupBuyer={lookupBuyer}
+                  lookingUpRecipient={lookingUpRecipient}
+                  lookupRecipient={lookupRecipient}
+                  inputClass={inputClass}
+                  labelClass={labelClass}
+                  isDark={isDark}
+                />
+                {error && <p className="text-red-400 text-sm">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="w-full py-3 bg-gold text-charcoal font-heading rounded-lg hover:bg-gold/90 disabled:opacity-50"
+                >
+                  {saving ? 'Sending…' : 'Send to Cashier'}
+                </button>
+              </form>
+            )}
+
             {canComplete && (
-              <div className={clsx(cardClass, 'mb-6')}>
+              <form onSubmit={handlePurchase} className={clsx('space-y-6 mb-6', cardClass)}>
+                <h2 className="font-heading text-lg text-gold">Walk-in Sale</h2>
+                <p className={clsx('text-sm -mt-2', isDark ? 'text-offwhite/50' : 'text-charcoal/50')}>
+                  Customer paying at the desk now — complete without a prior request.
+                </p>
+                <FormFields
+                  buyerPhone={buyerPhone}
+                  setBuyerPhone={setBuyerPhone}
+                  buyerName={buyerName}
+                  amount={amount}
+                  setAmount={setAmount}
+                  giftToOther={giftToOther}
+                  setGiftToOther={setGiftToOther}
+                  recipientPhone={recipientPhone}
+                  setRecipientPhone={setRecipientPhone}
+                  recipientName={recipientName}
+                  setRecipientName={setRecipientName}
+                  recipientPendingClaim={recipientPendingClaim}
+                  setRecipientPendingClaim={setRecipientPendingClaim}
+                  giftMessage={giftMessage}
+                  setGiftMessage={setGiftMessage}
+                  notes={notes}
+                  setNotes={setNotes}
+                  lookingUp={lookingUp}
+                  lookupBuyer={lookupBuyer}
+                  lookingUpRecipient={lookingUpRecipient}
+                  lookupRecipient={lookupRecipient}
+                  paymentMethod={paymentMethod}
+                  setPaymentMethod={setPaymentMethod}
+                  showPaymentMethod
+                  inputClass={inputClass}
+                  labelClass={labelClass}
+                  isDark={isDark}
+                />
+                {error && <p className="text-red-400 text-sm">{error}</p>}
+                <button
+                  type="submit"
+                  disabled={saving || activeRequestId}
+                  className="w-full py-3 bg-gold text-charcoal font-heading rounded-lg hover:bg-gold/90 disabled:opacity-50"
+                >
+                  {saving ? 'Processing…' : 'Complete Sale'}
+                </button>
+              </form>
+            )}
+
+            {canComplete && (
+              <div className={cardClass}>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-heading text-xl text-gold">Cashier Queue</h2>
                   <button type="button" onClick={loadQueue} className="text-sm text-gold hover:underline">
@@ -520,93 +643,7 @@ export default function GiftCardSale() {
                     ))}
                   </div>
                 ) : null}
-                <div className="mt-4 pt-4 border-t border-gold/20">
-                  <label className={labelClass}>Payment method</label>
-                  <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className={inputClass}>
-                    <option value="Card">Card</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Transfer">Transfer</option>
-                  </select>
-                </div>
               </div>
-            )}
-
-            {canRequest && !canComplete && (
-              <form onSubmit={handleRequest} className={clsx('space-y-6', cardClass)}>
-                <FormFields
-                  buyerPhone={buyerPhone}
-                  setBuyerPhone={setBuyerPhone}
-                  buyerName={buyerName}
-                  amount={amount}
-                  setAmount={setAmount}
-                  giftToOther={giftToOther}
-                  setGiftToOther={setGiftToOther}
-                  recipientPhone={recipientPhone}
-                  setRecipientPhone={setRecipientPhone}
-                  recipientName={recipientName}
-                  setRecipientName={setRecipientName}
-                  giftMessage={giftMessage}
-                  setGiftMessage={setGiftMessage}
-                  notes={notes}
-                  setNotes={setNotes}
-                  lookingUp={lookingUp}
-                  lookupBuyer={lookupBuyer}
-                  lookingUpRecipient={lookingUpRecipient}
-                  lookupRecipient={lookupRecipient}
-                  inputClass={inputClass}
-                  labelClass={labelClass}
-                  isDark={isDark}
-                />
-                {error && <p className="text-red-400 text-sm">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="w-full py-3 bg-gold text-charcoal font-heading rounded-lg hover:bg-gold/90 disabled:opacity-50"
-                >
-                  {saving ? 'Sending…' : 'Send to Cashier'}
-                </button>
-              </form>
-            )}
-
-            {canComplete && (
-              <form onSubmit={handlePurchase} className={clsx('space-y-6', cardClass)}>
-                <h2 className="font-heading text-lg text-gold">Walk-in Sale</h2>
-                <p className={clsx('text-sm -mt-2', isDark ? 'text-offwhite/50' : 'text-charcoal/50')}>
-                  Customer paying at the desk now — complete without a prior request.
-                </p>
-                <FormFields
-                  buyerPhone={buyerPhone}
-                  setBuyerPhone={setBuyerPhone}
-                  buyerName={buyerName}
-                  amount={amount}
-                  setAmount={setAmount}
-                  giftToOther={giftToOther}
-                  setGiftToOther={setGiftToOther}
-                  recipientPhone={recipientPhone}
-                  setRecipientPhone={setRecipientPhone}
-                  recipientName={recipientName}
-                  setRecipientName={setRecipientName}
-                  giftMessage={giftMessage}
-                  setGiftMessage={setGiftMessage}
-                  notes={notes}
-                  setNotes={setNotes}
-                  lookingUp={lookingUp}
-                  lookupBuyer={lookupBuyer}
-                  lookingUpRecipient={lookingUpRecipient}
-                  lookupRecipient={lookupRecipient}
-                  inputClass={inputClass}
-                  labelClass={labelClass}
-                  isDark={isDark}
-                />
-                {error && <p className="text-red-400 text-sm">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={saving || activeRequestId}
-                  className="w-full py-3 bg-gold text-charcoal font-heading rounded-lg hover:bg-gold/90 disabled:opacity-50"
-                >
-                  {saving ? 'Processing…' : 'Complete Sale'}
-                </button>
-              </form>
             )}
           </>
         )}
@@ -640,18 +677,31 @@ export default function GiftCardSale() {
       >
         <p className={clsx('text-sm', isDark ? 'text-offwhite/70' : 'text-charcoal/70')}>
           Have you collected{' '}
-          <span className="text-gold font-semibold">${confirmAmount.toFixed(2)}</span>
+          <span className="text-gold font-semibold">${confirmAmountLabel}</span>
           {' '}via{' '}
           <span className="font-medium">{confirmPaymentLabel}</span>
           {' '}from{' '}
           <span className="font-medium">{confirmBuyer}</span>?
         </p>
         <p className={clsx('text-sm mt-3', isDark ? 'text-offwhite/50' : 'text-charcoal/50')}>
-          This will issue a ${confirmAmount.toFixed(2)} gift card for {confirmRecipient}. This cannot be undone.
+          This will issue a ${confirmAmountLabel} gift card for {confirmRecipient}. This cannot be undone.
         </p>
       </AppModal>
     </div>
   );
+}
+
+function sanitizePhoneInput(value) {
+  return value.replace(/\D/g, '').slice(0, 10);
+}
+
+function sanitizeAmountInput(value) {
+  let cleaned = value.replace(/[^\d.]/g, '');
+  const dotIndex = cleaned.indexOf('.');
+  if (dotIndex !== -1) {
+    cleaned = `${cleaned.slice(0, dotIndex + 1)}${cleaned.slice(dotIndex + 1).replace(/\./g, '').slice(0, 2)}`;
+  }
+  return cleaned;
 }
 
 function FormFields({
@@ -666,6 +716,8 @@ function FormFields({
   setRecipientPhone,
   recipientName,
   setRecipientName,
+  recipientPendingClaim,
+  setRecipientPendingClaim,
   giftMessage,
   setGiftMessage,
   notes,
@@ -674,6 +726,9 @@ function FormFields({
   lookupBuyer,
   lookingUpRecipient,
   lookupRecipient,
+  paymentMethod,
+  setPaymentMethod,
+  showPaymentMethod = false,
   inputClass,
   labelClass,
   isDark,
@@ -685,10 +740,16 @@ function FormFields({
         <div className="flex gap-2">
           <input
             type="tel"
+            inputMode="numeric"
+            autoComplete="tel-national"
+            maxLength={10}
             value={buyerPhone}
-            onChange={(e) => setBuyerPhone(e.target.value)}
+            onChange={(e) => {
+              setBuyerPhone(sanitizePhoneInput(e.target.value));
+              setBuyerName('');
+            }}
             className={inputClass}
-            placeholder="Customer phone"
+            placeholder="10-digit phone"
             required
           />
           <button
@@ -724,17 +785,27 @@ function FormFields({
           <div className="relative w-28 sm:w-32">
             <span className={clsx('absolute left-3 top-1/2 -translate-y-1/2', isDark ? 'text-offwhite/50' : 'text-charcoal/50')}>$</span>
             <input
-              type="number"
-              min={GIFT_CARD_MIN_AMOUNT}
-              max={GIFT_CARD_MAX_AMOUNT}
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => setAmount(sanitizeAmountInput(e.target.value))}
               className={clsx(inputClass, 'pl-7 py-2 w-full')}
               placeholder="Custom"
               required
             />
           </div>
+          {showPaymentMethod && (
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className={clsx(inputClass, 'py-2 w-full sm:w-auto sm:min-w-[8.5rem]')}
+              aria-label="Payment method"
+            >
+              <option value="Card">Card</option>
+              <option value="Cash">Cash</option>
+              <option value="Transfer">Transfer</option>
+            </select>
+          )}
         </div>
         <GiftCardPreview
           amount={amount}
@@ -759,13 +830,17 @@ function FormFields({
             <div className="flex gap-2">
               <input
                 type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                maxLength={10}
                 value={recipientPhone}
                 onChange={(e) => {
-                  setRecipientPhone(e.target.value);
+                  setRecipientPhone(sanitizePhoneInput(e.target.value));
                   setRecipientName('');
+                  setRecipientPendingClaim(false);
                 }}
                 className={inputClass}
-                placeholder="Recipient phone"
+                placeholder="10-digit phone"
                 required
               />
               <button
@@ -778,6 +853,21 @@ function FormFields({
               </button>
             </div>
             {recipientName && <p className="text-sm text-gold mt-2">{recipientName}</p>}
+            {recipientPendingClaim && (
+              <p className={clsx('text-sm mt-2', isDark ? 'text-amber-200/80' : 'text-amber-700')}>
+                Not registered yet — they can claim after signup via the share link you will receive.
+              </p>
+            )}
+          </div>
+          <div>
+            <label className={labelClass}>Recipient Name (optional)</label>
+            <input
+              type="text"
+              value={recipientName}
+              onChange={(e) => setRecipientName(e.target.value)}
+              className={inputClass}
+              placeholder="Friend's name"
+            />
           </div>
           <div>
             <label className={labelClass}>Gift Message (optional)</label>

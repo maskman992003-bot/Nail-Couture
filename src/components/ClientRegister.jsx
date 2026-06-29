@@ -77,7 +77,10 @@ export default function ClientRegister() {
   const subtitleClass = theme === 'dark' ? 'text-offwhite/60 mt-2' : 'text-charcoal/60 mt-2';
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.name === 'phone'
+      ? e.target.value.replace(/\D/g, '').slice(0, 10)
+      : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
     setError('');
   };
 
@@ -95,8 +98,8 @@ export default function ClientRegister() {
       return;
     }
 
-    if (formData.phone.replace(/\D/g, '').length < 10) {
-      setError('Please enter a valid phone number');
+    if (formData.phone.length !== 10) {
+      setError('Please enter a 10-digit phone number');
       return;
     }
 
@@ -104,7 +107,7 @@ export default function ClientRegister() {
     setError('');
 
     try {
-      const cleanPhone = formData.phone.replace(/\D/g, '');
+      const cleanPhone = formData.phone;
 
       const { data: existing, error: checkError } = await supabase
         .from('profiles')
@@ -249,10 +252,13 @@ export default function ClientRegister() {
               </label>
               <input
                 type="tel"
-                 name="phone"
-                 value={formData.phone}
+                inputMode="numeric"
+                autoComplete="tel-national"
+                maxLength={10}
+                name="phone"
+                value={formData.phone}
                 onChange={handleChange}
-                placeholder="Enter your phone number"
+                placeholder="10-digit phone number"
                 className={inputClass}
               />
             </div>

@@ -3,8 +3,8 @@ import { supabase } from '../lib/supabase';
 export const GIFT_CARD_PRESET_AMOUNTS = [25, 50, 75, 100];
 export const GIFT_CARD_MIN_AMOUNT = 10;
 export const GIFT_CARD_MAX_AMOUNT = 500;
-export const GIFT_CARD_EXPIRY_MONTHS = 12;
-export const GIFT_CARD_EXPIRY_PERIOD_LABEL = '1 year';
+export const GIFT_CARD_EXPIRY_MONTHS = 6;
+export const GIFT_CARD_EXPIRY_PERIOD_LABEL = '6 months';
 
 export const GIFT_CARD_STATUS_LABELS = {
   active: 'Active',
@@ -98,18 +98,36 @@ export function filterRedeemableCheckoutGiftCards(cards, customerId) {
       && card.status === 'active'
       && Number(card.balance) > 0
       && !isGiftCardExpired(card)
+      && !isGiftCardPendingClaim(card)
     ))
     .map(toCheckoutGiftCard)
     .filter(Boolean);
 }
 
-function rpcUnavailable(error, fnName) {
-  return error?.message?.includes(fnName) || error?.code === '42883';
+function rpcUnavailable(error) {
+  if (!error) return false;
+  return ['42883', 'PGRST202', 'PGRST203'].includes(error.code);
+}
+
+const GIFT_CARD_MIGRATION_HINT =
+  'If this persists, run sql/123_gift_card_claim_token_fix.sql in Supabase and reload the API schema (Settings → API).';
+
+function normalizeGiftCardPaymentMethod(method) {
+  const value = String(method || 'card').toLowerCase();
+  if (value === 'transfer') return 'other';
+  if (['cash', 'card', 'other'].includes(value)) return value;
+  return 'card';
 }
 
 function normalizePhoneDigits(phone) {
   if (!phone) return '';
   return String(phone).replace(/\D/g, '');
+}
+
+function omitNullRpcParams(params) {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== null && value !== undefined),
+  );
 }
 
 export function formatGiftCardCode(code) {
@@ -127,11 +145,23 @@ export function maskGiftCardCode(code) {
   return `${formatted.slice(0, 3)}-****-${formatted.slice(-4)}`;
 }
 
+export function getGiftCardExpiresAt(card) {
+  if (!card) return null;
+  if (card.created_at) {
+    const issued = new Date(card.created_at);
+    const expires = new Date(issued);
+    expires.setMonth(expires.getMonth() + GIFT_CARD_EXPIRY_MONTHS);
+    return expires.toISOString();
+  }
+  return card.expires_at || null;
+}
+
 export function isGiftCardExpired(card) {
   if (!card) return false;
   if (card.status === 'expired' || card.is_expired) return true;
-  if (!card.expires_at) return false;
-  return new Date(card.expires_at) <= new Date();
+  const expiresAt = getGiftCardExpiresAt(card);
+  if (!expiresAt) return false;
+  return new Date(expiresAt) <= new Date();
 }
 
 export function getGiftCardDisplayStatus(card) {
@@ -149,8 +179,9 @@ export function formatGiftCardExpiryDate(expiresAt) {
 }
 
 export function getGiftCardExpiryLabel(card) {
-  if (!card?.expires_at) return null;
-  const formatted = formatGiftCardExpiryDate(card.expires_at);
+  const expiresAt = getGiftCardExpiresAt(card);
+  if (!expiresAt) return null;
+  const formatted = formatGiftCardExpiryDate(expiresAt);
   return isGiftCardExpired(card) ? `Expired ${formatted}` : `Expires ${formatted}`;
 }
 
@@ -171,12 +202,99 @@ export function getGiftCardRecipientLabel(card) {
 
 export function canTransferGiftCard(card) {
   if (!card) return false;
+  if (card.claim_status === 'pending' || card.pending_recipient_phone) return false;
   return (
     card.status === 'active'
     && !isGiftCardExpired(card)
     && !card.first_used_at
     && Number(card.balance) === Number(card.initial_amount)
   );
+}
+
+export function isGiftCardPendingClaim(card) {
+  if (!card) return false;
+  return card.claim_status === 'pending' || Boolean(card.pending_recipient_phone);
+}
+
+export function maskPhoneForDisplay(phone) {
+  const digits = normalizePhoneDigits(phone);
+  if (!digits || digits.length < 4) return '***-***-****';
+  return `***-***-${digits.slice(-4)}`;
+}
+
+/** True when value looks like a raw phone or gift card code (should not show verbatim on claim links). */
+export function isSensitiveClaimPreviewText(value) {
+  if (!value || typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  const digits = normalizePhoneDigits(trimmed);
+  if (digits.length >= 10) return true;
+  const compact = trimmed.replace(/[\s-]/g, '');
+  if (/^gc[-]?\d{4,}/i.test(compact)) return true;
+  if (/^\d{8,}$/.test(compact)) return true;
+  return false;
+}
+
+/** Mask phone numbers (and card codes) for public claim-link previews. */
+export function maskClaimPreviewText(value) {
+  if (!value || typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed) return value;
+  if (!isSensitiveClaimPreviewText(trimmed)) return trimmed;
+  const digits = normalizePhoneDigits(trimmed);
+  if (digits.length >= 10) return maskPhoneForDisplay(trimmed);
+  return 'GC-****-****';
+}
+
+export function sanitizeClaimPreviewOwnerName(name) {
+  if (!name?.trim()) return 'You';
+  if (isSensitiveClaimPreviewText(name)) return maskClaimPreviewText(name);
+  return name.trim();
+}
+
+/** Hide phone numbers and card codes mistaken for gift messages in customer-facing UI. */
+export function sanitizeDisplayGiftMessage(message) {
+  if (!message?.trim()) return null;
+  if (isSensitiveClaimPreviewText(message)) return null;
+  return message.trim();
+}
+
+export const GIFT_CARD_PUBLIC_ORIGIN = 'https://www.nailcouture.net';
+
+export function buildGiftCardClaimUrl(origin, claimToken) {
+  if (!claimToken) return '';
+  const base = (origin || GIFT_CARD_PUBLIC_ORIGIN || '').replace(/\/$/, '');
+  return `${base}/gift/claim/${encodeURIComponent(claimToken)}`;
+}
+
+export async function getGiftCardClaimPreview(claimToken) {
+  const { data, error } = await supabase.rpc('get_gift_card_claim_preview', {
+    p_claim_token: claimToken,
+  });
+
+  if (error) {
+    if (rpcUnavailable(error)) {
+      return { success: false, error: 'unavailable', message: 'Gift claim service unavailable.' };
+    }
+    return { success: false, error: 'error', message: error.message || 'Could not load gift.' };
+  }
+
+  return data || { success: false, error: 'error', message: 'Unexpected response' };
+}
+
+export async function claimPendingGiftCards(profileId) {
+  const { data, error } = await supabase.rpc('claim_pending_gift_cards', {
+    p_profile_id: profileId,
+  });
+
+  if (error) {
+    if (rpcUnavailable(error)) {
+      return { success: false, count: 0, claimed: [], error: 'Claim service unavailable.' };
+    }
+    return { success: false, count: 0, claimed: [], error: error.message || 'Claim failed' };
+  }
+
+  return data || { success: false, count: 0, claimed: [] };
 }
 
 export function computeGiftCardCheckoutSplit({ serviceDue, tip = 0, balance = 0, requestedAmount = null }) {
@@ -229,11 +347,11 @@ export async function purchaseGiftCard({
   notes = null,
   requestId = null,
 }) {
-  const { data, error } = await supabase.rpc('purchase_gift_card', {
+  const rpcParams = omitNullRpcParams({
     caller_phone: normalizePhoneDigits(callerPhone),
     buyer_phone: normalizePhoneDigits(buyerPhone),
     p_amount: amount,
-    p_payment_method: paymentMethod,
+    p_payment_method: normalizeGiftCardPaymentMethod(paymentMethod),
     p_owner_phone: ownerPhone ? normalizePhoneDigits(ownerPhone) : null,
     p_recipient_name: recipientName || null,
     p_gift_message: giftMessage || null,
@@ -241,11 +359,19 @@ export async function purchaseGiftCard({
     p_request_id: requestId || null,
   });
 
+  const { data, error } = await supabase.rpc('purchase_gift_card', rpcParams);
+
   if (error) {
-    if (rpcUnavailable(error, 'purchase_gift_card')) {
-      return { success: false, error: 'Gift card service unavailable. Run sql/084_gift_cards.sql and sql/085_gift_card_sale_requests.sql in Supabase.' };
+    console.warn('purchase_gift_card RPC failed:', error);
+    const baseMessage = error.message || error.details || 'Purchase failed';
+    if (rpcUnavailable(error)) {
+      return {
+        success: false,
+        error: `${baseMessage} ${GIFT_CARD_MIGRATION_HINT}`,
+        rpc_code: error.code,
+      };
     }
-    return { success: false, error: error.message || 'Purchase failed' };
+    return { success: false, error: baseMessage, rpc_code: error.code };
   }
 
   return data || { success: false, error: 'Unexpected response' };
@@ -260,7 +386,7 @@ export async function requestGiftCardSale({
   giftMessage = null,
   notes = null,
 }) {
-  const { data, error } = await supabase.rpc('request_gift_card_sale', {
+  const { data, error } = await supabase.rpc('request_gift_card_sale', omitNullRpcParams({
     caller_phone: normalizePhoneDigits(callerPhone),
     buyer_phone: normalizePhoneDigits(buyerPhone),
     p_amount: amount,
@@ -268,11 +394,14 @@ export async function requestGiftCardSale({
     p_recipient_name: recipientName || null,
     p_gift_message: giftMessage || null,
     p_notes: notes || null,
-  });
+  }));
 
   if (error) {
-    if (rpcUnavailable(error, 'request_gift_card_sale')) {
-      return { success: false, error: 'Gift card requests unavailable. Run sql/085_gift_card_sale_requests.sql in Supabase.' };
+    if (rpcUnavailable(error)) {
+      return {
+        success: false,
+        error: `${error.message || 'Request failed'} ${GIFT_CARD_MIGRATION_HINT}`,
+      };
     }
     return { success: false, error: error.message || 'Request failed' };
   }
@@ -287,7 +416,7 @@ export async function fetchGiftCardSaleRequests(callerPhone, status = 'pending')
   });
 
   if (error) {
-    if (rpcUnavailable(error, 'get_gift_card_sale_requests')) {
+    if (rpcUnavailable(error)) {
       return { success: false, requests: [], error: 'Gift card queue unavailable.' };
     }
     throw error;
@@ -303,7 +432,7 @@ export async function cancelGiftCardSaleRequest({ callerPhone, requestId }) {
   });
 
   if (error) {
-    if (rpcUnavailable(error, 'cancel_gift_card_sale_request')) {
+    if (rpcUnavailable(error)) {
       return { success: false, error: 'Cancel unavailable. Run sql/085_gift_card_sale_requests.sql in Supabase.' };
     }
     return { success: false, error: error.message || 'Cancel failed' };
@@ -321,7 +450,7 @@ export async function transferGiftCard({ ownerPhone, giftCardId, recipientPhone,
   });
 
   if (error) {
-    if (rpcUnavailable(error, 'transfer_gift_card')) {
+    if (rpcUnavailable(error)) {
       return { success: false, error: 'Gift card transfer unavailable. Run sql/084_gift_cards.sql in Supabase.' };
     }
     return { success: false, error: error.message || 'Transfer failed' };
@@ -334,7 +463,7 @@ export async function getMyGiftCards(phone) {
   const { data, error } = await supabase.rpc('get_my_gift_cards', { p_phone: phone });
 
   if (error) {
-    if (rpcUnavailable(error, 'get_my_gift_cards')) {
+    if (rpcUnavailable(error)) {
       return { success: false, owned: [], purchased_for_others: [], error: 'Gift cards unavailable.' };
     }
     throw error;
@@ -350,7 +479,7 @@ export async function lookupGiftCardByCode(callerPhone, code) {
   });
 
   if (error) {
-    if (rpcUnavailable(error, 'lookup_gift_card')) {
+    if (rpcUnavailable(error)) {
       return { success: false, error: 'Gift card lookup unavailable. Run sql/084_gift_cards.sql in Supabase.' };
     }
     return { success: false, error: error.message || 'Lookup failed' };
@@ -366,7 +495,7 @@ export async function getCustomerGiftCards(callerPhone, customerId) {
   });
 
   if (error) {
-    if (rpcUnavailable(error, 'get_customer_gift_cards')) {
+    if (rpcUnavailable(error)) {
       return { success: false, gift_cards: [], error: 'Gift cards unavailable.' };
     }
     throw error;
@@ -386,7 +515,7 @@ export async function getCheckoutGiftCards(callerPhone, customerId) {
     if (giftCards.length > 0) {
       return { success: true, gift_cards: giftCards, error: null };
     }
-  } else if (!rpcUnavailable(error, 'get_checkout_gift_cards')) {
+  } else if (!rpcUnavailable(error)) {
     // Auth/other RPC errors may still work via CRM fallback below.
     console.warn('get_checkout_gift_cards failed:', error.message || error);
   }
@@ -397,7 +526,7 @@ export async function getCheckoutGiftCards(callerPhone, customerId) {
     if (giftCards.length > 0) {
       return { success: true, gift_cards: giftCards, error: null };
     }
-    if (error && rpcUnavailable(error, 'get_checkout_gift_cards')) {
+    if (error && rpcUnavailable(error)) {
       return {
         success: false,
         gift_cards: [],
@@ -410,7 +539,7 @@ export async function getCheckoutGiftCards(callerPhone, customerId) {
       error: fallback.error || (error ? error.message : null),
     };
   } catch (fallbackError) {
-    if (error && rpcUnavailable(error, 'get_checkout_gift_cards')) {
+    if (error && rpcUnavailable(error)) {
       return {
         success: false,
         gift_cards: [],
@@ -439,7 +568,7 @@ export async function verifyGiftCardForCheckout({
   });
 
   if (error) {
-    if (rpcUnavailable(error, 'verify_gift_card_for_checkout')) {
+    if (rpcUnavailable(error)) {
       return {
         success: false,
         error: 'Gift card verification unavailable. Run sql/116_gift_card_checkout_verify.sql in Supabase.',
@@ -459,7 +588,7 @@ export async function voidGiftCard({ callerPhone, giftCardId, reason = null }) {
   });
 
   if (error) {
-    if (rpcUnavailable(error, 'void_gift_card')) {
+    if (rpcUnavailable(error)) {
       return { success: false, error: 'Void unavailable. Run sql/084_gift_cards.sql in Supabase.' };
     }
     return { success: false, error: error.message || 'Void failed' };
@@ -482,7 +611,7 @@ export async function fetchGiftCardPurchases({ cashierId, callerPhone, periodSta
     });
 
     if (error) {
-      if (rpcUnavailable(error, 'get_cashier_gift_card_purchases')) {
+      if (rpcUnavailable(error)) {
         return [];
       }
       console.warn('Gift card purchases RPC failed:', error);
@@ -556,8 +685,6 @@ export function buildGiftCardPurchaseReceipt({ giftCard, buyerName, ownerName, p
     `Purchased by: ${buyerName || 'Customer'}`,
     `Recipient: ${ownerName || buyerName || 'Customer'}`,
     `Gift card code: ${maskedCode}`,
-    `Valid until: ${formatGiftCardExpiryDate(giftCard?.expires_at) || `${GIFT_CARD_EXPIRY_PERIOD_LABEL} from purchase`}`,
-    '',
-    'Full code is available in the customer app. Present this receipt at checkout if needed.',
+    `Valid until: ${formatGiftCardExpiryDate(getGiftCardExpiresAt(giftCard)) || `${GIFT_CARD_EXPIRY_PERIOD_LABEL} from purchase`}`,
   ].join('\n');
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Sidebar from './Sidebar'
+import usePullToRefresh from '../hooks/usePullToRefresh'
+import PullToRefreshIndicator from './PullToRefreshIndicator'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import clsx from 'clsx';
@@ -21,6 +23,7 @@ export default function AdminServices() {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', description: '', checklistLines: '', is_coming_soon: false });
@@ -220,9 +223,38 @@ export default function AdminServices() {
     fetchCategories();
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const [{ data: servicesData }, { data: categoriesData, error: categoriesError }] = await Promise.all([
+        supabase.from('services').select('*').order('category').order('name'),
+        supabase.from('service_categories').select('*').order('sort_order'),
+      ]);
+      if (servicesData) setServices(servicesData);
+      if (categoriesError) {
+        console.error('fetchCategories error:', categoriesError);
+        setCategories([]);
+      } else {
+        setCategories(categoriesData || []);
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    disabled: loading || refreshing,
+  });
+
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        pullProgress={pullProgress}
+      />
       
       <div className="admin-services p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-light">

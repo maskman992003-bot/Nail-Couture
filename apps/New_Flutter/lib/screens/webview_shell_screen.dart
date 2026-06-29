@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:nail_couture_webview/bridge/native_bridge_handler.dart';
 import 'package:nail_couture_webview/bridge/native_bridge_script.dart';
+import 'package:nail_couture_webview/bridge/webview_url_handler.dart';
 import 'package:nail_couture_webview/config/app_config.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class WebViewShellScreen extends StatefulWidget {
   const WebViewShellScreen({super.key});
@@ -107,7 +109,7 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
             Expanded(
               child: SafeArea(
                 top: true,
-                bottom: true,
+                bottom: false,
                 left: false,
                 right: false,
                 child: Stack(
@@ -138,6 +140,8 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
                       supportZoom: false,
                       useOnRenderProcessGone: true,
                       useHybridComposition: true,
+                      useShouldOverrideUrlLoading: true,
+                      supportMultipleWindows: true,
                       userAgent: '$_baseUserAgent$_userAgentSuffix',
                     ),
                     initialUserScripts: UnmodifiableListView<UserScript>([
@@ -180,6 +184,12 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
                     },
                     onReceivedError: (controller, request, error) {
                       if (request.isForMainFrame != true) {
+                        return;
+                      }
+                      final failingUrl = request.url.toString();
+                      if (failingUrl.startsWith('tel:') ||
+                          failingUrl.startsWith('intent:') ||
+                          failingUrl.startsWith('mailto:')) {
                         return;
                       }
                       _clearLoadTimeout();
@@ -240,6 +250,24 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
                         allow: true,
                         retain: true,
                       );
+                    },
+                    shouldOverrideUrlLoading: (controller, navigationAction) async {
+                      return navigationPolicyForUrl(
+                        navigationAction.request.url,
+                      );
+                    },
+                    onCreateWindow: (controller, createWindowAction) async {
+                      final url = createWindowAction.request.url;
+                      if (url != null) {
+                        final uri = Uri.tryParse(url.toString());
+                        if (uri != null) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      }
+                      return false;
                     },
                   ),
                   if (_hasError)

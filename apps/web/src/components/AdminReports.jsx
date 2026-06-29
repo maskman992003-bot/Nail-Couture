@@ -5,6 +5,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import Sidebar from './Sidebar'
+import usePullToRefresh from '../hooks/usePullToRefresh'
+import PullToRefreshIndicator from './PullToRefreshIndicator'
 import clsx from 'clsx'
 import { fetchGiftCardSummary } from '@nail-couture/shared/utils/giftCards'
 import { downloadExportFile } from '../utils/nativeDownload.js'
@@ -417,6 +419,7 @@ export default function AdminReports() {
   const [customToDate, setCustomToDate] = useState('')
   const [exporting, setExporting] = useState(false)
   const [giftCardSummary, setGiftCardSummary] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   const fetchInsights = useCallback(async () => {
     const opts = { preferPayments }
@@ -436,6 +439,20 @@ export default function AdminReports() {
   useEffect(() => {
     fetchInsights()
   }, [fetchInsights])
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await fetchInsights()
+    } finally {
+      setRefreshing(false)
+    }
+  }, [fetchInsights])
+
+  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    disabled: loading || refreshing,
+  })
 
   const handleExport = async () => {
     setExporting(true)
@@ -644,6 +661,11 @@ export default function AdminReports() {
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        pullProgress={pullProgress}
+      />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

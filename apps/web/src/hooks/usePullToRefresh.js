@@ -7,7 +7,35 @@ const isTouchDevice = () =>
   typeof window !== 'undefined' &&
   (window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window)
 
-const isAtScrollTop = () => typeof window !== 'undefined' && window.scrollY <= 0
+const isScrollable = (element) => {
+  if (!element || element === document.body || element === document.documentElement) {
+    return false
+  }
+  const style = window.getComputedStyle(element)
+  const overflowY = style.overflowY
+  if (overflowY !== 'auto' && overflowY !== 'scroll' && overflowY !== 'overlay') {
+    return false
+  }
+  return element.scrollHeight > element.clientHeight
+}
+
+const getScrollableAncestors = (target) => {
+  const ancestors = []
+  let node = target?.parentElement
+  while (node && node !== document.body && node !== document.documentElement) {
+    if (isScrollable(node)) {
+      ancestors.push(node)
+    }
+    node = node.parentElement
+  }
+  return ancestors
+}
+
+const isAtScrollTop = (target) => {
+  if (typeof window === 'undefined') return false
+  if (window.scrollY > 0) return false
+  return getScrollableAncestors(target).every((el) => el.scrollTop <= 0)
+}
 
 const isIgnoredTarget = (target) =>
   Boolean(target?.closest?.('[data-drag-handle], [data-no-pull-refresh], button, a, input, select, textarea'))
@@ -18,6 +46,7 @@ export default function usePullToRefresh({ onRefresh, disabled = false, threshol
   const pullingRef = useRef(false)
   const startYRef = useRef(0)
   const pullDistanceRef = useRef(0)
+  const touchTargetRef = useRef(null)
   const isRefreshingRef = useRef(false)
   const onRefreshRef = useRef(onRefresh)
   onRefreshRef.current = onRefresh
@@ -28,6 +57,7 @@ export default function usePullToRefresh({ onRefresh, disabled = false, threshol
 
     const resetPull = () => {
       pullingRef.current = false
+      touchTargetRef.current = null
       pullDistanceRef.current = 0
       setPullDistance(0)
     }
@@ -35,10 +65,11 @@ export default function usePullToRefresh({ onRefresh, disabled = false, threshol
     const onTouchStart = (event) => {
       if (isRefreshingRef.current) return
       if (event.touches.length !== 1) return
-      if (!isAtScrollTop()) return
+      if (!isAtScrollTop(event.target)) return
       if (isIgnoredTarget(event.target)) return
 
       pullingRef.current = true
+      touchTargetRef.current = event.target
       startYRef.current = event.touches[0].clientY
       pullDistanceRef.current = 0
       setPullDistance(0)
@@ -46,7 +77,7 @@ export default function usePullToRefresh({ onRefresh, disabled = false, threshol
 
     const onTouchMove = (event) => {
       if (!pullingRef.current || isRefreshingRef.current) return
-      if (!isAtScrollTop()) {
+      if (!isAtScrollTop(touchTargetRef.current || event.target)) {
         resetPull()
         return
       }
@@ -67,6 +98,7 @@ export default function usePullToRefresh({ onRefresh, disabled = false, threshol
     const onTouchEnd = async () => {
       if (!pullingRef.current || isRefreshingRef.current) return
       pullingRef.current = false
+      touchTargetRef.current = null
 
       const distance = pullDistanceRef.current
       if (distance >= threshold && onRefreshRef.current) {

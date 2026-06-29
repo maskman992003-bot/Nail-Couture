@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getHomePath, isStaffRole } from '../utils/routes';
+import { CLIENT_LOGIN_PHONE_NOT_FOUND_MESSAGE } from '@nail-couture/shared/constants/clientAuth';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function ClientLogin() {
@@ -104,7 +105,7 @@ export default function ClientLogin() {
       }
 
       if (!data) {
-        setError('No account found with this phone number. Please check in at the kiosk first.');
+        setError(CLIENT_LOGIN_PHONE_NOT_FOUND_MESSAGE);
         setLoading(false);
         return;
       }

@@ -11,6 +11,7 @@ import {
   getGiftCardGiftedFromLabel,
   getMyGiftCards,
   isGiftCardExpired,
+  isGiftCardPendingClaim,
   maskGiftCardCode,
   GIFT_CARD_STATUS_LABELS,
   transferGiftCard,
@@ -24,37 +25,61 @@ import Sidebar from './Sidebar';
 import { GiftCardVisual } from './GiftCardVisual';
 import ListPagination from './ListPagination.jsx';
 import AppModal, { modalBtnPrimary, modalBtnSecondary, modalFooterClass, modalInputClass, modalTextareaClass } from './AppModal';
+import GiftCardSharePanel from './GiftCardSharePanel';
 import clsx from 'clsx';
 
-function GiftCardRow({ card, theme, onTransfer, showTransfer, hideFullCode }) {
+function GiftCardRow({ card, theme, onTransfer, showTransfer, hideFullCode, showShare }) {
   const isDark = theme === 'dark';
   const [revealed, setRevealed] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const pending = isGiftCardPendingClaim(card);
   const maskedCode = maskGiftCardCode(card.code);
-  const codeDisplay = revealed ? formatGiftCardCode(card.code) : maskedCode;
+  const codeDisplay = pending ? '' : (revealed ? formatGiftCardCode(card.code) : maskedCode);
   const giftedFromLabel = getGiftCardGiftedFromLabel(card);
+  const statusText = pending
+    ? 'Waiting for friend to claim'
+    : (GIFT_CARD_STATUS_LABELS[getGiftCardDisplayStatus(card)] || card.status);
 
   return (
-    <GiftCardVisual
-      isDark={isDark}
-      balance={card.balance}
-      initialAmount={card.initial_amount}
-      ownerName={card.owner_name}
-      statusText={GIFT_CARD_STATUS_LABELS[getGiftCardDisplayStatus(card)] || card.status}
-      expiryText={getGiftCardExpiryLabel(card)}
-      expiryExpired={isGiftCardExpired(card)}
-      giftedFromText={giftedFromLabel}
-      giftMessage={card.gift_message}
-      codeDisplay={codeDisplay}
-      codeInteractive={!hideFullCode}
-      onCodeClick={() => setRevealed((v) => !v)}
-      footer={
-        showTransfer && canTransferGiftCard(card) ? (
-          <button type="button" onClick={() => onTransfer(card)} className="text-sm text-gold hover:underline">
-            Gift to a friend
-          </button>
-        ) : null
-      }
-    />
+    <div className="space-y-3">
+      <GiftCardVisual
+        isDark={isDark}
+        balance={card.balance}
+        initialAmount={card.initial_amount}
+        ownerName={card.owner_name}
+        statusText={statusText}
+        expiryText={getGiftCardExpiryLabel(card)}
+        expiryExpired={isGiftCardExpired(card)}
+        giftedFromText={giftedFromLabel}
+        giftMessage={card.gift_message}
+        codeDisplay={codeDisplay}
+        codeInteractive={!hideFullCode && !pending}
+        onCodeClick={() => setRevealed((v) => !v)}
+        footer={
+          pending ? (
+            <button type="button" onClick={() => setShareOpen((v) => !v)} className="text-sm text-gold hover:underline">
+              {shareOpen ? 'Hide share link' : 'Share claim link'}
+            </button>
+          ) : (
+            showTransfer && canTransferGiftCard(card) ? (
+              <button type="button" onClick={() => onTransfer(card)} className="text-sm text-gold hover:underline">
+                Gift to a friend
+              </button>
+            ) : null
+          )
+        }
+      />
+      {pending && shareOpen && card.claim_token && (
+        <GiftCardSharePanel
+          claimToken={card.claim_token}
+          amount={card.initial_amount}
+          recipientName={card.recipient_name || card.owner_name}
+          pendingRecipientPhone={card.pending_recipient_phone}
+          isDark={isDark}
+          compact
+        />
+      )}
+    </div>
   );
 }
 

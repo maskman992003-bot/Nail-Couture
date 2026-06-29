@@ -62,6 +62,7 @@ import RouteDocumentTitle from './components/RouteDocumentTitle.jsx'
 import { CHECK_IN_ROLE } from '@nail-couture/shared/utils/routes'
 import MembershipCardPreviewPage from './pages/dev/MembershipCardPreviewPage.jsx'
 import GiftCardPreviewPage from './pages/dev/GiftCardPreviewPage.jsx'
+import GiftCardClaimPage from './components/GiftCardClaimPage.jsx'
 
 const KIOSK_ALLOWED_PATHS = ['/check-in', '/login'];
 
@@ -114,6 +115,7 @@ function AppRoutes() {
             } />
             <Route path="/login" element={<ClientLogin />} />
             <Route path="/register" element={<ClientRegister />} />
+            <Route path="/gift/claim/:token" element={<GiftCardClaimPage />} />
 
              <Route path="/superadmin" element={
                <ProtectedRoute allowedRoles={['super_admin']}>

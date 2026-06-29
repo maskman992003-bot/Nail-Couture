@@ -6,6 +6,7 @@ import { getNavItemsForRole } from '@nail-couture/shared/navigation/navItems.js'
 import { useAuth } from '../contexts/AuthContext';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
+import { GiftCardClaimScreen } from '../screens/GiftCardClaimScreen';
 import { CheckInScreen } from '../screens/CheckInScreen';
 import { PlaceholderScreen } from '../screens/PlaceholderScreen';
 import { PublicNavigator } from './PublicNavigator';
@@ -63,6 +64,11 @@ function AppStack() {
           <RootStack.Screen
             name="Register"
             component={RegisterScreen}
+            options={{ presentation: 'modal' }}
+          />
+          <RootStack.Screen
+            name="GiftClaim"
+            component={GiftCardClaimScreen}
             options={{ presentation: 'modal' }}
           />
           <RootStack.Screen

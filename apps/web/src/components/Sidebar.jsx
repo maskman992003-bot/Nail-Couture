@@ -497,12 +497,13 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Navigation */}
       <div
-        className="md:hidden fixed bottom-2 left-2 right-2 z-50 rounded-2xl"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl"
         style={{
           backgroundColor: sidebarBg,
           border: `1px solid ${borderColor}`,
+          borderBottom: 'none',
           boxShadow: sidebarShadow,
-          paddingBottom: 'max(0px, env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         <nav className="flex w-full items-center gap-1 px-1.5 py-1">

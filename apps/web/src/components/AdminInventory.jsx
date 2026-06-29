@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
+import usePullToRefresh from '../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 import AppModal, {
   modalLabelClass,
   modalInputClass,
@@ -167,6 +169,11 @@ export default function AdminInventory() {
   const outOfStockCount = inventory.filter((s) => s.quantity === 0).length;
   const offeredRefreshmentCount = inventory.filter((s) => s.category === 'refreshment' && s.quantity > 0).length;
 
+  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+    onRefresh: () => fetchInventory(true),
+    disabled: loading || refreshing,
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
@@ -181,11 +188,16 @@ export default function AdminInventory() {
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        pullProgress={pullProgress}
+      />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-light flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-heading text-3xl text-gold">Inventory Management</h1>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="font-heading text-2xl sm:text-3xl text-gold">Inventory Management</h1>
               <p className="text-secondary text-sm mt-1">
                 Track refreshments and materials in real time. Refreshments with stock appear in customer menus.
               </p>
@@ -195,22 +207,36 @@ export default function AdminInventory() {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 shrink-0">
               {lowStockCount > 0 && (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255, 165, 0, 0.1)', border: '1px solid rgba(255, 165, 0, 0.3)' }}>
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255, 165, 0, 0.1)', border: '1px solid rgba(255, 165, 0, 0.3)' }}>
                   <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
-                  <span className="text-orange-300 text-sm font-medium">{lowStockCount} low inventory</span>
+                  <span className="text-orange-300 text-sm font-medium">
+                    <span className="sm:hidden">{lowStockCount} low</span>
+                    <span className="hidden sm:inline">{lowStockCount} low inventory</span>
+                  </span>
                 </div>
               )}
               {outOfStockCount > 0 && (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255, 0, 0, 0.1)', border: '1px solid rgba(255, 0, 0, 0.3)' }}>
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255, 0, 0, 0.1)', border: '1px solid rgba(255, 0, 0, 0.3)' }}>
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                  <span className="text-red-300 text-sm font-medium">{outOfStockCount} out of inventory</span>
+                  <span className="text-red-300 text-sm font-medium">
+                    <span className="sm:hidden">{outOfStockCount} out</span>
+                    <span className="hidden sm:inline">{outOfStockCount} out of inventory</span>
+                  </span>
                 </div>
               )}
               <button
+                type="button"
+                onClick={() => fetchInventory(true)}
+                disabled={refreshing}
+                className="px-3 py-2 bg-secondary border border-light rounded-lg text-secondary hover:border-theme transition-colors font-medium text-sm min-h-[44px] disabled:opacity-50"
+              >
+                {refreshing ? 'Refreshing…' : 'Refresh'}
+              </button>
+              <button
                 onClick={() => { setAddForm(emptyForm); setAddError(''); setShowAddModal(true); }}
-                className="px-4 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors font-medium text-sm flex items-center gap-2"
+                className="px-4 py-2 bg-gold text-charcoal rounded-lg hover:bg-gold/90 transition-colors font-medium text-sm flex items-center gap-2 min-h-[44px]"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 Add Item
@@ -231,7 +257,7 @@ export default function AdminInventory() {
                   className="w-full p-3 bg-input border border-input rounded-lg focus:border-gold focus:outline-none text-primary placeholder-text-muted text-sm"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {['all', 'refreshment', 'material'].map((cat) => (
                   <button
                     key={cat}

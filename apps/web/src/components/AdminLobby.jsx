@@ -987,9 +987,19 @@ export default function AdminLobby() {
           pullProgress={pullProgress}
         />
         <div className="p-4 md:p-6 lg:p-8 mobile-page">
-            <div className="mb-6">
-              <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
-              <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Hold the grip handle and drag to assign, reassign, or return customers to waiting. Pull down to refresh on mobile.</p>
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
+                <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Hold the grip handle and drag to assign, reassign, or return customers to waiting. Pull down to refresh on mobile.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => refreshFloorManager()}
+                disabled={isRefreshing || Boolean(activeId)}
+                className="px-3 py-1.5 text-sm bg-secondary border border-light rounded-lg text-secondary hover:border-theme disabled:opacity-50 min-h-[44px] shrink-0 self-start"
+              >
+                {isRefreshing ? 'Refreshing…' : 'Refresh'}
+              </button>
             </div>
 
             {notification && (

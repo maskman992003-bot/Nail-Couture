@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureFlags';
@@ -45,6 +45,10 @@ const statusLabels = {
 
 export default function ClientPortal() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromRegistration = Boolean(location.state?.fromRegistration)
+    || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('nc_registration_welcome') === '1');
+  const welcomeName = location.state?.name || '';
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
@@ -97,6 +101,11 @@ export default function ClientPortal() {
       setAppointments(appointmentsData || []);
     } catch { /* ignore */ }
     setLoading(false);
+    try {
+      sessionStorage.removeItem('nc_registration_welcome');
+    } catch {
+      // ignore storage errors
+    }
   }, [navigate, user?.id]);
 
   useEffect(() => {
@@ -124,6 +133,39 @@ export default function ClientPortal() {
   };
 
   const shellClass = 'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary';
+
+  if ((authLoading || loading) && fromRegistration) {
+    const displayName = welcomeName || user?.full_name || 'there';
+    return (
+      <div className="min-h-screen bg-charcoal flex items-center justify-center p-8 relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 bg-gold rounded-full animate-ping"
+              style={{
+                left: `${10 + (i * 11) % 80}%`,
+                top: `${15 + (i * 17) % 70}%`,
+                animationDelay: `${(i % 4) * 0.4}s`,
+                animationDuration: `${1.2 + (i % 3) * 0.3}s`,
+              }}
+            />
+          ))}
+        </div>
+        <div className="relative z-10 text-center animate-fade-in max-w-sm">
+          <div className="w-16 h-16 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-6 ring-2 ring-gold/30">
+            <svg className="w-8 h-8 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p className="text-xs uppercase tracking-[0.3em] text-gold/80 mb-3">You&apos;re all set</p>
+          <h2 className="font-heading text-3xl text-gold mb-3 tracking-wide">Welcome, {displayName}</h2>
+          <p className="text-offwhite/60 text-sm mb-8">Loading your portal…</p>
+          <div className="w-12 h-12 border-[3px] border-gold border-t-transparent rounded-full animate-spin mx-auto" />
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading || loading) {
     return (

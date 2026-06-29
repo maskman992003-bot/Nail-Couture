@@ -34,7 +34,7 @@ export function SiteFooter() {
 
           <form
             onSubmit={handleSubmit}
-            className="flex w-full max-w-md gap-2 lg:w-auto"
+            className="flex w-full max-w-md flex-col gap-2 sm:flex-row lg:w-auto"
           >
             <input
               type="email"
@@ -45,9 +45,10 @@ export function SiteFooter() {
             />
             <Button
               type="submit"
-              className="h-11 rounded-none bg-primary px-5 text-[11px] font-medium uppercase tracking-[0.14em] text-primary-foreground hover:bg-primary/90"
+              className="h-11 w-full rounded-none bg-primary px-5 text-[11px] font-medium uppercase tracking-[0.14em] text-primary-foreground hover:bg-primary/90 sm:w-auto"
             >
-              Join Our VIP Founding List
+              <span className="sm:hidden">Join VIP List</span>
+              <span className="hidden sm:inline">Join Our VIP Founding List</span>
             </Button>
           </form>
         </div>
