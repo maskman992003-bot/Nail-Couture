@@ -1,13 +1,28 @@
 import { supabase } from '../lib/supabase';
 
 export const WORKSTATION_AVAILABLE = 'available';
+export const WORKSTATION_BUSY = 'busy';
 export const WORKSTATION_ON_BREAK = 'on_break';
 
 export function getWorkstationStatus(preferences) {
   if (!preferences || typeof preferences !== 'object') return WORKSTATION_AVAILABLE;
-  return preferences.workstation_status === WORKSTATION_ON_BREAK
-    ? WORKSTATION_ON_BREAK
-    : WORKSTATION_AVAILABLE;
+  const status = preferences.workstation_status;
+  if (status === WORKSTATION_ON_BREAK) return WORKSTATION_ON_BREAK;
+  if (status === WORKSTATION_BUSY) return WORKSTATION_BUSY;
+  return WORKSTATION_AVAILABLE;
+}
+
+export function getAssignmentPriority(preferences) {
+  if (!preferences || typeof preferences !== 'object') return false;
+  return Boolean(preferences.assignment_priority);
+}
+
+export function getLastAvailableAt(preferences) {
+  if (!preferences || typeof preferences !== 'object') return null;
+  const raw = preferences.last_available_at;
+  if (!raw) return null;
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 export async function fetchWorkstationStatus(profileId) {

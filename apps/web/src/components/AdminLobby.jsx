@@ -30,7 +30,12 @@ import AppModal, {
 import clsx from 'clsx'
 import { MULTI_TECH_VISITS } from '@nail-couture/shared/constants/featureFlags'
 import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCustomerAccess'
-import { getWorkstationStatus, WORKSTATION_ON_BREAK } from '@nail-couture/shared/utils/technicianWorkstation'
+import {
+  getWorkstationStatus,
+  getAssignmentPriority,
+  WORKSTATION_ON_BREAK,
+  WORKSTATION_BUSY,
+} from '@nail-couture/shared/utils/technicianWorkstation'
 import usePullToRefresh from '../hooks/usePullToRefresh'
 import PullToRefreshIndicator from './PullToRefreshIndicator'
 import VisitTechnicianManager, { MultiTechBadge } from './VisitTechnicianManager'
@@ -124,7 +129,7 @@ const DraggablePendingCustomer = ({ appointment, children }) => {
   )
 }
 
-const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, isOnBreak, updating, onAccept, onSendToCheckout, onManageTechs, showManageTechs, wiggle, activeDragId, theme }) => {
+const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, isOnBreak, dailyPoints, assignmentPriority, lastDispatchReason, updating, onAccept, onSendToCheckout, onManageTechs, showManageTechs, wiggle, activeDragId, theme }) => {
   const isDraggingThisPending = activeDragId && pendingCustomer && String(pendingCustomer.id) === String(activeDragId)
   const dropDisabled = isBusy || isPending || isOnBreak || isDraggingThisPending
   const { isOver, setNodeRef } = useDroppable({
@@ -168,16 +173,35 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
   const pendingCustomerDetailClass = clsx('text-xs', theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50')
   const dropHintTextClass = clsx('text-sm', theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40')
 
+  const tooltipLines = [
+    `Daily points: ${dailyPoints ?? 0}`,
+    isOnBreak ? 'Status: on break' : isBusy ? 'Status: busy' : isPending ? 'Status: pending assignment' : 'Status: available',
+    lastDispatchReason ? `Last pick: ${lastDispatchReason}` : null,
+  ].filter(Boolean).join(' · ')
+
   return (
     <div
       ref={setNodeRef}
       className={gridItemClass}
+      title={tooltipLines}
     >
       <div className="flex items-center justify-between mb-2">
-        <h4 className={techNameClass}>{tech.full_name}</h4>
-        <span className={statusBadgeClass}>
+        <div className="min-w-0">
+          <h4 className={techNameClass}>{tech.full_name}</h4>
+          <p className={`text-xs mt-0.5 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`}>
+            {dailyPoints ?? 0} pts today
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          {assignmentPriority && (
+            <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/30 text-purple-300 font-medium">
+              Priority
+            </span>
+          )}
+          <span className={statusBadgeClass}>
           {isBusy ? 'Busy' : isOnBreak ? 'On Break' : showAcceptButton ? 'Pending' : 'Available'}
         </span>
+        </div>
       </div>
       {isBusy ? (
         <div className={activeCustomerTextClass}>
@@ -599,6 +623,10 @@ export default function AdminLobby() {
   const [checkoutReadyAppointments, setCheckoutReadyAppointments] = useState([])
   const [pendingAppointments, setPendingAppointments] = useState([])
   const [technicians, setTechnicians] = useState([])
+  const [techWorkload, setTechWorkload] = useState({})
+  const [dispatchLog, setDispatchLog] = useState([])
+  const [showDispatchLog, setShowDispatchLog] = useState(false)
+  const [autoAssigning, setAutoAssigning] = useState(false)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
   const [notification, setNotification] = useState(null)
@@ -636,7 +664,7 @@ export default function AdminLobby() {
 
   useEffect(() => {
     const init = async () => {
-      await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
+      await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal(), fetchDispatchLog()])
       setLoading(false)
     }
     init()
@@ -645,10 +673,13 @@ export default function AdminLobby() {
     const channel = supabase
       .channel('floor-manager')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, async () => {
-        await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
+        await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal(), fetchDispatchLog()])
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, async () => {
         await fetchTechnicians()
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dispatch_audit_log' }, async () => {
+        await fetchDispatchLog()
       })
       .subscribe()
 
@@ -694,13 +725,29 @@ export default function AdminLobby() {
   }, [])
 
   const fetchTechnicians = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('role', 'technician')
-      .order('full_name')
-    
-    if (!error) setTechnicians(data || [])
+    const [{ data: profiles, error }, { data: workload }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'technician')
+        .order('full_name'),
+      supabase.rpc('get_floor_technician_workload'),
+    ])
+
+    if (!error) setTechnicians(profiles || [])
+    const map = {}
+    ;(workload || []).forEach((row) => {
+      map[row.id] = row
+    })
+    setTechWorkload(map)
+  }, [])
+
+  const fetchDispatchLog = useCallback(async () => {
+    const { data, error } = await supabase.rpc('get_dispatch_audit_log', {
+      caller_phone: getCallerPhone(),
+      p_limit: 20,
+    })
+    if (!error) setDispatchLog(data || [])
   }, [])
 
   const fetchTodayTotal = useCallback(async () => {
@@ -723,6 +770,7 @@ export default function AdminLobby() {
       fetchPendingAppointments(),
       fetchTechnicians(),
       fetchTodayTotal(),
+      fetchDispatchLog(),
     ])
   }, [
     fetchAppointments,
@@ -731,12 +779,36 @@ export default function AdminLobby() {
     fetchPendingAppointments,
     fetchTechnicians,
     fetchTodayTotal,
+    fetchDispatchLog,
   ])
 
   const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
     onRefresh: refreshFloorManager,
     disabled: Boolean(activeId),
   })
+
+  const handleAutoAssign = async () => {
+    setAutoAssigning(true)
+    try {
+      const { data, error } = await supabase.rpc('run_cumulative_effort_dispatcher', {
+        caller_phone: getCallerPhone(),
+      })
+      if (error) {
+        setNotification({ message: 'Auto-assign failed', name: error.message })
+      } else {
+        const results = data?.results || []
+        const lastAssigned = [...results].reverse().find((r) => r?.assigned)
+        setNotification({
+          message: lastAssigned?.reason_detail || `Assigned ${data?.assigned_count || 0} client(s)`,
+          name: 'Dispatcher',
+        })
+      }
+      await refreshFloorManager()
+    } finally {
+      setAutoAssigning(false)
+      setTimeout(() => setNotification(null), 4000)
+    }
+  }
 
   const decrementRefreshmentInventory = async (refreshmentName) => {
     try {
@@ -891,12 +963,22 @@ export default function AdminLobby() {
     )
 
     const targetTech = technicians.find((t) => String(t.id) === technicianId)
-    const targetOnBreak = targetTech && getWorkstationStatus(targetTech.preferences) === WORKSTATION_ON_BREAK
+    const targetWs = targetTech ? getWorkstationStatus(targetTech.preferences) : WORKSTATION_AVAILABLE
+    const targetOnBreak = targetWs === WORKSTATION_ON_BREAK
+    const targetWorkstationBusy = targetWs === WORKSTATION_BUSY
 
     if (targetOnBreak) {
       setWiggleTechId(technicianId)
       setTimeout(() => setWiggleTechId(null), 500)
       setNotification({ message: 'Technician is on break', name: targetTech?.full_name || 'Cannot assign' })
+      setTimeout(() => setNotification(null), 3000)
+      return
+    }
+
+    if (targetWorkstationBusy && !isReallocation) {
+      setWiggleTechId(technicianId)
+      setTimeout(() => setWiggleTechId(null), 500)
+      setNotification({ message: 'Technician is busy', name: 'Cannot assign right now' })
       setTimeout(() => setNotification(null), 3000)
       return
     }
@@ -992,15 +1074,53 @@ export default function AdminLobby() {
                 <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
                 <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Hold the grip handle and drag to assign, reassign, or return customers to waiting. Pull down to refresh on mobile.</p>
               </div>
-              <button
-                type="button"
-                onClick={() => refreshFloorManager()}
-                disabled={isRefreshing || Boolean(activeId)}
-                className="px-3 py-1.5 text-sm bg-secondary border border-light rounded-lg text-secondary hover:border-theme disabled:opacity-50 min-h-[44px] shrink-0 self-start"
-              >
-                {isRefreshing ? 'Refreshing…' : 'Refresh'}
-              </button>
+              <div className="flex flex-wrap gap-2 shrink-0 self-start">
+                <button
+                  type="button"
+                  onClick={handleAutoAssign}
+                  disabled={autoAssigning || isRefreshing || Boolean(activeId) || lobbyAppointments.length === 0}
+                  className="px-3 py-1.5 text-sm bg-gold text-charcoal rounded-lg hover:bg-gold/90 disabled:opacity-50 min-h-[44px]"
+                >
+                  {autoAssigning ? 'Assigning…' : 'Auto-assign'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDispatchLog((v) => !v)}
+                  className="px-3 py-1.5 text-sm bg-secondary border border-light rounded-lg text-secondary hover:border-theme min-h-[44px]"
+                >
+                  {showDispatchLog ? 'Hide log' : 'Dispatcher log'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => refreshFloorManager()}
+                  disabled={isRefreshing || Boolean(activeId)}
+                  className="px-3 py-1.5 text-sm bg-secondary border border-light rounded-lg text-secondary hover:border-theme disabled:opacity-50 min-h-[44px]"
+                >
+                  {isRefreshing ? 'Refreshing…' : 'Refresh'}
+                </button>
+              </div>
             </div>
+
+            {showDispatchLog && (
+              <div className={`mb-6 rounded-xl border p-4 ${theme === 'dark' ? 'border-offwhite/10 bg-offwhite/5' : 'border-charcoal/10 bg-charcoal/5'}`}>
+                <h3 className="font-heading text-gold text-sm mb-3">Dispatcher log (today)</h3>
+                {dispatchLog.length === 0 ? (
+                  <p className={`text-sm ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>No dispatch decisions yet today.</p>
+                ) : (
+                  <ul className="space-y-2 max-h-48 overflow-y-auto text-sm">
+                    {dispatchLog.map((entry) => (
+                      <li key={entry.id} className={theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70'}>
+                        <span className="text-gold/80">{formatTime(entry.created_at)}</span>
+                        {' — '}
+                        {entry.customer_name || 'Client'}
+                        {entry.technician_name ? ` → ${entry.technician_name}` : ''}
+                        {entry.reason_detail ? `: ${entry.reason_detail}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             {notification && (
               <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gold text-charcoal px-4 sm:px-8 py-4 rounded-lg shadow-lg z-50 max-w-[90vw]">
@@ -1134,9 +1254,12 @@ export default function AdminLobby() {
                   {technicians.map(tech => {
                     const activeCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')
                     const pendingCustomer = pendingAppointments.find(a => a.technician_id === tech.id && a.status === 'assigned_pending')
-                    const isBusy = !!activeCustomer
+                    const workload = techWorkload[tech.id] || {}
+                    const wsStatus = workload.workstation_status || getWorkstationStatus(tech.preferences)
+                    const isBusy = !!activeCustomer || wsStatus === WORKSTATION_BUSY
                     const isPending = !!pendingCustomer
-                    const isOnBreak = getWorkstationStatus(tech.preferences) === WORKSTATION_ON_BREAK
+                    const isOnBreak = wsStatus === WORKSTATION_ON_BREAK
+                    const assignmentPriority = workload.assignment_priority ?? getAssignmentPriority(tech.preferences)
                     
                     return (
                       <TechnicianGridItem
@@ -1147,6 +1270,9 @@ export default function AdminLobby() {
                         isBusy={isBusy}
                         isPending={isPending}
                         isOnBreak={isOnBreak}
+                        dailyPoints={workload.daily_points}
+                        assignmentPriority={assignmentPriority}
+                        lastDispatchReason={workload.last_dispatch_reason}
                         wiggle={String(wiggleTechId) === String(tech.id)}
                         updating={updating}
                         onAccept={acceptAssignment}

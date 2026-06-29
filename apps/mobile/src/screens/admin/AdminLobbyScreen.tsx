@@ -12,7 +12,12 @@ import { getServices } from '@nail-couture/shared/services/services.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { formatAppointmentTime, getAppointmentTotalPrice } from '@nail-couture/shared/utils/appointmentHelpers.js';
 import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCustomerAccess.js';
-import { getWorkstationStatus, WORKSTATION_ON_BREAK } from '@nail-couture/shared/utils/technicianWorkstation.js';
+import {
+  getWorkstationStatus,
+  getAssignmentPriority,
+  WORKSTATION_ON_BREAK,
+  WORKSTATION_BUSY,
+} from '@nail-couture/shared/utils/technicianWorkstation.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
@@ -40,6 +45,22 @@ type TechnicianRecord = {
   preferences?: Record<string, unknown>;
 };
 
+type TechWorkload = {
+  id: string;
+  daily_points?: number;
+  workstation_status?: string;
+  assignment_priority?: boolean;
+  last_dispatch_reason?: string;
+};
+
+type DispatchLogEntry = {
+  id: string;
+  created_at: string;
+  customer_name?: string;
+  technician_name?: string;
+  reason_detail?: string;
+};
+
 type ServiceItem = { id: number; name: string; price: number; is_addon?: boolean };
 
 export function AdminLobbyScreen() {
@@ -50,6 +71,10 @@ export function AdminLobbyScreen() {
   const [checkoutReady, setCheckoutReady] = useState<AppointmentRecord[]>([]);
   const [pendingAppointments, setPendingAppointments] = useState<AppointmentRecord[]>([]);
   const [technicians, setTechnicians] = useState<TechnicianRecord[]>([]);
+  const [techWorkload, setTechWorkload] = useState<Record<string, TechWorkload>>({});
+  const [dispatchLog, setDispatchLog] = useState<DispatchLogEntry[]>([]);
+  const [showDispatchLog, setShowDispatchLog] = useState(false);
+  const [autoAssigning, setAutoAssigning] = useState(false);
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -83,12 +108,14 @@ export function AdminLobbyScreen() {
     const phone = user.phone;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const [waiting, serving, checkout, pending, techs, countRes] = await Promise.all([
+    const [waiting, serving, checkout, pending, techs, workload, audit, countRes] = await Promise.all([
       getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'waiting', order_asc: true }),
       getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'serving', order_asc: true }),
       getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'ready_for_checkout', order_asc: true }),
       getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'assigned_pending', order_asc: true }),
       getSupabase().from('profiles').select('*').eq('role', 'technician').order('full_name'),
+      getSupabase().rpc('get_floor_technician_workload'),
+      getSupabase().rpc('get_dispatch_audit_log', { caller_phone: phone, p_limit: 20 }),
       getSupabase().rpc('get_appointments_count', { caller_phone: phone, status_filter: 'completed', date_from: today.toISOString() }),
     ]);
     setLobbyAppointments((waiting.data as AppointmentRecord[]) || []);
@@ -96,6 +123,12 @@ export function AdminLobbyScreen() {
     setCheckoutReady((checkout.data as AppointmentRecord[]) || []);
     setPendingAppointments((pending.data as AppointmentRecord[]) || []);
     setTechnicians((techs.data as TechnicianRecord[]) || []);
+    const map: Record<string, TechWorkload> = {};
+    ((workload.data as TechWorkload[]) || []).forEach((row) => {
+      map[row.id] = row;
+    });
+    setTechWorkload(map);
+    setDispatchLog((audit.data as DispatchLogEntry[]) || []);
     setTodayTotal((countRes.data as number) || 0);
     setLoading(false);
   }, [user?.phone]);
@@ -111,6 +144,26 @@ export function AdminLobbyScreen() {
     return () => { getSupabase().removeChannel(channel); };
   }, [fetchAll]);
 
+  const handleAutoAssign = async () => {
+    if (!user?.phone) return;
+    setAutoAssigning(true);
+    try {
+      const { data, error } = await getSupabase().rpc('run_cumulative_effort_dispatcher', {
+        caller_phone: user.phone,
+      });
+      if (error) {
+        showToast('Auto-assign failed', error.message);
+      } else {
+        const results = (data?.results as Array<{ assigned?: boolean; reason_detail?: string }>) || [];
+        const lastAssigned = [...results].reverse().find((r) => r?.assigned);
+        showToast(lastAssigned?.reason_detail || `Assigned ${data?.assigned_count || 0} client(s)`, 'Dispatcher');
+      }
+      await fetchAll();
+    } finally {
+      setAutoAssigning(false);
+    }
+  };
+
   const assignToTechnician = async (
     appointmentId: string,
     technicianId: string,
@@ -118,9 +171,15 @@ export function AdminLobbyScreen() {
     pendingAppt?: AppointmentRecord,
   ) => {
     const targetTech = technicians.find((t) => String(t.id) === technicianId);
-    const targetOnBreak = targetTech && getWorkstationStatus(targetTech.preferences) === WORKSTATION_ON_BREAK;
+    const targetWs = targetTech ? getWorkstationStatus(targetTech.preferences) : 'available';
+    const targetOnBreak = targetWs === WORKSTATION_ON_BREAK;
+    const targetWorkstationBusy = targetWs === WORKSTATION_BUSY;
     if (targetOnBreak) {
       showToast('Technician is on break', targetTech?.full_name);
+      return;
+    }
+    if (targetWorkstationBusy && !isReallocation) {
+      showToast('Technician is busy');
       return;
     }
     const targetIsServing = servingAppointments.some(
@@ -307,8 +366,11 @@ export function AdminLobbyScreen() {
   };
 
   const renderTechCard = (tech: TechnicianRecord) => {
-    const isBusy = busyTechnicians.includes(tech.id);
-    const isOnBreak = getWorkstationStatus(tech.preferences) === WORKSTATION_ON_BREAK;
+    const workload = techWorkload[tech.id] || {};
+    const wsStatus = workload.workstation_status || getWorkstationStatus(tech.preferences);
+    const isBusy = busyTechnicians.includes(tech.id) || wsStatus === WORKSTATION_BUSY;
+    const isOnBreak = wsStatus === WORKSTATION_ON_BREAK;
+    const assignmentPriority = workload.assignment_priority ?? getAssignmentPriority(tech.preferences);
     const pendingAppt = pendingAppointments.find((a) => String(a.technician_id) === String(tech.id));
     const servingAppt = servingAppointments.find((a) => String(a.technician_id) === String(tech.id));
     const isHighlighted = dropHighlightTechId === tech.id;
@@ -335,10 +397,21 @@ export function AdminLobbyScreen() {
         ]}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-          <Text style={[styles.textPrimary, { fontWeight: '600' }]}>{tech.full_name}</Text>
-          <Text style={{ fontSize: 11, color: isBusy ? '#f87171' : isOnBreak ? '#facc15' : pendingAppt ? '#fbbf24' : '#4ade80' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.textPrimary, { fontWeight: '600' }]}>{tech.full_name}</Text>
+            <Text style={[styles.textSecondary, { fontSize: 11, marginTop: 2 }]}>
+              {workload.daily_points ?? 0} pts today
+              {workload.last_dispatch_reason ? ` · ${workload.last_dispatch_reason}` : ''}
+            </Text>
+          </View>
+          <View style={{ alignItems: 'flex-end', gap: 4 }}>
+            {assignmentPriority && (
+              <Text style={{ fontSize: 10, color: '#c084fc', fontWeight: '600' }}>Priority</Text>
+            )}
+            <Text style={{ fontSize: 11, color: isBusy ? '#f87171' : isOnBreak ? '#facc15' : pendingAppt ? '#fbbf24' : '#4ade80' }}>
             {isBusy ? 'Busy' : isOnBreak ? 'On Break' : pendingAppt ? 'Pending' : 'Available'}
           </Text>
+          </View>
         </View>
         {isBusy && servingAppt ? (
           <>
@@ -399,10 +472,61 @@ export function AdminLobbyScreen() {
   }
 
   return (
-    <StaffScreenLayout title="Floor Manager" subtitle={`${todayTotal} completed today`}>
+    <StaffScreenLayout
+      title="Floor Manager"
+      subtitle={`${todayTotal} completed today`}
+      headerRight={
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pressable
+            onPress={handleAutoAssign}
+            disabled={autoAssigning || lobbyAppointments.length === 0}
+            style={{
+              backgroundColor: styles.tokens.goldStrong,
+              borderRadius: 8,
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+              opacity: autoAssigning || lobbyAppointments.length === 0 ? 0.5 : 1,
+            }}
+          >
+            <Text style={{ color: '#121212', fontWeight: '600', fontSize: 12 }}>
+              {autoAssigning ? '…' : 'Auto'}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setShowDispatchLog((v) => !v)}
+            style={{
+              borderWidth: 1,
+              borderColor: styles.tokens.borderLight,
+              borderRadius: 8,
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+            }}
+          >
+            <Text style={{ color: styles.tokens.textSecondary, fontSize: 12 }}>Log</Text>
+          </Pressable>
+        </View>
+      }
+    >
       {notification && (
         <View style={{ backgroundColor: 'rgba(197,160,89,0.15)', borderRadius: 10, padding: 12, marginBottom: 12 }}>
           <Text style={styles.textGold}>{notification.name ? `${notification.name}: ` : ''}{notification.message}</Text>
+        </View>
+      )}
+
+      {showDispatchLog && (
+        <View style={[styles.card, { padding: 12, marginBottom: 12 }]}>
+          <Text style={[styles.textGold, { fontWeight: '600', marginBottom: 8 }]}>Dispatcher log (today)</Text>
+          {dispatchLog.length === 0 ? (
+            <Text style={styles.textSecondary}>No dispatch decisions yet today.</Text>
+          ) : (
+            dispatchLog.map((entry) => (
+              <Text key={entry.id} style={[styles.textSecondary, { fontSize: 12, marginBottom: 4 }]}>
+                {entry.customer_name || 'Client'}
+                {entry.technician_name ? ` → ${entry.technician_name}` : ''}
+                {entry.reason_detail ? `: ${entry.reason_detail}` : ''}
+              </Text>
+            ))
+          )}
         </View>
       )}
 

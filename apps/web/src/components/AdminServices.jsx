@@ -15,6 +15,7 @@ import AppModal, {
   modalBtnDanger,
 } from './AppModal';
 import { linesToChecklist, checklistToLines } from '@nail-couture/shared/utils/serviceChecklist';
+import { calculateServicePoints, clampWeight } from '@nail-couture/shared/utils/cumulativeEffort';
 
 export default function AdminServices() {
   const { user } = useAuth();
@@ -26,7 +27,7 @@ export default function AdminServices() {
   const [refreshing, setRefreshing] = useState(false);
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', description: '', checklistLines: '', is_coming_soon: false });
+  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', description: '', checklistLines: '', is_coming_soon: false, time_weight: '3', effort_weight: '3', price_weight: '3' });
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,7 +74,7 @@ export default function AdminServices() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '', description: '', checklistLines: '', is_coming_soon: false });
+    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '', description: '', checklistLines: '', is_coming_soon: false, time_weight: '3', effort_weight: '3', price_weight: '3' });
     setShowForm(true);
   };
 
@@ -87,6 +88,9 @@ export default function AdminServices() {
       description: svc.description || '',
       checklistLines: checklistToLines(svc.metadata?.checklist),
       is_coming_soon: Boolean(svc.is_coming_soon),
+      time_weight: String(svc.time_weight ?? 3),
+      effort_weight: String(svc.effort_weight ?? 3),
+      price_weight: String(svc.price_weight ?? 3),
     });
     setShowForm(true);
   };
@@ -103,6 +107,9 @@ export default function AdminServices() {
       category: form.category,
       description: form.description,
       is_coming_soon: form.is_coming_soon,
+      time_weight: clampWeight(form.time_weight),
+      effort_weight: clampWeight(form.effort_weight),
+      price_weight: clampWeight(form.price_weight),
       metadata: { checklist: linesToChecklist(form.checklistLines) },
     };
     let result;
@@ -360,6 +367,45 @@ export default function AdminServices() {
                       />
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className={modalLabelClass}>Time weight (1–5)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={5}
+                        value={form.time_weight}
+                        onChange={(e) => setForm({ ...form, time_weight: e.target.value })}
+                        className={modalInputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className={modalLabelClass}>Effort weight (1–5)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={5}
+                        value={form.effort_weight}
+                        onChange={(e) => setForm({ ...form, effort_weight: e.target.value })}
+                        className={modalInputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className={modalLabelClass}>Price weight (1–5)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={5}
+                        value={form.price_weight}
+                        onChange={(e) => setForm({ ...form, price_weight: e.target.value })}
+                        className={modalInputClass}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-sm text-gold">
+                    Effort points preview:{' '}
+                    {calculateServicePoints(form.time_weight, form.effort_weight, form.price_weight)}
+                  </p>
                   <div>
                     <label className={modalLabelClass}>Description</label>
                     <textarea
@@ -428,6 +474,7 @@ export default function AdminServices() {
                         <th className="text-left py-3 px-4">Category</th>
                         <th className="text-left py-3 px-4">Price</th>
                         <th className="text-left py-3 px-4">Duration</th>
+                        <th className="text-left py-3 px-4">Points</th>
                         <th className="text-left py-3 px-4">Status</th>
                         <th className="text-left py-3 px-4">Actions</th>
                       </tr>
@@ -439,6 +486,7 @@ export default function AdminServices() {
                           <td className="py-3 px-4 text-secondary">{svc.category || '—'}</td>
                           <td className="py-3 px-4 text-gold">${parseFloat(svc.price).toFixed(2)}</td>
                           <td className="py-3 px-4 text-secondary">{svc.duration_minutes || 0} min</td>
+                          <td className="py-3 px-4 text-gold font-medium">{svc.points ?? '—'}</td>
                           <td className="py-3 px-4">
                             <button
                               type="button"
@@ -462,7 +510,7 @@ export default function AdminServices() {
                           </td>
                         </tr>
                       ))}
-                      {filteredServices.length === 0 && <tr><td colSpan="6" className="py-8 text-center text-muted">No services found</td></tr>}
+                      {filteredServices.length === 0 && <tr><td colSpan="7" className="py-8 text-center text-muted">No services found</td></tr>}
                     </tbody>
                   </table>
                 </div>

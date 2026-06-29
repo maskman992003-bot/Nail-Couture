@@ -169,8 +169,13 @@ export async function completeCheckIn(phoneNumber, appointmentId, options = null
   }
 
   const status = data?.appointment?.status
-  if (status && status !== 'waiting') {
-    throw new Error(`Check-in did not reach the lobby (status: ${status}). Run sql/111_kiosk_check_in_fix.sql in Supabase.`)
+  // Auto-dispatch (sql/125) may assign a technician before this RPC returns,
+  // so assigned_pending is a successful lobby outcome, not a stuck check-in.
+  const lobbyStatuses = ['waiting', 'assigned_pending', 'serving']
+  if (status && !lobbyStatuses.includes(status)) {
+    throw new Error(
+      `Check-in did not reach the lobby (status: ${status}). Run sql/111_kiosk_check_in_fix.sql in Supabase.`,
+    )
   }
 
   data = await ensureKioskRefreshmentDeducted(cleanPhone, appointmentId, options, data)

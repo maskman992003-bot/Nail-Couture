@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
 import { linesToChecklist, checklistToLines } from '@nail-couture/shared/utils/serviceChecklist.js';
+import { calculateServicePoints, clampWeight } from '@nail-couture/shared/utils/cumulativeEffort.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
@@ -22,6 +23,10 @@ type ServiceRecord = {
   category?: string;
   description?: string;
   is_coming_soon?: boolean;
+  time_weight?: number;
+  effort_weight?: number;
+  price_weight?: number;
+  points?: number;
   metadata?: { checklist?: string[] };
 };
 
@@ -41,7 +46,7 @@ export function AdminServicesScreen() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', description: '', checklistLines: '', is_coming_soon: false });
+  const [form, setForm] = useState({ name: '', price: '', duration_minutes: '', category: '', description: '', checklistLines: '', is_coming_soon: false, time_weight: '3', effort_weight: '3', price_weight: '3' });
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<ServiceRecord | null>(null);
@@ -82,7 +87,7 @@ export function AdminServicesScreen() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '', description: '', checklistLines: '', is_coming_soon: false });
+    setForm({ name: '', price: '', duration_minutes: '', category: categories[0]?.name || '', description: '', checklistLines: '', is_coming_soon: false, time_weight: '3', effort_weight: '3', price_weight: '3' });
     setApiError('');
     setShowForm(true);
   };
@@ -97,6 +102,9 @@ export function AdminServicesScreen() {
       description: svc.description || '',
       checklistLines: checklistToLines(svc.metadata?.checklist),
       is_coming_soon: Boolean(svc.is_coming_soon),
+      time_weight: String(svc.time_weight ?? 3),
+      effort_weight: String(svc.effort_weight ?? 3),
+      price_weight: String(svc.price_weight ?? 3),
     });
     setApiError('');
     setShowForm(true);
@@ -113,6 +121,9 @@ export function AdminServicesScreen() {
       category: form.category,
       description: form.description,
       is_coming_soon: form.is_coming_soon,
+      time_weight: clampWeight(form.time_weight),
+      effort_weight: clampWeight(form.effort_weight),
+      price_weight: clampWeight(form.price_weight),
       metadata: { checklist: linesToChecklist(form.checklistLines) },
     };
     const result = editing
@@ -265,7 +276,7 @@ export function AdminServicesScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.textPrimary, { fontWeight: '600' }]}>{svc.name}</Text>
                   <Text style={styles.textSecondary}>
-                    {svc.category} · {svc.duration_minutes || 0} min
+                    {svc.category} · {svc.duration_minutes || 0} min · {svc.points ?? '—'} pts
                   </Text>
                   <Pressable
                     onPress={() => toggleComingSoon(svc)}
@@ -336,6 +347,15 @@ export function AdminServicesScreen() {
         <TextInput value={form.price} onChangeText={(v) => setForm({ ...form, price: v })} keyboardType="decimal-pad" style={inputStyle} placeholderTextColor={styles.tokens.textMuted} />
         <Text style={styles.textSecondary}>Duration (minutes)</Text>
         <TextInput value={form.duration_minutes} onChangeText={(v) => setForm({ ...form, duration_minutes: v })} keyboardType="number-pad" style={inputStyle} placeholderTextColor={styles.tokens.textMuted} />
+        <Text style={styles.textSecondary}>Time weight (1–5)</Text>
+        <TextInput value={form.time_weight} onChangeText={(v) => setForm({ ...form, time_weight: v })} keyboardType="number-pad" style={inputStyle} placeholderTextColor={styles.tokens.textMuted} />
+        <Text style={styles.textSecondary}>Effort weight (1–5)</Text>
+        <TextInput value={form.effort_weight} onChangeText={(v) => setForm({ ...form, effort_weight: v })} keyboardType="number-pad" style={inputStyle} placeholderTextColor={styles.tokens.textMuted} />
+        <Text style={styles.textSecondary}>Price weight (1–5)</Text>
+        <TextInput value={form.price_weight} onChangeText={(v) => setForm({ ...form, price_weight: v })} keyboardType="number-pad" style={inputStyle} placeholderTextColor={styles.tokens.textMuted} />
+        <Text style={[styles.textGold, { marginBottom: 12 }]}>
+          Effort points preview: {calculateServicePoints(form.time_weight, form.effort_weight, form.price_weight)}
+        </Text>
         <Text style={styles.textSecondary}>Description</Text>
         <TextInput value={form.description} onChangeText={(v) => setForm({ ...form, description: v })} multiline style={[inputStyle, { minHeight: 72, textAlignVertical: 'top' }]} placeholder="Shown on public and customer menus" placeholderTextColor={styles.tokens.textMuted} />
         {categoryOptions.length > 0 && (
