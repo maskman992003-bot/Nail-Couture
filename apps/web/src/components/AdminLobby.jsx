@@ -131,39 +131,42 @@ const DraggablePendingCustomer = ({ appointment, children }) => {
 
 const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isPending, isOnBreak, dailyPoints, assignmentPriority, lastDispatchReason, updating, onAccept, onSendToCheckout, onManageTechs, showManageTechs, wiggle, activeDragId, theme }) => {
   const isDraggingThisPending = activeDragId && pendingCustomer && String(pendingCustomer.id) === String(activeDragId)
-  const dropDisabled = isBusy || isPending || isOnBreak || isDraggingThisPending
+  const isServing = Boolean(activeCustomer?.id)
+  const dropDisabled = isServing || isPending || isOnBreak || isDraggingThisPending
   const { isOver, setNodeRef } = useDroppable({
     id: tech.id,
     disabled: dropDisabled
   })
 
   const showAcceptButton = !!pendingCustomer
-  const dropHighlight = isOver && !isBusy && !isOnBreak
+  const dropHighlight = isOver && !isServing && !isOnBreak && !isPending
 
   const gridItemClass = clsx(
     'rounded-xl p-5 border-2 transition-all',
     {
       'border-gold border-4 bg-gold/20 scale-105': dropHighlight,
-      'border-red-500/50 bg-red-900/10': isBusy && !dropHighlight,
-      'border-yellow-500/40 bg-yellow-900/10': isOnBreak && !isBusy && !dropHighlight,
+      'border-red-500/50 bg-red-900/10': isServing && !dropHighlight,
+      'border-yellow-500/40 bg-yellow-900/10': isOnBreak && !isServing && !dropHighlight,
+      'border-amber-500/40 bg-amber-900/10': isPending && !isServing && !isOnBreak && !dropHighlight,
       'animate-wiggle': wiggle
     },
-    !dropHighlight && !isBusy && !isOnBreak && (
+    !dropHighlight && !isServing && !isOnBreak && !isPending && (
       theme === 'dark' ? 'border-gold/30 bg-gold/10 hover:border-gold/50' : 'border-gold/40 bg-gold/10 hover:border-gold/60'
     )
   )
 
   const techNameClass = clsx('font-heading text-lg', {
-    'text-red-400': isBusy,
-    'text-yellow-400': isOnBreak && !isBusy,
-    [theme === 'dark' ? 'text-offwhite' : 'text-charcoal']: !isBusy && !isOnBreak
+    'text-red-400': isServing,
+    'text-yellow-400': isOnBreak && !isServing,
+    'text-amber-400': isPending && !isServing && !isOnBreak,
+    [theme === 'dark' ? 'text-offwhite' : 'text-charcoal']: !isServing && !isOnBreak && !isPending
   })
 
   const statusBadgeClass = clsx('text-xs px-2 py-1 rounded', {
-    'bg-red-500/30 text-red-400': isBusy,
-    'bg-yellow-500/30 text-yellow-400': isOnBreak && !isBusy,
-    'bg-amber-500/30 text-amber-400': showAcceptButton && !isBusy && !isOnBreak
-  }, !isBusy && !isOnBreak && !showAcceptButton && (
+    'bg-red-500/30 text-red-400': isServing,
+    'bg-yellow-500/30 text-yellow-400': isOnBreak && !isServing,
+    'bg-amber-500/30 text-amber-400': isPending && !isServing && !isOnBreak,
+  }, !isServing && !isOnBreak && !isPending && (
     theme === 'dark' ? 'bg-offwhite/20 text-offwhite/50' : 'bg-charcoal/20 text-charcoal/50'
   ))
 
@@ -175,7 +178,8 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
 
   const tooltipLines = [
     `Daily points: ${dailyPoints ?? 0}`,
-    isOnBreak ? 'Status: on break' : isBusy ? 'Status: busy' : isPending ? 'Status: pending assignment' : 'Status: available',
+    isOnBreak ? 'Status: on break' : isServing ? 'Status: serving' : isPending ? 'Status: pending assignment' : 'Status: available',
+    assignmentPriority ? 'Next in fairness queue — does not block lobby assignments while busy' : null,
     lastDispatchReason ? `Last pick: ${lastDispatchReason}` : null,
   ].filter(Boolean).join(' · ')
 
@@ -194,16 +198,19 @@ const TechnicianGridItem = ({ tech, pendingCustomer, activeCustomer, isBusy, isP
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           {assignmentPriority && (
-            <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/30 text-purple-300 font-medium">
+            <span
+              className="text-[10px] px-2 py-0.5 rounded bg-purple-500/30 text-purple-300 font-medium"
+              title="Next in fairness queue — does not block lobby assignments while busy"
+            >
               Priority
             </span>
           )}
           <span className={statusBadgeClass}>
-          {isBusy ? 'Busy' : isOnBreak ? 'On Break' : showAcceptButton ? 'Pending' : 'Available'}
+          {isServing ? 'Serving' : isOnBreak ? 'On Break' : isPending ? 'Pending' : 'Available'}
         </span>
         </div>
       </div>
-      {isBusy ? (
+      {isServing ? (
         <div className={activeCustomerTextClass}>
           <div className="mb-2">{activeCustomer.customer?.full_name || 'Customer'}</div>
           <div className={activeCustomerDetailClass}>{activeCustomer.add_ons || activeCustomer.services?.name}</div>
@@ -797,9 +804,14 @@ export default function AdminLobby() {
         setNotification({ message: 'Auto-assign failed', name: error.message })
       } else {
         const results = data?.results || []
+        const assignedCount = data?.assigned_count || 0
         const lastAssigned = [...results].reverse().find((r) => r?.assigned)
+        const lastResult = results.length > 0 ? results[results.length - 1] : null
         setNotification({
-          message: lastAssigned?.reason_detail || `Assigned ${data?.assigned_count || 0} client(s)`,
+          message: lastAssigned?.reason_detail
+            || (assignedCount > 0 ? `Assigned ${assignedCount} client(s)` : null)
+            || lastResult?.reason_detail
+            || 'No clients waiting to assign',
           name: 'Dispatcher',
         })
       }
@@ -869,6 +881,8 @@ export default function AdminLobby() {
 
     if (error) {
       if (process.env.NODE_ENV === 'development') console.error('send_to_checkout:', error)
+      setNotification({ message: 'Send to checkout failed', name: error.message })
+      setTimeout(() => setNotification(null), 4000)
       setUpdating(null)
       return
     }
@@ -1078,7 +1092,7 @@ export default function AdminLobby() {
                 <button
                   type="button"
                   onClick={handleAutoAssign}
-                  disabled={autoAssigning || isRefreshing || Boolean(activeId) || lobbyAppointments.length === 0}
+                  disabled={autoAssigning || isRefreshing || Boolean(activeId)}
                   className="px-3 py-1.5 text-sm bg-gold text-charcoal rounded-lg hover:bg-gold/90 disabled:opacity-50 min-h-[44px]"
                 >
                   {autoAssigning ? 'Assigning…' : 'Auto-assign'}
@@ -1252,12 +1266,16 @@ export default function AdminLobby() {
                 <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40'}`}>Hold grip on a waiting customer, then drop on a technician to assign or reassign</p>
                 <div className="space-y-4">
                   {technicians.map(tech => {
-                    const activeCustomer = servingAppointments.find(a => a.technician_id === tech.id && a.status === 'serving')
-                    const pendingCustomer = pendingAppointments.find(a => a.technician_id === tech.id && a.status === 'assigned_pending')
+                    const activeCustomer = servingAppointments.find(
+                      a => String(a.technician_id) === String(tech.id) && a.status === 'serving'
+                    )
+                    const pendingCustomer = pendingAppointments.find(
+                      a => String(a.technician_id) === String(tech.id) && a.status === 'assigned_pending'
+                    )
                     const workload = techWorkload[tech.id] || {}
                     const wsStatus = workload.workstation_status || getWorkstationStatus(tech.preferences)
-                    const isBusy = !!activeCustomer || wsStatus === WORKSTATION_BUSY
-                    const isPending = !!pendingCustomer
+                    const isServing = Boolean(activeCustomer)
+                    const isPending = Boolean(pendingCustomer)
                     const isOnBreak = wsStatus === WORKSTATION_ON_BREAK
                     const assignmentPriority = workload.assignment_priority ?? getAssignmentPriority(tech.preferences)
                     
@@ -1267,7 +1285,7 @@ export default function AdminLobby() {
                         tech={tech}
                         activeCustomer={activeCustomer || {}}
                         pendingCustomer={pendingCustomer}
-                        isBusy={isBusy}
+                        isBusy={isServing}
                         isPending={isPending}
                         isOnBreak={isOnBreak}
                         dailyPoints={workload.daily_points}

@@ -155,8 +155,16 @@ export function AdminLobbyScreen() {
         showToast('Auto-assign failed', error.message);
       } else {
         const results = (data?.results as Array<{ assigned?: boolean; reason_detail?: string }>) || [];
+        const assignedCount = data?.assigned_count || 0;
         const lastAssigned = [...results].reverse().find((r) => r?.assigned);
-        showToast(lastAssigned?.reason_detail || `Assigned ${data?.assigned_count || 0} client(s)`, 'Dispatcher');
+        const lastResult = results.length > 0 ? results[results.length - 1] : null;
+        showToast(
+          lastAssigned?.reason_detail
+            || (assignedCount > 0 ? `Assigned ${assignedCount} client(s)` : null)
+            || lastResult?.reason_detail
+            || 'No clients waiting to assign',
+          'Dispatcher',
+        );
       }
       await fetchAll();
     } finally {
@@ -368,11 +376,11 @@ export function AdminLobbyScreen() {
   const renderTechCard = (tech: TechnicianRecord) => {
     const workload = techWorkload[tech.id] || {};
     const wsStatus = workload.workstation_status || getWorkstationStatus(tech.preferences);
-    const isBusy = busyTechnicians.includes(tech.id) || wsStatus === WORKSTATION_BUSY;
-    const isOnBreak = wsStatus === WORKSTATION_ON_BREAK;
-    const assignmentPriority = workload.assignment_priority ?? getAssignmentPriority(tech.preferences);
     const pendingAppt = pendingAppointments.find((a) => String(a.technician_id) === String(tech.id));
     const servingAppt = servingAppointments.find((a) => String(a.technician_id) === String(tech.id));
+    const isServing = Boolean(servingAppt);
+    const isOnBreak = wsStatus === WORKSTATION_ON_BREAK;
+    const assignmentPriority = workload.assignment_priority ?? getAssignmentPriority(tech.preferences);
     const isHighlighted = dropHighlightTechId === tech.id;
 
     return (
@@ -388,11 +396,13 @@ export function AdminLobbyScreen() {
             borderWidth: 2,
             borderColor: isHighlighted
               ? styles.tokens.goldStrong
-              : isBusy
+              : isServing
                 ? 'rgba(239,68,68,0.4)'
                 : isOnBreak
                   ? 'rgba(234,179,8,0.4)'
-                  : styles.tokens.borderLight,
+                  : pendingAppt
+                    ? 'rgba(245,158,11,0.4)'
+                    : styles.tokens.borderLight,
           },
         ]}
       >
@@ -401,19 +411,25 @@ export function AdminLobbyScreen() {
             <Text style={[styles.textPrimary, { fontWeight: '600' }]}>{tech.full_name}</Text>
             <Text style={[styles.textSecondary, { fontSize: 11, marginTop: 2 }]}>
               {workload.daily_points ?? 0} pts today
+              {assignmentPriority ? ' · Next in fairness queue' : ''}
               {workload.last_dispatch_reason ? ` · ${workload.last_dispatch_reason}` : ''}
             </Text>
           </View>
           <View style={{ alignItems: 'flex-end', gap: 4 }}>
             {assignmentPriority && (
-              <Text style={{ fontSize: 10, color: '#c084fc', fontWeight: '600' }}>Priority</Text>
+              <Text
+                style={{ fontSize: 10, color: '#c084fc', fontWeight: '600' }}
+                accessibilityLabel="Next in fairness queue — does not block lobby assignments while busy"
+              >
+                Priority
+              </Text>
             )}
-            <Text style={{ fontSize: 11, color: isBusy ? '#f87171' : isOnBreak ? '#facc15' : pendingAppt ? '#fbbf24' : '#4ade80' }}>
-            {isBusy ? 'Busy' : isOnBreak ? 'On Break' : pendingAppt ? 'Pending' : 'Available'}
+            <Text style={{ fontSize: 11, color: isServing ? '#f87171' : isOnBreak ? '#facc15' : pendingAppt ? '#fbbf24' : '#4ade80' }}>
+            {isServing ? 'Serving' : isOnBreak ? 'On Break' : pendingAppt ? 'Pending' : 'Available'}
           </Text>
           </View>
         </View>
-        {isBusy && servingAppt ? (
+        {isServing && servingAppt ? (
           <>
             <Text style={styles.textSecondary}>{servingAppt.customer?.full_name}</Text>
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
@@ -479,13 +495,13 @@ export function AdminLobbyScreen() {
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Pressable
             onPress={handleAutoAssign}
-            disabled={autoAssigning || lobbyAppointments.length === 0}
+            disabled={autoAssigning}
             style={{
               backgroundColor: styles.tokens.goldStrong,
               borderRadius: 8,
               paddingHorizontal: 10,
               paddingVertical: 8,
-              opacity: autoAssigning || lobbyAppointments.length === 0 ? 0.5 : 1,
+              opacity: autoAssigning ? 0.5 : 1,
             }}
           >
             <Text style={{ color: '#121212', fontWeight: '600', fontSize: 12 }}>
