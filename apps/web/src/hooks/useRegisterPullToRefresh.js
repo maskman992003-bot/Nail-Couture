@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePullToRefreshContext } from '../contexts/PullToRefreshContext';
 
 /**
@@ -7,9 +7,11 @@ import { usePullToRefreshContext } from '../contexts/PullToRefreshContext';
  */
 export default function useRegisterPullToRefresh(onRefresh, { blocked = false } = {}) {
   const { register } = usePullToRefreshContext();
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
 
   useEffect(() => {
-    if (!onRefresh) return undefined;
-    return register(onRefresh, { blocked });
-  }, [onRefresh, blocked, register]);
+    const stableHandler = (...args) => onRefreshRef.current?.(...args);
+    return register(stableHandler, { blocked });
+  }, [blocked, register]);
 }

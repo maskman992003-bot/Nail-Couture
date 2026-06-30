@@ -100,7 +100,6 @@ function AppChrome() {
 
 function AppRoutes() {
   const { loading } = useAuth();
-  const location = useLocation();
 
   if (loading) {
     return (
@@ -112,7 +111,7 @@ function AppRoutes() {
 
   return (
       <KioskSessionGuard>
-      <Routes key={location.pathname}>
+      <Routes>
             <Route path="/" element={<App />} />
             <Route path="/lookbook" element={<App />} />
             <Route path="/services" element={<Services />} />

@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppTheme } from '../hooks/useAppTheme.js';
 import BrandLogo from './BrandLogo.jsx';
@@ -73,30 +73,6 @@ function getNavLinkStyle(isActive, accentGradient) {
 function isSidebarItemActive(pathname, item) {
   if (item.id === 'home') return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
-}
-
-/** Hard navigation — React Router client nav was leaving stale pages mounted. */
-function goToSidebarHref(e, item, closeUserMenu) {
-  e.preventDefault();
-  closeUserMenu();
-  if (!isSidebarItemActive(window.location.pathname, item)) {
-    window.location.assign(item.href);
-  }
-}
-
-function SidebarNavItem({ item, pathname, closeUserMenu, className, style, children }) {
-  const isActive = isSidebarItemActive(pathname, item);
-  return (
-    <a
-      href={item.href}
-      onClick={(e) => goToSidebarHref(e, item, closeUserMenu)}
-      className={typeof className === 'function' ? className(isActive) : className}
-      style={typeof style === 'function' ? style(isActive) : style}
-      aria-current={isActive ? 'page' : undefined}
-    >
-      {children}
-    </a>
-  );
 }
 
 function UserMenuDropdown({
@@ -419,6 +395,13 @@ export default function Sidebar() {
   const accentGradient = themeConfig.accentGradient;
   const sidebarShadow = themeConfig.layout.sidebarShadow;
 
+  const onNavClick = (item) => {
+    closeUserMenu();
+    if (isSidebarItemActive(location.pathname, item)) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <>
       {/* Unified Sidebar - hidden on mobile, w-20 on tablet, w-64 on desktop */}
@@ -455,18 +438,18 @@ export default function Sidebar() {
                 const showBadge = showAssignmentBadge || showCheckoutBadge;
                 return (
                   <li key={item.id} className="shrink-0">
-                    <SidebarNavItem
-                      item={item}
-                      pathname={location.pathname}
-                      closeUserMenu={closeUserMenu}
-                      className={getNavLinkClasses}
-                      style={(isActive) => getNavLinkStyle(isActive, accentGradient)}
+                    <NavLink
+                      to={item.href}
+                      end={item.id === 'home'}
+                      className={({ isActive }) => getNavLinkClasses(isActive)}
+                      style={({ isActive }) => getNavLinkStyle(isActive, accentGradient)}
+                      onClick={() => onNavClick(item)}
                     >
                       <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} accentGradient={accentGradient} />
                       <span className="hidden text-sm font-medium tracking-wide whitespace-nowrap lg:inline">
                         {item.label}
                       </span>
-                    </SidebarNavItem>
+                    </NavLink>
                   </li>
                 );
               })}
@@ -547,18 +530,18 @@ export default function Sidebar() {
                 const showBadge = showAssignmentBadge || showCheckoutBadge;
                 return (
                   <li key={item.id} className="shrink-0">
-                    <SidebarNavItem
-                      item={item}
-                      pathname={location.pathname}
-                      closeUserMenu={closeUserMenu}
-                      className={getMobileNavLinkClasses}
-                      style={(isActive) => getNavLinkStyle(isActive, accentGradient)}
+                    <NavLink
+                      to={item.href}
+                      end={item.id === 'home'}
+                      className={({ isActive }) => getMobileNavLinkClasses(isActive)}
+                      style={({ isActive }) => getNavLinkStyle(isActive, accentGradient)}
+                      onClick={() => onNavClick(item)}
                     >
                       <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} compact accentGradient={accentGradient} />
                       <span className="max-w-[52px] truncate text-center text-[7px] font-medium leading-none tracking-wide">
                         {item.label}
                       </span>
-                    </SidebarNavItem>
+                    </NavLink>
                   </li>
                 );
               })}
@@ -636,7 +619,7 @@ export default function Sidebar() {
               textSize={userMenuSource === 'mobile' ? 'text-xs' : 'text-sm'}
               onNavigateSettings={() => {
                 closeUserMenu();
-                window.location.assign(settingsPath);
+                navigate(settingsPath);
               }}
               onToggleTheme={() => {
                 toggleTheme();

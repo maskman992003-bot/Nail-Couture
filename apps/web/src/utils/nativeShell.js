@@ -1,6 +1,12 @@
 import { Capacitor } from '@capacitor/core';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 
+/** Flutter WebView shell (see NailCoutureFlutter user-agent suffix). */
+export function isFlutterWebView() {
+  if (typeof navigator === 'undefined') return false;
+  return /NailCoutureFlutter/i.test(navigator.userAgent);
+}
+
 /** Public marketing routes blocked in the native shell (Apple 4.2). */
 export const NATIVE_BLOCKED_PUBLIC_PATHS = [
   '/',
@@ -31,11 +37,13 @@ function isMockNativeShellEnabled() {
 
 export function isNativeShell() {
   if (Capacitor.isNativePlatform()) return true;
+  if (isFlutterWebView()) return true;
   return isMockNativeShellEnabled();
 }
 
 export function getNativePlatform() {
   if (Capacitor.isNativePlatform()) return Capacitor.getPlatform();
+  if (isFlutterWebView()) return 'flutter';
   if (isMockNativeShellEnabled()) return 'web-mock';
   return 'web';
 }

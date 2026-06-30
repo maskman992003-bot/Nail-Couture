@@ -58,6 +58,43 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
     _loadTimeoutTimer = null;
   }
 
+  Future<void> _handleSystemBack(BuildContext context) async {
+    final controller = _webViewController;
+    if (controller != null) {
+      try {
+        final result = await controller.evaluateJavascript(source: '''
+          (function() {
+            if (typeof window.__ncHandleBackButton === 'function') {
+              return window.__ncHandleBackButton();
+            }
+            return 'webview_back';
+          })();
+        ''');
+        final action = result?.toString().replaceAll('"', '').trim();
+        if (action == 'exit') {
+          if (context.mounted) {
+            await SystemNavigator.pop();
+          }
+          return;
+        }
+        if (action == 'navigated') {
+          return;
+        }
+      } catch (_) {
+        // Fall through to WebView history back.
+      }
+
+      if (await controller.canGoBack()) {
+        await controller.goBack();
+        return;
+      }
+    }
+
+    if (context.mounted) {
+      await SystemNavigator.pop();
+    }
+  }
+
   Future<void> _reloadWebView() async {
     setState(() {
       _hasError = false;
@@ -85,16 +122,7 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
         if (didPop) {
           return;
         }
-
-        final controller = _webViewController;
-        if (controller != null && await controller.canGoBack()) {
-          await controller.goBack();
-          return;
-        }
-
-        if (context.mounted) {
-          await SystemNavigator.pop();
-        }
+        await _handleSystemBack(context);
       },
       child: Scaffold(
         body: Column(

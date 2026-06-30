@@ -7,16 +7,16 @@ export function PullToRefreshProvider({ children }) {
     onRefresh: null,
     blocked: false,
   });
-  const [version, setVersion] = useState(0);
+  const [blocked, setBlocked] = useState(false);
 
-  const register = useCallback((onRefresh, { blocked = false } = {}) => {
-    registrationRef.current = { onRefresh, blocked };
-    setVersion((value) => value + 1);
+  const register = useCallback((onRefresh, { blocked: nextBlocked = false } = {}) => {
+    registrationRef.current = { onRefresh, blocked: nextBlocked };
+    setBlocked((prev) => (prev === nextBlocked ? prev : nextBlocked));
 
     return () => {
       if (registrationRef.current.onRefresh === onRefresh) {
         registrationRef.current = { onRefresh: null, blocked: false };
-        setVersion((value) => value + 1);
+        setBlocked((prev) => (prev ? false : prev));
       }
     };
   }, []);
@@ -34,10 +34,9 @@ export function PullToRefreshProvider({ children }) {
     () => ({
       register,
       runRefresh,
-      blocked: registrationRef.current.blocked,
-      version,
+      blocked,
     }),
-    [register, runRefresh, version],
+    [register, runRefresh, blocked],
   );
 
   return (

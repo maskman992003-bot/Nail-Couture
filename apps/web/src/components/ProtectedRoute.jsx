@@ -1,10 +1,8 @@
-import { Fragment } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 
 export function ProtectedRoute({ allowedRoles, children }) {
-  const { pathname } = useLocation();
   const { user, loading, logout } = useAuth();
 
   if (loading) {
@@ -28,5 +26,5 @@ export function ProtectedRoute({ allowedRoles, children }) {
     return <Navigate to={redirectPath} replace />;
   }
 
-  return <Fragment key={pathname}>{children}</Fragment>;
+  return children;
 }

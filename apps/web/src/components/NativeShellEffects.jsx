@@ -6,7 +6,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 import { useMobileBridge } from '../hooks/useMobileBridge';
-import { isNativeRootPath } from '../utils/nativeShell';
+import { isFlutterWebView, isNativeRootPath } from '../utils/nativeShell';
 
 export default function NativeShellEffects() {
   const { isNativeShell } = useMobileBridge();
@@ -14,6 +14,10 @@ export default function NativeShellEffects() {
   const navigate = useNavigate();
   const location = useLocation();
   const splashHiddenRef = useRef(false);
+  const navigateRef = useRef(navigate);
+  const userRef = useRef(user);
+  navigateRef.current = navigate;
+  userRef.current = user;
 
   useEffect(() => {
     if (!isNativeShell || !Capacitor.isNativePlatform()) return;
@@ -62,6 +66,27 @@ export default function NativeShellEffects() {
       removeListener?.();
     };
   }, [isNativeShell, navigate, user, location.pathname]);
+
+  // Flutter WebView: PopScope calls window.__ncHandleBackButton before WebView.goBack().
+  useEffect(() => {
+    if (!isFlutterWebView()) return undefined;
+
+    window.__ncHandleBackButton = () => {
+      const pathname = window.location.pathname;
+      if (isNativeRootPath(pathname, userRef.current)) {
+        return 'exit';
+      }
+      if (window.history.length > 1) {
+        navigateRef.current(-1);
+        return 'navigated';
+      }
+      return 'exit';
+    };
+
+    return () => {
+      delete window.__ncHandleBackButton;
+    };
+  }, []);
 
   return null;
 }
