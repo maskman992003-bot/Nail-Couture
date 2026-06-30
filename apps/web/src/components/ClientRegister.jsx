@@ -74,17 +74,17 @@ const RegistrationSuccessScreen = ({
   const mutedText = theme === 'dark' ? 'text-offwhite/70' : 'text-charcoal/70';
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-8 relative overflow-hidden ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
+    <div className={`min-h-[100dvh] w-full overflow-y-auto flex relative ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
       <Sparkle />
-      <div className="relative z-10 text-center animate-fade-in max-w-md">
-        <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-8 ring-2 ring-gold/40">
+      <div className="m-auto w-full max-w-md px-4 py-6 sm:p-8 relative z-10 text-center animate-fade-in shrink-0">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gold/20 flex items-center justify-center mx-auto mb-6 sm:mb-8 ring-2 ring-gold/40">
           <svg className="w-12 h-12 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
         <p className="text-xs uppercase tracking-[0.3em] text-gold/80 mb-3">Account created</p>
-        <h2 className="font-heading text-4xl text-gold mb-4 tracking-wide">Welcome to the Club</h2>
-        <p className={`font-heading text-2xl mb-6 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{fullName}</p>
+        <h2 className="font-heading text-3xl sm:text-4xl text-gold mb-4 tracking-wide">Welcome to the Club</h2>
+        <p className={`font-heading text-xl sm:text-2xl mb-6 ${theme === 'dark' ? 'text-offwhite' : 'text-charcoal'}`}>{fullName}</p>
         {giftClaimCount > 0 && (
           <p className={`text-xl mb-4 ${mutedText}`}>
             Your <span className="text-gold">gift card{giftClaimCount > 1 ? 's are' : ' is'}</span> in your wallet.
@@ -155,12 +155,12 @@ export default function ClientRegister() {
   const { theme, themeConfig } = useTheme();
 
   const cardClass = theme === 'dark'
-    ? 'bg-[#111] border border-gold/20 rounded-2xl p-8 shadow-xl'
-    : 'bg-white border border-gold/30 rounded-2xl p-8 shadow-xl';
+    ? 'bg-[#111] border border-gold/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl w-full'
+    : 'bg-white border border-gold/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl w-full';
 
   const inputClass = theme === 'dark'
-    ? 'w-full px-4 py-3 rounded-lg bg-offwhite/10 border border-offwhite/20 text-offwhite placeholder-offwhite/30 focus:outline-none focus:border-gold transition-colors'
-    : 'w-full px-4 py-3 rounded-lg bg-charcoal/5 border border-charcoal/10 text-charcoal placeholder-charcoal/30 focus:outline-none focus:border-gold transition-colors';
+    ? 'w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg bg-offwhite/10 border border-offwhite/20 text-offwhite placeholder-offwhite/30 focus:outline-none focus:border-gold transition-colors text-base'
+    : 'w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg bg-charcoal/5 border border-charcoal/10 text-charcoal placeholder-charcoal/30 focus:outline-none focus:border-gold transition-colors text-base';
 
   const labelClass = `text-xs tracking-wider uppercase block mb-2 ${theme === 'dark' ? 'text-offwhite/50' : 'text-charcoal/50'}`;
 
@@ -396,17 +396,17 @@ export default function ClientRegister() {
   }
 
   return (
-    <div className={`min-h-screen flex items-center justify-center px-4 ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
+    <div className={`min-h-[100dvh] w-full overflow-y-auto flex ${theme === 'dark' ? 'bg-charcoal' : 'bg-cream'}`}>
       {loading && <SubmittingOverlay theme={theme} />}
-      <div className="w-full max-w-md">
+      <div className="m-auto w-full max-w-md px-3 sm:px-4 py-4 sm:py-8 pb-[max(1rem,env(safe-area-inset-bottom))] shrink-0">
         <div className={cardClass}>
-          <div className="text-center mb-8">
+          <div className="text-center mb-4 sm:mb-6 md:mb-8">
             <Link to="/" className="inline-flex justify-center w-full">
               <div
-                className="flex items-center justify-center rounded-full p-1.5"
+                className="flex items-center justify-center rounded-full p-1 sm:p-1.5"
                 style={{ boxShadow: `0 0 0 1px ${themeConfig.borderColor}` }}
               >
-                <BrandLogo className="h-28 w-28" />
+                <BrandLogo className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28" />
               </div>
             </Link>
             <p className={subtitleClass}>Create Your Account</p>
@@ -426,7 +426,7 @@ export default function ClientRegister() {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <label className={labelClass}>
                 Full Name
               </label>
@@ -440,7 +440,7 @@ export default function ClientRegister() {
               />
             </div>
 
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <label className={labelClass}>
                 Phone Number
               </label>
@@ -463,7 +463,7 @@ export default function ClientRegister() {
               )}
             </div>
 
-            <div className="mb-6">
+            <div className="mb-3 sm:mb-4 md:mb-6">
               <label className={labelClass}>
                 Email
               </label>
@@ -477,11 +477,11 @@ export default function ClientRegister() {
               />
             </div>
 
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <label className={labelClass}>
                 Birthday
               </label>
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <ScrollSelect
                   value={formData.birthday_month}
                   onChange={(v) => setFormData({ ...formData, birthday_month: v })}
@@ -501,7 +501,7 @@ export default function ClientRegister() {
               </div>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               <label className={labelClass}>
                 Referral Code <span className={theme === 'dark' ? 'text-offwhite/30' : 'text-charcoal/30'}>(Optional)</span>
               </label>
@@ -526,7 +526,7 @@ export default function ClientRegister() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 sm:mt-6 text-center">
             <Link to="/login" className="text-sm text-gold hover:text-gold/80">
               ← Back to Login
             </Link>
