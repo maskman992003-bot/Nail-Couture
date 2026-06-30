@@ -1,4 +1,5 @@
-import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './icons/Icon';
 import { useThemeStyles } from '../theme/useThemeStyles';
@@ -29,17 +30,20 @@ export function NotificationPanel({
 }: NotificationPanelProps) {
   const styles = useThemeStyles();
   const insets = useSafeAreaInsets();
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!open) setShowClearConfirm(false);
+  }, [open]);
 
   const handleClearAll = () => {
     if (notifications.length === 0) return;
-    Alert.alert(
-      'Clear all notifications?',
-      'This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear all', style: 'destructive', onPress: onDeleteAll },
-      ],
-    );
+    setShowClearConfirm(true);
+  };
+
+  const handleConfirmClearAll = () => {
+    onDeleteAll();
+    setShowClearConfirm(false);
   };
 
   return (
@@ -109,40 +113,78 @@ export function NotificationPanel({
             </View>
 
             {(unreadCount > 0 || notifications.length > 0) ? (
-              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 16 }}>
-                {unreadCount > 0 ? (
-                  <Pressable
-                    onPress={onMarkAllRead}
-                    style={{
-                      flex: 1,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: `${styles.tokens.goldStrong}66`,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text style={[styles.textGold, { fontSize: 12, fontWeight: '600' }]}>Mark all read</Text>
-                  </Pressable>
-                ) : null}
-                {notifications.length > 0 ? (
-                  <Pressable
-                    onPress={handleClearAll}
-                    style={{
-                      flex: 1,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: 'rgba(248,113,113,0.4)',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text style={{ color: '#f87171', fontSize: 12, fontWeight: '600' }}>Clear all</Text>
-                  </Pressable>
-                ) : null}
-              </View>
+              showClearConfirm ? (
+                <View style={{ paddingHorizontal: 20, paddingBottom: 16 }}>
+                  <Text style={[styles.textSecondary, { fontSize: 12, marginBottom: 8 }]}>
+                    Clear all notifications? This cannot be undone.
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <Pressable
+                      onPress={() => setShowClearConfirm(false)}
+                      style={{
+                        flex: 1,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: styles.tokens.borderLight,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={[styles.textSecondary, { fontSize: 12, fontWeight: '600' }]}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleConfirmClearAll}
+                      style={{
+                        flex: 1,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: 'rgba(248,113,113,0.4)',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#f87171', fontSize: 12, fontWeight: '600' }}>Clear all</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : (
+                <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 16 }}>
+                  {unreadCount > 0 ? (
+                    <Pressable
+                      onPress={onMarkAllRead}
+                      style={{
+                        flex: 1,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: `${styles.tokens.goldStrong}66`,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={[styles.textGold, { fontSize: 12, fontWeight: '600' }]}>Mark all read</Text>
+                    </Pressable>
+                  ) : null}
+                  {notifications.length > 0 ? (
+                    <Pressable
+                      onPress={handleClearAll}
+                      style={{
+                        flex: 1,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: 'rgba(248,113,113,0.4)',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#f87171', fontSize: 12, fontWeight: '600' }}>Clear all</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              )
             ) : null}
           </View>
 

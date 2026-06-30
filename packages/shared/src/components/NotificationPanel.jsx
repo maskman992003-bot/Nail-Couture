@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { BELL_PATH } from '../icons/paths.js';
 
 function formatTimestamp(createdAt) {
@@ -38,12 +39,20 @@ export default function NotificationPanel({
   const textMuted = theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40';
   const textPrimary = theme === 'dark' ? 'text-offwhite' : 'text-charcoal';
   const textSecondary = theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60';
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!open) setShowClearConfirm(false);
+  }, [open]);
 
   const handleClearAll = () => {
     if (notifications.length === 0) return;
-    if (window.confirm('Clear all notifications? This cannot be undone.')) {
-      onDeleteAll();
-    }
+    setShowClearConfirm(true);
+  };
+
+  const handleConfirmClearAll = () => {
+    onDeleteAll();
+    setShowClearConfirm(false);
   };
 
   const handleDeleteOne = (e, id) => {
@@ -103,26 +112,50 @@ export default function NotificationPanel({
           </div>
 
           {(unreadCount > 0 || notifications.length > 0) ? (
-            <div className="flex gap-2 px-5 pb-4">
-              {unreadCount > 0 ? (
-                <button
-                  type="button"
-                  onClick={onMarkAllRead}
-                  className="flex-1 px-3 py-2 text-xs font-medium text-gold border border-gold/40 rounded-xl hover:bg-gold/10 transition-colors text-center"
-                >
-                  Mark all read
-                </button>
-              ) : null}
-              {notifications.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="flex-1 px-3 py-2 text-xs font-medium text-red-400/90 border border-red-400/30 rounded-xl hover:bg-red-500/10 transition-colors text-center"
-                >
-                  Clear all
-                </button>
-              ) : null}
-            </div>
+            showClearConfirm ? (
+              <div className="px-5 pb-4">
+                <p className={`text-xs mb-2 ${textSecondary}`}>
+                  Clear all notifications? This cannot be undone.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowClearConfirm(false)}
+                    className={`flex-1 px-3 py-2 text-xs font-medium border rounded-xl transition-colors text-center ${theme === 'dark' ? 'text-offwhite/70 border-white/10 hover:bg-white/5' : 'text-charcoal/70 border-charcoal/10 hover:bg-charcoal/5'}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmClearAll}
+                    className="flex-1 px-3 py-2 text-xs font-medium text-red-400/90 border border-red-400/30 rounded-xl hover:bg-red-500/10 transition-colors text-center"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2 px-5 pb-4">
+                {unreadCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={onMarkAllRead}
+                    className="flex-1 px-3 py-2 text-xs font-medium text-gold border border-gold/40 rounded-xl hover:bg-gold/10 transition-colors text-center"
+                  >
+                    Mark all read
+                  </button>
+                ) : null}
+                {notifications.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleClearAll}
+                    className="flex-1 px-3 py-2 text-xs font-medium text-red-400/90 border border-red-400/30 rounded-xl hover:bg-red-500/10 transition-colors text-center"
+                  >
+                    Clear all
+                  </button>
+                ) : null}
+              </div>
+            )
           ) : null}
         </div>
 

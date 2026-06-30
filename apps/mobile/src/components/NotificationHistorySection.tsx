@@ -1,4 +1,5 @@
-import { Alert, Pressable, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getNotificationMobileScreen } from '@nail-couture/shared/constants/notificationRoutes.js';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +12,7 @@ export function NotificationHistorySection() {
   const navigation = useNavigation();
   const { user } = useAuth();
   const { notifications, markOneRead, deleteOne, deleteAll } = useNotifications();
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handlePress = (notif: AppNotification) => {
     if (!notif.is_read) markOneRead(notif.id);
@@ -20,14 +22,12 @@ export function NotificationHistorySection() {
 
   const handleClearAll = () => {
     if (notifications.length === 0) return;
-    Alert.alert(
-      'Clear all notifications?',
-      'This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear all', style: 'destructive', onPress: deleteAll },
-      ],
-    );
+    setShowClearConfirm(true);
+  };
+
+  const handleConfirmClearAll = () => {
+    deleteAll();
+    setShowClearConfirm(false);
   };
 
   return (
@@ -35,9 +35,21 @@ export function NotificationHistorySection() {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <Text style={[styles.textPrimary, { fontWeight: '600' }]}>Notifications</Text>
         {notifications.length > 0 ? (
-          <Pressable onPress={handleClearAll}>
-            <Text style={{ color: '#f87171', fontSize: 12 }}>Clear all</Text>
-          </Pressable>
+          showClearConfirm ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={[styles.textSecondary, { fontSize: 12 }]}>Clear all?</Text>
+              <Pressable onPress={() => setShowClearConfirm(false)}>
+                <Text style={[styles.textSecondary, { fontSize: 12 }]}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={handleConfirmClearAll}>
+                <Text style={{ color: '#f87171', fontSize: 12, fontWeight: '600' }}>Confirm</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable onPress={handleClearAll}>
+              <Text style={{ color: '#f87171', fontSize: 12 }}>Clear all</Text>
+            </Pressable>
+          )
         ) : null}
       </View>
 

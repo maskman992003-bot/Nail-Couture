@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 function formatTimestamp(createdAt) {
@@ -39,11 +40,16 @@ export default function NotificationHistorySection({
     : 'p-4 rounded-xl border border-charcoal/5 bg-charcoal/[0.02]';
   const card = cardClass ? cardClass(theme) : defaultCard;
 
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
   const handleClearAll = () => {
     if (notifications.length === 0) return;
-    if (window.confirm('Clear all notifications? This cannot be undone.')) {
-      onDeleteAll();
-    }
+    setShowClearConfirm(true);
+  };
+
+  const handleConfirmClearAll = () => {
+    onDeleteAll();
+    setShowClearConfirm(false);
   };
 
   const handleRowClick = (notif) => {
@@ -62,13 +68,33 @@ export default function NotificationHistorySection({
             </Link>
           ) : null}
           {notifications.length > 0 ? (
-            <button
-              type="button"
-              onClick={handleClearAll}
-              className="px-3 py-1.5 text-xs text-red-400/80 border border-red-400/30 rounded-lg hover:bg-red-500/10 transition-colors"
-            >
-              Clear all
-            </button>
+            showClearConfirm ? (
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${textSecondary}`}>Clear all?</span>
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirm(false)}
+                  className={`px-2 py-1 text-xs border rounded-lg transition-colors ${theme === 'dark' ? 'text-offwhite/70 border-white/10 hover:bg-white/5' : 'text-charcoal/70 border-charcoal/10 hover:bg-charcoal/5'}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmClearAll}
+                  className="px-2 py-1 text-xs text-red-400/80 border border-red-400/30 rounded-lg hover:bg-red-500/10 transition-colors"
+                >
+                  Confirm
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="px-3 py-1.5 text-xs text-red-400/80 border border-red-400/30 rounded-lg hover:bg-red-500/10 transition-colors"
+              >
+                Clear all
+              </button>
+            )
           ) : null}
         </div>
       </div>
