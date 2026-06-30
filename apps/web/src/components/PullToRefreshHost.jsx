@@ -1,20 +1,4 @@
-import usePullToRefresh from '../hooks/usePullToRefresh';
-import { usePullToRefreshContext } from '../contexts/PullToRefreshContext';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
-
+/** Global pull-to-refresh gesture disabled (see usePullToRefresh.js). */
 export default function PullToRefreshHost() {
-  const { runRefresh, blocked } = usePullToRefreshContext();
-
-  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
-    onRefresh: runRefresh,
-    blocked,
-  });
-
-  return (
-    <PullToRefreshIndicator
-      pullDistance={pullDistance}
-      isRefreshing={isRefreshing}
-      pullProgress={pullProgress}
-    />
-  );
+  return null;
 }

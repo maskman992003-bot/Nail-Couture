@@ -1,4 +1,4 @@
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppTheme } from '../hooks/useAppTheme.js';
 import BrandLogo from './BrandLogo.jsx';
@@ -70,21 +70,33 @@ function getNavLinkStyle(isActive, accentGradient) {
   };
 }
 
-function isNavItemActive(pathname, item) {
-  if (item.id === 'home') {
-    return pathname === item.href;
-  }
+function isSidebarItemActive(pathname, item) {
+  if (item.id === 'home') return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-function handleSidebarNavClick(event, { item, pathname, navigate, closeUserMenu }) {
+/** Hard navigation — React Router client nav was leaving stale pages mounted. */
+function goToSidebarHref(e, item, closeUserMenu) {
+  e.preventDefault();
   closeUserMenu();
-  event.preventDefault();
-  if (isNavItemActive(pathname, item)) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
+  if (!isSidebarItemActive(window.location.pathname, item)) {
+    window.location.assign(item.href);
   }
-  navigate(item.href);
+}
+
+function SidebarNavItem({ item, pathname, closeUserMenu, className, style, children }) {
+  const isActive = isSidebarItemActive(pathname, item);
+  return (
+    <a
+      href={item.href}
+      onClick={(e) => goToSidebarHref(e, item, closeUserMenu)}
+      className={typeof className === 'function' ? className(isActive) : className}
+      style={typeof style === 'function' ? style(isActive) : style}
+      aria-current={isActive ? 'page' : undefined}
+    >
+      {children}
+    </a>
+  );
 }
 
 function UserMenuDropdown({
@@ -372,32 +384,12 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
-    if (!showUserMenu) return;
+    if (!showUserMenu) return undefined;
 
     updateUserMenuPosition();
     window.addEventListener('resize', updateUserMenuPosition);
-
-    const closeMenu = (e) => {
-      if (
-        e.target.closest('[data-sidebar-nav]') ||
-        e.target.closest('.user-menu-trigger') ||
-        e.target.closest('.user-menu-dropdown')
-      ) {
-        return;
-      }
-      closeUserMenu();
-    };
-
-    const timer = setTimeout(() => {
-      document.addEventListener('click', closeMenu, true);
-    }, 0);
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('click', closeMenu, true);
-      window.removeEventListener('resize', updateUserMenuPosition);
-    };
-  }, [showUserMenu, closeUserMenu, updateUserMenuPosition]);
+    return () => window.removeEventListener('resize', updateUserMenuPosition);
+  }, [showUserMenu, updateUserMenuPosition]);
 
   const handleNotificationClick = (notif) => {
     if (!notif.is_read) markOneRead(notif.id);
@@ -427,17 +419,12 @@ export default function Sidebar() {
   const accentGradient = themeConfig.accentGradient;
   const sidebarShadow = themeConfig.layout.sidebarShadow;
 
-  const onNavClick = (event, item) => {
-    handleSidebarNavClick(event, { item, pathname: location.pathname, navigate, closeUserMenu });
-  };
-
-  const sidebarChrome = (
+  return (
     <>
       {/* Unified Sidebar - hidden on mobile, w-20 on tablet, w-64 on desktop */}
       <aside
         data-sidebar-nav
-        data-no-pull-refresh
-        className="fixed left-3 top-3 bottom-3 z-[100] hidden md:flex md:w-20 lg:w-64 flex-col transition-colors duration-300 rounded-3xl overflow-hidden"
+        className="app-sidebar-desktop fixed z-[110] hidden md:flex md:w-20 lg:w-64 flex-col transition-colors duration-300 rounded-3xl overflow-hidden"
         style={{
           backgroundColor: sidebarBg,
           border: `1px solid ${borderColor}`,
@@ -468,18 +455,18 @@ export default function Sidebar() {
                 const showBadge = showAssignmentBadge || showCheckoutBadge;
                 return (
                   <li key={item.id} className="shrink-0">
-                    <NavLink
-                      to={item.href}
-                      end={item.id === 'home'}
-                      className={({ isActive }) => getNavLinkClasses(isActive)}
-                      style={({ isActive }) => getNavLinkStyle(isActive, accentGradient)}
-                      onClick={(event) => onNavClick(event, item)}
+                    <SidebarNavItem
+                      item={item}
+                      pathname={location.pathname}
+                      closeUserMenu={closeUserMenu}
+                      className={getNavLinkClasses}
+                      style={(isActive) => getNavLinkStyle(isActive, accentGradient)}
                     >
                       <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} accentGradient={accentGradient} />
                       <span className="hidden text-sm font-medium tracking-wide whitespace-nowrap lg:inline">
                         {item.label}
                       </span>
-                    </NavLink>
+                    </SidebarNavItem>
                   </li>
                 );
               })}
@@ -527,13 +514,12 @@ export default function Sidebar() {
       <div
         data-sidebar-nav
         data-no-pull-refresh
-        className="md:hidden fixed bottom-0 left-0 right-0 z-[100] rounded-t-2xl"
+        className="app-sidebar-mobile md:hidden fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl"
         style={{
           backgroundColor: sidebarBg,
           border: `1px solid ${borderColor}`,
           borderBottom: 'none',
           boxShadow: sidebarShadow,
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         <nav className="flex w-full items-center gap-1 px-1.5 py-1">
@@ -561,18 +547,18 @@ export default function Sidebar() {
                 const showBadge = showAssignmentBadge || showCheckoutBadge;
                 return (
                   <li key={item.id} className="shrink-0">
-                    <NavLink
-                      to={item.href}
-                      end={item.id === 'home'}
-                      className={({ isActive }) => getMobileNavLinkClasses(isActive)}
-                      style={({ isActive }) => getNavLinkStyle(isActive, accentGradient)}
-                      onClick={(event) => onNavClick(event, item)}
+                    <SidebarNavItem
+                      item={item}
+                      pathname={location.pathname}
+                      closeUserMenu={closeUserMenu}
+                      className={getMobileNavLinkClasses}
+                      style={(isActive) => getNavLinkStyle(isActive, accentGradient)}
                     >
                       <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} compact accentGradient={accentGradient} />
                       <span className="max-w-[52px] truncate text-center text-[7px] font-medium leading-none tracking-wide">
                         {item.label}
                       </span>
-                    </NavLink>
+                    </SidebarNavItem>
                   </li>
                 );
               })}
@@ -635,12 +621,6 @@ export default function Sidebar() {
           </div>
         </nav>
       </div>
-    </>
-  );
-
-  return (
-    <>
-      {createPortal(sidebarChrome, document.body)}
 
       {showUserMenu && userMenuPos &&
         createPortal(
@@ -655,8 +635,8 @@ export default function Sidebar() {
               unreadCount={unreadCount}
               textSize={userMenuSource === 'mobile' ? 'text-xs' : 'text-sm'}
               onNavigateSettings={() => {
-                navigate(settingsPath);
                 closeUserMenu();
+                window.location.assign(settingsPath);
               }}
               onToggleTheme={() => {
                 toggleTheme();

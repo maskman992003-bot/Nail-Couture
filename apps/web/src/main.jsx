@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import Sidebar from './components/Sidebar.jsx'
+import { shouldShowAppSidebar } from './utils/appSidebar.js'
 import { HelmetProvider } from 'react-helmet-async'
 import './index.css'
 import './lib/supabase.js'
@@ -51,9 +53,6 @@ import CheckIn from './components/CheckIn.jsx'
 import PageHelmet from './components/PageHelmet.jsx'
 import { APP_PAGE_SEO } from './constants/pageSeo.js'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
-import { PullToRefreshProvider } from './contexts/PullToRefreshContext.jsx'
-import PullToRefreshHost from './components/PullToRefreshHost.jsx'
-import SidebarHost from './components/SidebarHost.jsx'
 import { IdleSessionProvider } from './contexts/IdleSessionContext.jsx'
 import { ThemeEngineProvider } from './context/ThemeEngineContext.jsx'
 import { MobileBridgeProvider } from './contexts/MobileBridgeContext.jsx'
@@ -90,8 +89,16 @@ function CheckInPage() {
   );
 }
 
+function AppChrome() {
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  if (!shouldShowAppSidebar(pathname, user)) return null;
+  return <Sidebar />;
+}
+
 function AppRoutes() {
   const { loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -102,8 +109,8 @@ function AppRoutes() {
   }
 
   return (
-    <KioskSessionGuard>
-    <Routes>
+      <KioskSessionGuard>
+      <Routes key={location.pathname}>
             <Route path="/" element={<App />} />
             <Route path="/lookbook" element={<App />} />
             <Route path="/services" element={<Services />} />
@@ -690,7 +697,7 @@ function AppRoutes() {
             ) : null}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-    </KioskSessionGuard>
+      </KioskSessionGuard>
   );
 }
 
@@ -700,20 +707,17 @@ createRoot(document.getElementById('root')).render(
       <ThemeEngineProvider>
         <MobileBridgeProvider>
           <AuthProvider>
-            <PullToRefreshProvider>
               <BrowserRouter>
                 <IdleSessionProvider>
                   <FlutterPushRegistrar />
                   <NativeShellEffects />
-                  <PullToRefreshHost />
-                  <SidebarHost />
+                  <AppChrome />
                   <NativeRouteGuard>
                     <RouteDocumentTitle />
                     <AppRoutes />
                   </NativeRouteGuard>
                 </IdleSessionProvider>
               </BrowserRouter>
-            </PullToRefreshProvider>
           </AuthProvider>
         </MobileBridgeProvider>
       </ThemeEngineProvider>
