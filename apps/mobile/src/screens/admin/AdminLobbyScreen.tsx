@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  AppState,
   PanResponder,
   Pressable,
+  RefreshControl,
   Switch,
   Text,
   View,
@@ -11,6 +13,7 @@ import {
 import { MULTI_TECH_VISITS } from '@nail-couture/shared/constants/featureFlags.js';
 import { getServices } from '@nail-couture/shared/services/services.js';
 import { getSupabase } from '@nail-couture/shared/lib/supabase.js';
+import { useFloorManager } from '@nail-couture/shared/hooks/useFloorManager.js';
 import { formatAppointmentTime, getAppointmentTotalPrice } from '@nail-couture/shared/utils/appointmentHelpers.js';
 import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCustomerAccess.js';
 import {
@@ -19,10 +22,7 @@ import {
   WORKSTATION_ON_BREAK,
   WORKSTATION_BUSY,
 } from '@nail-couture/shared/utils/technicianWorkstation.js';
-import {
-  fetchLobbyAutoAssignEnabled,
-  setLobbyAutoAssignEnabled,
-} from '@nail-couture/shared/utils/lobbyAutoAssign.js';
+import { setLobbyAutoAssignEnabled } from '@nail-couture/shared/utils/lobbyAutoAssign.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { StaffScreenLayout } from '../../components/staff/StaffScreenLayout';
 import { AppModal, ModalButton } from '../../components/AppModal';
@@ -63,19 +63,29 @@ type ServiceItem = { id: number; name: string; price: number; is_addon?: boolean
 export function AdminLobbyScreen() {
   const { user } = useAuth();
   const styles = useThemeStyles();
-  const [lobbyAppointments, setLobbyAppointments] = useState<AppointmentRecord[]>([]);
-  const [servingAppointments, setServingAppointments] = useState<AppointmentRecord[]>([]);
-  const [checkoutReady, setCheckoutReady] = useState<AppointmentRecord[]>([]);
-  const [pendingAppointments, setPendingAppointments] = useState<AppointmentRecord[]>([]);
-  const [technicians, setTechnicians] = useState<TechnicianRecord[]>([]);
-  const [techWorkload, setTechWorkload] = useState<Record<string, TechWorkload>>({});
-  const [autoAssignEnabled, setAutoAssignEnabled] = useState(true);
+  const getIsActive = useCallback(() => AppState.currentState === 'active', []);
+  const {
+    lobbyAppointments,
+    servingAppointments,
+    checkoutReadyAppointments: checkoutReady,
+    pendingAppointments,
+    technicians,
+    techWorkload,
+    todayTotal,
+    autoAssignEnabled,
+    setAutoAssignEnabled,
+    loading,
+    refreshing,
+    refreshFloorManager,
+  } = useFloorManager({
+    callerPhone: user?.phone,
+    userId: user?.id,
+    getIsActive,
+  });
   const [autoAssignToggling, setAutoAssignToggling] = useState(false);
   const [services, setServices] = useState<ServiceItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ message: string; name?: string } | null>(null);
-  const [todayTotal, setTodayTotal] = useState(0);
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRecord | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState<AppointmentRecord | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -99,57 +109,17 @@ export function AdminLobbyScreen() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const fetchAll = useCallback(async () => {
-    if (!user?.phone) return;
-    const phone = user.phone;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const [waiting, serving, checkout, pending, techs, workload, countRes] = await Promise.all([
-      getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'waiting', order_asc: true }),
-      getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'serving', order_asc: true }),
-      getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'ready_for_checkout', order_asc: true }),
-      getSupabase().rpc('get_appointments', { caller_phone: phone, status_filter: 'assigned_pending', order_asc: true }),
-      getSupabase().from('profiles').select('*').eq('role', 'technician').order('full_name'),
-      getSupabase().rpc('get_floor_technician_workload'),
-      getSupabase().rpc('get_appointments_count', { caller_phone: phone, status_filter: 'completed', date_from: today.toISOString() }),
-    ]);
-    setLobbyAppointments((waiting.data as AppointmentRecord[]) || []);
-    setServingAppointments((serving.data as AppointmentRecord[]) || []);
-    setCheckoutReady((checkout.data as AppointmentRecord[]) || []);
-    setPendingAppointments((pending.data as AppointmentRecord[]) || []);
-    setTechnicians((techs.data as TechnicianRecord[]) || []);
-    const map: Record<string, TechWorkload> = {};
-    ((workload.data as TechWorkload[]) || []).forEach((row) => {
-      map[row.id] = row;
-    });
-    setTechWorkload(map);
-    setTodayTotal((countRes.data as number) || 0);
-    setLoading(false);
-  }, [user?.phone]);
+  useEffect(() => {
+    getServices().then((data) => setServices(data as ServiceItem[])).catch(() => {});
+  }, []);
 
   useEffect(() => {
-    const init = async () => {
-      const [autoAssign] = await Promise.all([
-        fetchLobbyAutoAssignEnabled(),
-        fetchAll(),
-      ]);
-      setAutoAssignEnabled(autoAssign.enabled);
-    };
-    init();
-    getServices().then((data) => setServices(data as ServiceItem[])).catch(() => {});
-    const channel = getSupabase()
-      .channel('floor-manager')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => fetchAll())
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => fetchAll())
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_configurations' }, (payload) => {
-        const row = payload.new as { lobby_auto_assign_enabled?: boolean } | undefined;
-        if (row?.lobby_auto_assign_enabled !== undefined) {
-          setAutoAssignEnabled(row.lobby_auto_assign_enabled !== false);
-        }
-      })
-      .subscribe();
-    return () => { getSupabase().removeChannel(channel); };
-  }, [fetchAll]);
+    if (!user?.phone) return undefined;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refreshFloorManager(true);
+    });
+    return () => subscription.remove();
+  }, [user?.phone, refreshFloorManager]);
 
   const handleAutoAssignToggle = async (nextEnabled: boolean) => {
     if (!user?.phone || autoAssignToggling || nextEnabled === autoAssignEnabled) return;
@@ -167,7 +137,7 @@ export function AdminLobbyScreen() {
         } else {
           showToast('Auto-assign off — assign manually', 'Floor Manager');
         }
-        await fetchAll();
+        await refreshFloorManager();
       } else {
         showToast('Failed to update auto-assign', result.error || 'Error');
       }
@@ -221,7 +191,7 @@ export function AdminLobbyScreen() {
     } else if (isReallocation && pendingAppt) {
       showToast(`Reassigned to ${targetTech?.full_name}`, pendingAppt.customer?.full_name);
     }
-    await fetchAll();
+    await refreshFloorManager();
     setUpdating(null);
     setAssignTarget(null);
     setDraggingAppt(null);
@@ -236,7 +206,7 @@ export function AdminLobbyScreen() {
       p_technician_id: null,
     });
     showToast('Returned to waiting', appt?.customer?.full_name);
-    await fetchAll();
+    await refreshFloorManager();
     setUpdating(null);
   };
 
@@ -248,7 +218,7 @@ export function AdminLobbyScreen() {
       p_status: 'serving',
       p_start_time: new Date().toISOString(),
     });
-    await fetchAll();
+    await refreshFloorManager();
     setUpdating(null);
   };
 
@@ -262,7 +232,7 @@ export function AdminLobbyScreen() {
       p_final_price: estimatedPrice,
     });
     if (!error) showToast('Sent to Checkout', appt?.customer?.full_name);
-    await fetchAll();
+    await refreshFloorManager();
     setUpdating(null);
   };
 
@@ -284,7 +254,7 @@ export function AdminLobbyScreen() {
         field_value: nail_goal,
       });
     }
-    await fetchAll();
+    await refreshFloorManager();
     setEditingAppointment(null);
   };
 
@@ -296,7 +266,7 @@ export function AdminLobbyScreen() {
       appointment_id: cancelConfirm.id,
     });
     showToast(`Cancelled: ${cancelReason}`, cancelConfirm.customer?.full_name);
-    await fetchAll();
+    await refreshFloorManager();
     setUpdating(null);
     setCancelConfirm(null);
     setCancelReason('');
@@ -495,6 +465,14 @@ export function AdminLobbyScreen() {
     <StaffScreenLayout
       title="Floor Manager"
       subtitle={`${todayTotal} completed today`}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => refreshFloorManager()}
+          tintColor={styles.tokens.goldStrong}
+          colors={[styles.tokens.goldStrong]}
+        />
+      }
       headerRight={
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           <View
@@ -608,7 +586,7 @@ export function AdminLobbyScreen() {
                   ? { ...prev, technician_id: result.primary_technician_id }
                   : prev);
               }
-              fetchAll();
+              refreshFloorManager();
             }}
           />
         )}

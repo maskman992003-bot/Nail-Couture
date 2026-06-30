@@ -1,5 +1,5 @@
 import type { ReactNode, RefObject } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { UserHeaderActions } from '../UserHeaderActions';
 import { useLayout } from '../../theme/useLayout';
@@ -12,6 +12,7 @@ type StaffScreenLayoutProps = {
   scrollRef?: RefObject<ScrollView | null>;
   headerRight?: ReactNode;
   showUserActions?: boolean;
+  refreshControl?: React.ReactElement<typeof RefreshControl>;
 };
 
 export function StaffScreenLayout({
@@ -21,6 +22,7 @@ export function StaffScreenLayout({
   scrollRef,
   headerRight,
   showUserActions = true,
+  refreshControl,
 }: StaffScreenLayoutProps) {
   const styles = useThemeStyles();
   const layout = useLayout({ withBottomTabBar: true });
@@ -32,6 +34,7 @@ export function StaffScreenLayout({
         ref={scrollRef}
         contentContainerStyle={layout.pageContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={refreshControl}
       >
         {(title || subtitle || resolvedHeaderRight) && (
           <View style={styles.layout.pageHeader}>

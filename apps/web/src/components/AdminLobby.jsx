@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import {
@@ -37,10 +37,8 @@ import {
   WORKSTATION_BUSY,
 } from '@nail-couture/shared/utils/technicianWorkstation'
 import ToggleSwitch from '@nail-couture/shared/components/ToggleSwitch'
-import {
-  fetchLobbyAutoAssignEnabled,
-  setLobbyAutoAssignEnabled,
-} from '@nail-couture/shared/utils/lobbyAutoAssign'
+import { setLobbyAutoAssignEnabled } from '@nail-couture/shared/utils/lobbyAutoAssign'
+import { useFloorManager } from '@nail-couture/shared/hooks/useFloorManager'
 import usePullToRefresh from '../hooks/usePullToRefresh'
 import PullToRefreshIndicator from './PullToRefreshIndicator'
 import VisitTechnicianManager, { MultiTechBadge } from './VisitTechnicianManager'
@@ -637,18 +635,9 @@ const EditAppointmentModal = ({ appointment, services, onSave, onClose }) => {
 }
 
 export default function AdminLobby() {
-  const [lobbyAppointments, setLobbyAppointments] = useState([])
-  const [servingAppointments, setServingAppointments] = useState([])
-  const [checkoutReadyAppointments, setCheckoutReadyAppointments] = useState([])
-  const [pendingAppointments, setPendingAppointments] = useState([])
-  const [technicians, setTechnicians] = useState([])
-  const [techWorkload, setTechWorkload] = useState({})
-  const [autoAssignEnabled, setAutoAssignEnabled] = useState(true)
   const [autoAssignToggling, setAutoAssignToggling] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
   const [notification, setNotification] = useState(null)
-  const [todayTotal, setTodayTotal] = useState(0)
   const [activeId, setActiveId] = useState(null)
   const [editingAppointment, setEditingAppointment] = useState(null)
   const [services, setServices] = useState([])
@@ -657,9 +646,26 @@ export default function AdminLobby() {
   const [wiggleTechId, setWiggleTechId] = useState(null)
   const [managingTechsFor, setManagingTechsFor] = useState(null)
   const { user } = useAuth()
+  const {
+    lobbyAppointments,
+    servingAppointments,
+    checkoutReadyAppointments,
+    pendingAppointments,
+    technicians,
+    techWorkload,
+    todayTotal,
+    autoAssignEnabled,
+    setAutoAssignEnabled,
+    loading,
+    refreshFloorManager,
+  } = useFloorManager({ callerPhone: user?.phone, userId: user?.id })
   const showManageTechs = MULTI_TECH_VISITS && canManageVisitTechnicians(user?.role)
   const { theme } = useTheme()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    getServices().then(setServices).catch(err => { if (process.env.NODE_ENV === 'development') console.error(err); })
+  }, [])
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -680,121 +686,10 @@ export default function AdminLobby() {
 
   const allBusyTechnicians = [...busyTechnicians, ...pendingTechnicians]
 
-  useEffect(() => {
-    const init = async () => {
-      const [autoAssign] = await Promise.all([
-        fetchLobbyAutoAssignEnabled(),
-        Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()]),
-      ])
-      setAutoAssignEnabled(autoAssign.enabled)
-      setLoading(false)
-    }
-    init()
-    getServices().then(setServices).catch(err => { if (process.env.NODE_ENV === 'development') console.error(err); })
-    
-    const channel = supabase
-      .channel('floor-manager')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, async () => {
-        await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians(), fetchTodayTotal()])
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, async () => {
-        await fetchTechnicians()
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_configurations' }, (payload) => {
-        if (payload.new?.lobby_auto_assign_enabled !== undefined) {
-          setAutoAssignEnabled(payload.new.lobby_auto_assign_enabled !== false)
-        }
-      })
-      .subscribe()
-
-    return () => supabase.removeChannel(channel)
-  }, [])
-
   const getCallerPhone = () => {
     const d = localStorage.getItem('salon_user_data');
     return d ? JSON.parse(d).phone : '';
   };
-
-  const fetchAppointments = useCallback(async () => {
-    if (process.env.NODE_ENV === 'development') console.log('Fetching waiting appointments...')
-    const { data, error } = await supabase
-      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'waiting', order_asc: true })
-
-    if (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error fetching waiting:', error)
-    } else {
-      setLobbyAppointments(data || [])
-    }
-  }, [])
-
-  const fetchServingAppointments = useCallback(async () => {
-    const { data, error } = await supabase
-      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'serving', order_asc: true })
-
-    if (!error) setServingAppointments(data || [])
-  }, [])
-
-  const fetchCheckoutReadyAppointments = useCallback(async () => {
-    const { data, error } = await supabase
-      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'ready_for_checkout', order_asc: true })
-
-    if (!error) setCheckoutReadyAppointments(data || [])
-  }, [])
-
-  const fetchPendingAppointments = useCallback(async () => {
-    const { data, error } = await supabase
-      .rpc('get_appointments', { caller_phone: getCallerPhone(), status_filter: 'assigned_pending', order_asc: true })
-
-    if (!error) setPendingAppointments(data || [])
-  }, [])
-
-  const fetchTechnicians = useCallback(async () => {
-    const [{ data: profiles, error }, { data: workload }] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'technician')
-        .order('full_name'),
-      supabase.rpc('get_floor_technician_workload'),
-    ])
-
-    if (!error) setTechnicians(profiles || [])
-    const map = {}
-    ;(workload || []).forEach((row) => {
-      map[row.id] = row
-    })
-    setTechWorkload(map)
-  }, [])
-
-  const fetchTodayTotal = useCallback(async () => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const { data } = await supabase
-      .rpc('get_appointments_count', {
-        caller_phone: getCallerPhone(),
-        status_filter: 'completed',
-        date_from: today.toISOString(),
-      })
-    setTodayTotal(data || 0)
-  }, [])
-
-  const refreshFloorManager = useCallback(async () => {
-    await Promise.all([
-      fetchAppointments(),
-      fetchServingAppointments(),
-      fetchCheckoutReadyAppointments(),
-      fetchPendingAppointments(),
-      fetchTechnicians(),
-      fetchTodayTotal(),
-    ])
-  }, [
-    fetchAppointments,
-    fetchServingAppointments,
-    fetchCheckoutReadyAppointments,
-    fetchPendingAppointments,
-    fetchTechnicians,
-    fetchTodayTotal,
-  ])
 
   const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
     onRefresh: refreshFloorManager,
@@ -871,7 +766,7 @@ export default function AdminLobby() {
       p_start_time: updates.start_time || null,
       p_final_price: updates.final_price || null,
     })
-    await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchTodayTotal()])
+    await refreshFloorManager()
     setUpdating(null)
   }
 
@@ -897,7 +792,7 @@ export default function AdminLobby() {
     setNotification({ message: 'Sent to Checkout', name: appt?.customer?.full_name })
     setTimeout(() => setNotification(null), 3000)
 
-    await Promise.all([fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchTechnicians()])
+    await refreshFloorManager()
     setUpdating(null)
   }
 
@@ -925,7 +820,7 @@ export default function AdminLobby() {
       })
     }
     
-    await Promise.all([fetchAppointments(), fetchServingAppointments()])
+    await refreshFloorManager()
     setEditingAppointment(null)
   }
 
@@ -936,7 +831,7 @@ export default function AdminLobby() {
     setNotification({ message: `Cancelled: ${cancelReason}`, name: appointment.customer?.full_name })
     setTimeout(() => setNotification(null), 3000)
     
-    await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchTodayTotal()])
+    await refreshFloorManager()
     setUpdating(null)
     setCancelConfirm(null)
     setCancelReason('')
@@ -965,7 +860,7 @@ export default function AdminLobby() {
       setNotification({ message: 'Returned to waiting', name: pendingAppointment.customer?.full_name })
       setTimeout(() => setNotification(null), 3000)
 
-      await Promise.all([fetchAppointments(), fetchPendingAppointments(), fetchTechnicians()])
+      await refreshFloorManager()
       setUpdating(null)
       return
     }
@@ -1041,7 +936,7 @@ export default function AdminLobby() {
       setTimeout(() => setNotification(null), 3000)
     }
 
-    await Promise.all([fetchAppointments(), fetchPendingAppointments(), fetchTechnicians()])
+    await refreshFloorManager()
     setUpdating(null)
   }
 
@@ -1059,7 +954,7 @@ export default function AdminLobby() {
       return
     }
     
-    await Promise.all([fetchAppointments(), fetchServingAppointments(), fetchCheckoutReadyAppointments(), fetchPendingAppointments(), fetchTechnicians()])
+    await refreshFloorManager()
     setUpdating(null)
   }
 
@@ -1093,7 +988,7 @@ export default function AdminLobby() {
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h1 className="font-heading text-2xl sm:text-3xl text-gold">Floor Manager</h1>
-                <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Hold the grip handle and drag to assign, reassign, or return customers to waiting. Turn auto-assign off to distribute manually. Pull down to refresh on mobile.</p>
+                <p className={`mt-1 ${theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60'}`}>Drag to assign or return customers. Turn off auto-assign to distribute manually.</p>
               </div>
               <div className="flex flex-wrap gap-2 shrink-0 self-start">
                 <div className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg border min-h-[44px] ${theme === 'dark' ? 'bg-offwhite/5 border-offwhite/10' : 'bg-charcoal/5 border-charcoal/10'}`}>
@@ -1397,12 +1292,7 @@ export default function AdminLobby() {
                   ? { ...prev, technician_id: result.primary_technician_id }
                   : prev);
               }
-              Promise.all([
-                fetchAppointments(),
-                fetchServingAppointments(),
-                fetchCheckoutReadyAppointments(),
-                fetchPendingAppointments(),
-              ]).catch(() => {});
+              refreshFloorManager().catch(() => {});
             }}
           />
         </AppModal>
