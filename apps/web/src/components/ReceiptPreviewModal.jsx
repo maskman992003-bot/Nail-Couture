@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import clsx from 'clsx';
-import { copyTextToClipboard, downloadTextFile } from '@nail-couture/shared/utils/customerStats';
+import { copyTextToClipboard } from '@nail-couture/shared/utils/customerStats';
+import { downloadReceiptFile } from '../utils/nativeDownload.js';
+import { isFlutterWebView } from '../utils/mobileFilePickers.js';
 
 /**
  * @param {{
@@ -29,12 +31,16 @@ export default function ReceiptPreviewModal({
     ? 'bg-charcoal border-white/10 text-offwhite'
     : 'bg-white border-gray-200 text-gray-900';
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    setBusy(true);
+    setMessage('');
     try {
-      downloadTextFile(content, filename);
-      setMessage('Download started.');
+      await downloadReceiptFile(content, filename);
+      setMessage(isFlutterWebView() ? 'Share sheet opened.' : 'Download started.');
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Download failed.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -75,9 +81,10 @@ export default function ReceiptPreviewModal({
           <button
             type="button"
             onClick={handleDownload}
-            className="flex-1 py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90 transition-colors"
+            disabled={busy}
+            className="flex-1 py-3 bg-gold text-charcoal font-heading text-sm rounded-xl hover:bg-gold/90 transition-colors disabled:opacity-50"
           >
-            Download
+            {busy ? 'Preparing…' : isFlutterWebView() ? 'Share' : 'Download'}
           </button>
           <button
             type="button"

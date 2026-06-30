@@ -24,7 +24,9 @@ import {
   canViewGiftCardCode,
   stripGiftCardCodeFromSaleResult,
 } from '@nail-couture/shared/utils/giftCards';
-import { copyTextToClipboard, downloadTextFile } from '@nail-couture/shared/utils/customerStats';
+import { copyTextToClipboard } from '@nail-couture/shared/utils/customerStats';
+import { downloadReceiptFile } from '../utils/nativeDownload.js';
+import { isFlutterWebView } from '../utils/mobileFilePickers.js';
 import { GiftCardVisual } from './GiftCardVisual';
 import AppModal, { modalBtnPrimary, modalBtnSecondary } from './AppModal';
 import GiftCardSharePanel from './GiftCardSharePanel';
@@ -389,6 +391,19 @@ export default function GiftCardSale() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDownloadReceipt = async () => {
+    if (!receiptText) return;
+    try {
+      await downloadReceiptFile(
+        receiptText,
+        `gift-card-receipt-${result.gift_card?.id || 'download'}.txt`,
+      );
+    } catch (err) {
+      console.error('Receipt download error:', err);
+      window.alert('Unable to download receipt. Please try again.');
+    }
+  };
+
   const pageTitle = canComplete ? 'Gift Cards' : 'Gift Card Requests';
   const pageSubtitle = canComplete
     ? 'Complete pending sales after collecting payment, or sell directly (super admin / cashier).'
@@ -491,10 +506,10 @@ export default function GiftCardSale() {
               )}
               <button
                 type="button"
-                onClick={() => downloadTextFile(receiptText, `gift-card-receipt-${result.gift_card?.id || 'download'}.txt`)}
+                onClick={handleDownloadReceipt}
                 className={clsx('px-4 py-2 border rounded-lg', isDark ? 'border-gold/30 text-gold' : 'border-gold/40 text-charcoal')}
               >
-                Download Receipt
+                {isFlutterWebView() ? 'Share Receipt' : 'Download Receipt'}
               </button>
               <button type="button" onClick={resetForm} className={clsx('px-4 py-2 border rounded-lg', isDark ? 'border-offwhite/20' : 'border-charcoal/20')}>
                 {canComplete ? 'Sell Another' : 'Done'}
