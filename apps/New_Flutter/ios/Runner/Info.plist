@@ -68,15 +68,15 @@
 	</array>
 
 	<key>NSCameraUsageDescription</key>
-	<string>Nail Couture uses your camera for virtual try-on, nail design previews, and AR beauty consultations.</string>
+	<string>This app requires camera access to upload photos to Nail Couture.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Nail Couture uses your microphone for video consultations and voice-guided beauty sessions.</string>
+	<string>This app requires microphone access for media uploads.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Nail Couture can access contacts so you can invite friends or share appointment details.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Nail Couture uses your location to find nearby salons, provide directions, and show local offers.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Nail Couture accesses your photo library so you can upload inspiration images and save nail design results.</string>
+	<string>This app requires photo library access to upload photos to Nail Couture.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Nail Couture saves your nail design photos and beauty session results to your photo library.</string>
 </dict>

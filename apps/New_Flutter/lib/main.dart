@@ -24,7 +24,9 @@ Future<void> main() async {
     await InAppWebViewController.setWebContentsDebuggingEnabled(kDebugMode);
   }
 
-  await PushNotificationService.initialize();
+  if (!kIsWeb && Platform.isAndroid) {
+    await PushNotificationService.initialize();
+  }
 
   runApp(const NailCoutureWebViewApp());
 }
