@@ -6,6 +6,22 @@ function formatTimestamp(createdAt) {
   return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
 }
 
+function stopEvent(e) {
+  e.stopPropagation();
+}
+
+/**
+ * Mobile WebViews (especially Android flutter_inappwebview) can miss clicks on
+ * buttons nested inside overflow + position:sticky. Run the handler from pointerup.
+ */
+function handleTap(handler) {
+  return (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handler();
+  };
+}
+
 /**
  * @param {{
  *   open: boolean,
@@ -32,6 +48,16 @@ export default function NotificationPanel({
   onDeleteAll,
   onNotificationPress,
 }) {
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setShowClearConfirm(false);
+      setIsClearing(false);
+    }
+  }, [open]);
+
   if (!open) return null;
 
   const bg = theme === 'dark' ? '#111' : '#fff';
@@ -39,25 +65,23 @@ export default function NotificationPanel({
   const textMuted = theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40';
   const textPrimary = theme === 'dark' ? 'text-offwhite' : 'text-charcoal';
   const textSecondary = theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60';
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-
-  useEffect(() => {
-    if (!open) setShowClearConfirm(false);
-  }, [open]);
+  const cancelBtnClass = `flex-1 px-3 py-2.5 text-xs font-medium border rounded-xl transition-colors text-center cursor-pointer select-none ${theme === 'dark' ? 'text-offwhite/70 border-white/10 active:bg-white/5' : 'text-charcoal/70 border-charcoal/10 active:bg-charcoal/5'}`;
+  const dangerBtnClass = 'flex-1 px-3 py-2.5 text-xs font-medium text-red-400/90 border border-red-400/30 rounded-xl active:bg-red-500/10 transition-colors text-center cursor-pointer select-none';
 
   const handleClearAll = () => {
-    if (notifications.length === 0) return;
+    if (notifications.length === 0 || isClearing) return;
     setShowClearConfirm(true);
   };
 
-  const handleConfirmClearAll = () => {
-    onDeleteAll();
-    setShowClearConfirm(false);
-  };
-
-  const handleDeleteOne = (e, id) => {
-    e.stopPropagation();
-    onDeleteOne(id);
+  const handleConfirmClearAll = async () => {
+    if (isClearing) return;
+    setIsClearing(true);
+    try {
+      await onDeleteAll();
+      setShowClearConfirm(false);
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   const handleRowClick = (notif) => {
@@ -66,20 +90,26 @@ export default function NotificationPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-[200]" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60" />
+    <div className="fixed inset-0 z-[200]">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/60 border-0 p-0 cursor-default"
+        onClick={onClose}
+        aria-label="Close notifications"
+      />
       <div
-        className="absolute right-0 top-0 h-full w-full max-w-sm overflow-y-auto shadow-2xl"
+        className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col shadow-2xl"
         style={{
           backgroundColor: bg,
           borderLeft: `1px solid ${theme === 'dark' ? 'rgba(197,160,89,0.2)' : 'rgba(197,160,89,0.3)'}`,
           paddingTop: 'var(--safe-top)',
           paddingBottom: 'var(--safe-bottom)',
         }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={stopEvent}
+        onPointerDown={stopEvent}
       >
         <div
-          className="sticky top-0 z-10 border-b"
+          className="relative z-10 flex-shrink-0 border-b"
           style={{ borderColor: border, backgroundColor: bg }}
         >
           <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
@@ -102,8 +132,8 @@ export default function NotificationPanel({
             </div>
             <button
               type="button"
-              onClick={onClose}
-              className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl border transition-colors hover:bg-white/5 ${textMuted}`}
+              onPointerUp={handleTap(onClose)}
+              className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl border transition-colors active:bg-white/5 cursor-pointer select-none ${textMuted}`}
               style={{ borderColor: border }}
               aria-label="Close"
             >
@@ -112,54 +142,31 @@ export default function NotificationPanel({
           </div>
 
           {(unreadCount > 0 || notifications.length > 0) ? (
-            showClearConfirm ? (
-              <div className="px-5 pb-4">
-                <p className={`text-xs mb-2 ${textSecondary}`}>
-                  Clear all notifications? This cannot be undone.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowClearConfirm(false)}
-                    className={`flex-1 px-3 py-2 text-xs font-medium border rounded-xl transition-colors text-center ${theme === 'dark' ? 'text-offwhite/70 border-white/10 hover:bg-white/5' : 'text-charcoal/70 border-charcoal/10 hover:bg-charcoal/5'}`}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleConfirmClearAll}
-                    className="flex-1 px-3 py-2 text-xs font-medium text-red-400/90 border border-red-400/30 rounded-xl hover:bg-red-500/10 transition-colors text-center"
-                  >
-                    Clear all
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-2 px-5 pb-4">
-                {unreadCount > 0 ? (
-                  <button
-                    type="button"
-                    onClick={onMarkAllRead}
-                    className="flex-1 px-3 py-2 text-xs font-medium text-gold border border-gold/40 rounded-xl hover:bg-gold/10 transition-colors text-center"
-                  >
-                    Mark all read
-                  </button>
-                ) : null}
-                {notifications.length > 0 ? (
-                  <button
-                    type="button"
-                    onClick={handleClearAll}
-                    className="flex-1 px-3 py-2 text-xs font-medium text-red-400/90 border border-red-400/30 rounded-xl hover:bg-red-500/10 transition-colors text-center"
-                  >
-                    Clear all
-                  </button>
-                ) : null}
-              </div>
-            )
+            <div className="flex gap-2 px-5 pb-4">
+              {unreadCount > 0 ? (
+                <button
+                  type="button"
+                  onPointerUp={handleTap(onMarkAllRead)}
+                  className="flex-1 px-3 py-2.5 text-xs font-medium text-gold border border-gold/40 rounded-xl active:bg-gold/10 transition-colors text-center cursor-pointer select-none"
+                >
+                  Mark all read
+                </button>
+              ) : null}
+              {notifications.length > 0 ? (
+                <button
+                  type="button"
+                  onPointerUp={handleTap(handleClearAll)}
+                  disabled={isClearing}
+                  className={`${dangerBtnClass} disabled:opacity-50`}
+                >
+                  Clear all
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
-        <div className="p-4 space-y-3">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-3">
           {notifications.length === 0 ? (
             <div className="text-center py-12">
               <svg
@@ -189,8 +196,8 @@ export default function NotificationPanel({
               >
                 <button
                   type="button"
-                  onClick={(e) => handleDeleteOne(e, notif.id)}
-                  className={`absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-lg opacity-60 hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition-all ${textMuted}`}
+                  onPointerUp={handleTap(() => onDeleteOne(notif.id))}
+                  className={`absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-lg opacity-60 active:opacity-100 active:bg-red-500/10 active:text-red-400 transition-all cursor-pointer select-none ${textMuted}`}
                   aria-label="Delete notification"
                 >
                   &times;
@@ -213,6 +220,43 @@ export default function NotificationPanel({
             ))
           )}
         </div>
+
+        {showClearConfirm ? (
+          <div
+            className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 p-5"
+            onClick={stopEvent}
+            onPointerDown={stopEvent}
+          >
+            <div
+              className="w-full max-w-xs rounded-2xl border p-5 shadow-2xl"
+              style={{
+                backgroundColor: bg,
+                borderColor: theme === 'dark' ? 'rgba(197,160,89,0.25)' : 'rgba(197,160,89,0.35)',
+              }}
+            >
+              <h3 className={`font-heading text-lg mb-2 ${textPrimary}`}>Clear all notifications?</h3>
+              <p className={`text-sm mb-5 ${textSecondary}`}>This cannot be undone.</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onPointerUp={handleTap(() => setShowClearConfirm(false))}
+                  disabled={isClearing}
+                  className={cancelBtnClass}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onPointerUp={handleTap(handleConfirmClearAll)}
+                  disabled={isClearing}
+                  className={`${dangerBtnClass} disabled:opacity-50`}
+                >
+                  {isClearing ? 'Clearing…' : 'Clear all'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

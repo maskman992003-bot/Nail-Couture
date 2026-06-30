@@ -179,30 +179,44 @@ export function useNotifications({ userPhone, userId, enabled = true, getIsActiv
   const deleteOne = useCallback(
     async (id) => {
       if (!userPhone) return;
+      const previous = notifications;
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      seenNotificationIdsRef.current.delete(id);
       try {
-        await getSupabase().rpc('delete_notification', {
+        const { error } = await getSupabase().rpc('delete_notification', {
           p_phone: userPhone,
           p_notif_id: id,
         });
-        setNotifications((prev) => prev.filter((n) => n.id !== id));
-        seenNotificationIdsRef.current.delete(id);
-      } catch {
-        /* ignore */
+        if (error) {
+          console.error('Failed to delete notification:', error.message || error);
+          setNotifications(previous);
+        }
+      } catch (err) {
+        console.error('Failed to delete notification:', err);
+        setNotifications(previous);
       }
     },
-    [userPhone],
+    [userPhone, notifications],
   );
 
   const deleteAll = useCallback(async () => {
     if (!userPhone || notifications.length === 0) return;
+    const previous = notifications;
+    setNotifications([]);
+    seenNotificationIdsRef.current = new Set();
     try {
-      await getSupabase().rpc('delete_all_my_notifications', { p_phone: userPhone });
-      setNotifications([]);
-      seenNotificationIdsRef.current = new Set();
-    } catch {
-      /* ignore */
+      const { error } = await getSupabase().rpc('delete_all_my_notifications', { p_phone: userPhone });
+      if (error) {
+        console.error('Failed to clear notifications:', error.message || error);
+        setNotifications(previous);
+        throw error;
+      }
+    } catch (err) {
+      console.error('Failed to clear notifications:', err);
+      setNotifications(previous);
+      throw err;
     }
-  }, [userPhone, notifications.length]);
+  }, [userPhone, notifications]);
 
   return {
     notifications,
