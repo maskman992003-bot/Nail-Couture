@@ -53,6 +53,8 @@ import CheckIn from './components/CheckIn.jsx'
 import PageHelmet from './components/PageHelmet.jsx'
 import { APP_PAGE_SEO } from './constants/pageSeo.js'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
+import { PullToRefreshProvider } from './contexts/PullToRefreshContext.jsx'
+import PullToRefreshHost from './components/PullToRefreshHost.jsx'
 import { IdleSessionProvider } from './contexts/IdleSessionContext.jsx'
 import { ThemeEngineProvider } from './context/ThemeEngineContext.jsx'
 import { MobileBridgeProvider } from './contexts/MobileBridgeContext.jsx'
@@ -707,10 +709,12 @@ createRoot(document.getElementById('root')).render(
       <ThemeEngineProvider>
         <MobileBridgeProvider>
           <AuthProvider>
+            <PullToRefreshProvider>
               <BrowserRouter>
                 <IdleSessionProvider>
                   <FlutterPushRegistrar />
                   <NativeShellEffects />
+                  <PullToRefreshHost />
                   <AppChrome />
                   <NativeRouteGuard>
                     <RouteDocumentTitle />
@@ -718,6 +722,7 @@ createRoot(document.getElementById('root')).render(
                   </NativeRouteGuard>
                 </IdleSessionProvider>
               </BrowserRouter>
+            </PullToRefreshProvider>
           </AuthProvider>
         </MobileBridgeProvider>
       </ThemeEngineProvider>
