@@ -11,7 +11,6 @@ import {
   moderateCustomerReview,
   publishCustomerReview,
 } from '@nail-couture/shared/utils/customerReviewService';
-import Sidebar from './Sidebar';
 import ThemeSelect from './ThemeSelect';
 import AppModal, { modalBtnDanger, modalBtnSecondary } from './AppModal';
 import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
@@ -154,7 +153,7 @@ export default function StaffReviews() {
     }
   }, [user?.phone, user?.id, isTechnician, technicianFilter, dateRange, searchTerm, canViewHidden, currentPage]);
 
-  useRegisterPullToRefresh(loadReviews, { disabled: loading });
+  useRegisterPullToRefresh(loadReviews);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -238,7 +237,6 @@ export default function StaffReviews() {
 
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-6">
         <div>
           <h1 className="font-heading text-3xl text-gold">{pageTitle}</h1>

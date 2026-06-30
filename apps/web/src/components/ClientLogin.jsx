@@ -7,6 +7,7 @@ import { verifyKioskPin } from '@nail-couture/shared/constants/kiosk';
 import { CLIENT_LOGIN_PHONE_NOT_FOUND_MESSAGE } from '@nail-couture/shared/constants/clientAuth';
 import { claimPendingGiftCards } from '@nail-couture/shared/utils/giftCards';
 import { useTheme } from '../contexts/ThemeContext';
+import { useReloadPageRefresh } from '../hooks/useReloadPageRefresh';
 import BrandLogo from './BrandLogo.jsx';
 import KioskPinKeypad from './KioskPinKeypad.jsx';
 
@@ -22,6 +23,8 @@ export default function ClientLogin() {
   const navigate = useNavigate();
   const { user, login } = useAuth();
   const { theme, themeConfig } = useTheme();
+
+  useReloadPageRefresh();
 
   useEffect(() => {
     if (user && isCheckInRole(user.role)) {

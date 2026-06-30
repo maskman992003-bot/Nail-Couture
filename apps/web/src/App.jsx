@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { featureFlags } from './constants/featureFlags'
 import { useAppTheme } from './hooks/useAppTheme.js'
 import { isClassicLanding } from './themes/themeUtils.js'
+import { useReloadPageRefresh } from './hooks/useReloadPageRefresh.js'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import HomeLanding from './components/marketing/HomeLanding'
@@ -22,6 +23,8 @@ function App() {
   const { themeConfig, isDark } = useAppTheme()
   const [currentPage, setCurrentPage] = useState('home')
   const classicHome = isClassicLanding(themeConfig)
+
+  useReloadPageRefresh()
 
   useEffect(() => {
     const path = location.pathname.replace('/', '')

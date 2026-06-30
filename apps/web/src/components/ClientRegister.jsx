@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useReloadPageRefresh } from '../hooks/useReloadPageRefresh';
 import BrandLogo from './BrandLogo.jsx';
 import ScrollSelect from './ScrollSelect';
 import clsx from 'clsx';
@@ -124,6 +125,8 @@ const RegistrationSuccessScreen = ({
 };
 
 export default function ClientRegister() {
+  useReloadPageRefresh();
+
   const [searchParams] = useSearchParams();
   const urlReferralCode = searchParams.get('ref') || '';
   const giftToken = searchParams.get('gift') || '';

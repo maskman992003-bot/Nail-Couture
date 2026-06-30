@@ -25,7 +25,6 @@ import {
   VISIT_HISTORY_PAGE_SIZE,
   paginateRows,
 } from '@nail-couture/shared/utils/pagination.js';
-import Sidebar from './Sidebar';
 import ReviewForm from './reviews/ReviewForm';
 import ReceiptPreviewModal from './ReceiptPreviewModal';
 import ListPagination from './ListPagination.jsx';
@@ -146,7 +145,7 @@ export default function CustomerHistory() {
     setLoading(false);
   }, [navigate, user?.id, user?.phone]);
 
-  useRegisterPullToRefresh(fetchData, { disabled: loading });
+  useRegisterPullToRefresh(fetchData);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -410,7 +409,6 @@ export default function CustomerHistory() {
   if (loading) {
     return (
       <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -420,7 +418,6 @@ export default function CustomerHistory() {
 
   return (
     <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-8">
         <div>
           <h1 className="font-heading text-4xl text-gold">{CUSTOMER_ONLINE_BOOKING ? 'My Bookings' : 'Visit History'}</h1>

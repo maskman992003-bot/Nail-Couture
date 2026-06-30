@@ -22,7 +22,6 @@ import {
 } from '@nail-couture/shared/utils/appointmentServices';
 import { canManageVisitTechnicians } from '@nail-couture/shared/utils/staffCustomerAccess';
 import { fetchVisitTechnicianData } from '@nail-couture/shared/utils/visitTechnicians';
-import Sidebar from './Sidebar';
 import CheckoutServiceSummary from './CheckoutServiceSummary';
 import VisitTechnicianManager from './VisitTechnicianManager';
 import {
@@ -788,7 +787,7 @@ export default function CashierCheckout() {
     setLoading(false);
   };
 
-  useRegisterPullToRefresh(fetchQueues, { disabled: loading });
+  useRegisterPullToRefresh(fetchQueues);
 
   useEffect(() => {
     if (!CASHIER_CHECKOUT || !MULTI_TECH_VISITS) return undefined;
@@ -874,7 +873,6 @@ export default function CashierCheckout() {
   if (loading) {
     return (
       <div className={bgClass}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -884,7 +882,6 @@ export default function CashierCheckout() {
 
   return (
     <div className={bgClass}>
-      <Sidebar />
       <div className="max-w-7xl mx-auto px-6 py-8 mobile-page">
         <div className="mb-8">
           <h1 className="font-heading text-3xl text-gold mb-2">Checkout Station</h1>

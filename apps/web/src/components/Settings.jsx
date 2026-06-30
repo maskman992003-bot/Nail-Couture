@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAppTheme } from '../hooks/useAppTheme.js';
 import { getThemeOptions } from '../themes/index.js';
 import { mergeSkinWithPalette } from '../themes/resolveThemePalette.js';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import NotificationPreferencesPanel from '@nail-couture/shared/components/NotificationPreferencesPanel.jsx';
 import SessionTimeoutSettingsPanel from './SessionTimeoutSettingsPanel.jsx';
@@ -216,7 +215,7 @@ export default function Settings() {
     }
   };
 
-  useRegisterPullToRefresh(refreshProfile, { disabled: loading || refreshing });
+  useRegisterPullToRefresh(refreshProfile);
 
   const fetchWorkStats = async (userId, role) => {
     const today = new Date();
@@ -437,7 +436,6 @@ export default function Settings() {
   if (loading) {
     return (
       <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading profile...</div>
         </div>
@@ -462,7 +460,6 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-      <Sidebar />
       <style>{`.settings-page select, .settings-page option { background: var(--input-bg); color: var(--text-primary); }`}</style>
       <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 mobile-page">
         <div className="mb-8">

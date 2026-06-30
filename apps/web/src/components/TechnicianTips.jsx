@@ -11,7 +11,6 @@ import {
   getTipPeriodLabel,
   formatTipPeriodRange,
 } from '@nail-couture/shared/utils/technicianQueue';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 function formatTipTime(timestamp) {
@@ -58,7 +57,7 @@ export default function TechnicianTips() {
     }
   }, [user?.id, period]);
 
-  useRegisterPullToRefresh(() => loadTips(true), { disabled: loading });
+  useRegisterPullToRefresh(() => loadTips(true));
 
   useEffect(() => {
     if (!user) {
@@ -80,7 +79,6 @@ export default function TechnicianTips() {
 
   return (
     <div className={bgClass}>
-      <Sidebar />
       <div className="max-w-3xl mx-auto px-6 py-8 mobile-page">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>

@@ -6,7 +6,6 @@ import {
   SALON_UPDATES_PAGE_SIZE,
   paginateRows,
 } from '@nail-couture/shared/utils/pagination.js';
-import Sidebar from './Sidebar';
 import AnnouncementAttachmentsList from '@nail-couture/shared/components/AnnouncementAttachmentsList.jsx';
 import ListPagination from './ListPagination.jsx';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
@@ -38,7 +37,7 @@ export default function SalonUpdates() {
     refresh,
   } = useAnnouncementInbox(user?.phone);
 
-  useRegisterPullToRefresh(refresh, { disabled: loading });
+  useRegisterPullToRefresh(refresh);
 
   const updatesPagination = useMemo(
     () => paginateRows(items, page, SALON_UPDATES_PAGE_SIZE),
@@ -84,7 +83,6 @@ export default function SalonUpdates() {
 
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="max-w-3xl mx-auto">
           <header className="mb-8">

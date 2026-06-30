@@ -49,7 +49,7 @@ export default function GiftCardClaimPage() {
     }
   }, [token]);
 
-  useRegisterPullToRefresh(reloadPreview, { disabled: loading });
+  useRegisterPullToRefresh(reloadPreview);
 
   const bgClass = isDark ? 'bg-primary text-offwhite' : 'bg-white text-charcoal';
   const cardClass = isDark

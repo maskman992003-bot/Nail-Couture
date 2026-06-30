@@ -121,7 +121,7 @@ export default function ScheduleTeamPicker({
           <TeamSearchInput id={searchId} value={searchQuery} onChange={setSearchQuery} />
           <RoleFilterBar roleFilter={roleFilter} onChange={onRoleFilterChange} />
         </div>
-        <div className="max-h-[420px] overflow-y-auto divide-y divide-white/5" role="list">
+        <div className="max-h-[420px] overflow-y-auto divide-y divide-white/5" role="list" data-no-pull-refresh-scroll>
           {list}
           {visibleStaff.length === 0 && (
             <p className="p-4 text-sm text-secondary text-center">

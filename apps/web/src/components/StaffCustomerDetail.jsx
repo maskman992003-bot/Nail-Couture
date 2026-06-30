@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate, Link, Navigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
 import { getCustomersPath, getHomePath } from '@nail-couture/shared/utils/routes';
@@ -337,7 +336,7 @@ export default function StaffCustomerDetail() {
     return loadCoreData();
   }, [loadCoreData]);
 
-  useRegisterPullToRefresh(loadData, { disabled: loading });
+  useRegisterPullToRefresh(loadData);
 
   useEffect(() => {
     if (!user) {
@@ -549,7 +548,6 @@ export default function StaffCustomerDetail() {
   if (loading) {
     return (
       <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading customer...</div>
         </div>
@@ -560,7 +558,6 @@ export default function StaffCustomerDetail() {
   if (!profile) {
     return (
       <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <p className="text-primary/60 mb-4">Customer not found</p>
@@ -587,7 +584,6 @@ export default function StaffCustomerDetail() {
 
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

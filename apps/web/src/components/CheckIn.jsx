@@ -692,7 +692,7 @@ export default function CheckIn({ onNavigate }) {
     ])
     setServices(svcData || [])
     setRefreshmentList(refreshmentData || [])
-  }, { disabled: loading || rewardSaving })
+  })
 
   useEffect(() => {
     if (!result || result.isNew || !result.appointment) return

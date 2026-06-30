@@ -83,7 +83,7 @@ export default function ServicesPublic() {
     await Promise.all([fetchServices(), fetchCategories()]);
   }, []);
 
-  useRegisterPullToRefresh(refreshServices, { disabled: loading });
+  useRegisterPullToRefresh(refreshServices);
 
   const { grouped: groupedServices, sortedCategories, categoryTabs } = buildCategoryTabs(services, dbCategories);
   const displayCategories = getDisplayCategories(activeCategory, sortedCategories);

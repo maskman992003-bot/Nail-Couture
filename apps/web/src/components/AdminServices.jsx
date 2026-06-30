@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import Sidebar from './Sidebar'
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -248,11 +247,10 @@ export default function AdminServices() {
     }
   };
 
-  useRegisterPullToRefresh(handleRefresh, { disabled: loading || refreshing });
+  useRegisterPullToRefresh(handleRefresh);
 
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-      <Sidebar />
       
       <div className="admin-services p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-light">

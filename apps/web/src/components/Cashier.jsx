@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
 
@@ -65,7 +64,7 @@ export default function Cashier() {
     }
   };
 
-  useRegisterPullToRefresh(fetchData, { disabled: loading });
+  useRegisterPullToRefresh(fetchData);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -100,7 +99,6 @@ export default function Cashier() {
   if (loading) {
     return (
       <div className={bgClass}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -110,7 +108,6 @@ export default function Cashier() {
 
   return (
     <div className={bgClass}>
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className={headerBorderClass}>
           <h1 className="font-heading text-3xl text-gold">Cashier Dashboard</h1>

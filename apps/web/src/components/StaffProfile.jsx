@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
 
@@ -134,7 +133,7 @@ export default function StaffProfile() {
     await fetchProfile();
     await fetchCashierActivity();
     await fetchPerformanceStats();
-  }, { disabled: loading });
+  });
 
   const handleRoleChange = async (newRole) => {
     setUpdatingRole(true);
@@ -259,7 +258,6 @@ export default function StaffProfile() {
   if (loading) {
     return (
       <div className={containerClass}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -273,7 +271,6 @@ export default function StaffProfile() {
 
   return (
     <div className={containerClass}>
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className={headerBorderClass}>
           <div className="flex items-center justify-between">

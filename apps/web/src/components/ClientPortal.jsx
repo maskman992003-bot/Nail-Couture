@@ -7,7 +7,6 @@ import { getHomePath } from '@nail-couture/shared/utils/routes';
 import { getTierInfo, generateReferralCode } from '@nail-couture/shared/utils/loyaltyTier';
 import { computeVaultRewardsAvailable } from '@nail-couture/shared/utils/vaultRewards.js';
 import { getNextTierUpsellBenefit, getTierProgressSummary } from '@nail-couture/shared/utils/tierProgress.js';
-import Sidebar from './Sidebar';
 import AppModal, { modalBtnPrimary, modalLabelClass } from './AppModal';
 import PromoSlideIn from './marketing/PromoSlideIn';
 import PromoDetailModal from './marketing/PromoDetailModal';
@@ -119,7 +118,7 @@ export default function ClientPortal() {
   useRegisterPullToRefresh(async () => {
     setLoading(true);
     await fetchUserData();
-  }, { disabled: loading || authLoading });
+  });
 
   const handleCopyReferral = () => {
     if (!profile?.referral_code) return;
@@ -166,7 +165,6 @@ export default function ClientPortal() {
   if (authLoading || loading) {
     return (
       <div className={shellClass}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -177,7 +175,6 @@ export default function ClientPortal() {
   if (!profile) {
     return (
       <div className={shellClass}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <p className="text-secondary mb-4">Unable to load profile</p>
@@ -195,7 +192,6 @@ export default function ClientPortal() {
 
   return (
     <div className={shellClass}>
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page max-w-2xl mx-auto space-y-5">
         <CustomerHomeHeader />
 

@@ -5,9 +5,12 @@ import PageHelmet from '../PageHelmet';
 import { APP_PAGE_SEO } from '../../constants/pageSeo';
 import { FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import FitnessAssessmentDashboard from './FitnessAssessmentDashboard';
+import { useReloadPageRefresh } from '../../hooks/useReloadPageRefresh';
 import WebOnly from '../WebOnly.jsx';
 
 export default function FitnessAssessmentPublicPage() {
+  useReloadPageRefresh();
+
   if (!FITNESS_ASSESSMENT) return <Navigate to="/" replace />;
 
   return (

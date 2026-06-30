@@ -70,6 +70,23 @@ function getNavLinkStyle(isActive, accentGradient) {
   };
 }
 
+function isNavItemActive(pathname, item) {
+  if (item.id === 'home') {
+    return pathname === item.href;
+  }
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
+function handleSidebarNavClick(event, { item, pathname, navigate, closeUserMenu }) {
+  closeUserMenu();
+  event.preventDefault();
+  if (isNavItemActive(pathname, item)) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  navigate(item.href);
+}
+
 function UserMenuDropdown({
   theme,
   accentGradient,
@@ -345,6 +362,8 @@ export default function Sidebar() {
 
   useEffect(() => {
     closeUserMenu();
+    setNotifPanelOpen(false);
+    setShowLogoutConfirm(false);
   }, [location.pathname, closeUserMenu]);
 
   const updateUserMenuPosition = useCallback(() => {
@@ -360,20 +379,22 @@ export default function Sidebar() {
 
     const closeMenu = (e) => {
       if (
-        !e.target.closest('.user-menu-trigger') &&
-        !e.target.closest('.user-menu-dropdown')
+        e.target.closest('[data-sidebar-nav]') ||
+        e.target.closest('.user-menu-trigger') ||
+        e.target.closest('.user-menu-dropdown')
       ) {
-        closeUserMenu();
+        return;
       }
+      closeUserMenu();
     };
 
     const timer = setTimeout(() => {
-      document.addEventListener('pointerdown', closeMenu);
+      document.addEventListener('click', closeMenu, true);
     }, 0);
 
     return () => {
       clearTimeout(timer);
-      document.removeEventListener('pointerdown', closeMenu);
+      document.removeEventListener('click', closeMenu, true);
       window.removeEventListener('resize', updateUserMenuPosition);
     };
   }, [showUserMenu, closeUserMenu, updateUserMenuPosition]);
@@ -406,11 +427,17 @@ export default function Sidebar() {
   const accentGradient = themeConfig.accentGradient;
   const sidebarShadow = themeConfig.layout.sidebarShadow;
 
-  return (
+  const onNavClick = (event, item) => {
+    handleSidebarNavClick(event, { item, pathname: location.pathname, navigate, closeUserMenu });
+  };
+
+  const sidebarChrome = (
     <>
       {/* Unified Sidebar - hidden on mobile, w-20 on tablet, w-64 on desktop */}
       <aside
-        className="fixed left-3 top-3 bottom-3 z-50 hidden md:flex md:w-20 lg:w-64 flex-col transition-colors duration-300 rounded-3xl overflow-hidden"
+        data-sidebar-nav
+        data-no-pull-refresh
+        className="fixed left-3 top-3 bottom-3 z-[100] hidden md:flex md:w-20 lg:w-64 flex-col transition-colors duration-300 rounded-3xl overflow-hidden"
         style={{
           backgroundColor: sidebarBg,
           border: `1px solid ${borderColor}`,
@@ -446,7 +473,7 @@ export default function Sidebar() {
                       end={item.id === 'home'}
                       className={({ isActive }) => getNavLinkClasses(isActive)}
                       style={({ isActive }) => getNavLinkStyle(isActive, accentGradient)}
-                      onClick={closeUserMenu}
+                      onClick={(event) => onNavClick(event, item)}
                     >
                       <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} accentGradient={accentGradient} />
                       <span className="hidden text-sm font-medium tracking-wide whitespace-nowrap lg:inline">
@@ -498,7 +525,9 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Navigation */}
       <div
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl"
+        data-sidebar-nav
+        data-no-pull-refresh
+        className="md:hidden fixed bottom-0 left-0 right-0 z-[100] rounded-t-2xl"
         style={{
           backgroundColor: sidebarBg,
           border: `1px solid ${borderColor}`,
@@ -521,7 +550,8 @@ export default function Sidebar() {
               }
             }}
             onScroll={handleBottomNavScroll}
-            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain px-0.5 scrollbar-none"
+            className="sidebar-bottom-nav-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain px-0.5 scrollbar-none"
+            data-no-pull-refresh-scroll
           >
             <ul className="m-0 flex list-none gap-1 p-0">
               {navItems.map((item) => {
@@ -536,7 +566,7 @@ export default function Sidebar() {
                       end={item.id === 'home'}
                       className={({ isActive }) => getMobileNavLinkClasses(isActive)}
                       style={({ isActive }) => getNavLinkStyle(isActive, accentGradient)}
-                      onClick={closeUserMenu}
+                      onClick={(event) => onNavClick(event, item)}
                     >
                       <NavIcon iconPath={item.icon} showBadge={showBadge} badgeCount={badgeCount} compact accentGradient={accentGradient} />
                       <span className="max-w-[52px] truncate text-center text-[7px] font-medium leading-none tracking-wide">
@@ -605,6 +635,12 @@ export default function Sidebar() {
           </div>
         </nav>
       </div>
+    </>
+  );
+
+  return (
+    <>
+      {createPortal(sidebarChrome, document.body)}
 
       {showUserMenu && userMenuPos &&
         createPortal(

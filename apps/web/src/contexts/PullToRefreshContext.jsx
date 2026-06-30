@@ -5,17 +5,17 @@ const PullToRefreshContext = createContext(null);
 export function PullToRefreshProvider({ children }) {
   const registrationRef = useRef({
     onRefresh: null,
-    disabled: false,
+    blocked: false,
   });
   const [version, setVersion] = useState(0);
 
-  const register = useCallback((onRefresh, { disabled = false } = {}) => {
-    registrationRef.current = { onRefresh, disabled };
+  const register = useCallback((onRefresh, { blocked = false } = {}) => {
+    registrationRef.current = { onRefresh, blocked };
     setVersion((value) => value + 1);
 
     return () => {
       if (registrationRef.current.onRefresh === onRefresh) {
-        registrationRef.current = { onRefresh: null, disabled: false };
+        registrationRef.current = { onRefresh: null, blocked: false };
         setVersion((value) => value + 1);
       }
     };
@@ -34,7 +34,7 @@ export function PullToRefreshProvider({ children }) {
     () => ({
       register,
       runRefresh,
-      disabled: registrationRef.current.disabled,
+      blocked: registrationRef.current.blocked,
       version,
     }),
     [register, runRefresh, version],

@@ -21,7 +21,6 @@ import {
   GIFT_CARDS_PAGE_SIZE,
   paginateRows,
 } from '@nail-couture/shared/utils/pagination.js';
-import Sidebar from './Sidebar';
 import { GiftCardVisual } from './GiftCardVisual';
 import ListPagination from './ListPagination.jsx';
 import AppModal, { modalBtnPrimary, modalBtnSecondary, modalFooterClass, modalInputClass, modalTextareaClass } from './AppModal';
@@ -156,7 +155,7 @@ export default function CustomerGiftCards() {
     }
   };
 
-  useRegisterPullToRefresh(loadCards, { disabled: loading });
+  useRegisterPullToRefresh(loadCards);
 
   const closeTransferModal = () => {
     setTransferTarget(null);
@@ -223,7 +222,6 @@ export default function CustomerGiftCards() {
   if (loading) {
     return (
       <div className={bgClass}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -233,7 +231,6 @@ export default function CustomerGiftCards() {
 
   return (
     <div className={bgClass}>
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page max-w-2xl mx-auto">
         <div className={clsx('px-2 py-4 border-b mb-6', isDark ? 'border-gold/10' : 'border-gold/30')}>
           <h1 className="font-heading text-3xl text-gold">Gift Cards</h1>

@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import Sidebar from './Sidebar';
 import PromotionsAdminPanel from './marketing/PromotionsAdminPanel';
 import AnnouncementAttachmentsList from '@nail-couture/shared/components/AnnouncementAttachmentsList.jsx';
 import { useAnnouncements } from '@nail-couture/shared/hooks/useAnnouncements.js';
@@ -107,7 +106,7 @@ export default function Announcements() {
     refreshHistory,
   } = useAnnouncements(user?.phone, user?.role);
 
-  useRegisterPullToRefresh(refreshHistory, { disabled: isLoadingHistory || isSending });
+  useRegisterPullToRefresh(refreshHistory);
 
   const chipClass = (active) => clsx(
     'px-4 py-2 rounded-xl text-sm font-medium border transition-colors',
@@ -312,7 +311,6 @@ export default function Announcements() {
   if (!user || !enabled) {
     return (
       <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-        <Sidebar />
         <main className="p-4 md:p-6 lg:p-8">
           <div className="max-w-3xl mx-auto text-muted">Loading…</div>
         </main>
@@ -322,7 +320,6 @@ export default function Announcements() {
 
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className={clsx('mx-auto', activeTab === 'home-offers' ? 'max-w-6xl' : 'max-w-3xl')}>
           <header className="mb-8">

@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import Sidebar from './Sidebar'
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh'
 import clsx from 'clsx'
 import { fetchGiftCardSummary } from '@nail-couture/shared/utils/giftCards'
@@ -448,7 +447,7 @@ export default function AdminReports() {
     }
   }, [fetchInsights])
 
-  useRegisterPullToRefresh(handleRefresh, { disabled: loading || refreshing })
+  useRegisterPullToRefresh(handleRefresh)
 
   const handleExport = async () => {
     setExporting(true)
@@ -646,7 +645,6 @@ export default function AdminReports() {
   if (loading) {
     return (
       <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -656,7 +654,6 @@ export default function AdminReports() {
 
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

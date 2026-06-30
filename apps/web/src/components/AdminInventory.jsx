@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import AppModal, {
   modalLabelClass,
@@ -168,12 +167,11 @@ export default function AdminInventory() {
   const outOfStockCount = inventory.filter((s) => s.quantity === 0).length;
   const offeredRefreshmentCount = inventory.filter((s) => s.category === 'refreshment' && s.quantity > 0).length;
 
-  useRegisterPullToRefresh(() => fetchInventory(true), { disabled: loading || refreshing });
+  useRegisterPullToRefresh(() => fetchInventory(true));
 
   if (loading) {
     return (
       <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -183,7 +181,6 @@ export default function AdminInventory() {
 
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-light flex-shrink-0">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

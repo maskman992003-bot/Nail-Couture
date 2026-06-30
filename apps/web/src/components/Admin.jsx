@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
-import Sidebar from './Sidebar';
 import VipFoundingListCard from './VipFoundingListCard.jsx';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
@@ -42,7 +41,7 @@ export default function Admin() {
   useRegisterPullToRefresh(async () => {
     setLoading(true);
     await fetchDashboardData();
-  }, { disabled: loading });
+  });
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -73,7 +72,6 @@ export default function Admin() {
   if (loading) {
     return (
       <div className={bgClass}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading Dashboard...</div>
         </div>
@@ -83,7 +81,6 @@ export default function Admin() {
 
   return (
     <div className={bgClass}>
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className={headerBorderClass}>
           <h1 className="font-heading text-3xl text-gold">Admin Dashboard</h1>

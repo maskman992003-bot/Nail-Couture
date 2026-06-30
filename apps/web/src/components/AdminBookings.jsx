@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import AppModal, {
   modalLabelClass,
@@ -215,7 +214,7 @@ export default function AdminBookings() {
     }
   }, []);
 
-  useRegisterPullToRefresh(() => fetchBookings(true), { disabled: loading });
+  useRegisterPullToRefresh(() => fetchBookings(true));
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -501,7 +500,6 @@ const { error } = await supabase.from('appointments').insert({
   if (loading && bookings.length === 0) {
     return (
       <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-        <Sidebar />
         <div className="flex items-center justify-center py-20"><div className="text-gold animate-pulse">Loading...</div></div>
       </div>
     );
@@ -509,7 +507,6 @@ const { error } = await supabase.from('appointments').insert({
 
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: theme === 'dark' ? 'rgba(197,160,89,0.1)' : 'rgba(197,160,89,0.2)' }}>
           <div className="flex items-center justify-between flex-wrap gap-4">

@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { fetchLoyaltyHistory } from '@nail-couture/shared/utils/loyaltyTransactions';
-import Sidebar from './Sidebar';
 import DigitalWallet from '../features/wallet/DigitalWallet';
 import LoyaltyPointsHistoryPanel from './customer/LoyaltyPointsHistoryPanel';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
@@ -45,7 +44,7 @@ export default function CustomerLoyalty() {
     }
   };
 
-  useRegisterPullToRefresh(fetchProfile, { disabled: loading });
+  useRegisterPullToRefresh(fetchProfile);
 
   const handleCopyReferral = () => {
     if (!profile?.referral_code) return;
@@ -62,7 +61,6 @@ export default function CustomerLoyalty() {
   if (loading) {
     return (
       <div className={shellClass}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -73,7 +71,6 @@ export default function CustomerLoyalty() {
   if (!profile) {
     return (
       <div className={shellClass}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <p className={`${textMuted} mb-4`}>Unable to load profile</p>
@@ -86,7 +83,6 @@ export default function CustomerLoyalty() {
 
   return (
     <div className={shellClass}>
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-10">
         <DigitalWallet />
 

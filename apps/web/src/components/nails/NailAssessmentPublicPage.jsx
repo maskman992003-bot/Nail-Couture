@@ -5,9 +5,12 @@ import PageHelmet from '../PageHelmet';
 import { APP_PAGE_SEO } from '../../constants/pageSeo';
 import { NAIL_HEALTH_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import NailAssessmentDashboard from './NailAssessmentDashboard';
+import { useReloadPageRefresh } from '../../hooks/useReloadPageRefresh';
 import WebOnly from '../WebOnly.jsx';
 
 export default function NailAssessmentPublicPage() {
+  useReloadPageRefresh();
+
   if (!NAIL_HEALTH_ASSESSMENT) return <Navigate to="/" replace />;
 
   return (

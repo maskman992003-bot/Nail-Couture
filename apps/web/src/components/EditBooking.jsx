@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import { CATEGORIES, CATEGORY_ORDER } from '@nail-couture/shared/constants/servicesData';
 import { isServiceBookable, isAddOnBookable } from '@nail-couture/shared/utils/serviceVisibility';
@@ -85,7 +84,7 @@ export default function EditBooking() {
     setLoading(false);
   };
 
-  useRegisterPullToRefresh(loadBooking, { disabled: loading });
+  useRegisterPullToRefresh(loadBooking);
 
   const fetchServices = async () => {
     try {
@@ -192,7 +191,6 @@ export default function EditBooking() {
   if (loading) {
     return (
       <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -202,7 +200,6 @@ export default function EditBooking() {
 
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">

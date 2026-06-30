@@ -40,7 +40,7 @@ export default function NailAssessmentDashboard({ className }) {
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
 
-  useRegisterPullToRefresh(() => setHistoryRefreshKey((k) => k + 1), { disabled: saving });
+  useRegisterPullToRefresh(() => setHistoryRefreshKey((k) => k + 1));
 
   const handleChange = useCallback((field, value) => {
     setInputs((prev) => ({ ...prev, [field]: value }));

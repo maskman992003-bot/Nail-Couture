@@ -10,7 +10,6 @@ import {
   fetchTimeOffRequests,
   reviewTimeOffRequest,
 } from '@nail-couture/shared/utils/staffSchedule';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import AppModal, { modalBtnDanger, modalBtnSecondary } from './AppModal';
 import DayDetailPanel from './schedule/DayDetailPanel';
@@ -160,7 +159,7 @@ export default function StaffSchedule() {
     setLoading(false);
   }, [monthRange]);
 
-  useRegisterPullToRefresh(fetchData, { disabled: loading });
+  useRegisterPullToRefresh(fetchData);
 
   const refreshShiftsSilently = useCallback(async () => {
     const { start, end } = monthRange;
@@ -515,7 +514,6 @@ export default function StaffSchedule() {
   if (loading && staff.length === 0) {
     return (
       <div className="min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
-        <Sidebar />
         <div className="flex items-center justify-center py-24">
           <div className="text-gold animate-pulse tracking-widest text-sm">LOADING SCHEDULE...</div>
         </div>
@@ -525,7 +523,6 @@ export default function StaffSchedule() {
 
   return (
     <div className="min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
-      <Sidebar />
       <style>{`.staff-schedule select, .staff-schedule option { background: var(--input-bg); color: var(--text-primary); } .staff-schedule input[type="time"] { color-scheme: ${theme}; }`}</style>
 
       <div className="staff-schedule p-3 sm:p-4 md:p-6 lg:p-8 mobile-page max-w-7xl mx-auto w-full min-w-0 overflow-x-hidden">

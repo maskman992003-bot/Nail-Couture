@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { STAFF_SHIFTS } from '@nail-couture/shared/constants/featureFlags';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import AppModal, {
   modalLabelClass,
@@ -180,11 +179,10 @@ export default function StaffManagement() {
     }
   };
 
-  useRegisterPullToRefresh(handleRefresh, { disabled: loading || refreshing });
+  useRegisterPullToRefresh(handleRefresh);
 
   return (
     <div className={containerClass}>
-      <Sidebar />
       <style>{`.staff-mgmt select, .staff-mgmt option { ${theme === 'dark' ? 'background: #1a1a1a; color: #fff;' : 'background: #fff; color: #1a1a1a;'} }`}</style>
 
       <div className="staff-mgmt p-4 md:p-6 lg:p-8 mobile-page max-w-7xl mx-auto">

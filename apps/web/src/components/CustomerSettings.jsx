@@ -11,7 +11,6 @@ import NotificationPreferencesPanel from '@nail-couture/shared/components/Notifi
 import ToggleSwitch from '@nail-couture/shared/components/ToggleSwitch.jsx';
 import RefreshmentSelect from './RefreshmentSelect';
 import ScrollSelect from './ScrollSelect';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 const MONTHS = [
@@ -129,7 +128,7 @@ export default function CustomerSettings() {
     setLoading(false);
   };
 
-  useRegisterPullToRefresh(fetchProfile, { disabled: loading });
+  useRegisterPullToRefresh(fetchProfile);
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
@@ -216,7 +215,6 @@ export default function CustomerSettings() {
   if (authLoading || loading) {
     return (
       <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${shellClass}`}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse tracking-widest text-sm">LOADING SETTINGS...</div>
         </div>
@@ -226,7 +224,6 @@ export default function CustomerSettings() {
 
   return (
     <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${shellClass}`}>
-      <Sidebar />
 
       <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 mobile-page">
         <div className="border-b border-gold/10 pb-6 mb-6">

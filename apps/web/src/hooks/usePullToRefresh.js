@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 const DEFAULT_THRESHOLD = 72
 const MAX_PULL_DISTANCE = 96
+const SCROLL_TOP_TOLERANCE = 8
 
 const isTouchDevice = () => {
   if (typeof window === 'undefined') return false
@@ -49,20 +50,36 @@ const getDocumentScrollTop = () => {
     window.scrollY || 0,
     scrollingElement?.scrollTop || 0,
     document.body?.scrollTop || 0,
+    document.documentElement?.scrollTop || 0,
   )
 }
+
+const isScrolledToTop = (element) => (element?.scrollTop ?? 0) <= SCROLL_TOP_TOLERANCE
 
 const isAtScrollTop = (target) => {
   if (typeof window === 'undefined') return false
   if (target?.closest?.('[role="dialog"], [data-no-pull-refresh]')) return false
-  if (getDocumentScrollTop() > 0) return false
-  return getScrollableAncestors(target).every((el) => el.scrollTop <= 0)
+
+  const scrollableAncestors = getScrollableAncestors(target)
+  if (scrollableAncestors.length > 0) {
+    if (!scrollableAncestors.every(isScrolledToTop)) {
+      return false
+    }
+  }
+
+  return getDocumentScrollTop() <= SCROLL_TOP_TOLERANCE
 }
 
 const isIgnoredTarget = (target) =>
-  Boolean(target?.closest?.('[data-drag-handle], [data-no-pull-refresh], button, a, input, select, textarea'))
+  Boolean(target?.closest?.(
+    '[data-drag-handle], [data-no-pull-refresh], button, a, input, select, textarea, [contenteditable="true"]',
+  ))
 
-export default function usePullToRefresh({ onRefresh, disabled = false, threshold = DEFAULT_THRESHOLD } = {}) {
+export default function usePullToRefresh({
+  onRefresh,
+  blocked = false,
+  threshold = DEFAULT_THRESHOLD,
+} = {}) {
   const [pullDistance, setPullDistance] = useState(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const pullingRef = useRef(false)
@@ -70,12 +87,14 @@ export default function usePullToRefresh({ onRefresh, disabled = false, threshol
   const pullDistanceRef = useRef(0)
   const touchTargetRef = useRef(null)
   const isRefreshingRef = useRef(false)
+  const blockedRef = useRef(blocked)
   const onRefreshRef = useRef(onRefresh)
   onRefreshRef.current = onRefresh
   isRefreshingRef.current = isRefreshing
+  blockedRef.current = blocked
 
   useEffect(() => {
-    if (!isTouchDevice() || disabled) return undefined
+    if (!isTouchDevice()) return undefined
 
     const resetPull = () => {
       pullingRef.current = false
@@ -85,7 +104,7 @@ export default function usePullToRefresh({ onRefresh, disabled = false, threshol
     }
 
     const onTouchStart = (event) => {
-      if (isRefreshingRef.current) return
+      if (isRefreshingRef.current || blockedRef.current) return
       if (event.touches.length !== 1) return
       if (!isAtScrollTop(event.target)) return
       if (isIgnoredTarget(event.target)) return
@@ -98,7 +117,7 @@ export default function usePullToRefresh({ onRefresh, disabled = false, threshol
     }
 
     const onTouchMove = (event) => {
-      if (!pullingRef.current || isRefreshingRef.current) return
+      if (!pullingRef.current || isRefreshingRef.current || blockedRef.current) return
       if (!isAtScrollTop(touchTargetRef.current || event.target)) {
         resetPull()
         return
@@ -151,7 +170,7 @@ export default function usePullToRefresh({ onRefresh, disabled = false, threshol
       document.removeEventListener('touchend', onTouchEnd)
       document.removeEventListener('touchcancel', onTouchEnd)
     }
-  }, [disabled, threshold])
+  }, [threshold])
 
   const pullProgress = Math.min(pullDistance / threshold, 1)
 

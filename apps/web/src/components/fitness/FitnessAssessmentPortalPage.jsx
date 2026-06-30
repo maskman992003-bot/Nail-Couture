@@ -3,7 +3,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { FITNESS_ASSESSMENT } from '@nail-couture/shared/constants/featureFlags.js';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
-import Sidebar from '../Sidebar';
 import FitnessAssessmentDashboard from './FitnessAssessmentDashboard';
 
 export default function FitnessAssessmentPortalPage() {
@@ -20,7 +19,6 @@ export default function FitnessAssessmentPortalPage() {
         theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'
       }`}
     >
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-8">
         <div>
           <h1 className="font-heading text-4xl text-gold">Fitness Assessment</h1>

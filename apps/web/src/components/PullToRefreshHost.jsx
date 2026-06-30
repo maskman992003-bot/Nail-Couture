@@ -3,11 +3,11 @@ import { usePullToRefreshContext } from '../contexts/PullToRefreshContext';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 export default function PullToRefreshHost() {
-  const { runRefresh, disabled } = usePullToRefreshContext();
+  const { runRefresh, blocked } = usePullToRefreshContext();
 
   const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
     onRefresh: runRefresh,
-    disabled,
+    blocked,
   });
 
   return (

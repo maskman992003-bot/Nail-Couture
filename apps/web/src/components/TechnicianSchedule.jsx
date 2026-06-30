@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import DayDetailPanel from './schedule/DayDetailPanel';
 import TimeOffTab from './schedule/TimeOffTab';
@@ -82,7 +81,7 @@ export default function TechnicianSchedule() {
     }
   }, [user?.id, weekStart, weekEnd]);
 
-  useRegisterPullToRefresh(fetchData, { disabled: loading });
+  useRegisterPullToRefresh(fetchData);
 
   useEffect(() => {
     if (!user) {
@@ -163,7 +162,6 @@ export default function TechnicianSchedule() {
   if (loading) {
     return (
       <div className="technician-schedule min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
-        <Sidebar />
         <div className="flex items-center justify-center py-24">
           <div className="text-gold animate-pulse tracking-widest text-sm">LOADING SCHEDULE...</div>
         </div>
@@ -173,7 +171,6 @@ export default function TechnicianSchedule() {
 
   return (
     <div className="technician-schedule min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
-      <Sidebar />
 
       <div className="p-4 md:p-6 lg:p-8 mobile-page max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-gold/10 pb-6 mb-6">

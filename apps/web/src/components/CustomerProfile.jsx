@@ -24,7 +24,6 @@ import {
 import { fetchLoyaltyHistory } from '@nail-couture/shared/utils/loyaltyTransactions';
 import { computeAchievements } from '@nail-couture/shared/utils/customerAchievements';
 import { uploadProfileAvatar, getProfileInitials } from '@nail-couture/shared/utils/avatarUpload';
-import Sidebar from './Sidebar';
 import LoyaltyTermsSummary from '../features/wallet/components/LoyaltyTermsSummary';
 import LoyaltyPointsHistoryPanel from './customer/LoyaltyPointsHistoryPanel';
 import { modalBtnSecondary } from './AppModal';
@@ -135,7 +134,7 @@ export default function CustomerProfile() {
     setLoading(false);
   }, [user, navigate]);
 
-  useRegisterPullToRefresh(fetchProfile, { disabled: loading });
+  useRegisterPullToRefresh(fetchProfile);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -269,7 +268,6 @@ export default function CustomerProfile() {
   if (loading) {
     return (
       <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse tracking-widest text-sm">LOADING ACCOUNT...</div>
         </div>
@@ -280,7 +278,6 @@ export default function CustomerProfile() {
   if (!profile) {
     return (
       <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <Link to="/login" className="px-4 py-2 bg-gold text-charcoal rounded-lg">Return to Login</Link>
         </div>
@@ -296,7 +293,6 @@ export default function CustomerProfile() {
 
   return (
     <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
-      <Sidebar />
 
       <div className="profile-section p-4 md:p-6 lg:p-8 mobile-page max-w-4xl mx-auto">
         <div className="border-b border-gold/10 pb-6 mb-6">

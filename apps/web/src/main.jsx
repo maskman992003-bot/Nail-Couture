@@ -53,6 +53,7 @@ import { APP_PAGE_SEO } from './constants/pageSeo.js'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import { PullToRefreshProvider } from './contexts/PullToRefreshContext.jsx'
 import PullToRefreshHost from './components/PullToRefreshHost.jsx'
+import SidebarHost from './components/SidebarHost.jsx'
 import { IdleSessionProvider } from './contexts/IdleSessionContext.jsx'
 import { ThemeEngineProvider } from './context/ThemeEngineContext.jsx'
 import { MobileBridgeProvider } from './contexts/MobileBridgeContext.jsx'
@@ -705,6 +706,7 @@ createRoot(document.getElementById('root')).render(
                   <FlutterPushRegistrar />
                   <NativeShellEffects />
                   <PullToRefreshHost />
+                  <SidebarHost />
                   <NativeRouteGuard>
                     <RouteDocumentTitle />
                     <AppRoutes />

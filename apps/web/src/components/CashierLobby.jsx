@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import { useFloorSnapshot } from '@nail-couture/shared/hooks/useFloorSnapshot';
-import Sidebar from './Sidebar';
 import TechnicianFloorSnapshot from './technician/TechnicianFloorSnapshot';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
@@ -27,7 +26,6 @@ export default function CashierLobby() {
   if (loading) {
     return (
       <div className="min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading lobby...</div>
         </div>
@@ -37,7 +35,6 @@ export default function CashierLobby() {
 
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-      <Sidebar />
       <div className="technician-dashboard p-4 md:p-6 lg:p-8 mobile-page">
         <div className="space-y-6">
           <div>

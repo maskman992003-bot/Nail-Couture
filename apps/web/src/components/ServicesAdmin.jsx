@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getServices, updateService, createService } from '@nail-couture/shared/services/services';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 export default function ServicesAdmin() {
@@ -42,7 +41,7 @@ export default function ServicesAdmin() {
   useRegisterPullToRefresh(async () => {
     setLoading(true);
     await fetchServices();
-  }, { disabled: loading || saving });
+  });
 
   const startEdit = (service) => {
     setEditingId(service.id);
@@ -86,7 +85,6 @@ export default function ServicesAdmin() {
   if (loading) {
     return (
       <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading services...</div>
         </div>
@@ -96,7 +94,6 @@ export default function ServicesAdmin() {
 
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-      <Sidebar />
       <div className="max-w-7xl mx-auto px-6 py-8 mobile-page">
               <div className="mb-8 flex items-center justify-between">
                 <div>

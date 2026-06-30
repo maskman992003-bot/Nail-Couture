@@ -8,7 +8,7 @@
 }
 
 html {
-  touch-action: manipulation;
+  touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -51,6 +51,12 @@ label {
   select:focus {
     scroll-margin-bottom: 120px;
   }
+}
+
+/* Bottom nav horizontal scroll — pan-y on html would otherwise block sideways drags */
+.sidebar-bottom-nav-scroll {
+  touch-action: pan-x manipulation;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Bottom padding for mobile pages above fixed bottom tab bar + safe area */

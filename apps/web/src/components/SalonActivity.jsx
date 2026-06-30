@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import Sidebar from './Sidebar';
 import ThemeSelect from './ThemeSelect';
 import clsx from 'clsx';
 import { getCustomersPath, getCustomerDetailPath } from '@nail-couture/shared/utils/routes';
@@ -166,7 +165,7 @@ export default function SalonActivity() {
   useRegisterPullToRefresh(async () => {
     await loadTimeline();
     await loadVisits();
-  }, { disabled: timelineLoading || visitsLoading });
+  });
 
   useEffect(() => {
     if (!user) {
@@ -199,7 +198,6 @@ export default function SalonActivity() {
 
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>

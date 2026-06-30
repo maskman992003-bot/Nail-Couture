@@ -14,7 +14,6 @@ import {
   sumTransactionTotals,
 } from '@nail-couture/shared/utils/cashierTransactions';
 import { getCallerPhone } from '@nail-couture/shared/utils/technicianQueue';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import ReceiptPreviewModal from './ReceiptPreviewModal';
 
@@ -74,7 +73,7 @@ export default function CashierTransactions() {
     }
   }, [user?.id, period]);
 
-  useRegisterPullToRefresh(() => loadTransactions(true), { disabled: loading });
+  useRegisterPullToRefresh(() => loadTransactions(true));
 
   useEffect(() => {
     if (!user) {
@@ -110,7 +109,6 @@ export default function CashierTransactions() {
 
   return (
     <div className={bgClass}>
-      <Sidebar />
       <div className="max-w-3xl mx-auto px-6 py-8 mobile-page">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>

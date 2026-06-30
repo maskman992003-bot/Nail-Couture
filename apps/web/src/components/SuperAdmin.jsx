@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAppTheme } from '../hooks/useAppTheme.js';
 import { STAFF_GIFT_CARDS } from '@nail-couture/shared/constants/featureFlags';
 import { getGiftCardsPath, getHomePath } from '@nail-couture/shared/utils/routes';
-import Sidebar from './Sidebar';
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import AppModal from './AppModal';
 import AppointmentServicesPanel from './AppointmentServicesPanel';
@@ -217,12 +216,11 @@ export default function SuperAdmin() {
     }
   }, [fetchData]);
 
-  useRegisterPullToRefresh(handleRefresh, { disabled: loading || refreshing });
+  useRegisterPullToRefresh(handleRefresh);
 
   if (loading) {
     return (
       <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-        <Sidebar />
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading Dashboard...</div>
         </div>
@@ -232,7 +230,6 @@ export default function SuperAdmin() {
 
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
-      <Sidebar />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
          <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-theme">
         <div className="flex items-center justify-between">
