@@ -14,6 +14,7 @@ import FitnessMetricCard from './FitnessMetricCard';
 import FitnessTdeeCard from './FitnessTdeeCard';
 import FitnessAssessmentHistory from './FitnessAssessmentHistory';
 import SegmentedControl from './SegmentedControl';
+import useRegisterPullToRefresh from '../../hooks/useRegisterPullToRefresh';
 
 const DEFAULT_INPUTS = {
   unitSystem: 'imperial',
@@ -44,6 +45,8 @@ export default function FitnessAssessmentDashboard({ className }) {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
+
+  useRegisterPullToRefresh(() => setHistoryRefreshKey((k) => k + 1), { disabled: saving });
 
   const handleChange = useCallback((field, value) => {
     setInputs((prev) => {

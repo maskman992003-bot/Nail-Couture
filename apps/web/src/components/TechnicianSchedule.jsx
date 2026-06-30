@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import DayDetailPanel from './schedule/DayDetailPanel';
 import TimeOffTab from './schedule/TimeOffTab';
 import ScheduleTabToggle from './schedule/ScheduleTabToggle';
@@ -80,6 +81,8 @@ export default function TechnicianSchedule() {
       setLoading(false);
     }
   }, [user?.id, weekStart, weekEnd]);
+
+  useRegisterPullToRefresh(fetchData, { disabled: loading });
 
   useEffect(() => {
     if (!user) {

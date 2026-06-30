@@ -29,6 +29,7 @@ import Sidebar from './Sidebar';
 import { GiftCardVisual } from './GiftCardVisual';
 import AppModal, { modalBtnPrimary, modalBtnSecondary } from './AppModal';
 import GiftCardSharePanel from './GiftCardSharePanel';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
 
 export default function GiftCardSale() {
@@ -90,6 +91,8 @@ export default function GiftCardSale() {
       setLoadingQueue(false);
     }
   }, [user?.phone, canComplete]);
+
+  useRegisterPullToRefresh(loadQueue, { disabled: loadingQueue });
 
   useEffect(() => {
     loadQueue();

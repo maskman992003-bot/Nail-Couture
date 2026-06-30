@@ -6,6 +6,7 @@ import { CUSTOMER_ONLINE_BOOKING } from '@nail-couture/shared/constants/featureF
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import { isServiceBookable, isAddOnBookable } from '@nail-couture/shared/utils/serviceVisibility';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 export default function CustomerBooking() {
   const navigate = useNavigate();
@@ -44,6 +45,12 @@ export default function CustomerBooking() {
       setDbCategories(data || []);
     } catch { }
   };
+
+  useRegisterPullToRefresh(async () => {
+    setLoading(true);
+    await fetchServices();
+    await fetchCategories();
+  }, { disabled: loading || bookLoading });
 
   const fetchAvailableTechnicians = async () => {
     setLoadingTechs(true);

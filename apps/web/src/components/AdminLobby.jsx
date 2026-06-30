@@ -39,8 +39,7 @@ import {
 import ToggleSwitch from '@nail-couture/shared/components/ToggleSwitch'
 import { setLobbyAutoAssignEnabled } from '@nail-couture/shared/utils/lobbyAutoAssign'
 import { useFloorManager } from '@nail-couture/shared/hooks/useFloorManager'
-import usePullToRefresh from '../hooks/usePullToRefresh'
-import PullToRefreshIndicator from './PullToRefreshIndicator'
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh'
 import VisitTechnicianManager, { MultiTechBadge } from './VisitTechnicianManager'
 import { getAppointmentTotalPrice } from '@nail-couture/shared/utils/appointmentHelpers'
 import { getAppointmentServiceLabels } from '@nail-couture/shared/utils/appointmentServices'
@@ -691,10 +690,7 @@ export default function AdminLobby() {
     return d ? JSON.parse(d).phone : '';
   };
 
-  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
-    onRefresh: refreshFloorManager,
-    disabled: Boolean(activeId),
-  })
+  useRegisterPullToRefresh(refreshFloorManager, { disabled: Boolean(activeId) })
 
   const handleAutoAssignToggle = async (nextEnabled) => {
     if (autoAssignToggling || nextEnabled === autoAssignEnabled) return
@@ -979,11 +975,6 @@ export default function AdminLobby() {
     >
       <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
         <Sidebar />
-        <PullToRefreshIndicator
-          pullDistance={pullDistance}
-          isRefreshing={isRefreshing}
-          pullProgress={pullProgress}
-        />
         <div className="p-4 md:p-6 lg:p-8 mobile-page">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>

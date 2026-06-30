@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -13,6 +13,7 @@ import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
 import Sidebar from './Sidebar';
 import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
 import ReviewsList from './reviews/ReviewsList';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 export default function CustomerServices() {
   const navigate = useNavigate();
@@ -31,6 +32,25 @@ export default function CustomerServices() {
   const [loadingServiceReviews, setLoadingServiceReviews] = useState(null);
   const isFirstCategoryRender = useRef(true);
 
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [data, categories] = await Promise.all([getServices(), fetchServiceCategories(supabase)]);
+      const list = data || [];
+      setServices(list);
+      setDbCategories(categories);
+      const serviceIds = list.filter((s) => isServiceMenuVisible(s) && !s.is_coming_soon).map((s) => s.id);
+      const { summaries, available } = await fetchServiceReviewSummaries(serviceIds);
+      if (available) setReviewSummaries(summaries);
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useRegisterPullToRefresh(loadData, { disabled: loading });
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -40,20 +60,8 @@ export default function CustomerServices() {
       navigate(getHomePath(user.role));
       return;
     }
-    Promise.all([getServices(), fetchServiceCategories(supabase)])
-      .then(async ([data, categories]) => {
-        const list = data || [];
-        setServices(list);
-        setDbCategories(categories);
-        const serviceIds = list.filter((s) => isServiceMenuVisible(s) && !s.is_coming_soon).map((s) => s.id);
-        const { summaries, available } = await fetchServiceReviewSummaries(serviceIds);
-        if (available) setReviewSummaries(summaries);
-      })
-      .catch((err) => {
-        if (process.env.NODE_ENV === 'development') console.error(err);
-      })
-      .finally(() => setLoading(false));
-  }, [user, navigate]);
+    loadData();
+  }, [user, navigate, loadData]);
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
 

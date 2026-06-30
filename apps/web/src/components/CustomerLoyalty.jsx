@@ -7,6 +7,7 @@ import { fetchLoyaltyHistory } from '@nail-couture/shared/utils/loyaltyTransacti
 import Sidebar from './Sidebar';
 import DigitalWallet from '../features/wallet/DigitalWallet';
 import LoyaltyPointsHistoryPanel from './customer/LoyaltyPointsHistoryPanel';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 export default function CustomerLoyalty() {
   const navigate = useNavigate();
@@ -43,6 +44,8 @@ export default function CustomerLoyalty() {
       setLoading(false);
     }
   };
+
+  useRegisterPullToRefresh(fetchProfile, { disabled: loading });
 
   const handleCopyReferral = () => {
     if (!profile?.referral_code) return;

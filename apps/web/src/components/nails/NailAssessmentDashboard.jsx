@@ -10,6 +10,7 @@ import SegmentedControl from '../fitness/SegmentedControl';
 import NailDiagnosticForm from './NailDiagnosticForm';
 import NailResultCards from './NailResultCards';
 import NailAssessmentHistory from './NailAssessmentHistory';
+import useRegisterPullToRefresh from '../../hooks/useRegisterPullToRefresh';
 
 const DEFAULT_INPUTS = {
   age: '',
@@ -38,6 +39,8 @@ export default function NailAssessmentDashboard({ className }) {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
+
+  useRegisterPullToRefresh(() => setHistoryRefreshKey((k) => k + 1), { disabled: saving });
 
   const handleChange = useCallback((field, value) => {
     setInputs((prev) => ({ ...prev, [field]: value }));

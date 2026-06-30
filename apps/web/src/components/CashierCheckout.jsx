@@ -31,6 +31,7 @@ import {
   modalInputClass,
 } from './AppModal';
 import clsx from 'clsx';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 const statusColors = {
   ready_for_checkout: 'bg-amber-100 text-amber-800 border-amber-300',
@@ -786,6 +787,8 @@ export default function CashierCheckout() {
     setServingAppointments(servingResult.data || []);
     setLoading(false);
   };
+
+  useRegisterPullToRefresh(fetchQueues, { disabled: loading });
 
   useEffect(() => {
     if (!CASHIER_CHECKOUT || !MULTI_TECH_VISITS) return undefined;

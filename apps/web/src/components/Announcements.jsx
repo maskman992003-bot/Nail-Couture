@@ -30,6 +30,7 @@ import { featureFlags } from '@nail-couture/shared/constants/featureFlags.js';
 import { paginateRows, ANNOUNCEMENTS_PAGE_SIZE } from '@nail-couture/shared/utils/pagination.js';
 import WebCameraCapture from './WebCameraCapture.jsx';
 import ListPagination from './ListPagination.jsx';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import { clickFileInput, openWebCameraPicker } from '../utils/mobileFilePickers.js';
 
 const AUDIENCE_OPTIONS = [
@@ -103,7 +104,10 @@ export default function Announcements() {
     sendAnnouncement,
     error,
     setError,
+    refreshHistory,
   } = useAnnouncements(user?.phone, user?.role);
+
+  useRegisterPullToRefresh(refreshHistory, { disabled: isLoadingHistory || isSending });
 
   const chipClass = (active) => clsx(
     'px-4 py-2 rounded-xl text-sm font-medium border transition-colors',

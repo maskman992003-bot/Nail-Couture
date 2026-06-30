@@ -6,8 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from './Sidebar';
 import VipFoundingListCard from './VipFoundingListCard.jsx';
-import usePullToRefresh from '../hooks/usePullToRefresh';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
 
 export default function Admin() {
@@ -40,13 +39,10 @@ export default function Admin() {
     }
   };
 
-  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
-    onRefresh: async () => {
-      setLoading(true);
-      await fetchDashboardData();
-    },
-    disabled: loading,
-  });
+  useRegisterPullToRefresh(async () => {
+    setLoading(true);
+    await fetchDashboardData();
+  }, { disabled: loading });
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -88,11 +84,6 @@ export default function Admin() {
   return (
     <div className={bgClass}>
       <Sidebar />
-      <PullToRefreshIndicator
-        pullDistance={pullDistance}
-        isRefreshing={isRefreshing}
-        pullProgress={pullProgress}
-      />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className={headerBorderClass}>
           <h1 className="font-heading text-3xl text-gold">Admin Dashboard</h1>

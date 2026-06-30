@@ -17,6 +17,7 @@ import AppModal, { modalBtnDanger, modalBtnSecondary } from './AppModal';
 import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
 import ReviewsList from './reviews/ReviewsList';
 import ListPagination from './ListPagination.jsx';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import { REVIEWS_PAGE_SIZE } from '@nail-couture/shared/utils/pagination.js';
 
 const MANAGEMENT_ROLES = ['super_admin', 'owner', 'partner', 'admin'];
@@ -152,6 +153,8 @@ export default function StaffReviews() {
       setLoading(false);
     }
   }, [user?.phone, user?.id, isTechnician, technicianFilter, dateRange, searchTerm, canViewHidden, currentPage]);
+
+  useRegisterPullToRefresh(loadReviews, { disabled: loading });
 
   useEffect(() => {
     setCurrentPage(1);

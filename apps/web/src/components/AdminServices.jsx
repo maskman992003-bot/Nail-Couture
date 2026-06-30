@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Sidebar from './Sidebar'
-import usePullToRefresh from '../hooks/usePullToRefresh'
-import PullToRefreshIndicator from './PullToRefreshIndicator'
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import clsx from 'clsx';
@@ -249,19 +248,11 @@ export default function AdminServices() {
     }
   };
 
-  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
-    onRefresh: handleRefresh,
-    disabled: loading || refreshing,
-  });
+  useRegisterPullToRefresh(handleRefresh, { disabled: loading || refreshing });
 
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
-      <PullToRefreshIndicator
-        pullDistance={pullDistance}
-        isRefreshing={isRefreshing}
-        pullProgress={pullProgress}
-      />
       
       <div className="admin-services p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-light">

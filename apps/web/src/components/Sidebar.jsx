@@ -431,6 +431,7 @@ export default function Sidebar() {
             ref={navRef}
             onScroll={handleNavScroll}
             className="flex h-full flex-col gap-2 overflow-y-auto overscroll-y-contain px-2 scrollbar-none lg:px-3"
+            data-no-pull-refresh-scroll
           >
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {navItems.map((item) => {

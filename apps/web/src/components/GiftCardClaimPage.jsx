@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import BrandLogo from './BrandLogo.jsx';
@@ -8,6 +8,7 @@ import {
   getGiftCardClaimPreview,
 } from '@nail-couture/shared/utils/giftCards';
 import clsx from 'clsx';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 export default function GiftCardClaimPage() {
   const { token } = useParams();
@@ -35,6 +36,20 @@ export default function GiftCardClaimPage() {
     })();
     return () => { cancelled = true; };
   }, [token]);
+
+  const reloadPreview = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getGiftCardClaimPreview(token);
+      setPreview(data);
+    } catch {
+      setPreview({ success: false, error: 'error', message: 'Could not load this gift link.' });
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useRegisterPullToRefresh(reloadPreview, { disabled: loading });
 
   const bgClass = isDark ? 'bg-primary text-offwhite' : 'bg-white text-charcoal';
   const cardClass = isDark

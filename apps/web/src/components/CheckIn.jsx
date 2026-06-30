@@ -15,6 +15,7 @@ import { LOYALTY_REWARDS, reserveLoyaltyRewardForVisit } from '@nail-couture/sha
 import RefreshmentSelect from './RefreshmentSelect'
 import WaiverModal from './WaiverModal'
 import ScrollSelect from './ScrollSelect'
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh'
 
 const MONTHS = [
   { value: '', label: 'Month' },
@@ -683,6 +684,15 @@ export default function CheckIn({ onNavigate }) {
   useEffect(() => {
     getServices().then(setServices).catch(() => {})
   }, [])
+
+  useRegisterPullToRefresh(async () => {
+    const [svcData, refreshmentData] = await Promise.all([
+      getServices().catch(() => []),
+      getAvailableRefreshments().catch(() => []),
+    ])
+    setServices(svcData || [])
+    setRefreshmentList(refreshmentData || [])
+  }, { disabled: loading || rewardSaving })
 
   useEffect(() => {
     if (!result || result.isNew || !result.appointment) return

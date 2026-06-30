@@ -29,6 +29,7 @@ import LoyaltyTermsSummary from '../features/wallet/components/LoyaltyTermsSumma
 import LoyaltyPointsHistoryPanel from './customer/LoyaltyPointsHistoryPanel';
 import { modalBtnSecondary } from './AppModal';
 import CustomerReviewsSection from './reviews/CustomerReviewsSection';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -133,6 +134,8 @@ export default function CustomerProfile() {
     }
     setLoading(false);
   }, [user, navigate]);
+
+  useRegisterPullToRefresh(fetchProfile, { disabled: loading });
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }

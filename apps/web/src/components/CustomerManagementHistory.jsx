@@ -11,6 +11,7 @@ import { getStaffProfilePath } from '../utils/routes';
 import { paginateRows } from '@nail-couture/shared/utils/pagination.js';
 import { getCallerPhone } from '@nail-couture/shared/utils/technicianQueue';
 import ListPagination from './ListPagination.jsx';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import AppModal, { modalBtnDanger, modalBtnSecondary } from './AppModal.jsx';
 
 const STAFF_PROFILE_ROLES = ['super_admin', 'owner', 'partner', 'admin', 'cashier', 'technician'];
@@ -199,6 +200,8 @@ export default function CustomerManagementHistory() {
       setLoading(false);
     }
   }, [user, navigate]);
+
+  useRegisterPullToRefresh(fetchCustomers, { disabled: loading });
 
   useEffect(() => {
     fetchCustomers();

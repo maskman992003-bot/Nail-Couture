@@ -13,6 +13,7 @@ import { parseVisitFinalServices } from '@nail-couture/shared/utils/appointmentS
 import { canViewGlobalVisitHistory } from '@nail-couture/shared/utils/staffCustomerAccess';
 import { formatTimelineDate } from './TimelineEventRow';
 import VirtualizedTimelineList from './VirtualizedTimelineList';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import { VisitHistoryDetail } from './StaffCustomerDetail';
 
 const PAGE_SIZE = 50;
@@ -161,6 +162,11 @@ export default function SalonActivity() {
       setVisitsLoadingMore(false);
     }
   }, [dateRange]);
+
+  useRegisterPullToRefresh(async () => {
+    await loadTimeline();
+    await loadVisits();
+  }, { disabled: timelineLoading || visitsLoading });
 
   useEffect(() => {
     if (!user) {

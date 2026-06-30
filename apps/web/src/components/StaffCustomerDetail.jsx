@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link, Navigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
 import { getCustomersPath, getHomePath } from '@nail-couture/shared/utils/routes';
 import {
@@ -335,6 +336,8 @@ export default function StaffCustomerDetail() {
     setCustomerGiftCards([]);
     return loadCoreData();
   }, [loadCoreData]);
+
+  useRegisterPullToRefresh(loadData, { disabled: loading });
 
   useEffect(() => {
     if (!user) {

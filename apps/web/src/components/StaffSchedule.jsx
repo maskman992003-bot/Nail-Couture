@@ -11,6 +11,7 @@ import {
   reviewTimeOffRequest,
 } from '@nail-couture/shared/utils/staffSchedule';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import AppModal, { modalBtnDanger, modalBtnSecondary } from './AppModal';
 import DayDetailPanel from './schedule/DayDetailPanel';
 import TimeOffTab from './schedule/TimeOffTab';
@@ -158,6 +159,8 @@ export default function StaffSchedule() {
 
     setLoading(false);
   }, [monthRange]);
+
+  useRegisterPullToRefresh(fetchData, { disabled: loading });
 
   const refreshShiftsSilently = useCallback(async () => {
     const { start, end } = monthRange;

@@ -26,6 +26,7 @@ import { GiftCardVisual } from './GiftCardVisual';
 import ListPagination from './ListPagination.jsx';
 import AppModal, { modalBtnPrimary, modalBtnSecondary, modalFooterClass, modalInputClass, modalTextareaClass } from './AppModal';
 import GiftCardSharePanel from './GiftCardSharePanel';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
 
 function GiftCardRow({ card, theme, onTransfer, showTransfer, hideFullCode, showShare }) {
@@ -154,6 +155,8 @@ export default function CustomerGiftCards() {
       setLoading(false);
     }
   };
+
+  useRegisterPullToRefresh(loadCards, { disabled: loading });
 
   const closeTransferModal = () => {
     setTransferTarget(null);

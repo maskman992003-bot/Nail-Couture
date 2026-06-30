@@ -6,8 +6,7 @@ import { useAppTheme } from '../hooks/useAppTheme.js';
 import { getThemeOptions } from '../themes/index.js';
 import { mergeSkinWithPalette } from '../themes/resolveThemePalette.js';
 import Sidebar from './Sidebar';
-import usePullToRefresh from '../hooks/usePullToRefresh';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import NotificationPreferencesPanel from '@nail-couture/shared/components/NotificationPreferencesPanel.jsx';
 import SessionTimeoutSettingsPanel from './SessionTimeoutSettingsPanel.jsx';
 import StuckCheckInsPanel from './StuckCheckInsPanel.jsx';
@@ -217,10 +216,7 @@ export default function Settings() {
     }
   };
 
-  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
-    onRefresh: refreshProfile,
-    disabled: loading || refreshing,
-  });
+  useRegisterPullToRefresh(refreshProfile, { disabled: loading || refreshing });
 
   const fetchWorkStats = async (userId, role) => {
     const today = new Date();
@@ -467,11 +463,6 @@ export default function Settings() {
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <PullToRefreshIndicator
-        pullDistance={pullDistance}
-        isRefreshing={isRefreshing}
-        pullProgress={pullProgress}
-      />
       <style>{`.settings-page select, .settings-page option { background: var(--input-bg); color: var(--text-primary); }`}</style>
       <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 mobile-page">
         <div className="mb-8">

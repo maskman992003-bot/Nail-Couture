@@ -9,6 +9,7 @@ import {
 import Sidebar from './Sidebar';
 import AnnouncementAttachmentsList from '@nail-couture/shared/components/AnnouncementAttachmentsList.jsx';
 import ListPagination from './ListPagination.jsx';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
 
 const FILTERS = [
@@ -34,7 +35,10 @@ export default function SalonUpdates() {
     toggleSaved,
     toggleArchived,
     markNotificationRead,
+    refresh,
   } = useAnnouncementInbox(user?.phone);
+
+  useRegisterPullToRefresh(refresh, { disabled: loading });
 
   const updatesPagination = useMemo(
     () => paginateRows(items, page, SALON_UPDATES_PAGE_SIZE),

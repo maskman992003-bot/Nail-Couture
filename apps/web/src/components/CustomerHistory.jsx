@@ -29,6 +29,7 @@ import Sidebar from './Sidebar';
 import ReviewForm from './reviews/ReviewForm';
 import ReceiptPreviewModal from './ReceiptPreviewModal';
 import ListPagination from './ListPagination.jsx';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 const statusConfigDark = {
   waiting: { label: 'Waiting', color: 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' },
@@ -144,6 +145,8 @@ export default function CustomerHistory() {
     }
     setLoading(false);
   }, [navigate, user?.id, user?.phone]);
+
+  useRegisterPullToRefresh(fetchData, { disabled: loading });
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }

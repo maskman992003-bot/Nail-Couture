@@ -24,8 +24,7 @@ import MysteryGiftDetailModal from './customer/home/MysteryGiftDetailModal';
 import QuickActionGrid from './customer/home/QuickActionGrid';
 import ReferFriendModal from './customer/home/ReferFriendModal';
 import LoyaltyTermsSummary from '../features/wallet/components/LoyaltyTermsSummary';
-import usePullToRefresh from '../hooks/usePullToRefresh';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 const statusColors = {
   waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -117,13 +116,10 @@ export default function ClientPortal() {
     fetchUserData();
   }, [user, authLoading, navigate, fetchUserData]);
 
-  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
-    onRefresh: async () => {
-      setLoading(true);
-      await fetchUserData();
-    },
-    disabled: loading || authLoading,
-  });
+  useRegisterPullToRefresh(async () => {
+    setLoading(true);
+    await fetchUserData();
+  }, { disabled: loading || authLoading });
 
   const handleCopyReferral = () => {
     if (!profile?.referral_code) return;
@@ -200,11 +196,6 @@ export default function ClientPortal() {
   return (
     <div className={shellClass}>
       <Sidebar />
-      <PullToRefreshIndicator
-        pullDistance={pullDistance}
-        isRefreshing={isRefreshing}
-        pullProgress={pullProgress}
-      />
       <div className="p-4 md:p-6 lg:p-8 mobile-page max-w-2xl mx-auto space-y-5">
         <CustomerHomeHeader />
 

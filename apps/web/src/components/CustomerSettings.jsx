@@ -12,6 +12,7 @@ import ToggleSwitch from '@nail-couture/shared/components/ToggleSwitch.jsx';
 import RefreshmentSelect from './RefreshmentSelect';
 import ScrollSelect from './ScrollSelect';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 const MONTHS = [
   { value: '', label: 'Month' },
@@ -127,6 +128,8 @@ export default function CustomerSettings() {
     }
     setLoading(false);
   };
+
+  useRegisterPullToRefresh(fetchProfile, { disabled: loading });
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();

@@ -5,8 +5,7 @@ import { getHomePath } from '@nail-couture/shared/utils/routes';
 import { useTechnicianQueue } from '@nail-couture/shared/hooks/useTechnicianQueue';
 import Sidebar from './Sidebar';
 import TechnicianDashboard from './technician/TechnicianDashboard';
-import usePullToRefresh from '../hooks/usePullToRefresh';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 export default function Technician() {
   const navigate = useNavigate();
@@ -15,10 +14,7 @@ export default function Technician() {
 
   const queue = useTechnicianQueue(user?.id, user?.phone);
 
-  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
-    onRefresh: () => queue.refetch?.(false),
-    disabled: queue.loading,
-  });
+  useRegisterPullToRefresh(() => queue.refetch?.(false), { disabled: queue.loading });
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -41,11 +37,6 @@ export default function Technician() {
   return (
     <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
       <Sidebar />
-      <PullToRefreshIndicator
-        pullDistance={pullDistance}
-        isRefreshing={isRefreshing}
-        pullProgress={pullProgress}
-      />
       <TechnicianDashboard user={user} {...queue} />
     </div>
   );

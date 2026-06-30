@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getHomePath } from '@nail-couture/shared/utils/routes';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
 
 export default function Cashier() {
@@ -63,6 +64,8 @@ export default function Cashier() {
       setLoading(false);
     }
   };
+
+  useRegisterPullToRefresh(fetchData, { disabled: loading });
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }

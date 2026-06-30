@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import clsx from 'clsx';
 
 const roleColorsDark = {
@@ -128,6 +129,12 @@ export default function StaffProfile() {
     setTodayStats({ servicesCompleted: todayCount || 0, revenueProcessed: todayTotal });
     setWeekStats({ servicesCompleted: weekCount || 0, revenueProcessed: weekTotal });
   };
+
+  useRegisterPullToRefresh(async () => {
+    await fetchProfile();
+    await fetchCashierActivity();
+    await fetchPerformanceStats();
+  }, { disabled: loading });
 
   const handleRoleChange = async (newRole) => {
     setUpdatingRole(true);

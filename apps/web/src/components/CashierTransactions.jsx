@@ -15,6 +15,7 @@ import {
 } from '@nail-couture/shared/utils/cashierTransactions';
 import { getCallerPhone } from '@nail-couture/shared/utils/technicianQueue';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import ReceiptPreviewModal from './ReceiptPreviewModal';
 
 function formatTransactionTime(timestamp) {
@@ -72,6 +73,8 @@ export default function CashierTransactions() {
       setRefreshing(false);
     }
   }, [user?.id, period]);
+
+  useRegisterPullToRefresh(() => loadTransactions(true), { disabled: loading });
 
   useEffect(() => {
     if (!user) {

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getServices, updateService, createService } from '@nail-couture/shared/services/services';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 export default function ServicesAdmin() {
   const [services, setServices] = useState([]);
@@ -37,6 +38,11 @@ export default function ServicesAdmin() {
     }
     setLoading(false);
   };
+
+  useRegisterPullToRefresh(async () => {
+    setLoading(true);
+    await fetchServices();
+  }, { disabled: loading || saving });
 
   const startEdit = (service) => {
     setEditingId(service.id);

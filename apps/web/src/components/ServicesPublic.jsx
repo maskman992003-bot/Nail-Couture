@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,6 +10,7 @@ import { isServiceMenuVisible, shouldShowServicePrice } from '@nail-couture/shar
 import { fetchServiceReviewSummaries } from '@nail-couture/shared/utils/customerReviewService';
 import ServiceCategoryBar, { useCategoryFade } from './ServiceCategoryBar';
 import ReviewSummaryBadge from './reviews/ReviewSummaryBadge';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 export default function ServicesPublic() {
   const { theme } = useTheme();
@@ -76,6 +77,13 @@ export default function ServicesPublic() {
     const data = await fetchServiceCategories(supabase);
     setDbCategories(data);
   };
+
+  const refreshServices = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([fetchServices(), fetchCategories()]);
+  }, []);
+
+  useRegisterPullToRefresh(refreshServices, { disabled: loading });
 
   const { grouped: groupedServices, sortedCategories, categoryTabs } = buildCategoryTabs(services, dbCategories);
   const displayCategories = getDisplayCategories(activeCategory, sortedCategories);

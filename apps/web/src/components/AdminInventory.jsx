@@ -4,8 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Sidebar from './Sidebar';
-import usePullToRefresh from '../hooks/usePullToRefresh';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import AppModal, {
   modalLabelClass,
   modalInputClass,
@@ -169,10 +168,7 @@ export default function AdminInventory() {
   const outOfStockCount = inventory.filter((s) => s.quantity === 0).length;
   const offeredRefreshmentCount = inventory.filter((s) => s.category === 'refreshment' && s.quantity > 0).length;
 
-  const { pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
-    onRefresh: () => fetchInventory(true),
-    disabled: loading || refreshing,
-  });
+  useRegisterPullToRefresh(() => fetchInventory(true), { disabled: loading || refreshing });
 
   if (loading) {
     return (
@@ -188,11 +184,6 @@ export default function AdminInventory() {
   return (
     <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
       <Sidebar />
-      <PullToRefreshIndicator
-        pullDistance={pullDistance}
-        isRefreshing={isRefreshing}
-        pullProgress={pullProgress}
-      />
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-light flex-shrink-0">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

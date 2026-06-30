@@ -3,12 +3,21 @@ import { useEffect, useRef, useState } from 'react'
 const DEFAULT_THRESHOLD = 72
 const MAX_PULL_DISTANCE = 96
 
-const isTouchDevice = () =>
-  typeof window !== 'undefined' &&
-  (window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window)
+const isTouchDevice = () => {
+  if (typeof window === 'undefined') return false
+  return (
+    window.matchMedia('(pointer: coarse)').matches ||
+    'ontouchstart' in window ||
+    navigator.maxTouchPoints > 0 ||
+    /NailCoutureFlutter/i.test(navigator.userAgent)
+  )
+}
 
 const isScrollable = (element) => {
   if (!element || element === document.body || element === document.documentElement) {
+    return false
+  }
+  if (element.closest?.('[data-no-pull-refresh-scroll]')) {
     return false
   }
   const style = window.getComputedStyle(element)
@@ -16,13 +25,16 @@ const isScrollable = (element) => {
   if (overflowY !== 'auto' && overflowY !== 'scroll' && overflowY !== 'overlay') {
     return false
   }
-  return element.scrollHeight > element.clientHeight
+  return element.scrollHeight > element.clientHeight + 1
 }
 
 const getScrollableAncestors = (target) => {
   const ancestors = []
   let node = target?.parentElement
   while (node && node !== document.body && node !== document.documentElement) {
+    if (node.closest?.('[role="dialog"], [data-no-pull-refresh]')) {
+      break
+    }
     if (isScrollable(node)) {
       ancestors.push(node)
     }
@@ -31,9 +43,19 @@ const getScrollableAncestors = (target) => {
   return ancestors
 }
 
+const getDocumentScrollTop = () => {
+  const scrollingElement = document.scrollingElement || document.documentElement
+  return Math.max(
+    window.scrollY || 0,
+    scrollingElement?.scrollTop || 0,
+    document.body?.scrollTop || 0,
+  )
+}
+
 const isAtScrollTop = (target) => {
   if (typeof window === 'undefined') return false
-  if (window.scrollY > 0) return false
+  if (target?.closest?.('[role="dialog"], [data-no-pull-refresh]')) return false
+  if (getDocumentScrollTop() > 0) return false
   return getScrollableAncestors(target).every((el) => el.scrollTop <= 0)
 }
 

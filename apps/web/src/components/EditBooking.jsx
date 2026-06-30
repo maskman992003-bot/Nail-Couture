@@ -4,6 +4,7 @@ import { getHomePath } from '@nail-couture/shared/utils/routes';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 import { CATEGORIES, CATEGORY_ORDER } from '@nail-couture/shared/constants/servicesData';
 import { isServiceBookable, isAddOnBookable } from '@nail-couture/shared/utils/serviceVisibility';
 
@@ -83,6 +84,8 @@ export default function EditBooking() {
 
     setLoading(false);
   };
+
+  useRegisterPullToRefresh(loadBooking, { disabled: loading });
 
   const fetchServices = async () => {
     try {

@@ -18,6 +18,7 @@ export default function VirtualizedTimelineList({ events, profile, customerDetai
     <div
       ref={parentRef}
       className="h-[min(70vh,640px)] overflow-auto rounded-lg border border-light"
+      data-no-pull-refresh-scroll
     >
       <div
         className="relative w-full p-1"

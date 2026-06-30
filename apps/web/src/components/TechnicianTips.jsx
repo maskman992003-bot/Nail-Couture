@@ -12,6 +12,7 @@ import {
   formatTipPeriodRange,
 } from '@nail-couture/shared/utils/technicianQueue';
 import Sidebar from './Sidebar';
+import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh';
 
 function formatTipTime(timestamp) {
   if (!timestamp) return '';
@@ -56,6 +57,8 @@ export default function TechnicianTips() {
       setRefreshing(false);
     }
   }, [user?.id, period]);
+
+  useRegisterPullToRefresh(() => loadTips(true), { disabled: loading });
 
   useEffect(() => {
     if (!user) {
