@@ -70,10 +70,25 @@ label {
   bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
 }
 
+/* Floating dock: centered capsule above the home indicator / screen edge */
 .app-sidebar-mobile {
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
+  left: 50%;
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  width: fit-content;
+  max-width: min(90vw, calc(100vw - 2rem));
+  transform: translateX(-50%);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.app-sidebar-mobile-nav {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.app-sidebar-mobile .sidebar-bottom-nav-scroll {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* Bottom nav horizontal scroll — child links must allow pan-x (global touch-action: manipulation blocks it on iOS). */
@@ -87,9 +102,9 @@ label {
   touch-action: pan-x;
 }
 
-/* Bottom padding for mobile pages above fixed bottom tab bar + safe area */
+/* Bottom padding for mobile pages above floating bottom tab bar + lift + safe area */
 .mobile-page {
-  padding-bottom: max(6rem, calc(4.5rem + env(safe-area-inset-bottom, 0px)));
+  padding-bottom: max(6rem, calc(5rem + env(safe-area-inset-bottom, 0px)));
 }
 
 @media (min-width: 1024px) {

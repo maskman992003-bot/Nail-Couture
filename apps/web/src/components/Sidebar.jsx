@@ -497,15 +497,14 @@ export default function Sidebar() {
       <div
         data-sidebar-nav
         data-no-pull-refresh
-        className="app-sidebar-mobile lg:hidden fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl"
+        className="app-sidebar-mobile lg:hidden fixed z-[110]"
         style={{
           backgroundColor: sidebarBg,
           border: `1px solid ${borderColor}`,
-          borderBottom: 'none',
           boxShadow: sidebarShadow,
         }}
       >
-        <nav className="flex w-full items-center gap-1 px-1.5 py-1">
+        <nav className="app-sidebar-mobile-nav flex items-center gap-1 px-1.5 py-1">
           <div
             ref={(el) => {
               if (el) {
