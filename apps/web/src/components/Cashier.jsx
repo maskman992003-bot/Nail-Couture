@@ -84,7 +84,7 @@ export default function Cashier() {
   }, [user, navigate]);
 
   const bgClass = clsx(
-    'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64',
+    'min-h-screen w-full transition-all duration-300 pl-sidebar',
     theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'
   );
   const headerBorderClass = clsx('px-6 sm:px-8 py-4 border-b', theme === 'dark' ? 'border-gold/10' : 'border-gold/30');

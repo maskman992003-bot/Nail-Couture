@@ -250,7 +250,7 @@ export default function AdminServices() {
   useRegisterPullToRefresh(handleRefresh);
 
   return (
-    <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
+    <div className="min-h-screen w-full transition-all duration-300 pl-sidebar bg-primary text-primary">
       
       <div className="admin-services p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-light">

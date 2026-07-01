@@ -215,7 +215,7 @@ export default function CustomerGiftCards() {
   }
 
   const bgClass = clsx(
-    'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64',
+    'min-h-screen w-full transition-all duration-300 pl-sidebar',
     isDark ? 'bg-primary text-primary' : 'bg-white text-charcoal',
   );
 

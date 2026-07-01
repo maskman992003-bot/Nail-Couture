@@ -408,7 +408,7 @@ export default function CustomerHistory() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
+      <div className={`min-h-screen w-full transition-all duration-300 pl-sidebar ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -417,7 +417,7 @@ export default function CustomerHistory() {
   }
 
   return (
-    <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
+    <div className={`min-h-screen w-full transition-all duration-300 pl-sidebar ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`}>
       <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-8">
         <div>
           <h1 className="font-heading text-4xl text-gold">{CUSTOMER_ONLINE_BOOKING ? 'My Bookings' : 'Visit History'}</h1>

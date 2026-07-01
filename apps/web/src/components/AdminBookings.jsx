@@ -499,14 +499,14 @@ const { error } = await supabase.from('appointments').insert({
 
   if (loading && bookings.length === 0) {
     return (
-      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
         <div className="flex items-center justify-center py-20"><div className="text-gold animate-pulse">Loading...</div></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b" style={{ borderColor: theme === 'dark' ? 'rgba(197,160,89,0.1)' : 'rgba(197,160,89,0.2)' }}>
           <div className="flex items-center justify-between flex-wrap gap-4">

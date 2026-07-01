@@ -24,7 +24,7 @@ export default function Technician() {
 
   if (queue.loading) {
     return (
-      <div className="min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary pl-sidebar">
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -33,7 +33,7 @@ export default function Technician() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
       <TechnicianDashboard user={user} {...queue} />
     </div>
   );

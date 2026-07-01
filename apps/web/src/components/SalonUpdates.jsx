@@ -82,7 +82,7 @@ export default function SalonUpdates() {
   };
 
   return (
-    <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
+    <div className="min-h-screen w-full transition-all duration-300 pl-sidebar bg-primary text-primary">
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="max-w-3xl mx-auto">
           <header className="mb-8">

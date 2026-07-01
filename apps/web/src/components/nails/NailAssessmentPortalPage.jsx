@@ -15,7 +15,7 @@ export default function NailAssessmentPortalPage() {
 
   return (
     <div
-      className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${
+      className={`min-h-screen w-full transition-all duration-300 pl-sidebar ${
         theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'
       }`}
     >

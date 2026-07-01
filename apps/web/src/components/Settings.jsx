@@ -435,7 +435,7 @@ export default function Settings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
+      <div className="min-h-screen w-full transition-all duration-300 pl-sidebar bg-primary text-primary">
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading profile...</div>
         </div>
@@ -459,7 +459,7 @@ export default function Settings() {
   const currentSkin = APP_THEME_OPTIONS.find((o) => o.id === activeTheme);
 
   return (
-    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
       <style>{`.settings-page select, .settings-page option { background: var(--input-bg); color: var(--text-primary); }`}</style>
       <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 mobile-page">
         <div className="mb-8">

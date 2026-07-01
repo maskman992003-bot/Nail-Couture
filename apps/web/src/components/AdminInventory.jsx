@@ -171,7 +171,7 @@ export default function AdminInventory() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
+      <div className="min-h-screen w-full transition-all duration-300 pl-sidebar bg-primary text-primary">
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -180,7 +180,7 @@ export default function AdminInventory() {
   }
 
   return (
-    <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
+    <div className="min-h-screen w-full transition-all duration-300 pl-sidebar bg-primary text-primary">
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
         <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-light flex-shrink-0">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

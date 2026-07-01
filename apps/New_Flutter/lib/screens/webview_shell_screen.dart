@@ -125,6 +125,7 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
         await _handleSystemBack(context);
       },
       child: Scaffold(
+        backgroundColor: const Color(0xFF121212),
         body: Column(
           children: [
             if (_progress > 0 && _progress < 1)
@@ -137,9 +138,9 @@ class _WebViewShellScreenState extends State<WebViewShellScreen> {
             Expanded(
               child: SafeArea(
                 top: true,
-                bottom: false,
-                left: false,
-                right: false,
+                bottom: true,
+                left: true,
+                right: true,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [

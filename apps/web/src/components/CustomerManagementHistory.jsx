@@ -486,7 +486,7 @@ export default function CustomerManagementHistory() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
+      <div className="min-h-screen w-full transition-all duration-300 pl-sidebar bg-primary text-primary">
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading Customer Data...</div>
         </div>
@@ -495,7 +495,7 @@ export default function CustomerManagementHistory() {
   }
 
   return (
-    <div className="min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary">
+    <div className="min-h-screen w-full transition-all duration-300 pl-sidebar bg-primary text-primary">
       <div className="p-4 md:p-6 lg:p-8 mobile-page space-y-6">
         <div className="mb-6">
           <h1 className="font-heading text-3xl text-gold">Customer Management History</h1>

@@ -513,7 +513,7 @@ export default function StaffSchedule() {
 
   if (loading && staff.length === 0) {
     return (
-      <div className="min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary pl-sidebar">
         <div className="flex items-center justify-center py-24">
           <div className="text-gold animate-pulse tracking-widest text-sm">LOADING SCHEDULE...</div>
         </div>
@@ -522,7 +522,7 @@ export default function StaffSchedule() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary pl-sidebar">
       <style>{`.staff-schedule select, .staff-schedule option { background: var(--input-bg); color: var(--text-primary); } .staff-schedule input[type="time"] { color-scheme: ${theme}; }`}</style>
 
       <div className="staff-schedule p-3 sm:p-4 md:p-6 lg:p-8 mobile-page max-w-7xl mx-auto w-full min-w-0 overflow-x-hidden">

@@ -21,7 +21,7 @@ const ACTIVE_NAV_GRADIENT_FALLBACK = 'linear-gradient(135deg, rgba(197, 160, 89,
 
 function getNavLinkClasses(isActive) {
   const base =
-    'flex w-full min-h-[44px] shrink-0 items-center gap-3 overflow-hidden rounded-full px-3 py-2 transition-colors duration-200 touch-manipulation md:justify-center lg:justify-start lg:gap-3 lg:px-4 lg:py-2.5';
+    'flex w-full min-h-[44px] shrink-0 items-center gap-3 overflow-hidden rounded-full px-3 py-2 transition-colors duration-200 touch-manipulation lg:justify-start lg:gap-3 lg:px-4 lg:py-2.5';
   if (isActive) {
     return `${base} text-gold-strong font-medium`;
   }
@@ -30,7 +30,7 @@ function getNavLinkClasses(isActive) {
 
 function getMobileNavLinkClasses(isActive) {
   const base =
-    'flex min-h-[34px] min-w-[42px] shrink-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-full px-2 py-1 transition-colors duration-200 touch-manipulation';
+    'flex min-h-[34px] min-w-[42px] shrink-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-full px-2 py-1 transition-colors duration-200';
   if (isActive) {
     return `${base} text-gold-strong font-medium`;
   }
@@ -407,7 +407,7 @@ export default function Sidebar() {
       {/* Unified Sidebar - hidden on mobile, w-20 on tablet, w-64 on desktop */}
       <aside
         data-sidebar-nav
-        className="app-sidebar-desktop fixed z-[110] hidden md:flex md:w-20 lg:w-64 flex-col transition-colors duration-300 rounded-3xl overflow-hidden"
+        className="app-sidebar-desktop fixed z-[110] hidden lg:flex lg:w-64 flex-col transition-colors duration-300 rounded-3xl overflow-hidden"
         style={{
           backgroundColor: sidebarBg,
           border: `1px solid ${borderColor}`,
@@ -459,7 +459,7 @@ export default function Sidebar() {
 
         {/* User Menu */}
         <div className="p-3 lg:p-4 border-t flex-shrink-0 flex justify-center lg:justify-start" style={{ borderColor }}>
-          <div className="relative desktop-user-menu w-full md:flex md:justify-center lg:block">
+          <div className="relative desktop-user-menu w-full lg:flex lg:justify-center xl:block">
             <button
               type="button"
               ref={desktopUserMenuRef}
@@ -497,7 +497,7 @@ export default function Sidebar() {
       <div
         data-sidebar-nav
         data-no-pull-refresh
-        className="app-sidebar-mobile md:hidden fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl"
+        className="app-sidebar-mobile lg:hidden fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl"
         style={{
           backgroundColor: sidebarBg,
           border: `1px solid ${borderColor}`,

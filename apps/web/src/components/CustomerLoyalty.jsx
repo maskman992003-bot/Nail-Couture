@@ -53,7 +53,7 @@ export default function CustomerLoyalty() {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const shellClass = `min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`;
+  const shellClass = `min-h-screen w-full transition-all duration-300 pl-sidebar ${theme === 'dark' ? 'bg-primary text-primary' : 'bg-white text-charcoal'}`;
   const borderStyle = { borderColor: 'rgba(197, 160, 89, 0.3)', backgroundColor: theme === 'dark' ? '#111' : '#fff' };
   const labelMuted = theme === 'dark' ? 'text-offwhite/40' : 'text-charcoal/40';
   const textMuted = theme === 'dark' ? 'text-offwhite/60' : 'text-charcoal/60';

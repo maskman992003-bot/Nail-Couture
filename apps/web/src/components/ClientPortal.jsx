@@ -127,7 +127,7 @@ export default function ClientPortal() {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const shellClass = 'min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 bg-primary text-primary';
+  const shellClass = 'min-h-screen w-full transition-all duration-300 pl-sidebar bg-primary text-primary';
 
   if ((authLoading || loading) && fromRegistration) {
     const displayName = welcomeName || user?.full_name || 'there';

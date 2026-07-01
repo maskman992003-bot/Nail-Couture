@@ -120,7 +120,7 @@ export default function CustomerBooking() {
 
   if (!CUSTOMER_ONLINE_BOOKING) {
     return (
-      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
         <div className="flex items-center justify-center p-6">
           <div className="max-w-xl rounded-3xl border border-gold/30 bg-[#111] p-10 text-center">
             <div className="text-gold text-4xl font-heading mb-4">Booking Temporarily Unavailable</div>
@@ -181,7 +181,7 @@ export default function CustomerBooking() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading...</div>
         </div>
@@ -191,7 +191,7 @@ export default function CustomerBooking() {
 
   if (bookingSuccess) {
     return (
-      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
         <div className="flex items-center justify-center p-4 md:p-10">
           <div className="text-center max-w-md">
             <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c5a059, #f0d78c)', boxShadow: '0 0 30px rgba(197, 160, 89, 0.3)' }}>
@@ -213,7 +213,7 @@ export default function CustomerBooking() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
           <div>
             <div className="flex items-center gap-3 mb-2">

@@ -214,7 +214,7 @@ export default function CustomerSettings() {
 
   if (authLoading || loading) {
     return (
-      <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${shellClass}`}>
+      <div className={`min-h-screen w-full transition-all duration-300 pl-sidebar ${shellClass}`}>
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse tracking-widest text-sm">LOADING SETTINGS...</div>
         </div>
@@ -223,7 +223,7 @@ export default function CustomerSettings() {
   }
 
   return (
-    <div className={`min-h-screen w-full transition-all duration-300 pl-0 md:pl-20 lg:pl-64 ${shellClass}`}>
+    <div className={`min-h-screen w-full transition-all duration-300 pl-sidebar ${shellClass}`}>
 
       <div className="settings-page max-w-3xl mx-auto px-4 sm:px-6 py-8 mobile-page">
         <div className="border-b border-gold/10 pb-6 mb-6">

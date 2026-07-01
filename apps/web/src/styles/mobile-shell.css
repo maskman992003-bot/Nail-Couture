@@ -53,7 +53,17 @@ label {
   }
 }
 
-/* App chrome: keep fixed nav clear of device safe areas (body padding alone does not move fixed elements). */
+/* Page shell: bottom nav below lg (1024px); left sidebar padding at lg+ */
+.pl-sidebar {
+  padding-left: 0;
+}
+
+@media (min-width: 1024px) {
+  .pl-sidebar {
+    padding-left: 16rem;
+  }
+}
+
 .app-sidebar-desktop {
   left: max(0.75rem, env(safe-area-inset-left, 0px));
   top: max(0.75rem, env(safe-area-inset-top, 0px));
@@ -61,15 +71,20 @@ label {
 }
 
 .app-sidebar-mobile {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
 }
 
-/* Bottom nav horizontal scroll — pan-y on html would otherwise block sideways drags */
+/* Bottom nav horizontal scroll — child links must allow pan-x (global touch-action: manipulation blocks it on iOS). */
 .sidebar-bottom-nav-scroll {
-  touch-action: pan-x manipulation;
+  touch-action: pan-x;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.sidebar-bottom-nav-scroll a {
+  touch-action: pan-x;
 }
 
 /* Bottom padding for mobile pages above fixed bottom tab bar + safe area */

@@ -25,7 +25,7 @@ export default function CashierLobby() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-primary text-primary pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary pl-sidebar">
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading lobby...</div>
         </div>
@@ -34,7 +34,7 @@ export default function CashierLobby() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
       <div className="technician-dashboard p-4 md:p-6 lg:p-8 mobile-page">
         <div className="space-y-6">
           <div>

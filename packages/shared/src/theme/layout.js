@@ -38,7 +38,7 @@ export const screens = {
   '2xl': 1536,
 };
 
-/** Web sidebar offsets: pl-0 md:pl-20 lg:pl-64 */
+/** Web sidebar offsets: pl-sidebar (0 below lg, 16rem at lg+) */
 export const sidebarOffset = {
   base: 0,
   md: 80,

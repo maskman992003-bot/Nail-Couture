@@ -84,7 +84,7 @@ export default function ServicesAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading services...</div>
         </div>
@@ -93,7 +93,7 @@ export default function ServicesAdmin() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
       <div className="max-w-7xl mx-auto px-6 py-8 mobile-page">
               <div className="mb-8 flex items-center justify-between">
                 <div>

@@ -220,7 +220,7 @@ export default function SuperAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+      <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
         <div className="flex items-center justify-center py-20">
           <div className="text-gold animate-pulse">Loading Dashboard...</div>
         </div>
@@ -229,7 +229,7 @@ export default function SuperAdmin() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-0 md:pl-20 lg:pl-64">
+    <div className="min-h-screen w-full bg-primary text-primary transition-all duration-300 pl-sidebar">
       <div className="p-4 md:p-6 lg:p-8 mobile-page">
          <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-theme">
         <div className="flex items-center justify-between">

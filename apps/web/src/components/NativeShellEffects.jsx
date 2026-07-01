@@ -67,9 +67,11 @@ export default function NativeShellEffects() {
     };
   }, [isNativeShell, navigate, user, location.pathname]);
 
-  // Flutter WebView: PopScope calls window.__ncHandleBackButton before WebView.goBack().
+  // Flutter WebView: mark shell + back-button bridge (WKWebView often reports 0 safe-area env vars).
   useEffect(() => {
     if (!isFlutterWebView()) return undefined;
+
+    document.documentElement.setAttribute('data-native-shell', 'flutter');
 
     window.__ncHandleBackButton = () => {
       const pathname = window.location.pathname;
@@ -84,6 +86,7 @@ export default function NativeShellEffects() {
     };
 
     return () => {
+      document.documentElement.removeAttribute('data-native-shell');
       delete window.__ncHandleBackButton;
     };
   }, []);
