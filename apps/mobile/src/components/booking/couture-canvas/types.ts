@@ -11,6 +11,7 @@ export type CanvasAppointment = {
   serviceId?: string;
   phone?: string;
   notes?: string;
+  status?: string;
 };
 
 export type CanvasStaffMember = {

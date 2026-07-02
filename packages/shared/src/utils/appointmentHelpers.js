@@ -2,6 +2,7 @@ import { parseAppointmentLineItems, calculateLineItemTotal } from './appointment
 
 export const APPOINTMENT_STATUS_LABELS = {
   waiting: 'Waiting',
+  checking_in: 'Checking in',
   assigned_pending: 'Assigned',
   serving: 'In Chair',
   ready_for_checkout: 'At Checkout',
@@ -13,6 +14,7 @@ export const APPOINTMENT_STATUS_LABELS = {
 
 export const APPOINTMENT_STATUS_COLORS = {
   waiting: { bg: 'rgba(234,179,8,0.2)', text: '#facc15' },
+  checking_in: { bg: 'rgba(245,158,11,0.2)', text: '#fbbf24' },
   assigned_pending: { bg: 'rgba(59,130,246,0.2)', text: '#60a5fa' },
   serving: { bg: 'rgba(34,197,94,0.2)', text: '#4ade80' },
   ready_for_checkout: { bg: 'rgba(245,158,11,0.2)', text: '#fbbf24' },

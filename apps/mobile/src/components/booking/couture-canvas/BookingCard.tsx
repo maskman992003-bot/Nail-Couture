@@ -11,6 +11,7 @@ import {
   DAY_END_MINUTES,
   DAY_START_MINUTES,
 } from '@nail-couture/shared/utils/coutureTimeline.js';
+import { APPOINTMENT_STATUS_COLORS, APPOINTMENT_STATUS_LABELS } from '@nail-couture/shared/utils/appointmentHelpers.js';
 import { GlassSurface } from './GlassSurface';
 import { COUTURE_COLORS } from './constants';
 import type { CanvasAppointment } from './types';
@@ -48,6 +49,10 @@ export function BookingCard({
   );
   const initial = getInitialFromName(appointment.technicianName);
   const left = getBookingColumnLeft(columnIndex);
+  const status = appointment.status || 'confirmed';
+  const statusLabel = APPOINTMENT_STATUS_LABELS[status];
+  const statusColors = APPOINTMENT_STATUS_COLORS[status];
+  const showStatusBadge = status === 'checking_in' || status === 'assigned_pending';
 
   return (
     <Pressable
@@ -58,15 +63,37 @@ export function BookingCard({
         height,
         left,
         width: MIN_BOOKING_COLUMN_WIDTH,
+        opacity: status === 'checking_in' ? 0.88 : 1,
       }}
     >
       <GlassSurface
         accentSide="left"
         accentColor={appointment.accentColor}
-        style={{ flex: 1, paddingHorizontal: 12, paddingVertical: 10 }}
+        style={{
+          flex: 1,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderStyle: status === 'checking_in' ? 'dashed' : 'solid',
+        }}
       >
         <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
           <View style={{ flex: 1, justifyContent: 'center', minWidth: 0 }}>
+            {showStatusBadge && statusLabel && statusColors ? (
+              <View
+                style={{
+                  alignSelf: 'flex-start',
+                  marginBottom: 4,
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  borderRadius: 4,
+                  backgroundColor: statusColors.bg,
+                }}
+              >
+                <Text style={{ fontSize: 10, fontWeight: '600', color: statusColors.text }}>
+                  {statusLabel}
+                </Text>
+              </View>
+            ) : null}
             <Text style={{ fontSize: 11, color: COUTURE_COLORS.textMuted, marginBottom: 4 }}>
               {formatTimeRange(range.startMinutes, range.endMinutes)}
             </Text>

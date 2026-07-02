@@ -49,6 +49,7 @@ import { ScheduleWeekNav } from '../schedule/CalendarViewToggle.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useTheme } from '../../contexts/ThemeContext.jsx';
 import { supabase } from '../../lib/supabase';
+import { APPOINTMENT_STATUS_COLORS, APPOINTMENT_STATUS_LABELS } from '@nail-couture/shared/utils/appointmentHelpers.js';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const DURATION_OPTIONS = [
@@ -166,16 +167,31 @@ function BookingCard({ appointment, columnIndex, dayStartMinutes, dayEndMinutes,
   );
   const initial = getInitialFromName(appointment.technicianName).slice(0, 1);
   const left = getBookingColumnLeft(columnIndex);
+  const status = appointment.status || 'confirmed';
+  const statusLabel = APPOINTMENT_STATUS_LABELS[status];
+  const statusColors = APPOINTMENT_STATUS_COLORS[status];
+  const showStatusBadge = status === 'checking_in' || status === 'assigned_pending';
 
   return (
     <button
       type="button"
       onClick={() => onPress?.(appointment)}
-      className="absolute z-20 text-left"
+      className={`absolute z-20 text-left transition-opacity hover:opacity-90 ${status === 'checking_in' ? 'opacity-90' : ''}`}
       style={{ top, height, left, width: MIN_BOOKING_COLUMN_WIDTH }}
     >
-      <GlassCard accentColor={appointment.accentColor} className="flex h-full flex-row gap-2 p-3 transition-opacity hover:opacity-90">
+      <GlassCard
+        accentColor={appointment.accentColor}
+        className={`flex h-full flex-row gap-2 p-3 ${status === 'checking_in' ? 'border-dashed' : ''}`}
+      >
         <div className="min-w-0 flex-1">
+          {showStatusBadge && statusLabel && statusColors ? (
+            <span
+              className="mb-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold"
+              style={{ backgroundColor: statusColors.bg, color: statusColors.text }}
+            >
+              {statusLabel}
+            </span>
+          ) : null}
           <p className="mb-1 text-[11px] text-muted">
             {formatTimeRange(range.startMinutes, range.endMinutes)}
           </p>

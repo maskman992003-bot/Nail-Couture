@@ -48,7 +48,9 @@ function formatAppointmentServiceName(row, service) {
 const CUSTOMER_SEARCH_LIMIT = 8;
 const CANVAS_APPOINTMENT_STATUSES = new Set([
   'confirmed',
+  'checking_in',
   'waiting',
+  'assigned_pending',
   'serving',
   'ready_for_checkout',
 ]);
@@ -98,6 +100,7 @@ export function mapAppointmentRow(row, staffPalette = STAFF_ACCENT_COLORS, allSe
     serviceId: row.service_id || service?.id || '',
     phone: customer?.phone || '',
     notes: row.notes || '',
+    status: row.status || 'confirmed',
     selectedServices,
     selectedAddOns,
   };

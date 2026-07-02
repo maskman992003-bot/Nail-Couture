@@ -9,6 +9,7 @@ import ScrollSelect from './ScrollSelect';
 import clsx from 'clsx';
 import { claimPendingGiftCards, getGiftCardClaimPreview, maskPhoneForDisplay } from '@nail-couture/shared/utils/giftCards';
 import {
+  completeCustomerRegistration,
   generateCustomerReferralCode,
   isRegistrationComplete,
   needsRegistrationCompletion,
@@ -356,20 +357,12 @@ export default function ClientRegister() {
           return;
         }
 
-        const { data, error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            full_name: formData.full_name,
-            email: formData.email,
-            birthday,
-            registration_complete: true,
-            referral_code: completeProfileRef.current?.referral_code || generateReferralCode(formData.full_name),
-          })
-          .eq('id', profileId)
-          .select()
-          .single();
-
-        if (updateError) throw updateError;
+        const data = await completeCustomerRegistration(supabase, resolvedCompletePhone, {
+          fullName: formData.full_name,
+          email: formData.email,
+          birthday,
+          referralCode: completeProfileRef.current?.referral_code || generateReferralCode(formData.full_name),
+        });
 
         registeredNameRef.current = formData.full_name;
         pendingProfileRef.current = data;

@@ -16,8 +16,10 @@ import ScrollSelect from './ScrollSelect'
 import ServiceSelection from './ServiceSelection'
 import useRegisterPullToRefresh from '../hooks/useRegisterPullToRefresh'
 import {
+  completeCustomerRegistration,
   generateCustomerReferralCode,
   isRegistrationComplete,
+  updateKioskAppointmentServices,
 } from '@nail-couture/shared/auth/registration.js'
 
 const MONTHS = [
@@ -113,38 +115,31 @@ const RegistrationModal = ({ phone, existingProfile, existingAppointmentId, onCl
          .order('created_at', { ascending: true })
          .limit(1)
       
-      let profileId
+       let profileId
       let finalProfile
-      const existingProfile = profileRows?.[0] || null
+      const foundProfile = profileRows?.[0] || null
       
       if (profileSearchError) {
         throw profileSearchError
       }
       
-      if (existingProfile) {
-        if (!isRegistrationComplete(existingProfile)) {
+      if (foundProfile) {
+        if (!isRegistrationComplete(foundProfile)) {
           const birthday = birthdayMonth && birthdayDay ? `${birthdayMonth}-${birthdayDay}` : null
-          const { data: updatedProfile, error: updateError } = await supabase
-            .from('profiles')
-            .update({
-              full_name: fullName,
-              email,
-              nail_goal: nailGoal,
-              refreshment_pref: safeRefreshmentPref,
-              birthday,
-              registration_complete: true,
-              referral_code: existingProfile.referral_code || generateCustomerReferralCode(fullName),
-            })
-            .eq('id', existingProfile.id)
-            .select()
-            .single()
+          const updatedProfile = await completeCustomerRegistration(supabase, cleanPhone, {
+            fullName,
+            email,
+            nailGoal,
+            refreshmentPref: safeRefreshmentPref,
+            birthday,
+            referralCode: foundProfile.referral_code || generateCustomerReferralCode(fullName),
+          })
 
-          if (updateError) throw updateError
           profileId = updatedProfile.id
           finalProfile = updatedProfile
         } else {
-          profileId = existingProfile.id
-          finalProfile = existingProfile
+          profileId = foundProfile.id
+          finalProfile = foundProfile
         }
       } else {
          const birthday = birthdayMonth && birthdayDay ? `${birthdayMonth}-${birthdayDay}` : null
@@ -176,21 +171,13 @@ const RegistrationModal = ({ phone, existingProfile, existingAppointmentId, onCl
 
       let appointment
       if (existingAppointmentId) {
-        const { data: updatedAppointment, error: appointmentUpdateError } = await supabase
-          .from('appointments')
-          .update({
-            service_id: selectedServices[0]?.id || null,
-            add_ons: addOnsValue,
-            selected_service_names: selectedServiceNames,
-            final_price: totalPrice,
-            refreshment_pref: safeRefreshmentPref,
-          })
-          .eq('id', existingAppointmentId)
-          .select()
-          .single()
-
-        if (appointmentUpdateError) throw appointmentUpdateError
-        appointment = updatedAppointment
+        appointment = await updateKioskAppointmentServices(supabase, cleanPhone, existingAppointmentId, {
+          serviceId: selectedServices[0]?.id || null,
+          addOns: addOnsValue,
+          selectedServiceNames,
+          finalPrice: totalPrice,
+          refreshmentPref: safeRefreshmentPref,
+        })
       } else {
         const { data: createdAppointment, error: appointmentError } = await supabase
           .from('appointments')

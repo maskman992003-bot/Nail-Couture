@@ -13,9 +13,11 @@ import {
   isRefreshmentAvailable,
 } from '@nail-couture/shared/services/inventoryService.js';
 import {
+  completeCustomerRegistration,
   generateCustomerReferralCode,
   isRegistrationComplete,
   needsRegistrationCompletion,
+  updateKioskAppointmentServices,
 } from '@nail-couture/shared/auth/registration.js';
 import { DAYS, MONTHS, NAIL_GOALS } from '../../constants/birthdayOptions';
 import { RefreshmentSelect } from '../forms/RefreshmentSelect';
@@ -102,32 +104,25 @@ export function KioskRegistrationForm({
 
       let profileId: string;
       let finalProfile: { id: string; full_name: string; phone: string };
-      const existingProfile = profileRows?.[0];
+      const foundProfile = profileRows?.[0];
 
-      if (existingProfile) {
-        if (!isRegistrationComplete(existingProfile)) {
+      if (foundProfile) {
+        if (!isRegistrationComplete(foundProfile)) {
           const birthday = birthdayMonth && birthdayDay ? `${birthdayMonth}-${birthdayDay}` : null;
-          const { data: updatedProfile, error: updateError } = await getSupabase()
-            .from('profiles')
-            .update({
-              full_name: fullName,
-              email,
-              nail_goal: nailGoal,
-              refreshment_pref: safeRefreshmentPref,
-              birthday,
-              registration_complete: true,
-              referral_code: (existingProfile.referral_code as string) || generateCustomerReferralCode(fullName),
-            })
-            .eq('id', existingProfile.id)
-            .select()
-            .single();
+          const updatedProfile = await completeCustomerRegistration(getSupabase(), cleanPhone, {
+            fullName,
+            email,
+            nailGoal,
+            refreshmentPref: safeRefreshmentPref,
+            birthday,
+            referralCode: (foundProfile.referral_code as string) || generateCustomerReferralCode(fullName),
+          });
 
-          if (updateError) throw updateError;
           profileId = updatedProfile.id;
           finalProfile = updatedProfile;
         } else {
-          profileId = existingProfile.id as string;
-          finalProfile = existingProfile as { id: string; full_name: string; phone: string };
+          profileId = foundProfile.id as string;
+          finalProfile = foundProfile as { id: string; full_name: string; phone: string };
         }
       } else {
         const birthday = birthdayMonth && birthdayDay ? `${birthdayMonth}-${birthdayDay}` : null;
@@ -157,21 +152,18 @@ export function KioskRegistrationForm({
 
       let appointment;
       if (existingAppointmentId) {
-        const { data: updatedAppointment, error: appointmentUpdateError } = await getSupabase()
-          .from('appointments')
-          .update({
-            service_id: selectedServices[0]?.id || null,
-            add_ons: addOnsValue,
-            selected_service_names: selectedServiceNames,
-            final_price: totalPrice,
-            refreshment_pref: safeRefreshmentPref,
-          })
-          .eq('id', existingAppointmentId)
-          .select()
-          .single();
-
-        if (appointmentUpdateError) throw appointmentUpdateError;
-        appointment = updatedAppointment;
+        appointment = await updateKioskAppointmentServices(
+          getSupabase(),
+          cleanPhone,
+          existingAppointmentId,
+          {
+            serviceId: selectedServices[0]?.id || null,
+            addOns: addOnsValue,
+            selectedServiceNames,
+            finalPrice: totalPrice,
+            refreshmentPref: safeRefreshmentPref,
+          },
+        );
       } else {
         const { data: createdAppointment, error: appointmentError } = await getSupabase().from('appointments').insert({
           customer_id: profileId,

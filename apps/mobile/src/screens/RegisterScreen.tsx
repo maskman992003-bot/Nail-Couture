@@ -26,6 +26,7 @@ import {
   maskPhoneForDisplay,
 } from '@nail-couture/shared/utils/giftCards.js';
 import {
+  completeCustomerRegistration,
   generateCustomerReferralCode,
   isRegistrationComplete,
   needsRegistrationCompletion,
@@ -170,21 +171,13 @@ export function RegisterScreen() {
           return;
         }
 
-        const { data, error: updateError } = await getSupabase()
-          .from('profiles')
-          .update({
-            full_name: formData.full_name,
-            phone: resolvedCompletePhone,
-            email: formData.email,
-            birthday,
-            registration_complete: true,
-            referral_code: (completeProfileRef.current?.referral_code as string) || generateReferralCode(formData.full_name),
-          })
-          .eq('id', profileId)
-          .select()
-          .single();
-
-        if (updateError) throw updateError;
+        const data = await completeCustomerRegistration(getSupabase(), resolvedCompletePhone, {
+          fullName: formData.full_name,
+          email: formData.email,
+          birthday,
+          referralCode:
+            (completeProfileRef.current?.referral_code as string) || generateReferralCode(formData.full_name),
+        });
         await claimPendingGiftCards(data.id);
         login(data);
         return;
