@@ -12,7 +12,11 @@ import {
   getAvailableRefreshments,
   isRefreshmentAvailable,
 } from '@nail-couture/shared/services/inventoryService.js';
-import { buildAppointmentServicePayload } from '@nail-couture/shared/utils/appointmentServices.js';
+import {
+  generateCustomerReferralCode,
+  isRegistrationComplete,
+  needsRegistrationCompletion,
+} from '@nail-couture/shared/auth/registration.js';
 import { DAYS, MONTHS, NAIL_GOALS } from '../../constants/birthdayOptions';
 import { RefreshmentSelect } from '../forms/RefreshmentSelect';
 import { ScrollSelect } from '../forms/ScrollSelect';
@@ -26,6 +30,8 @@ import { useThemeStyles } from '../../theme/useThemeStyles';
 
 type KioskRegistrationFormProps = {
   phone: string;
+  existingProfile?: Record<string, unknown> | null;
+  existingAppointmentId?: string;
   onClose: () => void;
   onCompleteWaiverTrigger: (profileData: {
     id: string;
@@ -38,15 +44,17 @@ type KioskRegistrationFormProps = {
 
 export function KioskRegistrationForm({
   phone,
+  existingProfile = null,
+  existingAppointmentId,
   onClose,
   onCompleteWaiverTrigger,
 }: KioskRegistrationFormProps) {
   const styles = useThemeStyles();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [nailGoal, setNailGoal] = useState('');
-  const [birthdayMonth, setBirthdayMonth] = useState('');
-  const [birthdayDay, setBirthdayDay] = useState('');
+  const [fullName, setFullName] = useState(String(existingProfile?.full_name || ''));
+  const [email, setEmail] = useState(String(existingProfile?.email || ''));
+  const [nailGoal, setNailGoal] = useState(String(existingProfile?.nail_goal || ''));
+  const [birthdayMonth, setBirthdayMonth] = useState(String((existingProfile?.birthday as string || '').split('-')[0] || ''));
+  const [birthdayDay, setBirthdayDay] = useState(String((existingProfile?.birthday as string || '').split('-')[1] || ''));
   const [refreshmentList, setRefreshmentList] = useState<{ item_name: string }[]>([]);
   const [refreshmentsLoading, setRefreshmentsLoading] = useState(true);
   const [refreshmentPref, setRefreshmentPref] = useState('');
@@ -97,8 +105,30 @@ export function KioskRegistrationForm({
       const existingProfile = profileRows?.[0];
 
       if (existingProfile) {
-        profileId = existingProfile.id;
-        finalProfile = existingProfile;
+        if (!isRegistrationComplete(existingProfile)) {
+          const birthday = birthdayMonth && birthdayDay ? `${birthdayMonth}-${birthdayDay}` : null;
+          const { data: updatedProfile, error: updateError } = await getSupabase()
+            .from('profiles')
+            .update({
+              full_name: fullName,
+              email,
+              nail_goal: nailGoal,
+              refreshment_pref: safeRefreshmentPref,
+              birthday,
+              registration_complete: true,
+              referral_code: (existingProfile.referral_code as string) || generateCustomerReferralCode(fullName),
+            })
+            .eq('id', existingProfile.id)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+          profileId = updatedProfile.id;
+          finalProfile = updatedProfile;
+        } else {
+          profileId = existingProfile.id as string;
+          finalProfile = existingProfile as { id: string; full_name: string; phone: string };
+        }
       } else {
         const birthday = birthdayMonth && birthdayDay ? `${birthdayMonth}-${birthdayDay}` : null;
         const { data: profile, error: insertError } = await getSupabase()
@@ -110,6 +140,8 @@ export function KioskRegistrationForm({
             nail_goal: nailGoal,
             refreshment_pref: safeRefreshmentPref,
             birthday,
+            registration_complete: true,
+            referral_code: generateCustomerReferralCode(fullName),
           })
           .select()
           .single();
@@ -123,18 +155,38 @@ export function KioskRegistrationForm({
         buildAppointmentServicePayload(selectedServices, []);
       const totalPrice = selectedServices.reduce((sum, service) => sum + (service.price || 0), 0);
 
-      const { data: appointment, error: appointmentError } = await getSupabase().from('appointments').insert({
-        customer_id: profileId,
-        service_id: selectedServices[0]?.id || null,
-        add_ons: addOnsValue,
-        selected_service_names: selectedServiceNames,
-        final_price: totalPrice,
-        status: 'checking_in',
-        refreshment_pref: safeRefreshmentPref,
-        booking_type: 'walk_in',
-      }).select().single();
+      let appointment;
+      if (existingAppointmentId) {
+        const { data: updatedAppointment, error: appointmentUpdateError } = await getSupabase()
+          .from('appointments')
+          .update({
+            service_id: selectedServices[0]?.id || null,
+            add_ons: addOnsValue,
+            selected_service_names: selectedServiceNames,
+            final_price: totalPrice,
+            refreshment_pref: safeRefreshmentPref,
+          })
+          .eq('id', existingAppointmentId)
+          .select()
+          .single();
 
-      if (appointmentError) throw appointmentError;
+        if (appointmentUpdateError) throw appointmentUpdateError;
+        appointment = updatedAppointment;
+      } else {
+        const { data: createdAppointment, error: appointmentError } = await getSupabase().from('appointments').insert({
+          customer_id: profileId,
+          service_id: selectedServices[0]?.id || null,
+          add_ons: addOnsValue,
+          selected_service_names: selectedServiceNames,
+          final_price: totalPrice,
+          status: 'checking_in',
+          refreshment_pref: safeRefreshmentPref,
+          booking_type: 'walk_in',
+        }).select().single();
+
+        if (appointmentError) throw appointmentError;
+        appointment = createdAppointment;
+      }
 
       onCompleteWaiverTrigger({
         id: profileId,
@@ -183,8 +235,14 @@ export function KioskRegistrationForm({
           >
             <Text style={[styles.textGold, { fontSize: 28 }]}>★</Text>
           </View>
-          <Text style={[styles.textGold, { fontSize: 28, fontWeight: '600' }]}>Join the Couture Club</Text>
-          <Text style={styles.textSecondary}>Create your profile to get started</Text>
+          <Text style={[styles.textGold, { fontSize: 28, fontWeight: '600' }]}>
+            {existingProfile && !isRegistrationComplete(existingProfile) ? 'Complete Your Profile' : 'Join the Couture Club'}
+          </Text>
+          <Text style={styles.textSecondary}>
+            {existingProfile && !isRegistrationComplete(existingProfile)
+              ? 'Finish setting up your account to continue check-in'
+              : 'Create your profile to get started'}
+          </Text>
         </View>
 
         <View style={{ gap: 16 }}>

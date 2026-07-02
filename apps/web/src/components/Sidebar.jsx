@@ -460,24 +460,30 @@ export default function Sidebar() {
         {/* User Menu */}
         <div className="p-3 lg:p-4 border-t flex-shrink-0 flex justify-center lg:justify-start" style={{ borderColor }}>
           <div className="relative desktop-user-menu w-full lg:flex lg:justify-center xl:block">
-            <button
-              type="button"
-              ref={desktopUserMenuRef}
-              onClick={() => toggleUserMenu('desktop')}
-              className={`user-menu-trigger flex items-center hover:opacity-90 transition-opacity duration-200 w-full justify-center lg:justify-start cursor-pointer rounded-full p-1 hover:bg-offwhite/[0.04] ${
+            <div
+              className={`user-menu-trigger flex items-center w-full justify-center lg:justify-start ${
                 showUserMenu && userMenuSource === 'desktop' ? 'bg-offwhite/[0.04]' : ''
               }`}
             >
-              <div className="relative w-9 h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: `${themeConfig.accentColor}26`, boxShadow: `inset 0 0 0 1px ${themeConfig.borderColor}` }}>
-                <span className="text-gold-strong text-xs lg:text-sm font-heading">{initials || '?'}</span>
-                <div className="absolute -bottom-0.5 -left-0.5 z-20">
-                  <WaxSealBadge
-                    foundingType={user?.founding_type}
-                    foundingSpot={user?.founding_spot}
-                    pending={!user?.founding_spot}
-                    size={14}
-                  />
-                </div>
+              <div className="relative">
+                <button
+                  type="button"
+                  ref={desktopUserMenuRef}
+                  onClick={() => toggleUserMenu('desktop')}
+                  className="flex items-center rounded-full p-1 transition-opacity duration-200 hover:bg-offwhite/[0.04] hover:opacity-90 cursor-pointer"
+                >
+                  <div className="relative w-9 h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: `${themeConfig.accentColor}26`, boxShadow: `inset 0 0 0 1px ${themeConfig.borderColor}` }}>
+                    <span className="text-gold-strong text-xs lg:text-sm font-heading">{initials || '?'}</span>
+                    <div className="absolute -bottom-0.5 -left-0.5 z-20">
+                      <WaxSealBadge
+                        foundingType={user?.founding_type}
+                        foundingSpot={user?.founding_spot}
+                        pending={!user?.founding_spot}
+                        size={14}
+                      />
+                    </div>
+                  </div>
+                </button>
                 <NotificationBell
                   unreadCount={unreadCount}
                   ring={bellRing}
@@ -485,10 +491,13 @@ export default function Sidebar() {
                   size="sm"
                   overlay
                   className="absolute -bottom-0.5 -right-0.5 z-10"
-                  onClick={openNotifPanel}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openNotifPanel(e);
+                  }}
                 />
               </div>
-            </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -550,56 +559,61 @@ export default function Sidebar() {
           </div>
 
           <div className="relative flex shrink-0 flex-col items-center mobile-user-menu">
-            <button
-              type="button"
-              ref={mobileUserMenuRef}
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleUserMenu('mobile');
-              }}
-              className={`user-menu-trigger flex flex-col items-center gap-0.5 rounded-full px-1.5 py-1 transition-colors duration-200 ${
-                showUserMenu && userMenuSource === 'mobile'
-                  ? 'text-gold font-medium'
-                  : theme === 'dark'
-                    ? 'text-offwhite/55 hover:text-offwhite/90 hover:bg-offwhite/[0.06]'
-                    : 'text-charcoal/65 hover:text-charcoal hover:bg-charcoal/[0.05]'
-              }`}
-              style={
-                showUserMenu && userMenuSource === 'mobile'
-                  ? { background: accentGradient || ACTIVE_NAV_GRADIENT_FALLBACK }
-                  : undefined
-              }
-            >
-              <div
-                className="relative flex h-6 w-6 items-center justify-center rounded-full"
-                style={{
-                  background: 'rgba(197, 160, 89, 0.15)',
-                  boxShadow: 'inset 0 0 0 1px rgba(197, 160, 89, 0.25)',
+            <div className="relative">
+              <button
+                type="button"
+                ref={mobileUserMenuRef}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleUserMenu('mobile');
                 }}
-              >
-                <span className="text-[8px] text-gold font-heading">{initials || '?'}</span>
-                <NotificationBell
-                  unreadCount={unreadCount}
-                  ring={bellRing}
-                  theme={theme}
-                  size="sm"
-                  overlay
-                  className="absolute -top-1 -right-1 z-10"
-                  onClick={openNotifPanel}
-                />
-              </div>
-              <span
-                className={`max-w-[44px] truncate text-[7px] font-medium leading-none ${
+                className={`user-menu-trigger flex flex-col items-center gap-0.5 rounded-full px-1.5 py-1 transition-colors duration-200 ${
                   showUserMenu && userMenuSource === 'mobile'
-                    ? 'text-gold'
+                    ? 'text-gold font-medium'
                     : theme === 'dark'
-                      ? 'text-offwhite/55'
-                      : 'text-charcoal/65'
+                      ? 'text-offwhite/55 hover:text-offwhite/90 hover:bg-offwhite/[0.06]'
+                      : 'text-charcoal/65 hover:text-charcoal hover:bg-charcoal/[0.05]'
                 }`}
+                style={
+                  showUserMenu && userMenuSource === 'mobile'
+                    ? { background: accentGradient || ACTIVE_NAV_GRADIENT_FALLBACK }
+                    : undefined
+                }
               >
-                {displayName}
-              </span>
-            </button>
+                <div
+                  className="relative flex h-6 w-6 items-center justify-center rounded-full"
+                  style={{
+                    background: 'rgba(197, 160, 89, 0.15)',
+                    boxShadow: 'inset 0 0 0 1px rgba(197, 160, 89, 0.25)',
+                  }}
+                >
+                  <span className="text-[8px] text-gold font-heading">{initials || '?'}</span>
+                </div>
+                <span
+                  className={`max-w-[44px] truncate text-[7px] font-medium leading-none ${
+                    showUserMenu && userMenuSource === 'mobile'
+                      ? 'text-gold'
+                      : theme === 'dark'
+                        ? 'text-offwhite/55'
+                        : 'text-charcoal/65'
+                  }`}
+                >
+                  {displayName}
+                </span>
+              </button>
+              <NotificationBell
+                unreadCount={unreadCount}
+                ring={bellRing}
+                theme={theme}
+                size="sm"
+                overlay
+                className="absolute -top-1 -right-1 z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openNotifPanel(e);
+                }}
+              />
+            </div>
           </div>
         </nav>
       </div>

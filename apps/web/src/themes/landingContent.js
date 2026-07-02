@@ -1,3 +1,5 @@
+import { SALON_HOURS_DISPLAY } from '@nail-couture/shared/constants/salonHours.js';
+
 export const LANDING_FEATURES = [
   {
     title: 'Medical-Grade Sterilization',
@@ -86,6 +88,7 @@ export const LANDING_CONTACT = {
   phone: '(504) 481-7879',
   phoneTel: '+15044817879',
   openingLabel: 'Opening Fall 2026',
+  hours: SALON_HOURS_DISPLAY,
   mapsEmbedUrl:
     'https://www.google.com/maps?q=5300+Tchoupitoulas+St+%2332-34+New+Orleans+LA+70115&output=embed',
   mapsUrl:

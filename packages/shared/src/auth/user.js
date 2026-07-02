@@ -28,5 +28,6 @@ export function normalizeUser(profile) {
     preferred_contact: profile.preferred_contact || 'phone',
     role,
     is_staff: isStaffRole(role),
+    registration_complete: profile.registration_complete === true,
   };
 }

@@ -6,6 +6,7 @@ import { getHomePath, isCheckInRole } from '@nail-couture/shared/utils/routes';
 import { verifyKioskPin } from '@nail-couture/shared/constants/kiosk';
 import { CLIENT_LOGIN_PHONE_NOT_FOUND_MESSAGE } from '@nail-couture/shared/constants/clientAuth';
 import { claimPendingGiftCards } from '@nail-couture/shared/utils/giftCards';
+import { needsRegistrationCompletion } from '@nail-couture/shared/auth/registration.js';
 import { useTheme } from '../contexts/ThemeContext';
 import { useReloadPageRefresh } from '../hooks/useReloadPageRefresh';
 import BrandLogo from './BrandLogo.jsx';
@@ -90,6 +91,11 @@ export default function ClientLogin() {
       claimPendingGiftCards(profileData.id).catch(() => {});
     }
     login(profileData);
+    if (needsRegistrationCompletion(profileData)) {
+      const phoneDigits = (profileData.phone || '').replace(/\D/g, '');
+      navigate(`/register?complete=1&phone=${encodeURIComponent(phoneDigits)}`, { replace: true });
+      return;
+    }
     navigate(getHomePath(profileData.role || 'customer'));
   };
 

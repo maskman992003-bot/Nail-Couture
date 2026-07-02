@@ -15,6 +15,7 @@
     "build:preview:android": "eas build --profile preview --platform android"
   },
   "dependencies": {
+    "@expo-google-fonts/playfair-display": "^0.4.2",
     "@nail-couture/shared": "*",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.16.2",
@@ -23,11 +24,13 @@
     "@shopify/react-native-skia": "2.6.2",
     "@supabase/supabase-js": "^2.105.4",
     "expo": "~56.0.9",
+    "expo-blur": "~56.0.0",
     "expo-clipboard": "~56.0.4",
     "expo-constants": "~56.0.4",
     "expo-dev-client": "~56.0.19",
     "expo-device": "~8.0.10",
     "expo-document-picker": "~56.0.4",
+    "expo-font": "^56.0.7",
     "expo-image-picker": "~56.0.16",
     "expo-notifications": "~56.0.8",
     "expo-sensors": "^56.0.6",

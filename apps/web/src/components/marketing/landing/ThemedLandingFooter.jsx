@@ -146,8 +146,13 @@ export default function ThemedLandingFooter() {
           </p>
         </div>
 
-        <div className="flex flex-col justify-start">
-          <span className="landing-heading text-sm font-extrabold uppercase tracking-[0.16em] text-center align-middle">{contact.openingLabel}</span>
+        <div className="flex flex-col justify-start gap-2">
+          <span className="landing-heading text-sm font-extrabold uppercase tracking-[0.16em]">{contact.openingLabel}</span>
+          <div className="space-y-1 text-xs" style={{ color: themeConfig.textSecondary }}>
+            {contact.hours.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
         </div>
 
         <div>

@@ -16,6 +16,7 @@ import { CashierCheckoutScreen } from '../screens/staff/CashierCheckoutScreen';
 import { CashierTransactionsScreen } from '../screens/staff/CashierTransactionsScreen';
 import { GiftCardSaleScreen } from '../screens/staff/GiftCardSaleScreen';
 import { EmployeeScheduleView as ScheduleScreen } from '../screens/staff/EmployeeScheduleScreen';
+import { BookingCanvasScreen } from '../screens/staff/BookingCanvasScreen';
 import { StaffSettingsScreen } from '../screens/staff/StaffSettingsScreen';
 import { AdminHomeScreen } from '../screens/admin/AdminHomeScreen';
 import { AdminLobbyScreen } from '../screens/admin/AdminLobbyScreen';
@@ -61,6 +62,7 @@ const TECHNICIAN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponen
 const CASHIER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> = {
   Home: CashierHomeScreen,
   Schedule: ScheduleScreen,
+  PhoneBooking: BookingCanvasScreen,
   Lobby: CashierLobbyScreen,
   Checkout: CashierCheckoutScreen,
   GiftCards: GiftCardSaleScreen,
@@ -75,6 +77,7 @@ const CASHIER_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>>
 const ADMIN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> = {
   Home: AdminHomeScreen,
   Schedule: ScheduleScreen,
+  PhoneBooking: BookingCanvasScreen,
   Lobby: AdminLobbyScreen,
   Bookings: AdminBookingsScreen,
   Services: AdminServicesScreen,
@@ -93,6 +96,7 @@ const ADMIN_SCREEN_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> =
 
 const STAFF_SHARED_COMPONENTS: Partial<Record<AppScreenName, ScreenComponent>> = {
   Schedule: ScheduleScreen,
+  PhoneBooking: BookingCanvasScreen,
   Customers: CustomersStackNavigator,
   Reviews: StaffReviewsScreen,
   FitnessAssessment: CustomerFitnessAssessmentScreen,

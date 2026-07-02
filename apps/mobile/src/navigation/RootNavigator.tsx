@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { needsRegistrationCompletion } from '@nail-couture/shared/auth/registration.js';
 import { getNavItemsForRole } from '@nail-couture/shared/navigation/navItems.js';
 import { useAuth } from '../contexts/AuthContext';
 import { LoginScreen } from '../screens/LoginScreen';
@@ -52,7 +53,15 @@ function AppStack() {
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
       {user ? (
-        <RootStack.Screen name="Main" component={MainTabNavigator} />
+        needsRegistrationCompletion(user) ? (
+          <RootStack.Screen
+            name="Register"
+            component={RegisterScreen}
+            initialParams={{ complete: true, phone: user.phone }}
+          />
+        ) : (
+          <RootStack.Screen name="Main" component={MainTabNavigator} />
+        )
       ) : (
         <>
           <RootStack.Screen name="Public" component={PublicNavigator} />

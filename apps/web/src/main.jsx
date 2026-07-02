@@ -49,6 +49,7 @@ import NailAssessmentPortalPage from './components/nails/NailAssessmentPortalPag
 import AdminInventory from './components/AdminInventory.jsx'
 import AdminServices from './components/AdminServices.jsx'
 import AdminBookings from './components/AdminBookings.jsx'
+import BookingCanvas from './components/booking/BookingCanvas.jsx'
 import CheckIn from './components/CheckIn.jsx'
 import PageHelmet from './components/PageHelmet.jsx'
 import { APP_PAGE_SEO } from './constants/pageSeo.js'
@@ -198,14 +199,29 @@ function AppRoutes() {
                   <TechnicianSchedule />
                 </ProtectedRoute>
               } />
+              <Route path="/cashier/booking" element={
+                <ProtectedRoute allowedRoles={['cashier']}>
+                  <BookingCanvas />
+                </ProtectedRoute>
+              } />
               <Route path="/owner/schedule" element={
                 <ProtectedRoute allowedRoles={['owner']}>
                   <StaffSchedule />
                 </ProtectedRoute>
               } />
+              <Route path="/owner/booking" element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <BookingCanvas />
+                </ProtectedRoute>
+              } />
               <Route path="/partner/schedule" element={
                 <ProtectedRoute allowedRoles={['partner']}>
                   <StaffSchedule />
+                </ProtectedRoute>
+              } />
+              <Route path="/partner/booking" element={
+                <ProtectedRoute allowedRoles={['partner']}>
+                  <BookingCanvas />
                 </ProtectedRoute>
               } />
               <Route path="/:role/staff/:id/schedule" element={
@@ -216,6 +232,11 @@ function AppRoutes() {
               <Route path="/superadmin/bookings" element={
                 <ProtectedRoute allowedRoles={['super_admin']}>
                   <AdminBookings />
+                </ProtectedRoute>
+              } />
+              <Route path="/superadmin/booking" element={
+                <ProtectedRoute allowedRoles={['super_admin']}>
+                  <BookingCanvas />
                 </ProtectedRoute>
               } />
               <Route path="/superadmin/customers" element={
@@ -475,6 +496,11 @@ function AppRoutes() {
              <Route path="/admin/bookings" element={
                <ProtectedRoute allowedRoles={['admin']}>
                  <AdminBookings />
+               </ProtectedRoute>
+             } />
+             <Route path="/admin/booking" element={
+               <ProtectedRoute allowedRoles={['admin']}>
+                 <BookingCanvas />
                </ProtectedRoute>
              } />
              <Route path="/admin/services" element={

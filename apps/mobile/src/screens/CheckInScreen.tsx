@@ -36,6 +36,8 @@ const PHONE_KEYS = [
 
 type CheckInResult = {
   isNew: boolean;
+  needsRegistration?: boolean;
+  registrationCompleted?: boolean;
   name?: string;
   profile?: Record<string, unknown>;
   appointment?: Record<string, unknown> & {
@@ -156,7 +158,7 @@ export function CheckInScreen() {
       const cleanPhone = phone.replace(/\D/g, '');
       setWaiverCustomerPhone(cleanPhone);
 
-      if (response.isNew) {
+      if (response.isNew || response.needsRegistration) {
         setShowWaiver(false);
       } else {
         setWaiverCustomerName(response.name || '');
@@ -179,7 +181,9 @@ export function CheckInScreen() {
   }) => {
     setResult((prev) => ({
       ...prev,
-      isNew: true,
+      needsRegistration: false,
+      registrationCompleted: true,
+      isNew: prev?.isNew || false,
       profile: profileData,
       name: profileData.full_name,
       appointment: profileData.appointmentId
@@ -252,13 +256,13 @@ export function CheckInScreen() {
       if (insertError) throw insertError;
 
       const appointmentId = result?.appointment?.id;
-      if (appointmentId && result?.isNew) {
+      if (appointmentId && (result?.isNew || result?.registrationCompleted)) {
         await completeCheckIn(profilePhone || phone, appointmentId, {
           refreshmentPref: (result?.appointment?.refreshment_pref as string) || newUserDetails.refreshmentPref || null,
         });
       }
 
-      if (result?.isNew) {
+      if (result?.isNew || result?.registrationCompleted) {
         setNewUserSuccess(true);
       }
       setShowWaiver(false);
@@ -348,7 +352,7 @@ export function CheckInScreen() {
     return (
       <KioskServiceSelection
         onSelect={(payload) => {
-          if (result && !result.isNew && result.appointment) {
+          if (result && !result.isNew && !result.needsRegistration && result.appointment) {
             handleExistingUserServiceSelect(payload);
           } else {
             setSelectedServices(payload.services);
@@ -363,10 +367,12 @@ export function CheckInScreen() {
     );
   }
 
-  if (result?.isNew) {
+  if (result?.isNew || result?.needsRegistration) {
     return (
       <KioskRegistrationForm
         phone={phone}
+        existingProfile={result.profile}
+        existingAppointmentId={result.appointment?.id as string | undefined}
         onClose={() => {
           setPhone('');
           setResult(null);
@@ -376,7 +382,7 @@ export function CheckInScreen() {
     );
   }
 
-  if (result && !result.isNew && result.appointment) {
+  if (result && !result.isNew && !result.needsRegistration && result.appointment) {
     const addOnCatalog = services.filter((service) => isAddOnBookable(service));
     const totalPrice =
       selectedServices.reduce((sum, service) => sum + (service.price || 0), 0) +

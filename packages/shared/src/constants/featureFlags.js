@@ -21,7 +21,7 @@ export const featureFlags = {
     prepayOptions: false,           // Pay online in advance (Phase 3)
     giftCards: true,                // View and transfer gift cards
     mysteryGift: true,              // Grand opening Mystery Gift teaser
-    fitnessAssessment: true,        // Fitness assessment wellness tool
+    fitnessAssessment: false,       // Fitness assessment wellness tool (hidden until launch)
     nailHealthAssessment: true,     // Nail health assessment wellness tool
   },
   
@@ -47,6 +47,7 @@ export const featureFlags = {
     promotions: true,                // Management home-screen promotions tab
     giftCards: true,                 // Sell gift cards at front desk
     mysteryGiftAdmin: true,          // Owner/super_admin Mystery Gift campaign
+    phoneBooking: true,              // Couture Canvas phone booking tab
   },
   
   // Inventory & Operations

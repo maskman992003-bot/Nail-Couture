@@ -5,6 +5,12 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+  --sidebar-desktop-width: 16rem;
+  --sidebar-desktop-inset: max(0.75rem, env(safe-area-inset-left, 0px));
+  --sidebar-desktop-gap: 0.75rem;
+  --sidebar-content-offset: calc(
+    var(--sidebar-desktop-width) + var(--sidebar-desktop-inset) + var(--sidebar-desktop-gap)
+  );
 }
 
 html {
@@ -60,7 +66,7 @@ label {
 
 @media (min-width: 1024px) {
   .pl-sidebar {
-    padding-left: 16rem;
+    padding-left: var(--sidebar-content-offset);
   }
 }
 
@@ -100,6 +106,56 @@ label {
 
 .sidebar-bottom-nav-scroll a {
   touch-action: pan-x;
+}
+
+/* Booking canvas timeline grid — uses theme tokens (skin + light/dark) */
+.booking-timeline-hour-band--even {
+  background-color: color-mix(in srgb, var(--bg-secondary) 42%, transparent);
+}
+
+.booking-timeline-hour-band--odd {
+  background-color: transparent;
+}
+
+.booking-timeline-hour-line {
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: color-mix(in srgb, var(--border-light) 85%, transparent);
+}
+
+.booking-timeline-hour-line--accent {
+  border-top-color: color-mix(in srgb, var(--border-color) 55%, var(--border-light));
+}
+
+.booking-timeline-column-line {
+  background-color: color-mix(in srgb, var(--border-light) 65%, transparent);
+}
+
+/* Booking canvas: horizontal column scroll while time axis stays anchored */
+.booking-timeline-columns {
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.booking-timeline-columns button {
+  touch-action: manipulation;
+}
+
+.booking-timeline-axis button {
+  touch-action: manipulation;
+}
+
+/* Sticky time axis: stay above column scroll, clear of fixed sidebar shadow */
+.booking-timeline-axis {
+  padding-left: max(var(--safe-left), 0px);
+  box-shadow: 8px 0 16px -8px rgba(0, 0, 0, 0.45);
+}
+
+@media (min-width: 1024px) {
+  .booking-timeline-scroll {
+    padding-left: 0.25rem;
+  }
 }
 
 /* Bottom padding for mobile pages above floating bottom tab bar + lift + safe area */

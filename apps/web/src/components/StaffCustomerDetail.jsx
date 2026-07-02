@@ -678,7 +678,7 @@ export default function StaffCustomerDetail() {
           </div>
         )}
 
-        <div className="flex gap-1 overflow-x-auto border-b border-light pb-px">
+        <div className="theme-scrollbar flex gap-1 overflow-x-auto border-b border-light pb-px">
           {visibleTabs.map((tab) => (
             <button
               key={tab.id}

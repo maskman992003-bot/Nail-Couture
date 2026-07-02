@@ -313,11 +313,12 @@ export default function CustomerManagementHistory() {
   const searchFilteredCustomers = useMemo(() => {
     if (!searchTerm.trim()) return customers;
     const term = searchTerm.toLowerCase().trim();
-    return customers.filter(customer =>
-      customer.full_name.toLowerCase().includes(term) ||
-      customer.email.toLowerCase().includes(term) ||
-      customer.phone.toLowerCase().includes(term)
-    );
+    return customers.filter((customer) => {
+      const name = (customer.full_name || '').toLowerCase();
+      const email = (customer.email || '').toLowerCase();
+      const phone = (customer.phone || '').toLowerCase();
+      return name.includes(term) || email.includes(term) || phone.includes(term);
+    });
   }, [customers, searchTerm]);
 
   const dateFilteredCustomers = useMemo(() => {
@@ -757,7 +758,7 @@ export default function CustomerManagementHistory() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
-                        {customer.full_name.charAt(0).toUpperCase()}
+                        {(customer.full_name || '?').charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <div className="text-primary font-heading capitalize">{customer.full_name}</div>

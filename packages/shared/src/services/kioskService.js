@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { logInventoryUsage } from '../utils/inventoryUsage'
 import { buildAppointmentServicePayload } from '../utils/appointmentServices'
+import { needsRegistrationCompletion } from '../auth/registration.js'
 
 export async function processCheckIn(phoneNumber, checkedInBy = null) {
   const cleanPhone = phoneNumber.replace(/\D/g, '')
@@ -22,11 +23,14 @@ export async function processCheckIn(phoneNumber, checkedInBy = null) {
   }
 
   if (data.is_new) {
-    return { isNew: true }
+    return { isNew: true, needsRegistration: true }
   }
+
+  const needsRegistration = needsRegistrationCompletion(data.profile)
 
   return {
     isNew: false,
+    needsRegistration,
     name: data.name,
     profile: data.profile,
     appointment: data.appointment,

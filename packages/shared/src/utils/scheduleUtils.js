@@ -180,6 +180,22 @@ export function isToday(dateStr) {
   return dateStr === toDateStr(new Date());
 }
 
+export function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+export function addWeeks(date, weeks) {
+  return addDays(date, weeks * 7);
+}
+
+export function addMonths(date, months) {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
+
 /** Sunday-start week containing `date` */
 export function getWeekDates(date) {
   const d = new Date(date);

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -25,37 +25,48 @@ import {
   getGiftCardClaimPreview,
   maskPhoneForDisplay,
 } from '@nail-couture/shared/utils/giftCards.js';
+import {
+  generateCustomerReferralCode,
+  isRegistrationComplete,
+  needsRegistrationCompletion,
+} from '@nail-couture/shared/auth/registration.js';
 import type { RootStackParamList } from '../navigation/publicTypes';
 
 function generateReferralCode(name: string) {
-  const cleanName = name.replace(/\s+/g, '').toUpperCase().slice(0, 4);
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `${cleanName}${random}`;
+  return generateCustomerReferralCode(name);
 }
 
 export function RegisterScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'Register'>>();
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const styles = useThemeStyles();
   const pageLayout = useLayout();
 
   const giftToken = route.params?.gift || '';
+  const completeMode = Boolean(route.params?.complete);
+  const completePhone = (route.params?.phone || '').replace(/\D/g, '').slice(0, 10);
+  const resolvedCompletePhone = (
+    completePhone
+    || (completeMode ? String(user?.phone || '').replace(/\D/g, '').slice(0, 10) : '')
+  );
+  const isCompleteRegistration = completeMode && resolvedCompletePhone.length === 10;
+  const completeProfileRef = useRef<Record<string, unknown> | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     full_name: '',
-    phone: '',
+    phone: completeMode && completePhone.length === 10 ? completePhone : '',
     email: '',
     birthday_month: '',
     birthday_day: '',
     referral_code: route.params?.ref || '',
-  });
+  }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successProfile, setSuccessProfile] = useState<Record<string, unknown> | null>(null);
   const [giftPreview, setGiftPreview] = useState<Record<string, unknown> | null>(null);
   const [giftClaimCount, setGiftClaimCount] = useState(0);
-  const [phoneLocked, setPhoneLocked] = useState(false);
+  const [phoneLocked, setPhoneLocked] = useState(() => completeMode && completePhone.length === 10);
 
   useEffect(() => {
     if (!giftToken) return;
@@ -78,8 +89,54 @@ export function RegisterScreen() {
     return () => { cancelled = true; };
   }, [giftToken]);
 
+  useEffect(() => {
+    if (!completeMode || resolvedCompletePhone.length !== 10) return;
+    setPhoneLocked(true);
+    setFormData((prev) => ({
+      ...prev,
+      phone: resolvedCompletePhone,
+    }));
+
+    let cancelled = false;
+    (async () => {
+      const { data, error: profileError } = await getSupabase()
+        .from('profiles')
+        .select('*')
+        .eq('phone', resolvedCompletePhone)
+        .eq('role', 'customer')
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (profileError || !data) {
+        setError('Could not find your account. Please contact the salon.');
+        return;
+      }
+      if (isRegistrationComplete(data)) {
+        login(data);
+        return;
+      }
+
+      const [birthdayMonth = '', birthdayDay = ''] = String(data.birthday || '').split('-');
+      completeProfileRef.current = data;
+      setFormData((prev) => ({
+        ...prev,
+        full_name: String(data.full_name || prev.full_name),
+        phone: resolvedCompletePhone,
+        email: String(data.email || prev.email),
+        birthday_month: birthdayMonth,
+        birthday_day: birthdayDay,
+      }));
+    })();
+    return () => { cancelled = true; };
+  }, [completeMode, resolvedCompletePhone, login]);
+
   const handleSubmit = async () => {
-    if (
+    if (completeMode) {
+      if (!formData.full_name || !resolvedCompletePhone || !formData.email || !formData.birthday_month || !formData.birthday_day) {
+        setError('Please fill in all fields');
+        return;
+      }
+    } else if (
       !formData.full_name ||
       !formData.phone ||
       !formData.email ||
@@ -90,7 +147,7 @@ export function RegisterScreen() {
       return;
     }
 
-    if (formData.phone.replace(/\D/g, '').length < 10) {
+    if (!completeMode && formData.phone.replace(/\D/g, '').length < 10) {
       setError('Please enter a valid phone number');
       return;
     }
@@ -99,15 +156,52 @@ export function RegisterScreen() {
     setError('');
 
     try {
-      const cleanPhone = formData.phone.replace(/\D/g, '');
+      const cleanPhone = completeMode ? resolvedCompletePhone : formData.phone.replace(/\D/g, '');
+      const birthday =
+        formData.birthday_month && formData.birthday_day
+          ? `${formData.birthday_month}-${formData.birthday_day}`
+          : null;
+
+      if (completeMode) {
+        const profileId = completeProfileRef.current?.id as string | undefined;
+        if (!profileId) {
+          setError('Could not find your account. Please contact the salon.');
+          setLoading(false);
+          return;
+        }
+
+        const { data, error: updateError } = await getSupabase()
+          .from('profiles')
+          .update({
+            full_name: formData.full_name,
+            phone: resolvedCompletePhone,
+            email: formData.email,
+            birthday,
+            registration_complete: true,
+            referral_code: (completeProfileRef.current?.referral_code as string) || generateReferralCode(formData.full_name),
+          })
+          .eq('id', profileId)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+        await claimPendingGiftCards(data.id);
+        login(data);
+        return;
+      }
+
       const { data: existing } = await getSupabase()
         .from('profiles')
-        .select('id')
+        .select('id, registration_complete')
         .eq('phone', cleanPhone)
         .single();
 
       if (existing) {
-        setError('An account with this phone number already exists. Please login instead.');
+        if (needsRegistrationCompletion(existing)) {
+          setError('An account with this phone number already exists. Please log in to complete your profile.');
+        } else {
+          setError('An account with this phone number already exists. Please login instead.');
+        }
         setLoading(false);
         return;
       }
@@ -141,11 +235,6 @@ export function RegisterScreen() {
         }
       }
 
-      const birthday =
-        formData.birthday_month && formData.birthday_day
-          ? `${formData.birthday_month}-${formData.birthday_day}`
-          : null;
-
       const { data, error: insertError } = await getSupabase()
         .from('profiles')
         .insert({
@@ -154,6 +243,7 @@ export function RegisterScreen() {
           email: formData.email,
           birthday,
           role: 'customer',
+          registration_complete: true,
           referral_code: generateReferralCode(formData.full_name),
           referral_by: referredById,
           loyalty_points: initialPoints,
@@ -229,7 +319,7 @@ export function RegisterScreen() {
           { paddingBottom: pageLayout.contentBottomPadding },
         ]}
       >
-        {navigation.canGoBack() ? (
+        {navigation.canGoBack() && !completeMode ? (
           <Pressable onPress={() => navigation.goBack()} style={{ marginBottom: spacing[3], alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Icon name="chevronLeft" size={18} color={styles.tokens.goldStrong} />
             <Text style={styles.textGold}>Back</Text>
@@ -243,7 +333,14 @@ export function RegisterScreen() {
               style={{ height: 96, width: 160, marginBottom: 12 }}
               resizeMode="contain"
             />
-            <Text style={styles.textSecondary}>Create Your Account</Text>
+            <Text style={styles.textSecondary}>
+              {completeMode ? 'Complete Your Profile' : 'Create Your Account'}
+            </Text>
+            {completeMode ? (
+              <Text style={[styles.textSecondary, { marginTop: 8, textAlign: 'center', fontSize: 13 }]}>
+                Your salon account was started with your name and phone. Add the remaining details to finish setup.
+              </Text>
+            ) : null}
             {giftPreview?.success ? (
               <Text style={[styles.textGold, { marginTop: 8, textAlign: 'center', fontSize: 13 }]}>
                 {giftPreview.buyer_first_name
@@ -289,7 +386,9 @@ export function RegisterScreen() {
               />
               {phoneLocked ? (
                 <Text style={[styles.textSecondary, { fontSize: 11, marginTop: 4 }]}>
-                  Phone is locked to match your gift card.
+                  {isCompleteRegistration
+                    ? 'Phone is linked to your salon account and cannot be changed.'
+                    : 'Phone is locked to match your gift card.'}
                 </Text>
               ) : null}
             </FormField>

@@ -24,6 +24,7 @@ type AppModalProps = {
   scrollBody?: boolean;
   panelStyle?: StyleProp<ViewStyle>;
   maxPanelWidth?: number;
+  centerTitle?: boolean;
 };
 
 export function AppModal({
@@ -37,6 +38,7 @@ export function AppModal({
   scrollBody = false,
   panelStyle,
   maxPanelWidth = maxWidth.lg,
+  centerTitle = false,
 }: AppModalProps) {
   const { tokens } = useThemeStyles();
   const { height: windowHeight } = useWindowDimensions();
@@ -71,12 +73,35 @@ export function AppModal({
             <View
               style={[
                 layout.modalHeader,
-                { borderBottomWidth: 1, borderBottomColor: tokens.borderLight },
+                {
+                  borderBottomWidth: 1,
+                  borderBottomColor: tokens.borderLight,
+                },
+                centerTitle && {
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 52,
+                },
               ]}
             >
-              <View style={{ flex: 1, minWidth: 0 }}>
+              <View
+                style={{
+                  flex: centerTitle ? undefined : 1,
+                  minWidth: 0,
+                  width: centerTitle ? '100%' : undefined,
+                  alignItems: centerTitle ? 'center' : undefined,
+                  justifyContent: centerTitle ? 'center' : undefined,
+                }}
+              >
                 {title ? (
-                  <Text style={{ color: tokens.goldStrong, fontSize: 20, fontWeight: '600' }}>
+                  <Text
+                    style={{
+                      color: tokens.goldStrong,
+                      fontSize: 20,
+                      fontWeight: '600',
+                      textAlign: centerTitle ? 'center' : 'left',
+                    }}
+                  >
                     {title}
                   </Text>
                 ) : null}

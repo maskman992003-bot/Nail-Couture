@@ -8,6 +8,11 @@ import BrandLogo from './BrandLogo.jsx';
 import ScrollSelect from './ScrollSelect';
 import clsx from 'clsx';
 import { claimPendingGiftCards, getGiftCardClaimPreview, maskPhoneForDisplay } from '@nail-couture/shared/utils/giftCards';
+import {
+  generateCustomerReferralCode,
+  isRegistrationComplete,
+  needsRegistrationCompletion,
+} from '@nail-couture/shared/auth/registration.js';
 
 const MONTHS = [
   { value: '', label: 'Month' },
@@ -130,29 +135,37 @@ export default function ClientRegister() {
   const [searchParams] = useSearchParams();
   const urlReferralCode = searchParams.get('ref') || '';
   const giftToken = searchParams.get('gift') || '';
+  const completeMode = searchParams.get('complete') === '1';
+  const completePhone = (searchParams.get('phone') || '').replace(/\D/g, '').slice(0, 10);
+  const navigate = useNavigate();
+  const { user, login } = useAuth();
+  const { theme, themeConfig } = useTheme();
+  const resolvedCompletePhone = (
+    completePhone
+    || (completeMode ? (user?.phone || '').replace(/\D/g, '').slice(0, 10) : '')
+  );
+  const isCompleteRegistration = completeMode && resolvedCompletePhone.length === 10;
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     full_name: '',
-    phone: '',
+    phone: completeMode && completePhone.length === 10 ? completePhone : '',
     email: '',
     birthday_month: '',
     birthday_day: '',
-    referral_code: urlReferralCode
-  });
+    referral_code: urlReferralCode,
+  }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [giftPreview, setGiftPreview] = useState(null);
   const [giftClaimCount, setGiftClaimCount] = useState(0);
-  const [phoneLocked, setPhoneLocked] = useState(false);
+  const [phoneLocked, setPhoneLocked] = useState(() => completeMode && completePhone.length === 10);
+  const completeProfileRef = useRef(null);
   const [redirectSeconds, setRedirectSeconds] = useState(REDIRECT_DELAY_SEC);
   const hasNavigatedRef = useRef(false);
   const registeredNameRef = useRef('');
   const pendingProfileRef = useRef(null);
   const redirectCleanupRef = useRef(null);
-  const navigate = useNavigate();
-  const { login } = useAuth();
-  const { theme, themeConfig } = useTheme();
 
   const cardClass = theme === 'dark'
     ? 'bg-[#111] border border-gold/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl w-full'
@@ -256,8 +269,49 @@ export default function ClientRegister() {
     return () => { cancelled = true; };
   }, [giftToken]);
 
+  useEffect(() => {
+    if (!completeMode || resolvedCompletePhone.length !== 10) return;
+    setPhoneLocked(true);
+    setFormData((prev) => ({
+      ...prev,
+      phone: resolvedCompletePhone,
+    }));
+
+    let cancelled = false;
+    (async () => {
+      const { data, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('phone', resolvedCompletePhone)
+        .eq('role', 'customer')
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (profileError || !data) {
+        setError('Could not find your account. Please contact the salon.');
+        return;
+      }
+      if (isRegistrationComplete(data)) {
+        navigate('/portal', { replace: true });
+        return;
+      }
+
+      const [birthdayMonth = '', birthdayDay = ''] = (data.birthday || '').split('-');
+      completeProfileRef.current = data;
+      setFormData((prev) => ({
+        ...prev,
+        full_name: data.full_name || prev.full_name,
+        phone: resolvedCompletePhone,
+        email: data.email || prev.email,
+        birthday_month: birthdayMonth,
+        birthday_day: birthdayDay,
+      }));
+    })();
+    return () => { cancelled = true; };
+  }, [completeMode, resolvedCompletePhone, navigate]);
+
   const handleChange = (e) => {
-    if (e.target.name === 'phone' && phoneLocked) return;
+    if (e.target.name === 'phone' && (phoneLocked || isCompleteRegistration)) return;
     const value = e.target.name === 'phone'
       ? e.target.value.replace(/\D/g, '').slice(0, 10)
       : e.target.value;
@@ -265,21 +319,22 @@ export default function ClientRegister() {
     setError('');
   };
 
-  const generateReferralCode = (name) => {
-    const cleanName = name.replace(/\s+/g, '').toUpperCase().slice(0, 4);
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `${cleanName}${random}`;
-  };
+  const generateReferralCode = (name) => generateCustomerReferralCode(name);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.full_name || !formData.phone || !formData.email || !formData.birthday_month || !formData.birthday_day) {
+    if (completeMode) {
+      if (!formData.full_name || !resolvedCompletePhone || !formData.email || !formData.birthday_month || !formData.birthday_day) {
+        setError('Please fill in all fields');
+        return;
+      }
+    } else if (!formData.full_name || !formData.phone || !formData.email || !formData.birthday_month || !formData.birthday_day) {
       setError('Please fill in all fields');
       return;
     }
 
-    if (formData.phone.length !== 10) {
+    if (!completeMode && formData.phone.length !== 10) {
       setError('Please enter a 10-digit phone number');
       return;
     }
@@ -289,15 +344,56 @@ export default function ClientRegister() {
 
     try {
       const cleanPhone = formData.phone;
+      const birthday = formData.birthday_month && formData.birthday_day
+        ? `${formData.birthday_month}-${formData.birthday_day}`
+        : null;
+
+      if (completeMode) {
+        const profileId = completeProfileRef.current?.id;
+        if (!profileId) {
+          setError('Could not find your account. Please contact the salon.');
+          setLoading(false);
+          return;
+        }
+
+        const { data, error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            full_name: formData.full_name,
+            email: formData.email,
+            birthday,
+            registration_complete: true,
+            referral_code: completeProfileRef.current?.referral_code || generateReferralCode(formData.full_name),
+          })
+          .eq('id', profileId)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+
+        registeredNameRef.current = formData.full_name;
+        pendingProfileRef.current = data;
+        setSuccess(true);
+        claimPendingGiftCards(data.id).catch(() => undefined);
+        return;
+      }
 
       const { data: existing, error: checkError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, registration_complete')
         .eq('phone', cleanPhone)
         .single();
 
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
       if (existing) {
-        setError('An account with this phone number already exists. Please login instead.');
+        if (needsRegistrationCompletion(existing)) {
+          setError('An account with this phone number already exists. Please log in to complete your profile.');
+        } else {
+          setError('An account with this phone number already exists. Please login instead.');
+        }
         setLoading(false);
         return;
       }
@@ -330,10 +426,6 @@ export default function ClientRegister() {
         }
       }
 
-      const birthday = formData.birthday_month && formData.birthday_day
-        ? `${formData.birthday_month}-${formData.birthday_day}`
-        : null;
-
       const { data, error: insertError } = await supabase
         .from('profiles')
         .insert({
@@ -343,6 +435,7 @@ export default function ClientRegister() {
           birthday,
 
           role: 'customer',
+          registration_complete: true,
           referral_code: generateReferralCode(formData.full_name),
           referral_by: referredById,
           loyalty_points: initialPoints
@@ -409,7 +502,14 @@ export default function ClientRegister() {
                 <BrandLogo className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28" />
               </div>
             </Link>
-            <p className={subtitleClass}>Create Your Account</p>
+            <p className={subtitleClass}>
+              {completeMode ? 'Complete Your Profile' : 'Create Your Account'}
+            </p>
+            {completeMode ? (
+              <p className={theme === 'dark' ? 'text-offwhite/60 text-sm mt-2' : 'text-charcoal/60 text-sm mt-2'}>
+                Your salon account was started with your name and phone. Add the remaining details to finish setup.
+              </p>
+            ) : null}
             {giftPreview?.success && (
               <p className={theme === 'dark' ? 'text-gold text-sm mt-2 font-medium' : 'text-gold text-sm mt-2 font-medium'}>
                 {giftPreview.buyer_first_name
@@ -454,11 +554,18 @@ export default function ClientRegister() {
                 onChange={handleChange}
                 placeholder="10-digit phone number"
                 readOnly={phoneLocked}
-                className={clsx(inputClass, phoneLocked && 'opacity-80 cursor-not-allowed')}
+                disabled={phoneLocked}
+                aria-readonly={phoneLocked}
+                className={clsx(
+                  inputClass,
+                  phoneLocked && 'opacity-80 cursor-not-allowed pointer-events-none select-none',
+                )}
               />
               {phoneLocked && (
                 <p className={theme === 'dark' ? 'text-offwhite/40 text-xs mt-1' : 'text-charcoal/40 text-xs mt-1'}>
-                  Phone is locked to match your gift card.
+                  {isCompleteRegistration
+                    ? 'Phone is linked to your salon account and cannot be changed.'
+                    : 'Phone is locked to match your gift card.'}
                 </p>
               )}
             </div>

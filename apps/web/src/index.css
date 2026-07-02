@@ -73,6 +73,31 @@
   .text-cream { color: var(--color-cream); }
   .bg-cream { background-color: var(--color-cream); }
   .bg-modal { background-color: var(--card-bg); }
+
+  .theme-scrollbar {
+    color-scheme: inherit;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--text-muted) 80%, var(--gold-strong) 20%)
+      color-mix(in srgb, var(--bg-secondary) 75%, var(--border-light));
+  }
+
+  .theme-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .theme-scrollbar::-webkit-scrollbar-track {
+    background: color-mix(in srgb, var(--bg-secondary) 80%, var(--border-light));
+  }
+
+  .theme-scrollbar::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text-muted) 75%, var(--gold-strong) 25%);
+    border-radius: 999px;
+  }
+
+  .theme-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--text-secondary) 70%, var(--gold-strong) 30%);
+  }
 }
 
 /* Style closed select only — option styling breaks native dropdowns (white popup + white text). */

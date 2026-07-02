@@ -9,7 +9,7 @@ export type PublicTabParamList = {
 export type RootStackParamList = {
   Public: undefined;
   Login: undefined;
-  Register: { ref?: string; gift?: string } | undefined;
+  Register: { ref?: string; gift?: string; complete?: boolean; phone?: string } | undefined;
   GiftClaim: { token: string };
   CheckIn: undefined;
   Main: undefined;

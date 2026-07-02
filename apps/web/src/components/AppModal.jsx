@@ -33,6 +33,7 @@ export default function AppModal({
   panelOverlay = null,
   headerExtra,
   centered = false,
+  centerTitle = false,
 }) {
   const panelRef = useFocusTrap(open, onClose);
   const layeredPanel = Boolean(panelOverlay);
@@ -75,29 +76,62 @@ export default function AppModal({
         {(title || onClose || headerExtra) && (
           <div
             className={clsx(
-              'flex items-start justify-between gap-3 px-4 pb-3 sm:px-5 sm:py-4 border-b border-light shrink-0',
+              centerTitle
+                ? 'grid grid-cols-[2.5rem_1fr_2.5rem] items-center gap-3 px-4 py-3 sm:px-5 sm:py-4 border-b border-light shrink-0 min-h-[3.25rem]'
+                : 'flex items-start justify-between gap-3 px-4 pb-3 sm:px-5 sm:py-4 border-b border-light shrink-0',
               layeredPanel && 'relative z-[3]',
               !centered && 'pt-[max(0.75rem,env(safe-area-inset-top))]',
             )}
           >
-            <div className="min-w-0 flex-1">
-              {title && (
-                <h2 id="app-modal-title" className="font-heading text-lg sm:text-xl text-gold-strong leading-snug">
-                  {title}
-                </h2>
-              )}
-              {subtitle && <p className="text-secondary text-sm mt-1 leading-relaxed">{subtitle}</p>}
-              {headerExtra}
-            </div>
-            {onClose && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-secondary hover:text-primary text-2xl leading-none w-10 h-10 flex items-center justify-center rounded-lg hover:bg-secondary shrink-0 -mr-1"
-                aria-label="Close"
-              >
-                ×
-              </button>
+            {centerTitle ? (
+              <>
+                <div aria-hidden className="size-10 shrink-0" />
+                <div className="flex min-w-0 flex-col items-center justify-center">
+                  {title && (
+                    <h2
+                      id="app-modal-title"
+                      className="font-heading text-lg sm:text-xl text-gold-strong leading-snug text-center"
+                    >
+                      {title}
+                    </h2>
+                  )}
+                  {headerExtra}
+                </div>
+                {onClose ? (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="size-10 shrink-0 text-secondary hover:text-primary text-2xl leading-none flex items-center justify-center rounded-lg hover:bg-secondary justify-self-end"
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                ) : (
+                  <div aria-hidden className="size-10 shrink-0" />
+                )}
+              </>
+            ) : (
+              <>
+                <div className="min-w-0 flex-1">
+                  {title && (
+                    <h2 id="app-modal-title" className="font-heading text-lg sm:text-xl text-gold-strong leading-snug">
+                      {title}
+                    </h2>
+                  )}
+                  {subtitle && <p className="text-secondary text-sm mt-1 leading-relaxed">{subtitle}</p>}
+                  {headerExtra}
+                </div>
+                {onClose && (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="text-secondary hover:text-primary text-2xl leading-none w-10 h-10 flex items-center justify-center rounded-lg hover:bg-secondary shrink-0 -mr-1"
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                )}
+              </>
             )}
           </div>
         )}

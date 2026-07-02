@@ -3,6 +3,7 @@ import { getScreenNameForNavItem } from '@nail-couture/shared/navigation/navItem
 export type AppScreenName =
   | 'Home'
   | 'Schedule'
+  | 'PhoneBooking'
   | 'Lobby'
   | 'Bookings'
   | 'Staff'
@@ -32,6 +33,7 @@ export function resolveScreenName(navItemId: string): AppScreenName {
 export const ALL_SCREEN_NAMES: AppScreenName[] = [
   'Home',
   'Schedule',
+  'PhoneBooking',
   'Lobby',
   'Bookings',
   'Staff',

@@ -152,6 +152,17 @@ export function getStaffPlannerPath(role) {
   }
 }
 
+export function getPhoneBookingPath(role) {
+  switch (role) {
+    case 'super_admin': return '/superadmin/booking';
+    case 'owner': return '/owner/booking';
+    case 'partner': return '/partner/booking';
+    case 'admin': return '/admin/booking';
+    case 'cashier': return '/cashier/booking';
+    default: return getHomePath(role);
+  }
+}
+
 export function getReviewsPath(role) {
   switch (role) {
     case 'super_admin': return '/superadmin/reviews';
